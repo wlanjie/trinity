@@ -1,26 +1,20 @@
-//
-// Created by wlanjie on 2019/2/21.
-//
+#ifndef VIDEO_COMMON_HANDLER_H
+#define VIDEO_COMMON_HANDLER_H
 
-#ifndef TRINITY_HANDLER_H
-#define TRINITY_HANDLER_H
-
-#include "message_queue.h"
-
-namespace trinity {
+#include "CommonTools.h"
+#include "./message_queue.h"
 
 class Handler {
-public:
-    Handler(MessageQueue* queue);
-    ~Handler();
-
-    int PostMessage(Message* msg);
-    int GetQueueSize();
-    virtual void HandleMessage(Message* msg) {};
-
 private:
-    MessageQueue* queue_;
+	MessageQueue* mQueue;
+
+public:
+	Handler(MessageQueue* mQueue);
+	~Handler();
+
+	int postMessage(Message* msg);
+	int getQueueSize();
+	virtual void handleMessage(Message* msg){};
 };
 
-}
-#endif //TRINITY_HANDLER_H
+#endif // VIDEO_COMMON_HANDLER_H

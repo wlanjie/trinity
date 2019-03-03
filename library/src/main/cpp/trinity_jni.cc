@@ -5,7 +5,9 @@
 #include <jni.h>
 #include <android/log.h>
 #include "log.h"
-#include "record/preview_controller.h"
+#include "camera/recording_preview_controller.h"
+#include "song_decoder_controller.h"
+#include "record_processor.h"
 
 extern "C" {
 #include "libavformat/avformat.h"
@@ -20,12 +22,18 @@ extern "C" {
 #define NELEM(x) ((int) (sizeof(x) / sizeof((x)[0])))
 #endif
 
-#define RECORD_NAME "com/trinity/Record"
+#define SONG_STUDIO_NAME "com/trinity/Songstudio"
+#define RECORD_NAME "com/trinity/camera/PreviewScheduler"
+#define MUSIC_DECODE_NAME "com/trinity/decoder/MusicDecoder"
+#define AUDIO_RECORD_CONTROLLER_NAME "com/trinity/media/AudioRecordController"
+#define AUDIO_RECORD_ECHO_CONTROLLER_NAME "com/trinity/media/AudioRecordEchoController"
+#define SOUND_TRACK_CONTROLLER_NAME "com/trinity/media/SoundTrackController"
+#define AUDIO_RECORD_PROCESSOR "com/trinity/recording/processor/AudioRecordProcessor"
 
-using namespace trinity;
+//using namespace trinity;
 
 static jlong Android_JNI_createRecord(JNIEnv *env, jobject object) {
-    auto *preview_controller = new PreviewController();
+    auto *preview_controller = new RecordingPreviewController();
     return reinterpret_cast<jlong>(preview_controller);
 }
 
@@ -34,7 +42,7 @@ static void Android_JNI_prepareEGLContext(JNIEnv *env, jobject object, jlong id,
     if (id <= 0) {
         return;
     }
-    auto *preview_controller = reinterpret_cast<PreviewController *>(id);
+    auto *preview_controller = reinterpret_cast<RecordingPreviewController *>(id);
     if (surface != nullptr && preview_controller != nullptr) {
         JavaVM *vm = nullptr;
         env->GetJavaVM(&vm);
@@ -46,11 +54,19 @@ static void Android_JNI_prepareEGLContext(JNIEnv *env, jobject object, jlong id,
     }
 }
 
+static void Android_JNI_record_switch_camera(JNIEnv *env, jobject object, jlong handle) {
+    if (handle <= 0) {
+        return;
+    }
+    auto *preview_controller = reinterpret_cast<RecordingPreviewController *>(id);
+    preview_controller->SwitchCameraFacing();
+}
+
 static void Android_JNI_createWindowSurface(JNIEnv *env, jobject object, jlong id, jobject surface) {
     if (id <= 0) {
         return;
     }
-    auto *preview_controller = reinterpret_cast<PreviewController *>(id);
+    auto *preview_controller = reinterpret_cast<RecordingPreviewController *>(id);
     if (surface != nullptr && preview_controller != nullptr) {
         ANativeWindow *window = ANativeWindow_fromSurface(env, surface);
         if (window != nullptr) {
@@ -65,7 +81,7 @@ Android_JNI_adaptiveVideoQuality(JNIEnv *env, jobject object, jlong id, jint max
     if (id <= 0) {
         return;
     }
-    auto *preview_controller = reinterpret_cast<PreviewController *>(id);
+    auto *preview_controller = reinterpret_cast<RecordingPreviewController *>(id);
     if (preview_controller != nullptr) {
         preview_controller->AdaptiveVideoQuality(max_bit_rate, avg_bit_rate, fps);
     }
@@ -75,7 +91,7 @@ static void Android_JNI_hotConfigQuality(JNIEnv *env, jobject object, jlong id, 
     if (id <= 0) {
         return;
     }
-    auto *preview_controller = reinterpret_cast<PreviewController *>(id);
+    auto *preview_controller = reinterpret_cast<RecordingPreviewController *>(id);
     if (preview_controller != nullptr) {
 //        preview_controller->
     }
@@ -85,7 +101,7 @@ static void Android_JNI_resetRenderSize(JNIEnv *env, jobject object, long id, ji
     if (id <= 0) {
         return;
     }
-    auto *preview_controller = reinterpret_cast<PreviewController *>(id);
+    auto *preview_controller = reinterpret_cast<RecordingPreviewController *>(id);
     if (preview_controller != nullptr) {
         preview_controller->ResetRenderSize(width, height);
     }
@@ -95,7 +111,7 @@ static void Android_JNI_onFrameAvailable(JNIEnv *env, jobject object, jlong id) 
     if (id <= 0) {
         return;
     }
-    auto *preview_controller = reinterpret_cast<PreviewController *>(id);
+    auto *preview_controller = reinterpret_cast<RecordingPreviewController *>(id);
     if (preview_controller != nullptr) {
         preview_controller->NotifyFrameAvailable();
     }
@@ -105,7 +121,7 @@ static void Android_JNI_updateTextureMatrix(JNIEnv *env, jobject object, jlong i
     if (id <= 0) {
         return;
     }
-    auto *preview_controller = reinterpret_cast<PreviewController *>(id);
+    auto *preview_controller = reinterpret_cast<RecordingPreviewController *>(id);
     if (preview_controller != nullptr) {
 //        preview_controller->
     }
@@ -115,7 +131,7 @@ static void Android_JNI_destroyWindowSurface(JNIEnv *env, jobject object, jlong 
     if (id <= 0) {
         return;
     }
-    auto *preview_controller = reinterpret_cast<PreviewController *>(id);
+    auto *preview_controller = reinterpret_cast<RecordingPreviewController *>(id);
     if (preview_controller != nullptr) {
         preview_controller->DestroyWindowSurface();
     }
@@ -125,34 +141,261 @@ static void Android_JNI_destroyEGLContext(JNIEnv *env, jobject object, jlong id)
     if (id <= 0) {
         return;
     }
-    auto *preview_controller = reinterpret_cast<PreviewController *>(id);
+    auto *preview_controller = reinterpret_cast<RecordingPreviewController *>(id);
     if (preview_controller != nullptr) {
         preview_controller->DestroyEGLContext();
     }
+}
+
+static void
+Android_JNI_record_start(JNIEnv *env, jobject object, jlong handle, jint width, jint height, jint video_bit_rate,
+                         jint frame_rate, jboolean use_hard_encode, jint strategy) {
+    if (handle <= 0) {
+        return;
+    }
+    auto *preview_controller = reinterpret_cast<RecordingPreviewController *>(handle);
+    preview_controller->StartEncoding(width, height, video_bit_rate, frame_rate, use_hard_encode, strategy);
+}
+
+static void Android_JNI_record_stop(JNIEnv *env, jobject object, jlong handle) {
+    if (handle <= 0) {
+        return;
+    }
+    auto *preview_controller = reinterpret_cast<RecordingPreviewController *>(handle);
+    preview_controller->StopEncoding();
 }
 
 static void Android_JNI_releaseNative(JNIEnv *env, jobject object, jlong id) {
     if (id <= 0) {
         return;
     }
-    auto *preview_controller = reinterpret_cast<PreviewController *>(id);
+    auto *preview_controller = reinterpret_cast<RecordingPreviewController *>(id);
     if (preview_controller != nullptr) {
         delete preview_controller;
     }
 }
 
+// TODO
+static void Android_JNI_song_studio_init(JNIEnv *env, jobject) {
+
+}
+
+static void Android_JNI_song_studio_save_leak_tracer_log(JNIEnv *env, jobject object) {
+
+}
+
+static void Android_JNI_song_studio_get_commit_version(JNIEnv *env, jobject object) {
+
+}
+
+static jlong Android_JNI_create_music_decoder(JNIEnv *env, jobject object) {
+    auto *decoder = new LiveSongDecoderController();
+    return reinterpret_cast<jlong>(decoder);
+}
+
+static void Android_JNI_musicDecoderInit(JNIEnv *env, jobject object, jlong id, jfloat packetBufferTimePercent,
+                                         jint vocalSampleRate) {
+    if (id <= 0) {
+        return;
+    }
+    auto *decoder = reinterpret_cast<LiveSongDecoderController *>(id);
+    decoder->init(packetBufferTimePercent, vocalSampleRate);
+}
+
+static int Android_JNI_music_decoder_read_samples(JNIEnv *env, jobject object, jlong id, jshortArray array, jint size,
+                                                  jintArray extraSlientSampleSize, jintArray extraAccompanyType) {
+    if (id <= 0) {
+        return -1;
+    }
+    auto *decoder = reinterpret_cast<LiveSongDecoderController *>(id);
+    jshort *target = env->GetShortArrayElements(array, 0);
+    jint *slientSizeArr = env->GetIntArrayElements(extraSlientSampleSize, 0);
+    jint *extraAccompanyTypeArr = env->GetIntArrayElements(extraAccompanyType, 0);
+    int result = decoder->readSamplesAndProducePacket(target, size, slientSizeArr, extraAccompanyTypeArr);
+    env->ReleaseIntArrayElements(extraSlientSampleSize, slientSizeArr, 0);
+    env->ReleaseIntArrayElements(extraAccompanyType, extraAccompanyTypeArr, 0);
+    env->ReleaseShortArrayElements(array, target, 0);
+    return result;
+}
+
+static void
+Android_JNI_music_decoder_set_volume(JNIEnv *env, jobject object, jlong id, jfloat volume, jfloat accompanyMax) {
+    if (id <= 0) {
+        return;
+    }
+    auto *decoder = reinterpret_cast<LiveSongDecoderController *>(id);
+    decoder->setVolume(volume, accompanyMax);
+}
+
+static void Android_JNI_music_decoder_start(JNIEnv *env, jobject object, jlong id, jstring accompanyFilePathParam) {
+    if (id <= 0) {
+        return;
+    }
+    auto *decoder = reinterpret_cast<LiveSongDecoderController *>(id);
+    const char *accompanyFilePath = env->GetStringUTFChars(accompanyFilePathParam, NULL);
+    decoder->startAccompany(accompanyFilePath);
+    env->ReleaseStringUTFChars(accompanyFilePathParam, accompanyFilePath);
+}
+
+static void Android_JNI_music_decoder_pause(JNIEnv *env, jobject object, jlong id) {
+    if (id <= 0) {
+        return;
+    }
+    auto *decoder = reinterpret_cast<LiveSongDecoderController *>(id);
+    decoder->pauseAccompany();
+}
+
+static void Android_JNI_music_decoder_resume(JNIEnv *env, jobject object, jlong id) {
+    if (id <= 0) {
+        return;
+    }
+    auto *decoder = reinterpret_cast<LiveSongDecoderController *>(id);
+    decoder->resumeAccompany();
+}
+
+static void Android_JNI_music_decoder_stop(JNIEnv *env, jobject object, jlong id) {
+    if (id <= 0) {
+        return;
+    }
+    auto *decoder = reinterpret_cast<LiveSongDecoderController *>(id);
+    decoder->stopAccompany();
+}
+
+static void Android_JNI_music_decoder_destory(JNIEnv *env, jobject object, jlong id) {
+    if (id <= 0) {
+        return;
+    }
+    auto *decoder = reinterpret_cast<LiveSongDecoderController *>(id);
+    decoder->destroy();
+}
+
+static void Android_JNI_music_decoder_release(JNIEnv *env, jobject object, jlong id) {
+    if (id <= 0) {
+        return;
+    }
+    auto *decoder = reinterpret_cast<LiveSongDecoderController *>(id);
+    delete decoder;
+}
+
+static jlong
+Android_JNI_audio_record_processor_init(JNIEnv *env, jobject object, jint sampleRate, jint audioBufferSize) {
+    auto *recorder = new RecordProcessor();
+    recorder->initAudioBufferSize(sampleRate, audioBufferSize);
+    return reinterpret_cast<jlong>(recorder);
+}
+
+static void Android_JNI_audio_record_processor_flush_audio_buffer_to_queue(JNIEnv *env, jobject object, jlong handle) {
+    if (handle <= 0) {
+        return;
+    }
+    auto *recorder = reinterpret_cast<RecordProcessor *>(handle);
+    recorder->flushAudioBufferToQueue();
+    recorder->destroy();
+    delete recorder;
+}
+
+static jint Android_JNI_audio_record_processor_push_audio_buffer_to_queue(JNIEnv *env, jobject object, jlong handle,
+                                                                          jshortArray audioSamples,
+                                                                          jint audioSampleSize) {
+    if (handle <= 0) {
+        return -1;
+    }
+    auto *recorder = reinterpret_cast<RecordProcessor *>(handle);
+    jshort *samples = env->GetShortArrayElements(audioSamples, 0);
+    int result = recorder->pushAudioBufferToQueue(samples, audioSampleSize);
+    env->ReleaseShortArrayElements(audioSamples, samples, 0);
+    return result;
+}
+
+static void Android_JNI_audio_record_processor_destroy(JNIEnv *env, jobject object, jlong handle) {
+    if (handle <= 0) {
+        return;
+    }
+    auto *recorder = reinterpret_cast<RecordProcessor *>(handle);
+    recorder->destroy();
+    delete recorder;
+}
+
 static JNINativeMethod recordMethods[] = {
-        {"createNative",         "()J",                           (void **) Android_JNI_createRecord},
+        {"create",               "()J",                           (void **) Android_JNI_createRecord},
         {"prepareEGLContext",    "(JLandroid/view/Surface;III)V", (void **) Android_JNI_prepareEGLContext},
         {"createWindowSurface",  "(JLandroid/view/Surface;)V",    (void **) Android_JNI_createWindowSurface},
+        {"switchCamera",         "(J)V",                          (void **) Android_JNI_record_switch_camera},
         {"adaptiveVideoQuality", "(JIII)V",                       (void **) Android_JNI_adaptiveVideoQuality},
         {"hotConfigQuality",     "(JIII)V",                       (void **) Android_JNI_hotConfigQuality},
-        {"resetRenderSize",      "(JII)V",                        (void **) Android_JNI_resetRenderSize},
+        {"setRenderSize",        "(JII)V",                        (void **) Android_JNI_resetRenderSize},
         {"onFrameAvailable",     "(J)V",                          (void **) Android_JNI_onFrameAvailable},
         {"updateTextureMatrix",  "(J[F)V",                        (void **) Android_JNI_updateTextureMatrix},
         {"destroyWindowSurface", "(J)V",                          (void **) Android_JNI_destroyWindowSurface},
         {"destroyEGLContext",    "(J)V",                          (void **) Android_JNI_destroyEGLContext},
-        {"releaseNative",        "(J)V",                          (void **) Android_JNI_releaseNative}
+        {"startEncode",          "(JIIIIZI)V",                    (void **) Android_JNI_record_start},
+        {"stopEncoding",         "(J)V",                          (void **) Android_JNI_record_stop},
+        {"release",              "(J)V",                          (void **) Android_JNI_releaseNative}
+};
+
+//static JNINativeMethod songStudioMethods[] = {
+//        {"init",              "()V",                    (void **) Android_JNI_song_studio_init},
+//        {"saveLeakTracerLog", "(Ljava/lang/String;I)V", (void **) Android_JNI_song_studio_save_leak_tracer_log},
+//        {"getCommitVersion",  "()Ljava/lang/String;",   (void **) Android_JNI_song_studio_get_commit_version}
+//};
+
+static JNINativeMethod musicDecoderMethods[] = {
+        {"create",         "()J",                    (void **) Android_JNI_create_music_decoder},
+        {"initDecoder",    "(JFI)V",                 (void **) Android_JNI_musicDecoderInit},
+        {"readSamples",    "(J[SI[I[I)I",            (void **) Android_JNI_music_decoder_read_samples},
+        {"setVolume",      "(JFF)V",                 (void **) Android_JNI_music_decoder_set_volume},
+        {"start",          "(JLjava/lang/String;)V", (void **) Android_JNI_music_decoder_start},
+        {"pause",          "(J)V",                   (void **) Android_JNI_music_decoder_pause},
+        {"resume",         "(J)V",                   (void **) Android_JNI_music_decoder_resume},
+        {"stop",           "(J)V",                   (void **) Android_JNI_music_decoder_stop},
+        {"destroyDecoder", "(J)V",                   (void **) Android_JNI_music_decoder_destory},
+        {"release",        "(J)V",                   (void **) Android_JNI_music_decoder_release}
+};
+
+//static JNINativeMethod audioRecordControllerMethods[] = {
+//        {"createAudioRecorder", "(Ljava/lang/String;)V", (void **) Android_JNI_audio_record_controller_create},
+//        {"startRecording",      "()V",                   (void **) Android_JNI_audio_record_controller_start_recording},
+//        {"stopRecording",       "()V",                   (void **) Android_JNI_audio_record_controller_stop_recording}
+//};
+
+//static JNINativeMethod audioRecordEchoMethods[] = {
+//        {"createAudioRecorder", "(Ljava/lang/String;)V", (void **) Android_JNI_audio_record_echo_create},
+//        {"startRecording",      "()V",                   (void **) Android_JNI_audio_record_echo_start_recording},
+//        {"stopRecording",       "()V",                   (void **) Android_JNI_audio_record_echo_stop_recording}
+//};
+
+//static JNINativeMethod soundRecordControllerMethods[] = {
+//        {"initMetaData",                  "(IIII)Z", (void **) Anroid_JNI_sound_record_controller_init_meta_data},
+//        {"initAudioRecordProcessor",      "(I)Z",    (void **) Android_JNI_sound_record_controller_init_record_processor},
+//        {"destroyAudioRecorderProcessor", "()V",     (void **) Android_JNI_sound_record_controller_destroy_processor},
+//        {"start",                         "()V",     (void **) Android_JNI_sound_record_controller_start},
+//        {"stop",                          "()V",     (void **) Android_JNI_sound_record_controller_stop},
+//        {"initScoring",                   "(IIII)V", (void **) Android_JNI_sound_record_controller_init_scoring},
+//        {"setDestroyScoreProcessorFlag",  "(Z)V",    (void **) Android_JNI_sound_record_controller_score_processor_flag},
+//        {"getRenderData",                 "(J[F)V",  (void **) Android_JNI_sound_record_controller_render_data},
+//        {"getLatency",                    "(J)I",    (void **) Android_JNI_sound_record_controller_latency},
+//        {"getRecordVolume",               "()I",     (void **) Android_JNI_sound_record_controller_record_volume},
+//        {"enableUnAccom",                 "()V",     (void **) Android_JNI_sound_record_controller_enable_accom}
+//};
+//
+//static JNINativeMethod soundTrackControllerMethods[] = {
+//        {"setAudioDataSource",     "(Ljava/lang/String;F)Z", (void **) Android_JNI_sound_track_set_audio_source},
+//        {"getAccompanySampleRate", "()I",                    (void **) Android_JNI_sound_track_get_accompany_sample_rate},
+//        {"play",                   "()V",                    (void **) Android_JNI_sound_track_play},
+//        {"getCurrentTimeMills",    "()I",                    (void **) Android_JNI_sound_track_get_current_time_mills},
+//        {"setVolume",              "(F)V",                   (void **) Android_JNI_sound_track_set_volume},
+//        {"isPlaying",              "()Z",                    (void **) Android_JNI_sound_track_set_is_playing},
+//        {"setMusicSourceFlag",     "(Z)V",                   (void **) Android_JNI_sound_track_set_music_source_flag},
+//        {"stop",                   "()V",                    (void **) Android_JNI_sound_track_stop},
+//        {"pause",                  "()V",                    (void **) Android_JNI_sound_track_pause},
+//        {"seekToPosition",         "(FF)V",                  (void **) Android_JNI_sound_track_seek_to_position}
+//};
+
+static JNINativeMethod audioRecordProcessorMethods[] = {
+        {"init",                    "(II)J",  (void **) Android_JNI_audio_record_processor_init},
+        {"flushAudioBufferToQueue", "(J)V",   (void **) Android_JNI_audio_record_processor_flush_audio_buffer_to_queue},
+        {"destroy",                 "(J)V",   (void **) Android_JNI_audio_record_processor_destroy},
+        {"pushAudioBufferToQueue",  "(J[S)I", (void **) Android_JNI_audio_record_processor_push_audio_buffer_to_queue},
 };
 
 void logCallback(void *ptr, int level, const char *fmt, va_list vl) {
@@ -188,6 +431,14 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     jclass record = env->FindClass(RECORD_NAME);
     env->RegisterNatives(record, recordMethods, NELEM(recordMethods));
     env->DeleteLocalRef(record);
+
+    jclass musicDecoder = env->FindClass(MUSIC_DECODE_NAME);
+    env->RegisterNatives(musicDecoder, musicDecoderMethods, NELEM(musicDecoder));
+    env->DeleteLocalRef(musicDecoder);
+
+    jclass audioRecordProcessor = env->FindClass(AUDIO_RECORD_PROCESSOR);
+    env->RegisterNatives(audioRecordProcessor, audioRecordProcessorMethods, NELEM(audioRecordProcessorMethods));
+    env->DeleteLocalRef(audioRecordProcessor);
 
     av_register_all();
     avcodec_register_all();

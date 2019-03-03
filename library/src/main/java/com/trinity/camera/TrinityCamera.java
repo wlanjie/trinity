@@ -17,7 +17,7 @@ import java.lang.reflect.Field;
 import java.util.List;
 
 public class TrinityCamera {
-	private static final String TAG = "TCamera";
+	private static final String TAG = "TrinityCamera";
 
 	public static int VIDEO_WIDTH = 640;
 	public static int DEFAULT_VIDEO_WIDTH = 640;
@@ -85,6 +85,7 @@ public class TrinityCamera {
 				@Override
 				public void onFrameAvailable(SurfaceTexture surfaceTexture) {
 					if (null != mCallback) {
+//						Log.d("RecordingPublisher", "surfaceTexture time stamp is "+surfaceTexture.getTimestamp()/1000000000.0f);
 						mCallback.notifyFrameAvailable();
 					}
 				}
@@ -97,7 +98,7 @@ public class TrinityCamera {
 
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 	public void updateTexImage() {
-		// Log.i(TAG, "updateTexImage...");
+		// Log.i(TAG, "UpdateTexImage...");
 		try {
 			if (null != mCameraSurfaceTexture) {
 				mCameraSurfaceTexture.updateTexImage();
@@ -144,6 +145,7 @@ public class TrinityCamera {
 	private CameraConfigInfo setUpCamera(final int id) throws CameraParamSettingException {
 //		 forcePreviewSize_640_480();
 		forcePreviewSize_1280_720();
+		// printStackTrace(CameraLoader.class);
 		try {
 			// 1、开启Camera
 			try {
@@ -276,6 +278,8 @@ public class TrinityCamera {
 		case Surface.ROTATION_270:
 			degrees = 270;
 			break;
+        default:
+            break;
 		}
 		int result;
 		CameraInfo info = new CameraInfo();
@@ -291,11 +295,11 @@ public class TrinityCamera {
 	private ChangbaVideoCameraCallback mCallback;
 
 	public interface ChangbaVideoCameraCallback {
-		void onPermissionDismiss(String tip);
+		public void onPermissionDismiss(String tip);
 		
-		void notifyFrameAvailable();
+		public void notifyFrameAvailable();
 		
-		void updateTexMatrix(float texMatrix[]);
+		public void updateTexMatrix(float texMatrix[]);
 	}
 
 	public void setCallback(ChangbaVideoCameraCallback callback) {
