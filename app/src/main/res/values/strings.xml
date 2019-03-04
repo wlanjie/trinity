@@ -1,3 +1,38 @@
 <resources>
-    <string name="app_name">sample</string>
+    <string name="app_name">VideoRecorderPro</string>
+    <string name="forward_page">进入录制页</string>
+    <string name="ok">确定</string>
+
+
+    <string name="preview_original">自然</string>
+    <string name="preview_contrast">亮丽</string>
+    <string name="preview_vignette">晕影</string>
+    <string name="preview_thin">瘦脸</string>
+    <string name="preview_whitening">美白</string>
+    <string name="preview_sepia">复古</string>
+    <string name="preview_grayscale">黑白</string>
+    <string name="preview_none">无</string>
+    <string name="preview_tone_curve_blue_crystal">小清新</string>
+    <string name="preview_tone_curve_lake_water">幻彩</string>
+    <string name="preview_elegant">优雅</string>
+    <string name="preview_tone_japanese">日系</string>
+    <string name="preview_cool">清凉</string>
+
+    <string name="audio_rock">摇滚</string>
+    <string name="audio_rnb">R&amp;B</string>
+    <string name="audio_popular">流行</string>
+    <string name="audio_dance">舞曲</string>
+    <string name="audio_new_centrury">新世纪</string>
+    <string name="audio_phonograph">留声机</string>
+    <string name="audio_original">原声</string>
+    <string name="audio_double_u">迷幻</string>
+    <string name="audio_tune">电音</string>
+
+    <string name="start_live">开始录制</string>
+    <string name="connect_rtmp_server">正在连接RTMP服务器</string>
+    <string name="publish_timeout_tip">由于网络原因, 推流超时, 请稍后再试...</string>
+    <string name="audio_volume">人声音量</string>
+    <string name="accompany_volume">伴奏音量</string>
+    <string name="accompany_pitch_shift">变调</string>
+    <string name="cancel">取消</string>
 </resources>

@@ -18,6 +18,7 @@ import java.nio.ByteBuffer;
 public class MediaCodecSurfaceEncoder {
     private static final String TAG = "MediaCodecEncoder";
     private static final boolean VERBOSE = false;
+    private static final int MEDIA_CODEC_NOSIE_DELTA = 80*1024;
 
     public static final String MIME_TYPE = "video/avc"; // H.264 Advanced Video
     // Coding
@@ -201,7 +202,6 @@ public class MediaCodecSurfaceEncoder {
      * Drains all pending output from the decoder, and adds it to the circular
      * buffer.
      *
-     * @param outputData
      */
     public void drainEncoder() {
         mBufferInfo = new BufferInfo();

@@ -1,6 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#008577</color>
-    <color name="colorPrimaryDark">#00574B</color>
-    <color name="colorAccent">#D81B60</color>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+
+    <color name="transparent">#00000000</color>
+    <color name="listview_hint_color">#fbf8f3</color>
+    <color name="title_level_1">#FF50453D</color><!--notice type  -->
+    <color name="title_level_1_1">#FFA36B57</color><!--leadbord title1 -->
+    <color name="title_level_2">#FF867E77</color><!--notice content  -->
+    <color name="dark_slate_gray">#2F4F4F</color>
+    <color name="gray_2">#AFAFAF</color>
+    <color name="gray_1">#C0C0C0</color>
+    <color name="gray_3">#B5AeA8</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="red">#FFFF0000</color>
+    <color name="black">#FF000000</color>
+    <color name="lightgrey">#ff888888</color>
+    <color name="semitransparent">#80000000</color>
+    <color name="navpage">#FFE1E8EB</color>
+    <color name="menu_unselect">#FF3e332b</color>
+    <color name="menu_select">#FF382d25</color>
+    <color name="contribute_coin_count_color">#b98a33</color>
+    <drawable name="list_odd_idle">#FFFBF8F3</drawable>
+    <drawable name="list_even_idle">#FFF5F1EA</drawable>
+    <drawable name="list_focus">#FFF3E0C8</drawable>
+    <!-- pulldown -->
+    <color name="pull_down_text_color">#a3a7ac</color>
+    <!-- game -->
+    <color name="game_detail_title_text_color">#606060</color>
+    <color name="game_detail_content_text_color">#A49C95</color>
+    <color name="game_item_title_color">#AA705B</color>
+    <color name="game_item_content_text_color">#A49C95</color>
+
+    <color name="default_circle_indicator_fill_color">#FFd1ae8d</color>
+    <color name="default_circle_indicator_page_color">#ffece6db</color>
+    <color name="default_circle_indicator_stroke_color">#66dccec1</color>
+
 </resources>

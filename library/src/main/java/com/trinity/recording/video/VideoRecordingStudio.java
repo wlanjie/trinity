@@ -2,7 +2,7 @@ package com.trinity.recording.video;
 
 import android.content.res.AssetManager;
 import android.util.Log;
-import com.trinity.Videostudio;
+import com.trinity.VideoStudio;
 import com.trinity.camera.CameraParamSettingException;
 import com.trinity.camera.PreviewFilterType;
 import com.trinity.camera.PreviewScheduler;
@@ -39,8 +39,6 @@ public abstract class VideoRecordingStudio {
     public static final int audioBitsDepth = 16;
     public static final int audioBitRate = 64 * 1000;
     protected static int SAMPLE_RATE_IN_HZ = 44100;
-
-    public static final int MEDIA_CODEC_NOSIE_DELTA = 80*1024;
 
     protected PlayerService playerService = null;
 
@@ -125,7 +123,7 @@ public abstract class VideoRecordingStudio {
 
     public void stopRecording() {
         destroyRecordingResource();
-        Videostudio.getInstance().stopRecord();
+        VideoStudio.getInstance().stopRecord();
     }
 
     /**

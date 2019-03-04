@@ -8,6 +8,7 @@
 #include "camera/recording_preview_controller.h"
 #include "song_decoder_controller.h"
 #include "record_processor.h"
+#include "video_packet_consumer.h"
 
 extern "C" {
 #include "libavformat/avformat.h"
@@ -29,6 +30,7 @@ extern "C" {
 #define AUDIO_RECORD_ECHO_CONTROLLER_NAME "com/trinity/media/AudioRecordEchoController"
 #define SOUND_TRACK_CONTROLLER_NAME "com/trinity/media/SoundTrackController"
 #define AUDIO_RECORD_PROCESSOR "com/trinity/recording/processor/AudioRecordProcessor"
+#define VIDEO_STUDIO "com/trinity/VideoStudio"
 
 //using namespace trinity;
 
@@ -58,7 +60,7 @@ static void Android_JNI_record_switch_camera(JNIEnv *env, jobject object, jlong 
     if (handle <= 0) {
         return;
     }
-    auto *preview_controller = reinterpret_cast<RecordingPreviewController *>(id);
+    auto *preview_controller = reinterpret_cast<RecordingPreviewController *>(handle);
     preview_controller->SwitchCameraFacing();
 }
 
@@ -316,6 +318,68 @@ static void Android_JNI_audio_record_processor_destroy(JNIEnv *env, jobject obje
     delete recorder;
 }
 
+static jlong Android_JNI_video_studio_create(JNIEnv *env, jobject object) {
+    auto *videoPacketConsumerThread = new VideoPacketConsumerThread();
+    return reinterpret_cast<jlong>(videoPacketConsumerThread);
+}
+
+static jint Android_JNI_video_studio_start_record(JNIEnv *env, jobject object, jlong handle, jstring outputPath,
+                                                  jint videoWidth, jint videoheight, jint videoFrameRate,
+                                                  jint videoBitRate, jint audioSampleRate, jint audioChannels,
+                                                  jint audioBitRate,
+                                                  jint qualityStrategy) {
+    if (handle <= 0) {
+        return -1;
+    }
+    auto *videoPacketConsumerThread = reinterpret_cast<VideoPacketConsumerThread *>(handle);
+    int initCode = 0;
+    JavaVM *g_jvm = NULL;
+    env->GetJavaVM(&g_jvm);
+    // TODO delete g_obj
+    jobject g_obj = env->NewGlobalRef(object);
+    char *videoPath = (char *) (env->GetStringUTFChars(outputPath, NULL));
+    //如果视频临时文件存在则删除掉
+    remove(videoPath);
+    /** 预先初始化3个队列, 防止在init过程中把Statistics重新置为空的问题；
+     * 由于先初始化消费者，在初始化生产者，所以队列初始化放到这里 **/
+    LiveCommonPacketPool::GetInstance()->initRecordingVideoPacketQueue();
+    LiveCommonPacketPool::GetInstance()->initAudioPacketQueue(audioSampleRate);
+    LiveAudioPacketPool::GetInstance()->initAudioPacketQueue();
+
+    std::map<std::string, int> configMap;
+    initCode = videoPacketConsumerThread->init(videoPath, videoWidth, videoheight, videoFrameRate, videoBitRate,
+                                               audioSampleRate,
+                                               audioChannels, audioBitRate, "libfdk_aac", qualityStrategy, configMap,
+                                               g_jvm, g_obj);
+    LOGI("initCode is %d...qualityStrategy:%d", initCode, qualityStrategy);
+    if (initCode >= 0) {
+        videoPacketConsumerThread->startAsync();
+    } else {
+        /** 如果初始化失败, 那么就把队列销毁掉 **/
+        LiveCommonPacketPool::GetInstance()->destoryRecordingVideoPacketQueue();
+        LiveCommonPacketPool::GetInstance()->destoryAudioPacketQueue();
+        LiveAudioPacketPool::GetInstance()->destoryAudioPacketQueue();
+    }
+    env->ReleaseStringUTFChars(outputPath, videoPath);
+    return initCode;
+}
+
+static void Android_JNI_video_studio_stop_record(JNIEnv *env, jobject object, jlong handle) {
+    if (handle <= 0) {
+        return;
+    }
+    auto *videoPacketConsumerThread = reinterpret_cast<VideoPacketConsumerThread *>(handle);
+    videoPacketConsumerThread->stop();
+}
+
+static void Android_JNI_video_studio_release(JNIEnv *env, jobject object, jlong handle) {
+    if (handle <= 0) {
+        return;
+    }
+    auto *videoPacketConsumerThread = reinterpret_cast<VideoPacketConsumerThread *>(handle);
+    delete videoPacketConsumerThread;
+}
+
 static JNINativeMethod recordMethods[] = {
         {"create",               "()J",                           (void **) Android_JNI_createRecord},
         {"prepareEGLContext",    "(JLandroid/view/Surface;III)V", (void **) Android_JNI_prepareEGLContext},
@@ -392,10 +456,17 @@ static JNINativeMethod musicDecoderMethods[] = {
 //};
 
 static JNINativeMethod audioRecordProcessorMethods[] = {
-        {"init",                    "(II)J",  (void **) Android_JNI_audio_record_processor_init},
-        {"flushAudioBufferToQueue", "(J)V",   (void **) Android_JNI_audio_record_processor_flush_audio_buffer_to_queue},
-        {"destroy",                 "(J)V",   (void **) Android_JNI_audio_record_processor_destroy},
-        {"pushAudioBufferToQueue",  "(J[S)I", (void **) Android_JNI_audio_record_processor_push_audio_buffer_to_queue},
+        {"init",                    "(II)J",   (void **) Android_JNI_audio_record_processor_init},
+        {"flushAudioBufferToQueue", "(J)V",    (void **) Android_JNI_audio_record_processor_flush_audio_buffer_to_queue},
+        {"destroy",                 "(J)V",    (void **) Android_JNI_audio_record_processor_destroy},
+        {"pushAudioBufferToQueue",  "(J[SI)I", (void **) Android_JNI_audio_record_processor_push_audio_buffer_to_queue},
+};
+
+static JNINativeMethod videoStudioMethods[] = {
+        {"create",                 "()J",                            (void **) Android_JNI_video_studio_create},
+        {"startCommonVideoRecord", "(JLjava/lang/String;IIIIIIII)I", (void **) Android_JNI_video_studio_start_record},
+        {"stopVideoRecord",        "(J)V",                           (void **) Android_JNI_video_studio_stop_record},
+        {"release",                "(J)V",                           (void **) Android_JNI_video_studio_release}
 };
 
 void logCallback(void *ptr, int level, const char *fmt, va_list vl) {
@@ -439,6 +510,10 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     jclass audioRecordProcessor = env->FindClass(AUDIO_RECORD_PROCESSOR);
     env->RegisterNatives(audioRecordProcessor, audioRecordProcessorMethods, NELEM(audioRecordProcessorMethods));
     env->DeleteLocalRef(audioRecordProcessor);
+
+    jclass videoStudio = env->FindClass(VIDEO_STUDIO);
+    env->RegisterNatives(videoStudio, videoStudioMethods, NELEM(videoStudioMethods));
+    env->DeleteLocalRef(videoStudio);
 
     av_register_all();
     avcodec_register_all();

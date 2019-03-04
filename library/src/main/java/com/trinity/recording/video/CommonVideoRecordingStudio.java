@@ -2,13 +2,10 @@ package com.trinity.recording.video;
 
 import android.os.Build;
 import android.os.Handler;
-import com.trinity.Videostudio;
+import com.trinity.VideoStudio;
 import com.trinity.camera.PreviewScheduler;
 import com.trinity.recording.RecordingImplType;
-import com.trinity.recording.exception.InitPlayerFailException;
-import com.trinity.recording.exception.InitRecorderFailException;
-import com.trinity.recording.exception.RecordingStudioException;
-import com.trinity.recording.exception.RecordingStudioNullArgumentException;
+import com.trinity.recording.exception.*;
 import com.trinity.recording.service.PlayerService;
 import com.trinity.recording.service.factory.PlayerServiceFactory;
 import com.trinity.recording.service.impl.AudioRecordRecorderServiceImpl;
@@ -72,7 +69,7 @@ public class CommonVideoRecordingStudio extends VideoRecordingStudio {
                               int adaptiveMaximumBitrate) {
 
     qualityStrategy = ifQualityStrayegyEnable(qualityStrategy);
-    return Videostudio.getInstance().startVideoRecord(outputPath,
+    return VideoStudio.getInstance().startVideoRecord(outputPath,
         videoWidth, videoHeight, VIDEO_FRAME_RATE, COMMON_VIDEO_BIT_RATE,
         audioSampleRate, audioChannels, audioBitRate,
         qualityStrategy, adaptiveBitrateWindowSizeInSecs, adaptiveBitrateEncoderReconfigInterval,

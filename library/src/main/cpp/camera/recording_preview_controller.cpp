@@ -302,7 +302,7 @@ void RecordingPreviewController::ConfigCamera() {
     jclass jcls = env->GetObjectClass(obj_);
     if (NULL != jcls) {
         jmethodID configCameraCallback = env->GetMethodID(jcls, "configCameraFromNative",
-                                                          "(I)Lcom/changba/songstudio/camera/preview/CameraConfigInfo;");
+                                                          "(I)Lcom/trinity/camera/CameraConfigInfo;");
         if (NULL != configCameraCallback) {
             jobject cameraConfigInfo = env->CallObjectMethod(obj_, configCameraCallback, facing_id_);
             jclass cls_CameraConfigInfo = env->GetObjectClass(cameraConfigInfo);
