@@ -23,7 +23,6 @@ extern "C" {
 #define NELEM(x) ((int) (sizeof(x) / sizeof((x)[0])))
 #endif
 
-#define SONG_STUDIO_NAME "com/trinity/Songstudio"
 #define RECORD_NAME "com/trinity/camera/PreviewScheduler"
 #define MUSIC_DECODE_NAME "com/trinity/decoder/MusicDecoder"
 #define AUDIO_RECORD_CONTROLLER_NAME "com/trinity/media/AudioRecordController"
@@ -175,19 +174,6 @@ static void Android_JNI_releaseNative(JNIEnv *env, jobject object, jlong id) {
     if (preview_controller != nullptr) {
         delete preview_controller;
     }
-}
-
-// TODO
-static void Android_JNI_song_studio_init(JNIEnv *env, jobject) {
-
-}
-
-static void Android_JNI_song_studio_save_leak_tracer_log(JNIEnv *env, jobject object) {
-
-}
-
-static void Android_JNI_song_studio_get_commit_version(JNIEnv *env, jobject object) {
-
 }
 
 static jlong Android_JNI_create_music_decoder(JNIEnv *env, jobject object) {
@@ -396,12 +382,6 @@ static JNINativeMethod recordMethods[] = {
         {"release",              "(J)V",                          (void **) Android_JNI_releaseNative}
 };
 
-//static JNINativeMethod songStudioMethods[] = {
-//        {"init",              "()V",                    (void **) Android_JNI_song_studio_init},
-//        {"saveLeakTracerLog", "(Ljava/lang/String;I)V", (void **) Android_JNI_song_studio_save_leak_tracer_log},
-//        {"getCommitVersion",  "()Ljava/lang/String;",   (void **) Android_JNI_song_studio_get_commit_version}
-//};
-
 static JNINativeMethod musicDecoderMethods[] = {
         {"create",         "()J",                    (void **) Android_JNI_create_music_decoder},
         {"initDecoder",    "(JFI)V",                 (void **) Android_JNI_musicDecoderInit},
@@ -503,7 +483,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     env->DeleteLocalRef(record);
 
     jclass musicDecoder = env->FindClass(MUSIC_DECODE_NAME);
-    env->RegisterNatives(musicDecoder, musicDecoderMethods, NELEM(musicDecoder));
+    env->RegisterNatives(musicDecoder, musicDecoderMethods, NELEM(musicDecoderMethods));
     env->DeleteLocalRef(musicDecoder);
 
     jclass audioRecordProcessor = env->FindClass(AUDIO_RECORD_PROCESSOR);

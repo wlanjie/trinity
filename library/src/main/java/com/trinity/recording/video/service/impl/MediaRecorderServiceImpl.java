@@ -49,7 +49,7 @@ public class MediaRecorderServiceImpl implements MediaRecorderService {
 
 	@Override
 	public void destoryMediaRecorderProcessor() {
-		audioRecorderService.destoryAudioRecorderProcessor();
+		audioRecorderService.destroyAudioRecorderProcessor();
 	}
 
 	@Override

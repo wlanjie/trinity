@@ -4,7 +4,7 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import com.trinity.PacketBufferTimeEnum;
-import com.trinity.Songstudio;
+import com.trinity.SongStudio;
 import com.trinity.recording.exception.AudioConfigurationException;
 import com.trinity.recording.exception.StartRecordingException;
 import com.trinity.recording.processor.RecordProcessor;
@@ -14,14 +14,14 @@ import com.trinity.recording.service.RecorderService;
 public class AudioRecordRecorderServiceImpl implements RecorderService {
 
 	private static final String TAG = "AudioRecordRecorderServiceImpl";
-	
+
 	public static final int WRITE_FILE_FAIL = 9208911;
 	protected AudioRecord audioRecord;
 	private Thread recordThread;
 
 	private RecordProcessor recordProcessor;
 
-	private int recordVolume = 0;
+	private int mRecordVolume = 0;
 	private int AUDIO_SOURCE = MediaRecorder.AudioSource.MIC;
 	public static int SAMPLE_RATE_IN_HZ = 44100;
 	private final static int CHANNEL_CONFIGURATION = AudioFormat.CHANNEL_IN_MONO;
@@ -30,11 +30,12 @@ public class AudioRecordRecorderServiceImpl implements RecorderService {
 	private int bufferSizeInBytes = 0;
 	private int bufferSizeInShorts = 0;
 
-	private boolean isRecording = false;
+	private boolean mRecording = false;
 	//音频清唱会暂停
-	private volatile boolean isPause = false;
+	private volatile boolean mPause = false;
 
 	private static final AudioRecordRecorderServiceImpl instance = new AudioRecordRecorderServiceImpl();
+	protected PlayerService playerService = null;
 
 	protected AudioRecordRecorderServiceImpl() {
 	}
@@ -88,8 +89,8 @@ public class AudioRecordRecorderServiceImpl implements RecorderService {
 		} else {
 			throw new StartRecordingException();
 		}
-		isRecording = true;
-		isPause = false;
+		mRecording = true;
+		mPause = false;
 		recordThread = new Thread(new RecordThread(), "RecordThread");
 		try{
 			recordThread.start();
@@ -101,7 +102,7 @@ public class AudioRecordRecorderServiceImpl implements RecorderService {
 	@Override
 	public boolean initAudioRecorderProcessor() {
 		boolean result = true;
-		Songstudio songstudio = Songstudio.getInstance();
+		SongStudio songstudio = SongStudio.getInstance();
 		songstudio.resetPacketBufferTime();
 		recordProcessor = songstudio.getAudioRecorder();
 		PacketBufferTimeEnum packetBufferTime = songstudio
@@ -126,7 +127,7 @@ public class AudioRecordRecorderServiceImpl implements RecorderService {
 	}
 
 	@Override
-	public void destoryAudioRecorderProcessor() {
+	public void destroyAudioRecorderProcessor() {
 		if (recordProcessor != null) {
 			recordProcessor.destroy();
 		}
@@ -134,7 +135,7 @@ public class AudioRecordRecorderServiceImpl implements RecorderService {
 
 	@Override
 	public int getAudioBufferSize() {
-		Songstudio songstudio = Songstudio.getInstance();
+		SongStudio songstudio = SongStudio.getInstance();
 		PacketBufferTimeEnum packetBufferTime = songstudio
 				.getPacketBufferTime();
 		float percent = packetBufferTime.getPercent();
@@ -145,8 +146,8 @@ public class AudioRecordRecorderServiceImpl implements RecorderService {
 	public void stop() {
 		try {
 			if (audioRecord != null) {
-				isRecording = false;
-				isPause = false;
+				mRecording = false;
+				mPause = false;
 				try {
 					if (recordThread != null) {
 						recordThread.join();
@@ -182,8 +183,8 @@ public class AudioRecordRecorderServiceImpl implements RecorderService {
 			int scoringBufferMaxSize = bufferSizeInShorts;
 			short[] audioSamples = new short[scoringBufferMaxSize];
 			int offset = (int) (((long) scoringBufferMaxSize) * 1000 / SAMPLE_RATE_IN_HZ);
-			while (isRecording) {
-				boolean localPaused = isPause;
+			while (mRecording) {
+				boolean localPaused = mPause;
 //				android.util.Log.d(TAG, "RecordThread run() localPaused="+localPaused+"  isUnAccom="+isUnAccom);
 				if (isUnAccom && localPaused) { //只有是清唱才能暂停录制
 					continue;
@@ -194,7 +195,7 @@ public class AudioRecordRecorderServiceImpl implements RecorderService {
 					if (isUnAccom) {
 						float x = (float) Math.abs(audioSamples[0])
 								/ Short.MAX_VALUE;
-						recordVolume = Math.round((2 * x - x * x) * 9);
+						mRecordVolume = Math.round((2 * x - x * x) * 9);
 						// Log.i("problem", "recordVolume"+recordVolume);
 					}
 					recordProcessor.pushAudioBufferToQueue(audioSamples,
@@ -215,7 +216,7 @@ public class AudioRecordRecorderServiceImpl implements RecorderService {
 			return 0;
 		}
 	}
-	
+
 	private int getPlayCurrentTimeMills() {
 		if (null != playerService) {
 			return playerService.getPlayerCurrentTimeMills();
@@ -228,26 +229,24 @@ public class AudioRecordRecorderServiceImpl implements RecorderService {
 		return SAMPLE_RATE_IN_HZ;
 	}
 
-	protected PlayerService playerService = null;
-
 	@Override
 	public int getRecordVolume() {
-		return recordVolume;
+		return mRecordVolume;
 	}
 
 	@Override
 	public void pause() {
-		isPause = true;
+		mPause = true;
 	}
 
 	@Override
 	public void continueRecord() {
-		isPause = false;
+		mPause = false;
 	}
 
 	@Override
 	public boolean isPaused() {
-		return isPause;
+		return mPause;
 	}
-	
+
 }

@@ -34,7 +34,6 @@ void* LiveSongDecoderController::startDecoderThread(void* ptr) {
 }
 
 void LiveSongDecoderController::init(float packetBufferTimePercent, int vocalSampleRate) {
-	//初始化两个全局变量
 	volume = 1.0f;
 	accompanyMax = 1.0f;
 	accompanyType = ACCOMPANY_TYPE_SILENT_SAMPLE;
@@ -51,7 +50,6 @@ void LiveSongDecoderController::init(float packetBufferTimePercent, int vocalSam
 
 	silentSamples = new short[accompanyPacketBufferSize];
 	memset(silentSamples, 0 , accompanyPacketBufferSize * 2);
-	//初始化队列以及开启线程
 	packetPool = LiveCommonPacketPool::GetInstance();
 	packetPool->initDecoderAccompanyPacketQueue();
 	packetPool->initAccompanyPacketQueue(vocalSampleRate, CHANNEL_PER_FRAME);

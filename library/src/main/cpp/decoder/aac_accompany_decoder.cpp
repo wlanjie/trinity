@@ -51,11 +51,7 @@ int AACAccompanyDecoder::init(const char* audioFile) {
 	seek_success_read_frame_success = true;
 	isNeedFirstFrameCorrectFlag = true;
 	firstFrameCorrectionInSecs = 0.0f;
-
-	avcodec_register_all();
-	av_register_all();
 	avFormatContext = avformat_alloc_context();
-	// 打开输入文件
 	LOGI("open accompany file %s....", audioFile);
 
 	if(NULL == accompanyFilePath){
@@ -145,10 +141,7 @@ int AACAccompanyDecoder::init(const char* audioFile) {
 }
 
 bool AACAccompanyDecoder::audioCodecIsSupported() {
-	if (avCodecContext->sample_fmt == AV_SAMPLE_FMT_S16) {
-		return true;
-	}
-	return false;
+	return avCodecContext->sample_fmt == AV_SAMPLE_FMT_S16;
 }
 
 LiveAudioPacket* AACAccompanyDecoder::decodePacket(){
@@ -325,7 +318,7 @@ void AACAccompanyDecoder::destroy() {
 		avCodecContext = NULL;
 	}
 	if (NULL != avFormatContext) {
-		LOGI("leave LiveReceiver::destory");
+		LOGI("leave LiveReceiver::destroy");
 		avformat_close_input(&avFormatContext);
 		avFormatContext = NULL;
 	}

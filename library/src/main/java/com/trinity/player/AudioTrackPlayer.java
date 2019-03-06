@@ -3,7 +3,7 @@ package com.trinity.player;
 import android.media.AudioFormat;
 import android.media.AudioTrack;
 import android.util.Log;
-import com.trinity.Songstudio;
+import com.trinity.SongStudio;
 import com.trinity.decoder.Mp3Decoder;
 import com.trinity.recording.service.PlayerService;
 
@@ -50,9 +50,9 @@ public class AudioTrackPlayer {
   public boolean prepare(int vocalSampleRate) {
     boolean result = true;
     this.sampleRateInHz = vocalSampleRate;
-    decoder = Songstudio.getInstance().getMp3Decoder();
+    decoder = SongStudio.getInstance().getMp3Decoder();
     initMetaData();
-    Songstudio songstudio = Songstudio.getInstance();
+    SongStudio songstudio = SongStudio.getInstance();
     float percent = songstudio.getPacketBufferTime().getPercent();
     decoder.init(percent, vocalSampleRate);
     result = initAudioTrack();
@@ -64,7 +64,7 @@ public class AudioTrackPlayer {
 
   private void initMetaData() {
     int byteCountPerSec = sampleRateInHz * CHANNEL_PER_FRAME * BITS_PER_CHANNEL / BITS_PER_BYTE;
-    float percent = Songstudio.getInstance().getPacketBufferTime().getPercent();
+    float percent = SongStudio.getInstance().getPacketBufferTime().getPercent();
     DECODE_BUFFER_SIZE = (int) ((byteCountPerSec / 2) * percent);
     isPlaying = false;
     isStop = false;
@@ -233,7 +233,7 @@ public class AudioTrackPlayer {
           }
           lastSampleType = sampleType;
         }
-        decoder.destory();
+        decoder.destroy();
       } catch (Error e) {
         e.printStackTrace();
       }
