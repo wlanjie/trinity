@@ -35,7 +35,7 @@ public:
                      int videoWidth, int videoHeight, float videoFrameRate, int videoBitRate,
                      int audioSampleRate, int audioChannels, int audioBitRate,
                      char *audio_codec_name,
-                     int qualityStrategy,const std::map<std::string, int>& configMap);
+                     int qualityStrategy);
 
     virtual void registerFillAACPacketCallback(
             int (*fill_aac_packet)(LiveAudioPacket **, void *context), void *context);

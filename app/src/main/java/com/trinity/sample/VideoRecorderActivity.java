@@ -361,13 +361,10 @@ public class VideoRecorderActivity extends Activity implements OnClickListener {
   private boolean isPublishing = false;
 
   private void showMiniPlayer() {
-    if (!isPublishing) {
-      return;
-    }
     mini_player_layout.setVisibility(View.VISIBLE);
     process_btn.setImageResource(R.drawable.pause_button);
     songname_label.setText(song.getName() + "-" + song.getArtist());
-    String musicPath = song.getSongFilePath("music");
+    String musicPath = "/sdcard/feng.mp3";
     MediaPlayer mediaPlayer;
     try {
       mediaPlayer = MediaPlayer.create(this, Uri.fromFile(new File(musicPath)));

@@ -21,8 +21,7 @@ public:
     int init(char *videoOutputURI,
              int videoWidth, int videoheight, int videoFrameRate, int videoBitRate,
              int audioSampleRate, int audioChannels, int audioBitRate, char *audio_codec_name,
-             int qualityStrategy,
-             const std::map<std::string, int> &configMap);
+             int qualityStrategy);
 
     virtual void stop();
 

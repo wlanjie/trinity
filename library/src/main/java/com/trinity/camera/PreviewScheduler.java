@@ -80,10 +80,6 @@ public class PreviewScheduler
 
     private native void createWindowSurface(long handle, Surface surface);
 
-    private native void adaptiveVideoQuality(long handle, int maxBitRate, int avgBitRate, int fps);
-
-    private native void hotConfigQuality(long handle, int maxBitrate, int avgBitrate, int fps);
-
     @Override
     public void resetRenderSize(int width, int height) {
         setRenderSize(mHandle, width, height);

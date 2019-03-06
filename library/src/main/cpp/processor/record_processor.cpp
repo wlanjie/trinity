@@ -59,6 +59,7 @@ int RecordProcessor::correctRecordBuffer(int correctTimeMills) {
 	LiveAudioPacket * accompanyPacket = getSilentDataPacket(correctBufferSize);
 	packetPool->pushAccompanyPacketToQueue(accompanyPacket);
 	dataAccumulateTimeMills+=correctTimeMills;
+	return 0;
 }
 
 LiveAudioPacket* RecordProcessor::getSilentDataPacket(int audioBufferSize) {

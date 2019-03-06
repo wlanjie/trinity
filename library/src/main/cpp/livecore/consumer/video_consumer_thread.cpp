@@ -66,7 +66,7 @@ void VideoConsumerThread::init() {
 }
 
 int VideoConsumerThread::init(char* videoOutputURI, int videoWidth, int videoheight, int videoFrameRate, int videoBitRate, int audioSampleRate, int audioChannels, int audioBitRate,
-		char* audio_codec_name, int qualityStrategy, const std::map<std::string, int>& configMap) {
+		char* audio_codec_name, int qualityStrategy) {
 	init();
 	if (NULL == videoPublisher) {
 		pthread_mutex_lock(&connectingLock);
@@ -74,7 +74,7 @@ int VideoConsumerThread::init(char* videoOutputURI, int videoWidth, int videohei
 		pthread_mutex_unlock(&connectingLock);
 		buildPublisherInstance();
 		int ret = videoPublisher->init(videoOutputURI, videoWidth, videoheight, videoFrameRate, videoBitRate, audioSampleRate, audioChannels, audioBitRate, audio_codec_name,
-				qualityStrategy, configMap);
+				qualityStrategy);
 
 		pthread_mutex_lock(&connectingLock);
 		this->isConnecting = false;

@@ -12,11 +12,10 @@ public:
     virtual ~VideoPacketConsumerThread();
 
     virtual int init(char *videoPath,
-                     int videoWidth, int videoheight, int videoFrameRate, int videoBitRate,
+                     int videoWidth, int videoHeight, int videoFrameRate, int videoBitRate,
                      int audioSampleRate, int audioChannels, int audioBitRate,
                      char *audio_codec_name,
                      int qualityStrategy,
-                     const std::map<std::string, int>& configMap,
                      JavaVM *g_jvm, jobject obj);
 
     virtual void stop();

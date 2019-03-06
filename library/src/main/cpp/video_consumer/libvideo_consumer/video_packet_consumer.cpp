@@ -11,19 +11,18 @@ VideoPacketConsumerThread::~VideoPacketConsumerThread() {
 }
 
 int VideoPacketConsumerThread::init(char *videoPath,
-                                    int videoWidth, int videoheight, int videoFrameRate,
+                                    int videoWidth, int videoHeight, int videoFrameRate,
                                     int videoBitRate,
                                     int audioSampleRate, int audioChannels, int audioBitRate,
                                     char *audio_codec_name,
                                     int qualityStrategy,
-                                    const std::map<std::string, int> &configMap,
                                     JavaVM *g_jvm, jobject obj) {
     this->g_jvm = g_jvm;
     this->obj = obj;
     int ret = VideoConsumerThread::init(videoPath,
-                                        videoWidth, videoheight, videoFrameRate, videoBitRate,
+                                        videoWidth, videoHeight, videoFrameRate, videoBitRate,
                                         audioSampleRate, audioChannels, audioBitRate,
-                                        audio_codec_name, qualityStrategy, configMap);
+                                        audio_codec_name, qualityStrategy);
     packetPool = LiveCommonPacketPool::GetInstance();
     if (ret < 0) {
         LOGI("VideoConsumerThread::Init failed...");

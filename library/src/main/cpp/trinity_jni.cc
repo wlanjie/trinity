@@ -346,10 +346,9 @@ static jint Android_JNI_video_studio_start_record(JNIEnv *env, jobject object, j
     LiveCommonPacketPool::GetInstance()->initAudioPacketQueue(audioSampleRate);
     LiveAudioPacketPool::GetInstance()->initAudioPacketQueue();
 
-    std::map<std::string, int> configMap;
     initCode = videoPacketConsumerThread->init(videoPath, videoWidth, videoheight, videoFrameRate, videoBitRate,
                                                audioSampleRate,
-                                               audioChannels, audioBitRate, "libfdk_aac", qualityStrategy, configMap,
+                                               audioChannels, audioBitRate, "libfdk_aac", qualityStrategy,
                                                g_jvm, g_obj);
     LOGI("initCode is %d...qualityStrategy:%d", initCode, qualityStrategy);
     if (initCode >= 0) {
@@ -385,8 +384,8 @@ static JNINativeMethod recordMethods[] = {
         {"prepareEGLContext",    "(JLandroid/view/Surface;III)V", (void **) Android_JNI_prepareEGLContext},
         {"createWindowSurface",  "(JLandroid/view/Surface;)V",    (void **) Android_JNI_createWindowSurface},
         {"switchCamera",         "(J)V",                          (void **) Android_JNI_record_switch_camera},
-        {"adaptiveVideoQuality", "(JIII)V",                       (void **) Android_JNI_adaptiveVideoQuality},
-        {"hotConfigQuality",     "(JIII)V",                       (void **) Android_JNI_hotConfigQuality},
+//        {"adaptiveVideoQuality", "(JIII)V",                       (void **) Android_JNI_adaptiveVideoQuality},
+//        {"hotConfigQuality",     "(JIII)V",                       (void **) Android_JNI_hotConfigQuality},
         {"setRenderSize",        "(JII)V",                        (void **) Android_JNI_resetRenderSize},
         {"onFrameAvailable",     "(J)V",                          (void **) Android_JNI_onFrameAvailable},
         {"updateTextureMatrix",  "(J[F)V",                        (void **) Android_JNI_updateTextureMatrix},

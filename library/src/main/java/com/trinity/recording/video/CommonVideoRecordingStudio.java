@@ -14,14 +14,12 @@ import com.trinity.recording.video.service.factory.MediaRecorderServiceFactory;
 public class CommonVideoRecordingStudio extends VideoRecordingStudio {
 
   private Handler mTimeHandler;
-  private int latency = -1;
   private PlayerService.OnCompletionListener onComletionListener;
 
   public CommonVideoRecordingStudio(RecordingImplType recordingImplType, Handler mTimeHandler,
                                     PlayerService.OnCompletionListener onComletionListener, RecordingStudioStateCallback recordingStudioStateCallback) {
     super(recordingImplType, recordingStudioStateCallback);
     // 伴奏的初始化
-    this.latency = -1;
     this.onComletionListener = onComletionListener;
     this.mTimeHandler = mTimeHandler;
   }

@@ -62,8 +62,7 @@ int RecordingPublisher::init(char *videoOutputURI,
                              int videoBitRate,
                              int audioSampleRate, int audioChannels, int audioBitRate,
                              char *audio_codec_name,
-                             int qualityStrategy,
-							 const std::map<std::string, int>& configMap) {
+                             int qualityStrategy) {
     int ret = 0;
     this->publishTimeout = PUBLISH_DATA_TIME_OUT;
     this->duration = 0.0;
