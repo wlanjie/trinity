@@ -7,7 +7,7 @@ import android.view.SurfaceHolder;
 import com.trinity.encoder.MediaCodecSurfaceEncoder;
 
 public class PreviewScheduler
-        implements TrinityCamera.ChangbaVideoCameraCallback, TrinityPreviewView.PreviewViewCallback {
+        implements TrinityCamera.CameraCallback, TrinityPreviewView.PreviewViewCallback {
     private TrinityPreviewView mPreviewView;
     private TrinityCamera mCamera;
     private boolean isFirst = true;

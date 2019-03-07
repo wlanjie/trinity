@@ -349,10 +349,6 @@ public class MediaCodecSurfaceEncoder {
 
     // temporary not supported devices list
     public static boolean IsInNotSupportedList() {
-//		if(!HWEncoderServerBlackListHelper.isHWEncoderAvailable){
-//			return true;
-//		}
-//		String manufacturer = android.os.Build.MANUFACTURER;
         String model = Build.MODEL;
         if (model.compareTo("Coolpad 8720L") == 0)
             return true;

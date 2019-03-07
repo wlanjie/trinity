@@ -13,15 +13,13 @@ import com.trinity.recording.video.service.factory.MediaRecorderServiceFactory;
 
 public class CommonVideoRecordingStudio extends VideoRecordingStudio {
 
-  private Handler mTimeHandler;
   private PlayerService.OnCompletionListener onComletionListener;
 
-  public CommonVideoRecordingStudio(RecordingImplType recordingImplType, Handler mTimeHandler,
+  public CommonVideoRecordingStudio(RecordingImplType recordingImplType,
                                     PlayerService.OnCompletionListener onComletionListener, RecordingStudioStateCallback recordingStudioStateCallback) {
     super(recordingImplType, recordingStudioStateCallback);
     // 伴奏的初始化
     this.onComletionListener = onComletionListener;
-    this.mTimeHandler = mTimeHandler;
   }
 
   @Override
@@ -34,18 +32,18 @@ public class CommonVideoRecordingStudio extends VideoRecordingStudio {
     }
 
     scheduler.resetStopState();
-    recorderService = MediaRecorderServiceFactory.getInstance().getRecorderService(scheduler, recordingImplType);
-    if (recorderService != null) {
-      recorderService.initMetaData();
+    setRecorderService(MediaRecorderServiceFactory.getInstance().getRecorderService(scheduler, getRecordingImplType()));
+    if (getRecorderService() != null) {
+      getRecorderService().initMetaData();
     }
-    if (recorderService != null && !recorderService.initMediaRecorderProcessor()) {
+    if (getRecorderService() != null && !getRecorderService().initMediaRecorderProcessor()) {
       throw new InitRecorderFailException();
     }
     // 初始化伴奏带额播放器 实例化以及init播放器
-    playerService = PlayerServiceFactory.getInstance().getPlayerService(onComletionListener,
-        RecordingImplType.ANDROID_PLATFORM, mTimeHandler);
-    if (playerService != null) {
-      boolean result = playerService.setAudioDataSource(AudioRecordRecorderServiceImpl.SAMPLE_RATE_IN_HZ);
+    setPlayerService(PlayerServiceFactory.getInstance().getPlayerService(onComletionListener,
+        RecordingImplType.ANDROID_PLATFORM));
+    if (getPlayerService() != null) {
+      boolean result = getPlayerService().setAudioDataSource(AudioRecordRecorderServiceImpl.Companion.getSAMPLE_RATE_IN_HZ());
       if (!result) {
         throw new InitPlayerFailException();
       }
@@ -54,8 +52,8 @@ public class CommonVideoRecordingStudio extends VideoRecordingStudio {
 
   public boolean isPlayingAccompany() {
     boolean ret = false;
-    if (null != playerService) {
-      ret = playerService.isPlayingAccompany();
+    if (null != getPlayerService()) {
+      ret = getPlayerService().isPlayingAccompany();
     }
     return ret;
   }
@@ -70,8 +68,7 @@ public class CommonVideoRecordingStudio extends VideoRecordingStudio {
     return VideoStudio.getInstance().startVideoRecord(outputPath,
         videoWidth, videoHeight, VIDEO_FRAME_RATE, COMMON_VIDEO_BIT_RATE,
         audioSampleRate, audioChannels, audioBitRate,
-        qualityStrategy, adaptiveBitrateWindowSizeInSecs, adaptiveBitrateEncoderReconfigInterval,
-        adaptiveBitrateWarCntThreshold, adaptiveMinimumBitrate, adaptiveMaximumBitrate);
+        qualityStrategy);
   }
 
   private int ifQualityStrayegyEnable(int qualityStrategy) {
@@ -81,11 +78,11 @@ public class CommonVideoRecordingStudio extends VideoRecordingStudio {
 
   @Override
   protected boolean startProducer(final int videoWidth, int videoHeight, boolean useHardWareEncoding, int strategy) throws StartRecordingException {
-    if (playerService != null) {
-      playerService.start();
+    if (getPlayerService() != null) {
+      getPlayerService().start();
     }
-    if (recorderService != null) {
-      return recorderService.start(videoWidth, videoHeight, VideoRecordingStudio.getInitializeVideoBitRate(), VIDEO_FRAME_RATE, useHardWareEncoding, strategy);
+    if (getRecorderService() != null) {
+      return getRecorderService().start(videoWidth, videoHeight, COMMON_VIDEO_BIT_RATE, VIDEO_FRAME_RATE, useHardWareEncoding, strategy);
     }
 
     return false;
@@ -94,9 +91,9 @@ public class CommonVideoRecordingStudio extends VideoRecordingStudio {
   @Override
   public void destroyRecordingResource() {
     // 销毁伴奏播放器
-    if (playerService != null) {
-      playerService.stop();
-      playerService = null;
+    if (getPlayerService() != null) {
+      getPlayerService().stop();
+      setPlayerService(null);
     }
     super.destroyRecordingResource();
   }
@@ -105,8 +102,8 @@ public class CommonVideoRecordingStudio extends VideoRecordingStudio {
    * 播放一个新的伴奏
    **/
   public void startAccompany(String musicPath) {
-    if (null != playerService) {
-      playerService.startAccompany(musicPath);
+    if (null != getPlayerService()) {
+      getPlayerService().startAccompany(musicPath);
     }
   }
 
@@ -114,8 +111,8 @@ public class CommonVideoRecordingStudio extends VideoRecordingStudio {
    * 停止播放
    **/
   public void stopAccompany() {
-    if (null != playerService) {
-      playerService.stopAccompany();
+    if (null != getPlayerService()) {
+      getPlayerService().stopAccompany();
     }
   }
 
@@ -123,8 +120,8 @@ public class CommonVideoRecordingStudio extends VideoRecordingStudio {
    * 暂停播放
    **/
   public void pauseAccompany() {
-    if (null != playerService) {
-      playerService.pauseAccompany();
+    if (null != getPlayerService()) {
+      getPlayerService().pauseAccompany();
     }
   }
 
@@ -132,8 +129,8 @@ public class CommonVideoRecordingStudio extends VideoRecordingStudio {
    * 继续播放
    **/
   public void resumeAccompany() {
-    if (null != playerService) {
-      playerService.resumeAccompany();
+    if (null != getPlayerService()) {
+      getPlayerService().resumeAccompany();
     }
   }
 
@@ -141,8 +138,8 @@ public class CommonVideoRecordingStudio extends VideoRecordingStudio {
    * 设置伴奏的音量大小
    **/
   public void setAccompanyVolume(float volume, float accompanyMax) {
-    if (null != playerService) {
-      playerService.setVolume(volume, accompanyMax);
+    if (null != getPlayerService()) {
+      getPlayerService().setVolume(volume, accompanyMax);
     }
   }
 

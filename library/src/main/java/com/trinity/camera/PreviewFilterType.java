@@ -4,6 +4,7 @@ package com.trinity.camera;
  * @author wlanjie
  */
 
+// TODO delete
 public enum PreviewFilterType {
 	PREVIEW_COOL(10000, "清凉"), 
 	PREVIEW_THIN_FACE(10001, "瘦脸"), 

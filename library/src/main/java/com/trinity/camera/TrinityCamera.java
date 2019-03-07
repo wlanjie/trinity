@@ -292,9 +292,9 @@ public class TrinityCamera {
 		return result;
 	}
 
-	private ChangbaVideoCameraCallback mCallback;
+	private CameraCallback mCallback;
 
-	public interface ChangbaVideoCameraCallback {
+	public interface CameraCallback {
 		public void onPermissionDismiss(String tip);
 		
 		public void notifyFrameAvailable();
@@ -302,7 +302,7 @@ public class TrinityCamera {
 		public void updateTexMatrix(float texMatrix[]);
 	}
 
-	public void setCallback(ChangbaVideoCameraCallback callback) {
+	public void setCallback(CameraCallback callback) {
 		this.mCallback = callback;
 	}
 }

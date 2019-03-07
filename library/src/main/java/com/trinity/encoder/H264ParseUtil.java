@@ -1,9 +1,5 @@
 package com.trinity.encoder;
 
-/**
- * Created by xiaokai.zhan on 2018/9/12.
- */
-
 public class H264ParseUtil {
     private  static byte bytesHeader[] = {0, 0, 0, 1};
 

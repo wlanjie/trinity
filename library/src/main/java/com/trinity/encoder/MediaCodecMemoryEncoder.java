@@ -488,9 +488,6 @@ public class MediaCodecMemoryEncoder {
 	
 	// temporary not supported devices list 
 	public static boolean IsInNotSupportedList() {
-		if(!HWEncoderServerBlackListHelper.isHWEncoderAvailable){
-			return true;
-		}
 		String manufacturer = Build.MANUFACTURER;
 		String model = Build.MODEL;
 		

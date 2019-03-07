@@ -22,7 +22,7 @@ class SongStudio private constructor() {
         }
 
     fun stopAudioRecord() {
-        AudioRecordRecorderServiceImpl.getInstance().stop()
+        AudioRecordRecorderServiceImpl.instance.stop()
     }
 
     fun resetPacketBufferTime() {

@@ -101,7 +101,7 @@ public class VideoRecorderActivity extends Activity implements OnClickListener {
       }
     };
     recordingStudio = new CommonVideoRecordingStudio(RecordingImplType.ANDROID_PLATFORM,
-        mTimeHandler, onComletionListener, recordingStudioStateCallback);
+        onComletionListener, recordingStudioStateCallback);
   }
 
   PlayerService.OnCompletionListener onComletionListener = new PlayerService.OnCompletionListener() {
