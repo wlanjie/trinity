@@ -1,6 +1,5 @@
 package com.trinity.recording.video
 
-import android.util.Log
 import com.trinity.VideoStudio
 import com.trinity.camera.CameraParamSettingException
 import com.trinity.camera.PreviewScheduler
@@ -93,7 +92,7 @@ abstract class VideoRecordingStudio(// 输出video的路径
         } catch (exception: StartRecordingException) {
           //启动录音失败，需要把资源销毁，并且把消费者线程停止掉
           stopRecording()
-          this@VideoRecordingStudio.recordingStudioStateCallback!!.onStartRecordingException(exception)
+          recordingStudioStateCallback?.onStartRecordingException(exception)
         }
 
       }
