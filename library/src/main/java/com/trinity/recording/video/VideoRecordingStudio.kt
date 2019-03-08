@@ -1,25 +1,26 @@
 package com.trinity.recording.video
 
+import android.os.Build
 import com.trinity.VideoStudio
 import com.trinity.camera.CameraParamSettingException
 import com.trinity.camera.PreviewScheduler
 import com.trinity.recording.RecordingImplType
-import com.trinity.recording.exception.InitRecorderFailException
-import com.trinity.recording.exception.RecordingStudioException
-import com.trinity.recording.exception.StartRecordingException
+import com.trinity.recording.exception.*
 import com.trinity.recording.service.PlayerService
+import com.trinity.recording.service.factory.PlayerServiceFactory
+import com.trinity.recording.service.impl.AudioRecordRecorderServiceImpl
 import com.trinity.recording.video.service.MediaRecorderService
 import com.trinity.recording.video.service.factory.MediaRecorderServiceFactory
 
-abstract class VideoRecordingStudio(// 输出video的路径
-  protected var recordingImplType: RecordingImplType, recordingStudioStateCallback: RecordingStudioStateCallback
+class VideoRecordingStudio(// 输出video的路径
+  private var recordingImplType: RecordingImplType,
+  private val onComletionListener: PlayerService.OnCompletionListener,
+  private val recordingStudioStateCallback: RecordingStudioStateCallback
 ) {
 
-  protected var playerService: PlayerService? = null
+  private var playerService: PlayerService? = null
 
-  protected var recorderService: MediaRecorderService? = null
-
-  protected var recordingStudioStateCallback: RecordingStudioStateCallback? = recordingStudioStateCallback
+  private var recorderService: MediaRecorderService? = null
 
   /**
    * 获取录音器的参数
@@ -40,19 +41,29 @@ abstract class VideoRecordingStudio(// 输出video的路径
   }
 
   @Throws(RecordingStudioException::class)
-  open fun initRecordingResource(scheduler: PreviewScheduler) {
-    /**
-     * 这里一定要注意顺序，先初始化record在初始化player，因为player中要用到recorder中的samplerateSize
-     */
+  fun initRecordingResource(scheduler: PreviewScheduler) {
+    scheduler.resetStopState()
     recorderService = MediaRecorderServiceFactory.instance.getRecorderService(scheduler, recordingImplType)
     recorderService?.initMetaData()
     if (recorderService?.initMediaRecorderProcessor() == false) {
       throw InitRecorderFailException()
     }
+    // 初始化伴奏带额播放器 实例化以及init播放器
+    playerService = PlayerServiceFactory.instance.getPlayerService(
+      onComletionListener,
+      RecordingImplType.ANDROID_PLATFORM
+    )
+    val result = playerService?.setAudioDataSource(AudioRecordRecorderServiceImpl.SAMPLE_RATE_IN_HZ) ?: false
+    if (!result) {
+      throw InitPlayerFailException()
+    }
   }
 
   @Synchronized
-  open fun destroyRecordingResource() {
+  private fun destroyRecordingResource() {
+    playerService?.stop()
+    playerService = null
+
     recorderService?.stop()
     recorderService?.destoryMediaRecorderProcessor()
     recorderService = null
@@ -99,22 +110,43 @@ abstract class VideoRecordingStudio(// 输出video的路径
     }.start()
   }
 
-  protected abstract fun startConsumer(
+  private fun startConsumer(
     outputPath: String, videoBitRate: Int, videoWidth: Int, videoHeight: Int, audioSampleRate: Int,
     qualityStrategy: Int, adaptiveBitrateWindowSizeInSecs: Int, adaptiveBitrateEncoderReconfigInterval: Int,
     adaptiveBitrateWarCntThreshold: Int, adaptiveMinimumBitrate: Int,
     adaptiveMaximumBitrate: Int
-  ): Int
+  ): Int {
+    val quality = ifQualityStrayegyEnable(qualityStrategy)
+    return VideoStudio.instance.startVideoRecord(
+      outputPath,
+      videoWidth, videoHeight, VideoRecordingStudio.VIDEO_FRAME_RATE, videoBitRate,
+      audioSampleRate, VideoRecordingStudio.audioChannels, VideoRecordingStudio.audioBitRate,
+      quality
+    )
+  }
+
+  private fun ifQualityStrayegyEnable(qualityStrategy: Int): Int {
+    return if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) 0 else qualityStrategy
+  }
 
   @Throws(StartRecordingException::class)
-  protected abstract fun startProducer(
+  private fun startProducer(
     videoWidth: Int,
     videoHeight: Int,
     videoBitRate: Int,
     useHardWareEncoding: Boolean,
     strategy: Int
-  ): Boolean
-
+  ): Boolean {
+    playerService?.start()
+    return recorderService?.start(
+      videoWidth,
+      videoHeight,
+      videoBitRate,
+      VideoRecordingStudio.VIDEO_FRAME_RATE,
+      useHardWareEncoding,
+      strategy
+    ) ?: false
+  }
   fun stopRecording() {
     destroyRecordingResource()
     VideoStudio.instance.stopRecord()
@@ -123,6 +155,41 @@ abstract class VideoRecordingStudio(// 输出video的路径
   @Throws(CameraParamSettingException::class)
   fun switchCamera() {
     recorderService?.switchCamera()
+  }
+
+  /**
+   * 播放一个新的伴奏
+   */
+  fun startAccompany(musicPath: String) {
+    playerService?.startAccompany(musicPath)
+  }
+
+  /**
+   * 停止播放
+   */
+  fun stopAccompany() {
+    playerService?.stopAccompany()
+  }
+
+  /**
+   * 暂停播放
+   */
+  fun pauseAccompany() {
+    playerService?.pauseAccompany()
+  }
+
+  /**
+   * 继续播放
+   */
+  fun resumeAccompany() {
+    playerService?.resumeAccompany()
+  }
+
+  /**
+   * 设置伴奏的音量大小
+   */
+  fun setAccompanyVolume(volume: Float, accompanyMax: Float) {
+    playerService?.setVolume(volume, accompanyMax)
   }
 
   companion object {

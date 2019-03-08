@@ -24,7 +24,6 @@ import com.trinity.recording.RecordingImplType;
 import com.trinity.recording.exception.RecordingStudioException;
 import com.trinity.recording.exception.StartRecordingException;
 import com.trinity.recording.service.PlayerService;
-import com.trinity.recording.video.CommonVideoRecordingStudio;
 import com.trinity.recording.video.VideoRecordingStudio;
 
 import java.io.File;
@@ -73,7 +72,7 @@ public class VideoRecorderActivity extends Activity implements OnClickListener {
 
   private TrinityCamera videoCamera;
   private PreviewScheduler previewScheduler;
-  private CommonVideoRecordingStudio recordingStudio;
+  private VideoRecordingStudio recordingStudio;
 
 
   @Override
@@ -100,7 +99,7 @@ public class VideoRecorderActivity extends Activity implements OnClickListener {
         });
       }
     };
-    recordingStudio = new CommonVideoRecordingStudio(RecordingImplType.ANDROID_PLATFORM,
+    recordingStudio = new VideoRecordingStudio(RecordingImplType.ANDROID_PLATFORM,
         onComletionListener, recordingStudioStateCallback);
   }
 
