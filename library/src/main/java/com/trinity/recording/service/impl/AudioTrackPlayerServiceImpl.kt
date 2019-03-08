@@ -16,7 +16,7 @@ open class AudioTrackPlayerServiceImpl : PlayerService, PlayerService.OnCompleti
         get() {
             try {
                 if (mediaPlayer != null) {
-                    return mediaPlayer?.accompanySampleRate ?: 0
+                    return mediaPlayer?.getAccompanySampleRate() ?: 0
                 }
             } catch (e: IllegalStateException) {
                 e.printStackTrace()
@@ -26,16 +26,16 @@ open class AudioTrackPlayerServiceImpl : PlayerService, PlayerService.OnCompleti
         }
 
     override val playerCurrentTimeMills: Int
-        get() = mediaPlayer?.currentTimeMills ?: 0
+        get() = mediaPlayer?.getCurrentTimeMills() ?: 0
 
     override val playedAccompanyTimeMills: Int
-        get() = mediaPlayer?.playedAccompanyTimeMills ?: 0
+        get() = mediaPlayer?.getPlayedAccompanyTimeMills() ?: 0
 
     override val isPlayingAccompany: Boolean
         get() {
             var ret = false
             if (null != mediaPlayer) {
-                ret = mediaPlayer?.isPlayingAccompany ?: false
+                ret = mediaPlayer?.isPlayingAccompany() ?: false
             }
             return ret
         }
@@ -44,7 +44,7 @@ open class AudioTrackPlayerServiceImpl : PlayerService, PlayerService.OnCompleti
         try {
             if (mediaPlayer == null) {
                 mediaPlayer = AudioTrackPlayer()
-                mediaPlayer?.setAudioStreamType(AudioManager.STREAM_MUSIC)
+                mediaPlayer?.audioStreamType = AudioManager.STREAM_MUSIC
                 mediaPlayer?.setOnCompletionListener(this)
             }
         } catch (e: Exception) {

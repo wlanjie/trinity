@@ -59,14 +59,14 @@ public class CommonVideoRecordingStudio extends VideoRecordingStudio {
   }
 
   @Override
-  protected int startConsumer(final String outputPath, final int videoWidth, final int videoHeight, final int audioSampleRate,
+  protected int startConsumer(final String outputPath, final int videoBitRate, final int videoWidth, final int videoHeight, final int audioSampleRate,
                               int qualityStrategy, int adaptiveBitrateWindowSizeInSecs, int adaptiveBitrateEncoderReconfigInterval,
                               int adaptiveBitrateWarCntThreshold, int adaptiveMinimumBitrate,
                               int adaptiveMaximumBitrate) {
 
     qualityStrategy = ifQualityStrayegyEnable(qualityStrategy);
     return VideoStudio.getInstance().startVideoRecord(outputPath,
-        videoWidth, videoHeight, VIDEO_FRAME_RATE, COMMON_VIDEO_BIT_RATE,
+        videoWidth, videoHeight, VIDEO_FRAME_RATE, videoBitRate,
         audioSampleRate, audioChannels, audioBitRate,
         qualityStrategy);
   }
@@ -77,12 +77,12 @@ public class CommonVideoRecordingStudio extends VideoRecordingStudio {
   }
 
   @Override
-  protected boolean startProducer(final int videoWidth, int videoHeight, boolean useHardWareEncoding, int strategy) throws StartRecordingException {
+  protected boolean startProducer(final int videoWidth, int videoHeight, int videoBitRate, boolean useHardWareEncoding, int strategy) throws StartRecordingException {
     if (getPlayerService() != null) {
       getPlayerService().start();
     }
     if (getRecorderService() != null) {
-      return getRecorderService().start(videoWidth, videoHeight, COMMON_VIDEO_BIT_RATE, VIDEO_FRAME_RATE, useHardWareEncoding, strategy);
+      return getRecorderService().start(videoWidth, videoHeight, videoBitRate, VIDEO_FRAME_RATE, useHardWareEncoding, strategy);
     }
 
     return false;

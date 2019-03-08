@@ -148,7 +148,7 @@ public class VideoRecorderActivity extends Activity implements OnClickListener {
 
     int width = 720;
     int height = 1280;
-    int bitRateKbs = 19000;
+    int bitRateKbs = 19000 * 1000;
     int audioSampleRate = recordingStudio.getRecordSampleRate();
     recordingStudio.startVideoRecording(FilePathUtil.getVideoRecordingFilePath(), bitRateKbs, width, height,
         audioSampleRate, 0, adaptiveBitrateWindowSizeInSecs, adaptiveBitrateEncoderReconfigInterval,

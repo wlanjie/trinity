@@ -85,7 +85,7 @@ class AudioRecordRecorderServiceImpl private constructor() : RecorderService {
       }
 
     }
-    if (audioRecord == null || audioRecord?.state != AudioRecord.STATE_INITIALIZED) {
+    if (audioRecord?.state != AudioRecord.STATE_INITIALIZED) {
       throw AudioConfigurationException()
     }
     bufferSizeInShorts = bufferSizeInBytes / 2
@@ -93,7 +93,7 @@ class AudioRecordRecorderServiceImpl private constructor() : RecorderService {
 
   @Throws(StartRecordingException::class)
   override fun start() {
-    if (audioRecord != null && audioRecord!!.state == AudioRecord.STATE_INITIALIZED) {
+    if (audioRecord?.state == AudioRecord.STATE_INITIALIZED) {
       try {
         audioRecord?.startRecording()
       } catch (e: Exception) {
@@ -195,13 +195,13 @@ class AudioRecordRecorderServiceImpl private constructor() : RecorderService {
             mRecordVolume = Math.round((2 * x - x * x) * 9)
             // Log.i("problem", "recordVolume"+recordVolume);
           }
-          recordProcessor!!.pushAudioBufferToQueue(
+          recordProcessor?.pushAudioBufferToQueue(
             audioSamples,
             audioSampleSize
           )
         }
       }
-      recordProcessor!!.flushAudioBufferToQueue()
+      recordProcessor?.flushAudioBufferToQueue()
     }
   }
 

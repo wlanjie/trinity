@@ -67,11 +67,6 @@ abstract class VideoRecordingStudio(// 输出video的路径
     adaptiveBitrateWarCntThreshold: Int, adaptiveMinimumBitrate: Int,
     adaptiveMaximumBitrate: Int, useHardWareEncoding: Boolean
   ) {
-    //设置初始编码率
-    if (bitRate > 0) {
-      initializeVideoBitRate = bitRate * 1000
-      Log.i("problem", "initializeVideoBitRate:$initializeVideoBitRate,useHardWareEncoding:$useHardWareEncoding")
-    }
 
     object : Thread() {
       override fun run() {
@@ -79,6 +74,7 @@ abstract class VideoRecordingStudio(// 输出video的路径
           //这里面不应该是根据Producer是否选用硬件编码器再去看Consumer端, 这里应该对于Consumer端是透明的
           val ret = startConsumer(
             outputPath,
+            bitRate,
             videoWidth,
             videoHeight,
             audioSampleRate,
@@ -92,7 +88,7 @@ abstract class VideoRecordingStudio(// 输出video的路径
           if (ret < 0) {
             destroyRecordingResource()
           } else {
-            startProducer(videoWidth, videoHeight, useHardWareEncoding, qualityStrategy)
+            startProducer(videoWidth, videoHeight, bitRate, useHardWareEncoding, qualityStrategy)
           }
         } catch (exception: StartRecordingException) {
           //启动录音失败，需要把资源销毁，并且把消费者线程停止掉
@@ -105,7 +101,7 @@ abstract class VideoRecordingStudio(// 输出video的路径
   }
 
   protected abstract fun startConsumer(
-    outputPath: String, videoWidth: Int, videoHeight: Int, audioSampleRate: Int,
+    outputPath: String, videoBitRate: Int, videoWidth: Int, videoHeight: Int, audioSampleRate: Int,
     qualityStrategy: Int, adaptiveBitrateWindowSizeInSecs: Int, adaptiveBitrateEncoderReconfigInterval: Int,
     adaptiveBitrateWarCntThreshold: Int, adaptiveMinimumBitrate: Int,
     adaptiveMaximumBitrate: Int
@@ -115,6 +111,7 @@ abstract class VideoRecordingStudio(// 输出video的路径
   protected abstract fun startProducer(
     videoWidth: Int,
     videoHeight: Int,
+    videoBitRate: Int,
     useHardWareEncoding: Boolean,
     strategy: Int
   ): Boolean
@@ -130,9 +127,6 @@ abstract class VideoRecordingStudio(// 输出video的路径
   }
 
   companion object {
-    const val COMMON_VIDEO_BIT_RATE = 520 * 1000
-    var initializeVideoBitRate = COMMON_VIDEO_BIT_RATE
-
     const val VIDEO_FRAME_RATE = 24
     const val audioSampleRate = 44100
     const val audioChannels = 2
