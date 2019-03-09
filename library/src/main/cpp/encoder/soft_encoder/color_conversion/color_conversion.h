@@ -1,7 +1,7 @@
 #ifndef COLOR_CONVERSION_H_
 #define COLOR_CONVERSION_H_
 
-#include "CommonTools.h"
+#include "common_tools.h"
 
 void yuv420p_to_nv12(const uint8_t * const srcSlice[], const int srcStride[],
 		int imageWidth, int imageHeight, uint8_t * const dst[], const int dstStride[]);

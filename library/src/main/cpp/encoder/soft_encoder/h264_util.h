@@ -1,7 +1,7 @@
 #ifndef SONG_STUDIO_H264_UTIL_H
 #define SONG_STUDIO_H264_UTIL_H
 
-#include "CommonTools.h"
+#include "common_tools.h"
 #include <vector>
 
 using namespace std;

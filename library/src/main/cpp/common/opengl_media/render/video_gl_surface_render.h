@@ -3,7 +3,7 @@
 
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
-#include "CommonTools.h"
+#include "common_tools.h"
 
 static char* OUTPUT_VIEW_VERTEX_SHADER =
 		"attribute vec4 position;    \n"

@@ -1,7 +1,7 @@
 #ifndef ACCOMPANY_DECODER_H
 #define ACCOMPANY_DECODER_H
 
-#include "CommonTools.h"
+#include "common_tools.h"
 #include "libvideo_consumer/live_common_packet_pool.h"
 
 #define LOG_TAG "AACAccompanyDecoder"

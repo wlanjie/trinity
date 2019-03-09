@@ -1,6 +1,6 @@
 #ifndef CHANGBA_STUDIO_OPENGL_TOOLS_H_
 #define CHANGBA_STUDIO_OPENGL_TOOLS_H_
-#include "CommonTools.h"
+#include "common_tools.h"
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 

@@ -1,7 +1,7 @@
 #ifndef VIDEO_PLAYER_MOVIE_FRAME_H
 #define VIDEO_PLAYER_MOVIE_FRAME_H
 
-#include "CommonTools.h"
+#include "common_tools.h"
 
 /** 为了避免类文件过多，现在把有关数据结构的model都写到了这个文件中 **/
 typedef enum {

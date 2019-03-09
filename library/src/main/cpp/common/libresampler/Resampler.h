@@ -1,6 +1,6 @@
 #ifndef SONGSTUDIO_RESAMPLER_H
 #define SONGSTUDIO_RESAMPLER_H
-#include "CommonTools.h"
+#include "common_tools.h"
 extern "C" {
 	#include "libavutil/opt.h"
 	#include "libavutil/channel_layout.h"

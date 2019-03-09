@@ -15,7 +15,7 @@
 #define INT64_MAX	9223372036854775807LL
 #endif
 
-#include "CommonTools.h"
+#include "common_tools.h"
 #include "./accompany_decoder.h"
 
 extern "C" {

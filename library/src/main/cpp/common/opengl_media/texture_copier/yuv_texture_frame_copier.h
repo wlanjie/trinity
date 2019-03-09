@@ -3,7 +3,7 @@
 
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
-#include "CommonTools.h"
+#include "common_tools.h"
 #include "texture_frame_copier.h"
 #include "matrix.h"
 

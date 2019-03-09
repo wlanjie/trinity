@@ -1,6 +1,6 @@
 #ifndef 	VIDEO_PLAYER_TEXTURE_FRAME_H
 #define VIDEO_PLAYER_TEXTURE_FRAME_H
-#include "CommonTools.h"
+#include "common_tools.h"
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 

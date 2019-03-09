@@ -1,7 +1,7 @@
 #ifndef TEXTURE_FRAME_COPIER_H
 #define TEXTURE_FRAME_COPIER_H
 
-#include "CommonTools.h"
+#include "common_tools.h"
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 #include "opengl_media/texture/texture_frame.h"

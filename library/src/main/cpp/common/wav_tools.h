@@ -1,6 +1,6 @@
 #ifndef SONG_STUDIO_WAV_TOOLS_H_
 #define SONG_STUDIO_WAV_TOOLS_H_
-#include "CommonTools.h"
+#include "common_tools.h"
 
 #define LOG_TAG "SongStudio WaveHeader"
 

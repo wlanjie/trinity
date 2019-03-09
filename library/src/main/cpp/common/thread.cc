@@ -1,5 +1,5 @@
 #include "thread.h"
-#include "CommonTools.h"
+#include "common_tools.h"
 
 Thread::Thread() {
 	pthread_mutex_init(&mLock, NULL);

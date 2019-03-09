@@ -1,7 +1,7 @@
 #ifndef VIDEO_COMMON_MESSAGE_QUEUE_H
 #define VIDEO_COMMON_MESSAGE_QUEUE_H
 
-#include "CommonTools.h"
+#include "common_tools.h"
 #include <pthread.h>
 
 

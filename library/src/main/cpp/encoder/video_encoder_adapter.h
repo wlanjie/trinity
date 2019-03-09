@@ -1,7 +1,7 @@
 #ifndef VIDEO_ENCODER_ADAPTER_H
 #define VIDEO_ENCODER_ADAPTER_H
 
-#include "CommonTools.h"
+#include "common_tools.h"
 #include "opengl_media/render/video_gl_surface_render.h"
 #include "egl_core/egl_core.h"
 #include "live_common_packet_pool.h"

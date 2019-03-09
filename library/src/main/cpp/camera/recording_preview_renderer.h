@@ -4,7 +4,7 @@
 #include "opengl_media/render/video_gl_surface_render.h"
 #include "opengl_media/texture/gpu_texture_frame.h"
 #include "opengl_media/texture_copier/gpu_texture_frame_copier.h"
-#include "CommonTools.h"
+#include "common_tools.h"
 #include "egl_core/gl_tools.h"
 
 #define PREVIEW_FILTER_SEQUENCE_IN                                    0

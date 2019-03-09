@@ -1,7 +1,7 @@
 #ifndef SONGSTUDIO_MUSIC_MERGER_H
 #define SONGSTUDIO_MUSIC_MERGER_H
 
-#include "CommonTools.h"
+#include "common_tools.h"
 
 class MusicMerger {
 protected:

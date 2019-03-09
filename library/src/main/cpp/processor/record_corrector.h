@@ -1,6 +1,6 @@
 #ifndef SONGSTUDIO_RECORDER_CORRECTOR_H
 #define SONGSTUDIO_RECORDER_CORRECTOR_H
-#include "CommonTools.h"
+#include "common_tools.h"
 
 #define MIN_DIFF_TIME_MILLS		50
 #define MAX_DIFF_TIME_MILLS		150

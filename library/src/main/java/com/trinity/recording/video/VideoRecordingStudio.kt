@@ -76,37 +76,32 @@ class VideoRecordingStudio(// 输出video的路径
     adaptiveBitrateWarCntThreshold: Int, adaptiveMinimumBitrate: Int,
     adaptiveMaximumBitrate: Int, useHardWareEncoding: Boolean
   ) {
-
-    object : Thread() {
-      override fun run() {
-        try {
-          //这里面不应该是根据Producer是否选用硬件编码器再去看Consumer端, 这里应该对于Consumer端是透明的
-          val ret = startConsumer(
-            outputPath,
-            bitRate,
-            videoWidth,
-            videoHeight,
-            audioSampleRate,
-            qualityStrategy,
-            adaptiveBitrateWindowSizeInSecs,
-            adaptiveBitrateEncoderReconfigInterval,
-            adaptiveBitrateWarCntThreshold,
-            adaptiveMinimumBitrate,
-            adaptiveMaximumBitrate
-          )
-          if (ret < 0) {
-            destroyRecordingResource()
-          } else {
-            startProducer(videoWidth, videoHeight, bitRate, useHardWareEncoding, qualityStrategy)
-          }
-        } catch (exception: StartRecordingException) {
-          //启动录音失败，需要把资源销毁，并且把消费者线程停止掉
-          stopRecording()
-          recordingStudioStateCallback?.onStartRecordingException(exception)
-        }
-
+    try {
+      //这里面不应该是根据Producer是否选用硬件编码器再去看Consumer端, 这里应该对于Consumer端是透明的
+      val ret = startConsumer(
+        outputPath,
+        bitRate,
+        videoWidth,
+        videoHeight,
+        audioSampleRate,
+        qualityStrategy,
+        adaptiveBitrateWindowSizeInSecs,
+        adaptiveBitrateEncoderReconfigInterval,
+        adaptiveBitrateWarCntThreshold,
+        adaptiveMinimumBitrate,
+        adaptiveMaximumBitrate
+      )
+      if (ret < 0) {
+        destroyRecordingResource()
+      } else {
+        startProducer(videoWidth, videoHeight, bitRate, useHardWareEncoding, qualityStrategy)
       }
-    }.start()
+    } catch (exception: StartRecordingException) {
+      //启动录音失败，需要把资源销毁，并且把消费者线程停止掉
+      stopRecording()
+      recordingStudioStateCallback.onStartRecordingException(exception)
+    }
+
   }
 
   private fun startConsumer(
