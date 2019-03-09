@@ -29,7 +29,7 @@ extern "C" {
 #define AUDIO_RECORD_ECHO_CONTROLLER_NAME "com/trinity/media/AudioRecordEchoController"
 #define SOUND_TRACK_CONTROLLER_NAME "com/trinity/media/SoundTrackController"
 #define AUDIO_RECORD_PROCESSOR "com/trinity/recording/processor/AudioRecordProcessor"
-#define VIDEO_STUDIO "com/trinity/VideoStudio"
+#define VIDEO_STUDIO "com/trinity/recording/video/VideoRecordingStudio"
 
 //using namespace trinity;
 
@@ -442,10 +442,10 @@ static JNINativeMethod audioRecordProcessorMethods[] = {
 };
 
 static JNINativeMethod videoStudioMethods[] = {
-        {"create",                 "()J",                            (void **) Android_JNI_video_studio_create},
-        {"startCommonVideoRecord", "(JLjava/lang/String;IIIIIIII)I", (void **) Android_JNI_video_studio_start_record},
-        {"stopVideoRecord",        "(J)V",                           (void **) Android_JNI_video_studio_stop_record},
-        {"release",                "(J)V",                           (void **) Android_JNI_video_studio_release}
+        {"create",      "()J",                            (void **) Android_JNI_video_studio_create},
+        {"startRecord", "(JLjava/lang/String;IIIIIIII)I", (void **) Android_JNI_video_studio_start_record},
+        {"stopRecord",  "(J)V",                           (void **) Android_JNI_video_studio_stop_record},
+        {"release",     "(J)V",                           (void **) Android_JNI_video_studio_release}
 };
 
 void logCallback(void *ptr, int level, const char *fmt, va_list vl) {

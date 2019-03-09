@@ -20,9 +20,8 @@ public class MediaCodecSurfaceEncoder {
     private static final boolean VERBOSE = false;
     private static final int MEDIA_CODEC_NOSIE_DELTA = 80*1024;
 
-    public static final String MIME_TYPE = "video/avc"; // H.264 Advanced Video
-    // Coding
-    private static final int IFRAME_INTERVAL = 1; // sync frame every second
+    private static final String MIME_TYPE = "video/avc";
+    private static final int IFRAME_INTERVAL = 1;
 
     private Surface mInputSurface;
     private MediaCodec mEncoder;

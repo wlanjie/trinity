@@ -1,7 +1,6 @@
 package com.trinity.recording.video
 
 import android.os.Build
-import com.trinity.VideoStudio
 import com.trinity.camera.CameraParamSettingException
 import com.trinity.camera.PreviewScheduler
 import com.trinity.recording.RecordingImplType
@@ -19,8 +18,8 @@ class VideoRecordingStudio(// 输出video的路径
 ) {
 
   private var playerService: PlayerService? = null
-
   private var recorderService: MediaRecorderService? = null
+  private var mHandle: Long = 0
 
   /**
    * 获取录音器的参数
@@ -60,7 +59,7 @@ class VideoRecordingStudio(// 输出video的路径
   }
 
   @Synchronized
-  private fun destroyRecordingResource() {
+  fun destroyRecordingResource() {
     playerService?.stop()
     playerService = null
 
@@ -117,7 +116,9 @@ class VideoRecordingStudio(// 输出video的路径
     adaptiveMaximumBitrate: Int
   ): Int {
     val quality = ifQualityStrayegyEnable(qualityStrategy)
-    return VideoStudio.instance.startVideoRecord(
+    mHandle = create()
+    return startRecord(
+      mHandle,
       outputPath,
       videoWidth, videoHeight, VideoRecordingStudio.VIDEO_FRAME_RATE, videoBitRate,
       audioSampleRate, VideoRecordingStudio.audioChannels, VideoRecordingStudio.audioBitRate,
@@ -149,7 +150,8 @@ class VideoRecordingStudio(// 输出video的路径
   }
   fun stopRecording() {
     destroyRecordingResource()
-    VideoStudio.instance.stopRecord()
+    stopRecord(mHandle)
+    release(mHandle)
   }
 
   @Throws(CameraParamSettingException::class)
@@ -197,7 +199,16 @@ class VideoRecordingStudio(// 输出video的路径
     const val audioSampleRate = 44100
     const val audioChannels = 2
     const val audioBitRate = 64 * 1000
-    protected var SAMPLE_RATE_IN_HZ = 44100
+    private var SAMPLE_RATE_IN_HZ = 44100
   }
 
+  private external fun create(): Long
+  private external fun startRecord(
+    handle: Long, outputPath: String, videoWidth: Int,
+    videoHeight: Int, videoFrameRate: Int, videoBitRate: Int,
+    audioSampleRate: Int, audioChannels: Int, audioBitRate: Int,
+    qualityStrategy: Int
+  ): Int
+  private external fun stopRecord(handle: Long)
+  private external fun release(handle: Long)
 }
