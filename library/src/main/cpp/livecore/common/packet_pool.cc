@@ -3,111 +3,111 @@
 #define LOG_TAG "LivePacketPool"
 
 LivePacketPool::LivePacketPool() {
-    audioPacketQueue = NULL;
-    recordingVideoPacketQueue = NULL;
-    buffer = NULL;
-    pthread_rwlock_init(&mRwlock, NULL);
+    audio_packet_queue_ = NULL;
+    recording_video_packet_queue_ = NULL;
+    buffer_ = NULL;
+    pthread_rwlock_init(&rw_lock_, NULL);
 }
 
 LivePacketPool::~LivePacketPool() {
-    pthread_rwlock_destroy(&mRwlock);
+    pthread_rwlock_destroy(&rw_lock_);
 }
-//初始化静态成员
-LivePacketPool* LivePacketPool::instance = new LivePacketPool();
+
+LivePacketPool* LivePacketPool::instance_ = new LivePacketPool();
 LivePacketPool* LivePacketPool::GetInstance() {
-    return instance;
+    return instance_;
 }
 
-/**************************start audio packet queue process**********************************************/
-void LivePacketPool::initAudioPacketQueue(int audioSampleRate) {
+void LivePacketPool::InitAudioPacketQueue(int audioSampleRate) {
     const char* name = "audioPacket queue_";
-    audioPacketQueue = new LiveAudioPacketQueue(name);
-    this->audioSampleRate = audioSampleRate;
+    audio_packet_queue_ = new LiveAudioPacketQueue(name);
+    // TODO 是否使用
+    this->audio_sample_rate_ = audioSampleRate;
 #ifdef __ANDROID__
-    this->channels = INPUT_CHANNEL_4_ANDROID;
+    this->channels_ = INPUT_CHANNEL_4_ANDROID;
 #elif defined(__APPLE__)	// IOS or OSX
-    this->channels = INPUT_CHANNEL_4_IOS;
+    this->channels_ = INPUT_CHANNEL_4_IOS;
 #endif
-    bufferSize = audioSampleRate * channels * AUDIO_PACKET_DURATION_IN_SECS;
-    buffer = new short[bufferSize];
-    bufferCursor = 0;
+    buffer_size_ = audioSampleRate * channels_ * AUDIO_PACKET_DURATION_IN_SECS;
+    buffer_ = new short[buffer_size_];
+    buffer_cursor_ = 0;
 }
 
-void LivePacketPool::abortAudioPacketQueue() {
-    if(NULL != audioPacketQueue){
-        audioPacketQueue->abort();
+void LivePacketPool::AbortAudioPacketQueue() {
+    if(NULL != audio_packet_queue_){
+        audio_packet_queue_->Abort();
     }
 }
-void LivePacketPool::destoryAudioPacketQueue() {
-    if(NULL != audioPacketQueue){
-        delete audioPacketQueue;
-        audioPacketQueue = NULL;
+void LivePacketPool::DestroyAudioPacketQueue() {
+    if(NULL != audio_packet_queue_){
+        delete audio_packet_queue_;
+        audio_packet_queue_ = NULL;
     }
-    if(buffer){
-        delete[] buffer;
-        buffer = NULL;
+    if(buffer_){
+        delete[] buffer_;
+        buffer_ = NULL;
     }
 }
 
-int LivePacketPool::getAudioPacket(LiveAudioPacket **audioPacket, bool block) {
+int LivePacketPool::GetAudioPacket(LiveAudioPacket **audioPacket, bool block) {
     int result = -1;
-    if(NULL != audioPacketQueue){
-        result = audioPacketQueue->get(audioPacket, block);
+    if(NULL != audio_packet_queue_){
+        result = audio_packet_queue_->Get(audioPacket, block);
     }
     return result;
 }
 
-int LivePacketPool::getAudioPacketQueueSize() {
-    return audioPacketQueue->size();
+int LivePacketPool::GetAudioPacketQueueSize() {
+    return audio_packet_queue_->Size();
 }
 
-bool LivePacketPool::discardAudioPacket() {
+bool LivePacketPool::DiscardAudioPacket() {
     bool ret = false;
     LiveAudioPacket *tempAudioPacket = NULL;
-    int resultCode = audioPacketQueue->get(&tempAudioPacket, true);
+    int resultCode = audio_packet_queue_->Get(&tempAudioPacket, true);
     if (resultCode > 0) {
         delete tempAudioPacket;
         tempAudioPacket = NULL;
-        pthread_rwlock_wrlock(&mRwlock);
-        totalDiscardVideoPacketDuration -= (AUDIO_PACKET_DURATION_IN_SECS * 1000.0f);
-        pthread_rwlock_unlock(&mRwlock);
+        pthread_rwlock_wrlock(&rw_lock_);
+        total_discard_video_packet_duration_ -= (AUDIO_PACKET_DURATION_IN_SECS * 1000.0f);
+        pthread_rwlock_unlock(&rw_lock_);
         ret = true;
     }
-//    LOGI("discard %d ms Audio Data And this time totalDiscardVideoPacketDuration is %d getAudioPacketQueueSize is %d", (int)(AUDIO_PACKET_DURATION_IN_SECS * 1000.0f), totalDiscardVideoPacketDuration, getAudioPacketQueueSize());
+//    LOGI("discard %d ms Audio Data And this time total_discard_video_packet_duration_ is %d GetAudioPacketQueueSize is %d", (int)(AUDIO_PACKET_DURATION_IN_SECS * 1000.0f), total_discard_video_packet_duration_, GetAudioPacketQueueSize());
     return ret;
 }
 
-bool LivePacketPool::detectDiscardAudioPacket() {
+bool LivePacketPool::DetectDiscardAudioPacket() {
     bool ret = false;
-    pthread_rwlock_wrlock(&mRwlock);
-    ret = totalDiscardVideoPacketDuration >= (AUDIO_PACKET_DURATION_IN_SECS * 1000.0f);
-    pthread_rwlock_unlock(&mRwlock);
+    pthread_rwlock_wrlock(&rw_lock_);
+    ret = total_discard_video_packet_duration_ >= (AUDIO_PACKET_DURATION_IN_SECS * 1000.0f);
+    pthread_rwlock_unlock(&rw_lock_);
     return ret;
 }
 
-void LivePacketPool::pushAudioPacketToQueue(LiveAudioPacket* audioPacket) {
-    if(NULL != audioPacketQueue){
+void LivePacketPool::PushAudioPacketToQueue(LiveAudioPacket *audioPacket) {
+    if(NULL != audio_packet_queue_){
         int audioPacketBufferCursor = 0;
-//        float position = audioPacket->position;
+//        float position_ = audioPacket->position_;
         while(audioPacket->size > 0){
-            int audioBufferLength = bufferSize - bufferCursor;
+            int audioBufferLength = buffer_size_ - buffer_cursor_;
             int length = MIN(audioBufferLength, audioPacket->size);
-            memcpy(buffer + bufferCursor, audioPacket->buffer + audioPacketBufferCursor, length * sizeof(short));
+            memcpy(buffer_ + buffer_cursor_, audioPacket->buffer + audioPacketBufferCursor, length * sizeof(short));
             audioPacket->size -= length;
-            bufferCursor += length;
+            buffer_cursor_ += length;
             audioPacketBufferCursor += length;
-            if(bufferCursor == bufferSize){
+            if(buffer_cursor_ == buffer_size_){
                 LiveAudioPacket* targetAudioPacket = new LiveAudioPacket();
-                targetAudioPacket->size = bufferSize;
-                short * audioBuffer = new short[bufferSize];
-                memcpy(audioBuffer, buffer, bufferSize * sizeof(short));
+                targetAudioPacket->size = buffer_size_;
+                short * audioBuffer = new short[buffer_size_];
+                memcpy(audioBuffer, buffer_, buffer_size_ * sizeof(short));
                 targetAudioPacket->buffer = audioBuffer;
 //                int consumeBufferCnt = audioPacketBufferCursor - length;
-//                float consumeBufferDuration = ((float)consumeBufferCnt / (float)(this->channels * audioSampleRate)) * 1000.0f;
-//                targetAudioPacket->position = position + consumeBufferDuration;
-//        			LOGI("AudioPacket Split : targetAudioPacket->position is %.6f", targetAudioPacket->position);
-                audioPacketQueue->put(targetAudioPacket);
-                bufferCursor = 0;
+//                float consumeBufferDuration = ((float)consumeBufferCnt / (float)(this->channels_ * sample_rate_)) * 1000.0f;
+//                targetAudioPacket->position_ = position_ + consumeBufferDuration;
+//        			LOGI("AudioPacket Split : targetAudioPacket->position_ is %.6f", targetAudioPacket->position_);
+                audio_packet_queue_->Put(targetAudioPacket);
+                buffer_cursor_ = 0;
             }
         }
         delete audioPacket;
@@ -117,88 +117,88 @@ void LivePacketPool::pushAudioPacketToQueue(LiveAudioPacket* audioPacket) {
 
 /**************************start decoder original song packet queue process*******************************************/
 
-void LivePacketPool::initRecordingVideoPacketQueue() {
-    if(NULL == recordingVideoPacketQueue){
-        const char* name = "recording video yuv frame packet queue_";
-        recordingVideoPacketQueue = new LiveVideoPacketQueue(name);
-        totalDiscardVideoPacketDuration = 0;
-        tempVideoPacket = NULL;
-        tempVideoPacketRefCnt = 0;
+void LivePacketPool::InitRecordingVideoPacketQueue() {
+    if(NULL == recording_video_packet_queue_){
+        const char* name = "recording video yuv frame_ packet_ queue_";
+        recording_video_packet_queue_ = new LiveVideoPacketQueue(name);
+        total_discard_video_packet_duration_ = 0;
+        temp_video_packet_ = NULL;
+        temp_video_packet_ref_count_ = 0;
     }
 }
 
-void LivePacketPool::abortRecordingVideoPacketQueue() {
-    if (NULL != recordingVideoPacketQueue) {
-        recordingVideoPacketQueue->abort();
+void LivePacketPool::AbortRecordingVideoPacketQueue() {
+    if (NULL != recording_video_packet_queue_) {
+        recording_video_packet_queue_->Abort();
     }
 }
 
-void LivePacketPool::destoryRecordingVideoPacketQueue() {
-    if (NULL != recordingVideoPacketQueue) {
-        delete recordingVideoPacketQueue;
-        recordingVideoPacketQueue = NULL;
-        if(tempVideoPacketRefCnt > 0){
-            delete tempVideoPacket;
-            tempVideoPacket = NULL;
+void LivePacketPool::DestroyRecordingVideoPacketQueue() {
+    if (NULL != recording_video_packet_queue_) {
+        delete recording_video_packet_queue_;
+        recording_video_packet_queue_ = NULL;
+        if(temp_video_packet_ref_count_ > 0){
+            delete temp_video_packet_;
+            temp_video_packet_ = NULL;
         }
     }
 }
 
-int LivePacketPool::getRecordingVideoPacket(LiveVideoPacket **videoPacket,
+int LivePacketPool::GetRecordingVideoPacket(LiveVideoPacket **videoPacket,
                                             bool block) {
     int result = -1;
-    if (NULL != recordingVideoPacketQueue) {
-        result = recordingVideoPacketQueue->get(videoPacket, block);
+    if (NULL != recording_video_packet_queue_) {
+        result = recording_video_packet_queue_->Get(videoPacket, block);
     }
     return result;
 }
 
-bool LivePacketPool::detectDiscardVideoPacket(){
-    return recordingVideoPacketQueue->size() > VIDEO_PACKET_QUEUE_THRRESHOLD;
+bool LivePacketPool::DetectDiscardVideoPacket(){
+    return recording_video_packet_queue_->Size() > VIDEO_PACKET_QUEUE_THRRESHOLD;
 }
 
-bool LivePacketPool::pushRecordingVideoPacketToQueue(LiveVideoPacket* videoPacket) {
+bool LivePacketPool::PushRecordingVideoPacketToQueue(LiveVideoPacket *videoPacket) {
     bool dropFrame = false;
-    if (NULL != recordingVideoPacketQueue) {
-        while (detectDiscardVideoPacket()) {
+    if (NULL != recording_video_packet_queue_) {
+        while (DetectDiscardVideoPacket()) {
             dropFrame = true;
             int discardVideoFrameCnt = 0;
-            int discardVideoFrameDuration = recordingVideoPacketQueue->discardGOP(&discardVideoFrameCnt);
+            int discardVideoFrameDuration = recording_video_packet_queue_->DiscardGOP(&discardVideoFrameCnt);
             if(discardVideoFrameDuration < 0){
                 break;
             }
-            this->recordDropVideoFrame(discardVideoFrameDuration);
+            this->RecordDropVideoFrame(discardVideoFrameDuration);
             //            LOGI("discard a GOP Video Packet And totalDiscardVideoPacketSize is %d", totalDiscardVideoPacketSize);
         }
         //为了计算当前帧的Duration, 所以延迟一帧放入Queue中
-        if(NULL != tempVideoPacket){
-            int packetDuration = videoPacket->timeMills - tempVideoPacket->timeMills;
-            tempVideoPacket->duration = packetDuration;
-            recordingVideoPacketQueue->put(tempVideoPacket);
-            tempVideoPacketRefCnt = 0;
+        if(NULL != temp_video_packet_){
+            int packetDuration = videoPacket->timeMills - temp_video_packet_->timeMills;
+            temp_video_packet_->duration = packetDuration;
+            recording_video_packet_queue_->Put(temp_video_packet_);
+            temp_video_packet_ref_count_ = 0;
         }
-        tempVideoPacket = videoPacket;
-        tempVideoPacketRefCnt = 1;
+        temp_video_packet_ = videoPacket;
+        temp_video_packet_ref_count_ = 1;
     }
     return dropFrame;
 }
 
-void LivePacketPool::recordDropVideoFrame(int discardVideoPacketDuration){
-    pthread_rwlock_wrlock(&mRwlock);
-    totalDiscardVideoPacketDuration+=discardVideoPacketDuration;
-    pthread_rwlock_unlock(&mRwlock);
+void LivePacketPool::RecordDropVideoFrame(int discardVideoPacketDuration){
+    pthread_rwlock_wrlock(&rw_lock_);
+    total_discard_video_packet_duration_+=discardVideoPacketDuration;
+    pthread_rwlock_unlock(&rw_lock_);
 }
 
-int LivePacketPool::getRecordingVideoPacketQueueSize() {
-    if (NULL != recordingVideoPacketQueue) {
-        return recordingVideoPacketQueue->size();
+int LivePacketPool::GetRecordingVideoPacketQueueSize() {
+    if (NULL != recording_video_packet_queue_) {
+        return recording_video_packet_queue_->Size();
     }
     return 0;
 }
 
-void LivePacketPool::clearRecordingVideoPacketToQueue() {
-    if (NULL != recordingVideoPacketQueue) {
-        return recordingVideoPacketQueue->flush();
+void LivePacketPool::ClearRecordingVideoPacketToQueue() {
+    if (NULL != recording_video_packet_queue_) {
+        return recording_video_packet_queue_->Flush();
     }
 }
 /**************************end decoder original song packet queue process*******************************************/

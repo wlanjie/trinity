@@ -3,110 +3,110 @@
 #define LOG_TAG "SoftEncoderAdapter"
 
 SoftEncoderAdapter::SoftEncoderAdapter(int strategy) :
-        _msg(MSG_NONE), copyTexSurface(0) {
-    hostGPUCopier = NULL;
-    eglCore = NULL;
-    encoder = NULL;
-    outputTexId = -1;
-    this->strategy = strategy;
+        msg_(MSG_NONE), copy_texture_surface_(0) {
+    host_gpu_copier_ = NULL;
+    egl_core_ = NULL;
+    encoder_ = NULL;
+    output_texture_id_ = -1;
+    this->strategy_ = strategy;
 
-    pthread_mutex_init(&mLock, NULL);
-    pthread_cond_init(&mCondition, NULL);
-    pthread_mutex_init(&previewThreadLock, NULL);
-    pthread_cond_init(&previewThreadCondition, NULL);
+    pthread_mutex_init(&lock_, NULL);
+    pthread_cond_init(&condition_, NULL);
+    pthread_mutex_init(&preview_thread_lock_, NULL);
+    pthread_cond_init(&preview_thread_condition_, NULL);
 }
 
 SoftEncoderAdapter::~SoftEncoderAdapter() {
-    pthread_mutex_destroy(&mLock);
-    pthread_cond_destroy(&mCondition);
-    pthread_mutex_destroy(&previewThreadLock);
-    pthread_cond_destroy(&previewThreadCondition);
+    pthread_mutex_destroy(&lock_);
+    pthread_cond_destroy(&condition_);
+    pthread_mutex_destroy(&preview_thread_lock_);
+    pthread_cond_destroy(&preview_thread_condition_);
 }
 
-void SoftEncoderAdapter::createEncoder(EGLCore *eglCore, int inputTexId) {
-	LOGI("enter createEncoder");
-    this->loadTextureContext = eglCore->getContext();
-    this->texId = inputTexId;
-    pixelSize = videoWidth * videoHeight * PIXEL_BYTE_SIZE;
-    hostGPUCopier = new HostGPUCopier();
+void SoftEncoderAdapter::CreateEncoder(EGLCore *eglCore, int inputTexId) {
+	LOGI("enter CreateEncoder");
+    this->load_texture_context_ = eglCore->GetContext();
+    this->texture_id_ = inputTexId;
+    pixel_size_ = video_width_ * video_height_ * PIXEL_BYTE_SIZE;
+    host_gpu_copier_ = new HostGPUCopier();
 
-    startTime = -1;
-    fpsChangeTime = -1;
+    start_time_ = -1;
+    fps_change_time_ = -1;
 
-    encoder = new VideoX264Encoder(strategy);
-    encoder->init(videoWidth, videoHeight, videoBitRate, frameRate, packetPool);
-    yuy2PacketPool = LiveYUY2PacketPool::GetInstance();
-    yuy2PacketPool->initYUY2PacketQueue();
-    pthread_create(&x264EncoderThread, NULL, startEncodeThread, this);
-    _msg = MSG_WINDOW_SET;
-    pthread_create(&imageDownloadThread, NULL, startDownloadThread, this);
+    encoder_ = new VideoX264Encoder(strategy_);
+    encoder_->Init(video_width_, video_height_, video_bit_rate_, frameRate, packet_pool_);
+    yuy_packet_pool_ = LiveYUY2PacketPool::GetInstance();
+    yuy_packet_pool_->InitYUY2PacketQueue();
+    pthread_create(&x264_encoder_thread_, NULL, StartEncodeThread, this);
+    msg_ = MSG_WINDOW_SET;
+    pthread_create(&image_download_thread_, NULL, StartDownloadThread, this);
 
-    LOGI("leave createEncoder");
+    LOGI("leave CreateEncoder");
 }
 
-void SoftEncoderAdapter::reConfigure(int maxBitRate, int avgBitRate, int fps) {
-    if (encoder) {
-        encoder->reConfigure(avgBitRate);
+void SoftEncoderAdapter::ReConfigure(int maxBitRate, int avgBitRate, int fps) {
+    if (encoder_) {
+        encoder_->ReConfigure(avgBitRate);
     }
 }
 
-void SoftEncoderAdapter::hotConfig(int maxBitrate, int avgBitrate, int fps) {
-    if (encoder) {
-        encoder->reConfigure(maxBitrate);
+void SoftEncoderAdapter::HotConfig(int maxBitrate, int avgBitrate, int fps) {
+    if (encoder_) {
+        encoder_->ReConfigure(maxBitrate);
     }
 
-    resetFpsStartTimeIfNeed(fps);
+    ResetFpsStartTimeIfNeed(fps);
 }
 
-void SoftEncoderAdapter::encode() {
-    while (_msg == MSG_WINDOW_SET || NULL == eglCore) {
+void SoftEncoderAdapter::Encode() {
+    while (msg_ == MSG_WINDOW_SET || NULL == egl_core_) {
         usleep(100 * 1000);
     }
-    if (startTime == -1)
-        startTime = getCurrentTime();
+    if (start_time_ == -1)
+        start_time_ = getCurrentTime();
 
-    if (fpsChangeTime == -1){
-        fpsChangeTime = getCurrentTime();
+    if (fps_change_time_ == -1){
+        fps_change_time_ = getCurrentTime();
     }
 
-    int64_t curTime = getCurrentTime() - startTime;
+    int64_t curTime = getCurrentTime() - start_time_;
     // need drop frames
-    int expectedFrameCount = (int) ((getCurrentTime() - fpsChangeTime) / 1000.0f * frameRate + 0.5f);
-    if (expectedFrameCount < encodedFrameCount) {
-        LOGI("expectedFrameCount is %d while encodedFrameCount is %d", expectedFrameCount,
-             encodedFrameCount);
+    int expectedFrameCount = (int) ((getCurrentTime() - fps_change_time_) / 1000.0f * frameRate + 0.5f);
+    if (expectedFrameCount < encoded_frame_count_) {
+        LOGI("expectedFrameCount is %d while encoded_frame_count_ is %d", expectedFrameCount,
+             encoded_frame_count_);
         return;
     }
-    encodedFrameCount++;
-    pthread_mutex_lock(&previewThreadLock);
-    pthread_mutex_lock(&mLock);
-    pthread_cond_signal(&mCondition);
-    pthread_mutex_unlock(&mLock);
-    pthread_cond_wait(&previewThreadCondition, &previewThreadLock);
-    pthread_mutex_unlock(&previewThreadLock);
+    encoded_frame_count_++;
+    pthread_mutex_lock(&preview_thread_lock_);
+    pthread_mutex_lock(&lock_);
+    pthread_cond_signal(&condition_);
+    pthread_mutex_unlock(&lock_);
+    pthread_cond_wait(&preview_thread_condition_, &preview_thread_lock_);
+    pthread_mutex_unlock(&preview_thread_lock_);
 }
 
-void SoftEncoderAdapter::destroyEncoder() {
-    yuy2PacketPool->abortYUY2PacketQueue();
-    pthread_join(x264EncoderThread, 0);
-    yuy2PacketPool->destoryYUY2PacketQueue();
-    if (NULL != encoder) {
-        encoder->destroy();
-        delete encoder;
-        encoder = NULL;
+void SoftEncoderAdapter::DestroyEncoder() {
+    yuy_packet_pool_->AbortYUY2PacketQueue();
+    pthread_join(x264_encoder_thread_, 0);
+    yuy_packet_pool_->DestroyYUY2PacketQueue();
+    if (NULL != encoder_) {
+        encoder_->Destroy();
+        delete encoder_;
+        encoder_ = NULL;
     }
 
-    pthread_mutex_lock(&mLock);
-    _msg = MSG_RENDER_LOOP_EXIT;
-    pthread_cond_signal(&mCondition);
-    pthread_mutex_unlock(&mLock);
-    pthread_join(imageDownloadThread, 0);
-    if (NULL != hostGPUCopier) {
-        hostGPUCopier->destroy();
+    pthread_mutex_lock(&lock_);
+    msg_ = MSG_RENDER_LOOP_EXIT;
+    pthread_cond_signal(&condition_);
+    pthread_mutex_unlock(&lock_);
+    pthread_join(image_download_thread_, 0);
+    if (NULL != host_gpu_copier_) {
+        host_gpu_copier_->Destroy();
     }
 }
 
-void *SoftEncoderAdapter::startDownloadThread(void *ptr) {
+void *SoftEncoderAdapter::StartDownloadThread(void *ptr) {
     SoftEncoderAdapter *softEncoderAdapter = (SoftEncoderAdapter *) ptr;
     softEncoderAdapter->renderLoop();
     pthread_exit(0);
@@ -116,106 +116,106 @@ void *SoftEncoderAdapter::startDownloadThread(void *ptr) {
 void SoftEncoderAdapter::renderLoop() {
     bool renderingEnabled = true;
     while (renderingEnabled) {
-        pthread_mutex_lock(&mLock);
-        switch (_msg) {
+        pthread_mutex_lock(&lock_);
+        switch (msg_) {
             case MSG_WINDOW_SET:
                 LOGI("receive msg MSG_WINDOW_SET");
-                initialize();
+                Initialize();
                 break;
             case MSG_RENDER_LOOP_EXIT:
                 LOGI("receive msg MSG_RENDER_LOOP_EXIT");
                 renderingEnabled = false;
-                destroy();
+                Destroy();
                 break;
             default:
                 break;
         }
-        _msg = MSG_NONE;
-        if (NULL != eglCore) {
-            eglCore->makeCurrent(copyTexSurface);
-            this->loadTexture();
-            pthread_cond_wait(&mCondition, &mLock);
+        msg_ = MSG_NONE;
+        if (NULL != egl_core_) {
+            egl_core_->MakeCurrent(copy_texture_surface_);
+            this->LoadTexture();
+            pthread_cond_wait(&condition_, &lock_);
         }
-        pthread_mutex_unlock(&mLock);
+        pthread_mutex_unlock(&lock_);
     }
     return;
 }
 
-void SoftEncoderAdapter::loadTexture() {
-    if (-1 == startTime) {
+void SoftEncoderAdapter::LoadTexture() {
+    if (-1 == start_time_) {
         return;
     }
     //1:拷贝纹理到我们的临时纹理
-    int recordingDuration = getCurrentTime() - startTime;
-    glViewport(0, 0, videoWidth, videoHeight);
-    glBindFramebuffer(GL_FRAMEBUFFER, mFBO);
+    int recordingDuration = getCurrentTime() - start_time_;
+    glViewport(0, 0, video_width_, video_height_);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
     checkGlError("glBindFramebuffer fbo_");
     long startTimeMills = getCurrentTime();
-    renderer->renderToTexture(texId, outputTexId);
+    renderer_->RenderToTexture(texture_id_, output_texture_id_);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-//	LOGI("copy TexId waste timeMils 【%d】", (int)(getCurrentTime() - startTimeMills));
-    this->signalPreviewThread();
+//	LOGI("copy TexId waste timeMils 【%d】", (int)(getCurrentTime() - start_time_mills_));
+    this->SignalPreviewThread();
     //2:从显存Download到内存
     startTimeMills = getCurrentTime();
-    byte *packetBuffer = new byte[pixelSize];
-    hostGPUCopier->copyYUY2Image(outputTexId, packetBuffer, videoWidth, videoHeight);
-//	LOGI("Download Texture waste timeMils 【%d】", (int)(getCurrentTime() - startTimeMills));
+    byte *packetBuffer = new byte[pixel_size_];
+    host_gpu_copier_->CopyYUY2Image(output_texture_id_, packetBuffer, video_width_, video_height_);
+//	LOGI("Download Texture waste timeMils 【%d】", (int)(getCurrentTime() - start_time_mills_));
     //3:构造LiveVideoPacket放到YUY2PacketPool里面
     LiveVideoPacket *videoPacket = new LiveVideoPacket();
     videoPacket->buffer = packetBuffer;
-    videoPacket->size = pixelSize;
+    videoPacket->size = pixel_size_;
     videoPacket->timeMills = recordingDuration;
 //	LOGI("recordingDuration 【%d】", recordingDuration);
-    yuy2PacketPool->pushYUY2PacketToQueue(videoPacket);
+    yuy_packet_pool_->PushYUY2PacketToQueue(videoPacket);
 }
 
-void SoftEncoderAdapter::signalPreviewThread() {
-    pthread_mutex_lock(&previewThreadLock);
-    pthread_cond_signal(&previewThreadCondition);
-    pthread_mutex_unlock(&previewThreadLock);
+void SoftEncoderAdapter::SignalPreviewThread() {
+    pthread_mutex_lock(&preview_thread_lock_);
+    pthread_cond_signal(&preview_thread_condition_);
+    pthread_mutex_unlock(&preview_thread_lock_);
 }
 
-bool SoftEncoderAdapter::initialize() {
-    eglCore = new EGLCore();
-    eglCore->init(loadTextureContext);
-    copyTexSurface = eglCore->createOffscreenSurface(videoWidth, videoHeight);
-    eglCore->makeCurrent(copyTexSurface);
-    renderer = new VideoGLSurfaceRender();
-    renderer->init(videoWidth, videoHeight);
-    glGenFramebuffers(1, &mFBO);
+bool SoftEncoderAdapter::Initialize() {
+    egl_core_ = new EGLCore();
+    egl_core_->Init(load_texture_context_);
+    copy_texture_surface_ = egl_core_->CreateOffscreenSurface(video_width_, video_height_);
+    egl_core_->MakeCurrent(copy_texture_surface_);
+    renderer_ = new VideoGLSurfaceRender();
+    renderer_->Init(video_width_, video_height_);
+    glGenFramebuffers(1, &fbo_);
     //初始化outputTexId
-    glGenTextures(1, &outputTexId);
-    glBindTexture(GL_TEXTURE_2D, outputTexId);
+    glGenTextures(1, &output_texture_id_);
+    glBindTexture(GL_TEXTURE_2D, output_texture_id_);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, videoWidth, videoHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, video_width_, video_height_, 0, GL_RGBA, GL_UNSIGNED_BYTE,
                  0);
     glBindTexture(GL_TEXTURE_2D, 0);
     return true;
 }
 
-void SoftEncoderAdapter::destroy() {
-    if (NULL != eglCore) {
-        eglCore->makeCurrent(copyTexSurface);
-        if (mFBO) {
+void SoftEncoderAdapter::Destroy() {
+    if (NULL != egl_core_) {
+        egl_core_->MakeCurrent(copy_texture_surface_);
+        if (fbo_) {
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glDeleteFramebuffers(1, &mFBO);
+            glDeleteFramebuffers(1, &fbo_);
         }
-        eglCore->releaseSurface(copyTexSurface);
-        if (renderer) {
+        egl_core_->ReleaseSurface(copy_texture_surface_);
+        if (renderer_) {
             LOGI("delete renderer_..");
-            renderer->dealloc();
-            delete renderer;
-            renderer = NULL;
+            renderer_->Destroy();
+            delete renderer_;
+            renderer_ = NULL;
         }
-        eglCore->release();
-        eglCore = NULL;
+        egl_core_->Release();
+        egl_core_ = NULL;
     }
 }
 
-void *SoftEncoderAdapter::startEncodeThread(void *ptr) {
+void *SoftEncoderAdapter::StartEncodeThread(void *ptr) {
     SoftEncoderAdapter *softEncoderAdapter = (SoftEncoderAdapter *) ptr;
     softEncoderAdapter->startEncode();
     pthread_exit(0);
@@ -225,14 +225,14 @@ void *SoftEncoderAdapter::startEncodeThread(void *ptr) {
 void SoftEncoderAdapter::startEncode() {
     LiveVideoPacket *videoPacket = NULL;
     while (true) {
-//		LOGI("getYUY2PacketQueueSize is %d", yuy2PacketPool->getYUY2PacketQueueSize());
-        if (yuy2PacketPool->getYUY2Packet(&videoPacket, true) < 0) {
-            LOGI("yuy2PacketPool->getRecordingVideoPacket return negetive value...");
+//		LOGI("getYUY2PacketQueueSize is %d", yuy_packet_pool_->GetYUY2PacketQueueSize());
+        if (yuy_packet_pool_->GetYUY2Packet(&videoPacket, true) < 0) {
+            LOGI("yuy_packet_pool_->GetRecordingVideoPacket return negetive value...");
             break;
         }
         if (videoPacket) {
             //调用编码器编码这一帧数据
-            encoder->encode(videoPacket);
+            encoder_->Encode(videoPacket);
             delete videoPacket;
             videoPacket = NULL;
         }

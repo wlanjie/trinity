@@ -3,49 +3,49 @@
 #define LOG_TAG "HostGPUCopier"
 
 HostGPUCopier::HostGPUCopier() {
-	mGLProgId = 0;
-	downloadTex = 0;
-	this->isRecording = false;
+	prog_id_ = 0;
+	download_texture_ = 0;
+	this->recording_ = false;
 }
 
 HostGPUCopier::~HostGPUCopier() {
 }
 
-void HostGPUCopier::copyYUY2Image(GLuint ipTex, byte* yuy2ImageBuffer, int width, int height) {
+void HostGPUCopier::CopyYUY2Image(GLuint ipTex, byte *yuy2ImageBuffer, int width, int height) {
 	//将纹理渲染到YUY2格式的数据
 //	LOGI("width is %d height is %d", width, height);
-	this->convertYUY2(ipTex, width, height);
+	this->ConvertYUY2(ipTex, width, height);
 	//Download image
 	const unsigned int yuy2Pairs = (width + 1) / 2;
-	int imageBufferSize = getBufferSizeInBytes(width, height);
-	this->downloadImageFromTexture(downloadTex, yuy2ImageBuffer, yuy2Pairs, height);
+	int imageBufferSize = GetBufferSizeInBytes(width, height);
+	this->DownloadImageFromTexture(download_texture_, yuy2ImageBuffer, yuy2Pairs, height);
 }
 
-void HostGPUCopier::ensureTextureStorage(GLint internalFormat, const unsigned int yuy2Pairs, int height) {
-	if (!downloadTex) {
-		glGenTextures(1, &downloadTex);
-		checkGlError("glGenTextures downloadTex");
-		glBindTexture(GL_TEXTURE_2D, downloadTex);
-		checkGlError("glBindTexture downloadTex");
+void HostGPUCopier::EnsureTextureStorage(GLint internalFormat, const unsigned int yuy2Pairs, int height) {
+	if (!download_texture_) {
+		glGenTextures(1, &download_texture_);
+		checkGlError("glGenTextures download_texture_");
+		glBindTexture(GL_TEXTURE_2D, download_texture_);
+		checkGlError("glBindTexture download_texture_");
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	} else {
-		glBindTexture(GL_TEXTURE_2D, downloadTex);
-		checkGlError("glBindTexture downloadTex");
+		glBindTexture(GL_TEXTURE_2D, download_texture_);
+		checkGlError("glBindTexture download_texture_");
 	}
 	// Specify texture
 	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, yuy2Pairs, (GLsizei) height, 0, internalFormat, GL_UNSIGNED_BYTE, 0);
 }
 
-void HostGPUCopier::convertYUY2(GLuint ipTex, int width, int height) {
-	prepareConvertToYUY2Program();
+void HostGPUCopier::ConvertYUY2(GLuint ipTex, int width, int height) {
+	PrepareConvertToYUY2Program();
 
 	const unsigned int yuy2Pairs = (width + 1) / 2;
 	//GL_OES_required_internalFormat  0x8058 // GL_RGBA8/GL_RGBA8_OES
 	GLint internalFormat = GL_RGBA;
-	ensureTextureStorage(internalFormat, yuy2Pairs, height);
+	EnsureTextureStorage(internalFormat, yuy2Pairs, height);
 
 	glActiveTexture(GL_TEXTURE0);
 	checkGlError("glActiveTexture GL_TEXTURE0");
@@ -54,10 +54,10 @@ void HostGPUCopier::convertYUY2(GLuint ipTex, int width, int height) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	// Attach YUY2 texture to frame buffer
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	// Attach YUY2 texture to frame_ buffer_
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
 	checkGlError("glBindFramebuffer");
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, downloadTex, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, download_texture_, 0);
 	checkGlError("glFramebufferTexture2D");
 	int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (status != GL_FRAMEBUFFER_COMPLETE) {
@@ -73,9 +73,9 @@ void HostGPUCopier::convertYUY2(GLuint ipTex, int width, int height) {
 	 */
 	glViewport(0, 0, yuy2Pairs, height);
 	checkGlError("glViewport...");
-//	LOGI("glUseProgram mGLProgId is %d", mGLProgId);
-	glUseProgram(mGLProgId);
-	checkGlError("glUseProgram mGLProgId...");
+//	LOGI("glUseProgram prog_id_ is %d", prog_id_);
+	glUseProgram(prog_id_);
+	checkGlError("glUseProgram prog_id_...");
 
 	// Upload some uniforms if needed
 	float sPerHalfTexel = (float) (0.5f / (float) width);
@@ -88,40 +88,40 @@ void HostGPUCopier::convertYUY2(GLuint ipTex, int width, int height) {
 		GLfloat coefUVec[4] = { -(GLfloat) NV_YUY2_R_U_UNKNOW, -(GLfloat) NV_YUY2_G_U_UNKNOW, (GLfloat) NV_YUY2_B_U_UNKNOW, (GLfloat) 128 / 255 };
 		GLfloat coefVVec[4] = { (GLfloat) NV_YUY2_R_V_UNKNOW, -(GLfloat) NV_YUY2_G_V_UNKNOW, -(GLfloat) NV_YUY2_B_V_UNKNOW, (GLfloat) 128 / 255 };
 
-		glUniform4fv(uniformLoc_coefY, 1, coefYVec);
-		checkGlError("glUniform4fv uniformLoc_coefY");
-		glUniform4fv(uniformLoc_coefU, 1, coefUVec);
-		checkGlError("glUniform4fv uniformLoc_coefU");
-		glUniform4fv(uniformLoc_coefV, 1, coefVVec);
-		checkGlError("glUniform4fv uniformLoc_coefV");
+		glUniform4fv(uniformLoc_coef_y_, 1, coefYVec);
+		checkGlError("glUniform4fv uniformLoc_coef_y_");
+		glUniform4fv(uniformLoc_coef_u_, 1, coefUVec);
+		checkGlError("glUniform4fv uniformLoc_coef_u_");
+		glUniform4fv(uniformLoc_coef_v_, 1, coefVVec);
+		checkGlError("glUniform4fv uniformLoc_coef_v_");
 	} else if (IS_LUMA_601_FLAG) {
 		GLfloat coefYVec[4] = { (GLfloat) NV_YUY2_R_Y_601, (GLfloat) NV_YUY2_G_Y_601, (GLfloat) NV_YUY2_B_Y_601, (GLfloat) 16 / 255 };
 		GLfloat coefUVec[4] = { -(GLfloat) NV_YUY2_R_U_601, -(GLfloat) NV_YUY2_G_U_601, (GLfloat) NV_YUY2_B_U_601, (GLfloat) 128 / 255 };
 		GLfloat coefVVec[4] = { (GLfloat) NV_YUY2_R_V_601, -(GLfloat) NV_YUY2_G_V_601, -(GLfloat) NV_YUY2_B_V_601, (GLfloat) 128 / 255 };
 
-		glUniform4fv(uniformLoc_coefY, 1, coefYVec);
-		checkGlError("glUniform4fv uniformLoc_coefY");
-		glUniform4fv(uniformLoc_coefU, 1, coefUVec);
-		checkGlError("glUniform4fv uniformLoc_coefU");
-		glUniform4fv(uniformLoc_coefV, 1, coefVVec);
-		checkGlError("glUniform4fv uniformLoc_coefV");
+		glUniform4fv(uniformLoc_coef_y_, 1, coefYVec);
+		checkGlError("glUniform4fv uniformLoc_coef_y_");
+		glUniform4fv(uniformLoc_coef_u_, 1, coefUVec);
+		checkGlError("glUniform4fv uniformLoc_coef_u_");
+		glUniform4fv(uniformLoc_coef_v_, 1, coefVVec);
+		checkGlError("glUniform4fv uniformLoc_coef_v_");
 	} else {
 		GLfloat coefYVec[4] = { (GLfloat) NV_YUY2_R_Y_709, (GLfloat) NV_YUY2_G_Y_709, (GLfloat) NV_YUY2_B_Y_709, (GLfloat) 16 / 255 };
 		GLfloat coefUVec[4] = { -(GLfloat) NV_YUY2_R_U_709, -(GLfloat) NV_YUY2_G_U_709, (GLfloat) NV_YUY2_B_U_709, (GLfloat) 128 / 255 };
 		GLfloat coefVVec[4] = { (GLfloat) NV_YUY2_R_V_709, -(GLfloat) NV_YUY2_G_V_709, -(GLfloat) NV_YUY2_B_V_709, (GLfloat) 128 / 255 };
 
-		glUniform4fv(uniformLoc_coefY, 1, coefYVec);
-		checkGlError("glUniform4fv uniformLoc_coefY");
-		glUniform4fv(uniformLoc_coefU, 1, coefUVec);
-		checkGlError("glUniform4fv uniformLoc_coefU");
-		glUniform4fv(uniformLoc_coefV, 1, coefVVec);
-		checkGlError("glUniform4fv uniformLoc_coefV");
+		glUniform4fv(uniformLoc_coef_y_, 1, coefYVec);
+		checkGlError("glUniform4fv uniformLoc_coef_y_");
+		glUniform4fv(uniformLoc_coef_u_, 1, coefUVec);
+		checkGlError("glUniform4fv uniformLoc_coef_u_");
+		glUniform4fv(uniformLoc_coef_v_, 1, coefVVec);
+		checkGlError("glUniform4fv uniformLoc_coef_v_");
 	}
 
 	bool flipVertically = true;
 	VertexCoordVec vertices[4];
 
-	if (isRecording) {
+	if (recording_) {
 		//正常录制的参数
 		vertices[0].x = -1;
 		vertices[0].y = -1;
@@ -172,37 +172,38 @@ void HostGPUCopier::convertYUY2(GLuint ipTex, int width, int height) {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	glVertexAttribPointer(attrLoc_pos, 2, GL_FLOAT, GL_FALSE, (GLsizei) sizeof(VertexCoordVec), (const GLvoid *) &vertices[0].x);
-	glEnableVertexAttribArray(attrLoc_pos);
-	checkGlError("glEnableVertexAttribArray attrLoc_pos...");
+	glVertexAttribPointer(attrLoc_pos_, 2, GL_FLOAT, GL_FALSE, (GLsizei) sizeof(VertexCoordVec), (const GLvoid *) &vertices[0].x);
+	glEnableVertexAttribArray(attrLoc_pos_);
+	checkGlError("glEnableVertexAttribArray attrLoc_pos_...");
 
-	glVertexAttribPointer(attrLoc_texCoord, 2, GL_FLOAT, GL_FALSE, (GLsizei) sizeof(VertexCoordVec), (const GLvoid *) &vertices[0].s);
-	glEnableVertexAttribArray(attrLoc_texCoord);
-	checkGlError("glEnableVertexAttribArray attrLoc_texCoord...");
+	glVertexAttribPointer(attrLoc_texture_coord_, 2, GL_FLOAT, GL_FALSE, (GLsizei) sizeof(VertexCoordVec), (const GLvoid *) &vertices[0].s);
+	glEnableVertexAttribArray(attrLoc_texture_coord_);
+	checkGlError("glEnableVertexAttribArray attrLoc_texture_coord_...");
 
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	checkGlError("glDrawArrays...");
 
-	glDisableVertexAttribArray(attrLoc_pos);
-	glDisableVertexAttribArray(attrLoc_texCoord);
+	glDisableVertexAttribArray(attrLoc_pos_);
+	glDisableVertexAttribArray(attrLoc_texture_coord_);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glUseProgram(0);
 }
 
-void HostGPUCopier::downloadImageFromTexture(GLuint texId, void *imageBuf, unsigned int imageWidth, unsigned int imageHeight) {
-	// Set texture's min/mag filter to ensure frame buffer completeness
+void HostGPUCopier::DownloadImageFromTexture(GLuint texId, void *imageBuf, unsigned int imageWidth,
+											 unsigned int imageHeight) {
+	// Set texture's min/mag filter to ensure frame_ buffer_ completeness
 	glBindTexture(GL_TEXTURE_2D, texId);
-	checkGlError("glBindTexture texId");
+	checkGlError("glBindTexture texture_id_");
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
 	checkGlError("glBindFramebuffer");
-	// Attach texture to frame buffer
+	// Attach texture to frame_ buffer_
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texId, 0);
 	checkGlError("glFramebufferTexture2D...");
 
@@ -214,51 +215,51 @@ void HostGPUCopier::downloadImageFromTexture(GLuint texId, void *imageBuf, unsig
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-int HostGPUCopier::getBufferSizeInBytes(int width, int height) {
+int HostGPUCopier::GetBufferSizeInBytes(int width, int height) {
 	return width * height * 2;
 }
 
-void HostGPUCopier::destroy() {
-	if (vertexShader)
-		glDeleteShader(vertexShader);
+void HostGPUCopier::Destroy() {
+	if (vertex_shader_)
+		glDeleteShader(vertex_shader_);
 
-	if (pixelShader)
-		glDeleteShader(pixelShader);
+	if (pixel_shader_)
+		glDeleteShader(pixel_shader_);
 
-	if(downloadTex){
-		glDeleteTextures(1, &downloadTex);
+	if(download_texture_){
+		glDeleteTextures(1, &download_texture_);
 	}
 
-	if (mGLProgId) {
-		glDeleteProgram(mGLProgId);
-		mGLProgId = 0;
+	if (prog_id_) {
+		glDeleteProgram(prog_id_);
+		prog_id_ = 0;
 	}
 }
 
-bool HostGPUCopier::prepareConvertToYUY2Program() {
+bool HostGPUCopier::PrepareConvertToYUY2Program() {
 	bool ret = true;
-	if (mGLProgId) {
+	if (prog_id_) {
 		return ret;
 	}
-	mGLProgId = loadProgram(vertexShaderStr, convertToYUY2FragmentShaderStr);
-	if (!mGLProgId) {
+	prog_id_ = loadProgram(vertexShaderStr, convertToYUY2FragmentShaderStr);
+	if (!prog_id_) {
 		return false;
 	}
 	/**
 	 * Query attribute locations and uniform locations
 	 */
-	attrLoc_pos = glGetAttribLocation(mGLProgId, "posAttr");
+	attrLoc_pos_ = glGetAttribLocation(prog_id_, "posAttr");
 	checkGlError("glGetAttribLocation posAttr");
-	attrLoc_texCoord = glGetAttribLocation(mGLProgId, "texCoordAttr");
+	attrLoc_texture_coord_ = glGetAttribLocation(prog_id_, "texCoordAttr");
 	checkGlError("glGetAttribLocation texCoordAttr");
-	mGLUniformTexture = glGetUniformLocation(mGLProgId, "sampler");
+	mGLUniformTexture = glGetUniformLocation(prog_id_, "sampler");
 	checkGlError("glGetAttribLocation sampler");
-	uniformLoc_coefY = glGetUniformLocation(mGLProgId, "coefY");
-	uniformLoc_coefU = glGetUniformLocation(mGLProgId, "coefU");
-	uniformLoc_coefV = glGetUniformLocation(mGLProgId, "coefV");
-	uniformLoc_sPerHalfTexel = glGetUniformLocation(mGLProgId, "sPerHalfTexel");
+	uniformLoc_coef_y_ = glGetUniformLocation(prog_id_, "coefY");
+	uniformLoc_coef_u_ = glGetUniformLocation(prog_id_, "coefU");
+	uniformLoc_coef_v_ = glGetUniformLocation(prog_id_, "coefV");
+	uniformLoc_sPerHalfTexel = glGetUniformLocation(prog_id_, "sPerHalfTexel");
 
-	glUseProgram(mGLProgId);
+	glUseProgram(prog_id_);
 	/**
 	 * Upload some uniforms
 	 */
@@ -267,38 +268,38 @@ bool HostGPUCopier::prepareConvertToYUY2Program() {
 		GLfloat coefUVec[4] = { -(GLfloat) NV_YUY2_R_U_UNKNOW, -(GLfloat) NV_YUY2_G_U_UNKNOW, (GLfloat) NV_YUY2_B_U_UNKNOW, (GLfloat) 128 / 255 };
 		GLfloat coefVVec[4] = { (GLfloat) NV_YUY2_R_V_UNKNOW, -(GLfloat) NV_YUY2_G_V_UNKNOW, -(GLfloat) NV_YUY2_B_V_UNKNOW, (GLfloat) 128 / 255 };
 
-		glUniform4fv(uniformLoc_coefY, 1, coefYVec);
-		checkGlError("glUniform4fv uniformLoc_coefY");
-		glUniform4fv(uniformLoc_coefU, 1, coefUVec);
-		checkGlError("glUniform4fv uniformLoc_coefU");
-		glUniform4fv(uniformLoc_coefV, 1, coefVVec);
-		checkGlError("glUniform4fv uniformLoc_coefV");
+		glUniform4fv(uniformLoc_coef_y_, 1, coefYVec);
+		checkGlError("glUniform4fv uniformLoc_coef_y_");
+		glUniform4fv(uniformLoc_coef_u_, 1, coefUVec);
+		checkGlError("glUniform4fv uniformLoc_coef_u_");
+		glUniform4fv(uniformLoc_coef_v_, 1, coefVVec);
+		checkGlError("glUniform4fv uniformLoc_coef_v_");
 	} else if (IS_LUMA_601_FLAG) {
 		GLfloat coefYVec[4] = { (GLfloat) NV_YUY2_R_Y_601, (GLfloat) NV_YUY2_G_Y_601, (GLfloat) NV_YUY2_B_Y_601, (GLfloat) 16 / 255 };
 		GLfloat coefUVec[4] = { -(GLfloat) NV_YUY2_R_U_601, -(GLfloat) NV_YUY2_G_U_601, (GLfloat) NV_YUY2_B_U_601, (GLfloat) 128 / 255 };
 		GLfloat coefVVec[4] = { (GLfloat) NV_YUY2_R_V_601, -(GLfloat) NV_YUY2_G_V_601, -(GLfloat) NV_YUY2_B_V_601, (GLfloat) 128 / 255 };
 
-		glUniform4fv(uniformLoc_coefY, 1, coefYVec);
-		checkGlError("glUniform4fv uniformLoc_coefY");
-		glUniform4fv(uniformLoc_coefU, 1, coefUVec);
-		checkGlError("glUniform4fv uniformLoc_coefU");
-		glUniform4fv(uniformLoc_coefV, 1, coefVVec);
-		checkGlError("glUniform4fv uniformLoc_coefV");
+		glUniform4fv(uniformLoc_coef_y_, 1, coefYVec);
+		checkGlError("glUniform4fv uniformLoc_coef_y_");
+		glUniform4fv(uniformLoc_coef_u_, 1, coefUVec);
+		checkGlError("glUniform4fv uniformLoc_coef_u_");
+		glUniform4fv(uniformLoc_coef_v_, 1, coefVVec);
+		checkGlError("glUniform4fv uniformLoc_coef_v_");
 	} else {
 		GLfloat coefYVec[4] = { (GLfloat) NV_YUY2_R_Y_709, (GLfloat) NV_YUY2_G_Y_709, (GLfloat) NV_YUY2_B_Y_709, (GLfloat) 16 / 255 };
 		GLfloat coefUVec[4] = { -(GLfloat) NV_YUY2_R_U_709, -(GLfloat) NV_YUY2_G_U_709, (GLfloat) NV_YUY2_B_U_709, (GLfloat) 128 / 255 };
 		GLfloat coefVVec[4] = { (GLfloat) NV_YUY2_R_V_709, -(GLfloat) NV_YUY2_G_V_709, -(GLfloat) NV_YUY2_B_V_709, (GLfloat) 128 / 255 };
 
-		glUniform4fv(uniformLoc_coefY, 1, coefYVec);
-		checkGlError("glUniform4fv uniformLoc_coefY");
-		glUniform4fv(uniformLoc_coefU, 1, coefUVec);
-		checkGlError("glUniform4fv uniformLoc_coefU");
-		glUniform4fv(uniformLoc_coefV, 1, coefVVec);
-		checkGlError("glUniform4fv uniformLoc_coefV");
+		glUniform4fv(uniformLoc_coef_y_, 1, coefYVec);
+		checkGlError("glUniform4fv uniformLoc_coef_y_");
+		glUniform4fv(uniformLoc_coef_u_, 1, coefUVec);
+		checkGlError("glUniform4fv uniformLoc_coef_u_");
+		glUniform4fv(uniformLoc_coef_v_, 1, coefVVec);
+		checkGlError("glUniform4fv uniformLoc_coef_v_");
 	}
 	glUseProgram(0);
 
-	glGenFramebuffers(1, &FBO);
+	glGenFramebuffers(1, &fbo_);
 	checkGlError("glGenFramebuffers");
 	return ret;
 }

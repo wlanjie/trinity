@@ -7,8 +7,7 @@
 #include "texture_frame_copier.h"
 #include "matrix.h"
 
-
-static char* GPU_FRAME_VERTEX_SHADER =
+static const char* GPU_FRAME_VERTEX_SHADER =
 		"attribute vec4 vPosition;\n"
 		"attribute vec4 vTexCords;\n"
 		"varying vec2 yuvTexCoords;\n"
@@ -18,7 +17,7 @@ static char* GPU_FRAME_VERTEX_SHADER =
 		"  gl_Position = trans * vPosition;\n"
 		"}\n";
 
-static char* GPU_FRAME_FRAGMENT_SHADER =
+static const char* GPU_FRAME_FRAGMENT_SHADER =
 	"#extension GL_OES_EGL_image_external : require\n"
 	"precision mediump float;\n"
 	"uniform samplerExternalOES yuvTexSampler;\n"
@@ -32,10 +31,11 @@ public:
 	GPUTextureFrameCopier();
     virtual ~GPUTextureFrameCopier();
 
-    virtual bool init();
-    virtual void renderWithCoords(TextureFrame* textureFrame, GLuint texId, GLfloat* vertexCoords, GLfloat* textureCoords);
+    virtual bool Init();
+    virtual void RenderWithCoords(TextureFrame *textureFrame, GLuint texId, GLfloat *vertexCoords,
+								  GLfloat *textureCoords);
 protected:
-    GLint mGLUniformTexture;
+    GLint uniform_texture_;
 };
 
 #endif // GPU_TEXTURE_FRAME_COPIER_H

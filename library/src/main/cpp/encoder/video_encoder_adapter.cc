@@ -3,28 +3,28 @@
 #define LOG_TAG "VideoEncoderAdapter"
 
 VideoEncoderAdapter::VideoEncoderAdapter() {
-	renderer = NULL;
+	renderer_ = NULL;
 }
 
 VideoEncoderAdapter::~VideoEncoderAdapter() {
 }
 
 void VideoEncoderAdapter::init(int width, int height, int videoBitRate, float frameRate){
-	packetPool = LiveCommonPacketPool::GetInstance();
-	this->videoWidth = width;
-	this->videoHeight = height;
+	packet_pool_ = LiveCommonPacketPool::GetInstance();
+	this->video_width_ = width;
+	this->video_height_ = height;
 	this->frameRate = frameRate;
-	this->videoBitRate = videoBitRate;
-	this->encodedFrameCount = 0;
+	this->video_bit_rate_ = videoBitRate;
+	this->encoded_frame_count_ = 0;
 
-	LOGI("Init(width:%d, height:%d, videoBitRate:%d, frameRate:%d)", width, height, videoBitRate, frameRate);
+	LOGI("Init(width:%d, height:%d, video_bit_rate_:%d, frame_rate_:%d)", width, height, videoBitRate, frameRate);
 }
 
-void VideoEncoderAdapter::resetFpsStartTimeIfNeed(int fps){
+void VideoEncoderAdapter::ResetFpsStartTimeIfNeed(int fps){
 	 if (fabs(fps - this->frameRate) > FLOAT_DELTA){
 		 this->frameRate = fps;
 		 LOGI("HotConfig reset resetFpsStartTime");
-		 encodedFrameCount = 0;
-		 fpsChangeTime = getCurrentTime();
+		 encoded_frame_count_ = 0;
+		 fps_change_time_ = getCurrentTime();
 	 }
 }

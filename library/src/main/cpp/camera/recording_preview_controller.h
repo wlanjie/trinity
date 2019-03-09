@@ -141,8 +141,8 @@ public:
         this->previewController = previewController;
     }
 
-    void handleMessage(Message *msg) {
-        int what = msg->getWhat();
+    void HandleMessage(Message *msg) {
+        int what = msg->GetWhat();
         switch (what) {
             case MSG_EGL_THREAD_CREATE:
                 previewController->Initialize();

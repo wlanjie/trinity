@@ -62,7 +62,7 @@ typedef union {
 
 #ifdef HAVE_AV_CONFIG_H
 
-#include "config.h"
+#include "config_.h"
 
 #if   ARCH_ARM
 #   include "arm/intreadwrite.h"

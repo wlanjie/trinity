@@ -2,45 +2,45 @@
 #define LOG_TAG "VideoConsumerThread"
 
 VideoConsumerThread::VideoConsumerThread() {
-	isStopping = false;
-	videoPublisher = NULL;
-	isConnecting = false;
+	stopping_ = false;
+	video_publisher_ = NULL;
+	connecting_ = false;
 
-	pthread_mutex_init(&connectingLock, NULL);
-	pthread_cond_init(&interruptCondition, NULL);
-	pthread_mutex_init(&interruptLock, NULL);
+	pthread_mutex_init(&connecting_lock_, NULL);
+	pthread_cond_init(&interrupt_condition_, NULL);
+	pthread_mutex_init(&interrupt_lock_, NULL);
 }
 VideoConsumerThread::~VideoConsumerThread() {
-	pthread_mutex_destroy(&connectingLock);
-	pthread_cond_destroy(&interruptCondition);
-	pthread_mutex_destroy(&interruptLock);
+	pthread_mutex_destroy(&connecting_lock_);
+	pthread_cond_destroy(&interrupt_condition_);
+	pthread_mutex_destroy(&interrupt_lock_);
 }
 
 void VideoConsumerThread::registerPublishTimeoutCallback(int (*on_publish_timeout_callback)(void *context), void* context) {
-	if (NULL != videoPublisher) {
-		videoPublisher->registerPublishTimeoutCallback(on_publish_timeout_callback, context);
+	if (NULL != video_publisher_) {
+		video_publisher_->registerPublishTimeoutCallback(on_publish_timeout_callback, context);
 	}
 }
 
 void VideoConsumerThread::registerHotAdaptiveBitrateCallback(int (*hot_adaptive_bitrate_callback)(int maxBitrate, int avgBitrate, int fps, void *context), void *context) {
-    if (NULL != videoPublisher) {
-        videoPublisher->registerHotAdaptiveBitrateCallback(hot_adaptive_bitrate_callback, context);
+    if (NULL != video_publisher_) {
+        video_publisher_->registerHotAdaptiveBitrateCallback(hot_adaptive_bitrate_callback, context);
     }
 }
 
 void VideoConsumerThread::registerStatisticsBitrateCallback(int (*statistics_bitrate_callback)(int sendBitrate, int compressedBitrate, void *context), void *context) {
-    if (NULL != videoPublisher) {
-        videoPublisher->registerStatisticsBitrateCallback(statistics_bitrate_callback, context);
+    if (NULL != video_publisher_) {
+        video_publisher_->registerStatisticsBitrateCallback(statistics_bitrate_callback, context);
     }
 }
 
 static int fill_aac_packet_callback(LiveAudioPacket** packet, void *context) {
 	VideoConsumerThread* videoPacketConsumer = (VideoConsumerThread*) context;
-	return videoPacketConsumer->getAudioPacket(packet);
+	return videoPacketConsumer->GetAudioPacket(packet);
 }
-int VideoConsumerThread::getAudioPacket(LiveAudioPacket ** audioPacket) {
-	if (aacPacketPool->getAudioPacket(audioPacket, true) < 0) {
-		LOGI("aacPacketPool->getAudioPacket return negetive value...");
+int VideoConsumerThread::GetAudioPacket(LiveAudioPacket **audioPacket) {
+	if (aac_packet_pool_->GetAudioPacket(audioPacket, true) < 0) {
+		LOGI("aac_packet_pool_->GetAudioPacket return negetive value...");
 		return -1;
 	}
 	return 1;
@@ -48,52 +48,54 @@ int VideoConsumerThread::getAudioPacket(LiveAudioPacket ** audioPacket) {
 
 static int fill_h264_packet_callback(LiveVideoPacket ** packet, void *context) {
 	VideoConsumerThread* videoPacketConsumer = (VideoConsumerThread*) context;
-	return videoPacketConsumer->getH264Packet(packet);
+	return videoPacketConsumer->GetH264Packet(packet);
 }
-int VideoConsumerThread::getH264Packet(LiveVideoPacket ** packet) {
-	if (packetPool->getRecordingVideoPacket(packet, true) < 0) {
-		LOGI("packetPool->getRecordingVideoPacket return negetive value...");
+int VideoConsumerThread::GetH264Packet(LiveVideoPacket **packet) {
+	if (packet_pool_->GetRecordingVideoPacket(packet, true) < 0) {
+		LOGI("packet_pool_->GetRecordingVideoPacket return negetive value...");
 		return -1;
 	}
 	return 1;
 }
 
-void VideoConsumerThread::init() {
-	isStopping = false;
-	packetPool = LivePacketPool::GetInstance();
-	aacPacketPool = LiveAudioPacketPool::GetInstance();
-	videoPublisher = NULL;
+void VideoConsumerThread::Init() {
+	stopping_ = false;
+	packet_pool_ = LivePacketPool::GetInstance();
+	aac_packet_pool_ = LiveAudioPacketPool::GetInstance();
+	video_publisher_ = NULL;
 }
 
-int VideoConsumerThread::init(char* videoOutputURI, int videoWidth, int videoheight, int videoFrameRate, int videoBitRate, int audioSampleRate, int audioChannels, int audioBitRate,
-		char* audio_codec_name, int qualityStrategy) {
-	init();
-	if (NULL == videoPublisher) {
-		pthread_mutex_lock(&connectingLock);
-		this->isConnecting = true;
-		pthread_mutex_unlock(&connectingLock);
-		buildPublisherInstance();
-		int ret = videoPublisher->init(videoOutputURI, videoWidth, videoheight, videoFrameRate, videoBitRate, audioSampleRate, audioChannels, audioBitRate, audio_codec_name,
-				qualityStrategy);
+int VideoConsumerThread::Init(char *videoOutputURI, int videoWidth, int videoheight, int videoFrameRate,
+							  int videoBitRate, int audioSampleRate, int audioChannels, int audioBitRate,
+							  char *audio_codec_name, int qualityStrategy) {
+	Init();
+	if (NULL == video_publisher_) {
+		pthread_mutex_lock(&connecting_lock_);
+		this->connecting_ = true;
+		pthread_mutex_unlock(&connecting_lock_);
+		BuildPublisherInstance();
+		int ret = video_publisher_->Init(videoOutputURI, videoWidth, videoheight, videoFrameRate, videoBitRate,
+										 audioSampleRate, audioChannels, audioBitRate, audio_codec_name,
+										 qualityStrategy);
 
-		pthread_mutex_lock(&connectingLock);
-		this->isConnecting = false;
-		pthread_mutex_unlock(&connectingLock);
-		LOGI("videoPublisher->Init return code %d...", ret);
+		pthread_mutex_lock(&connecting_lock_);
+		this->connecting_ = false;
+		pthread_mutex_unlock(&connecting_lock_);
+		LOGI("video_publisher_->Init return code %d...", ret);
 
-		if (ret < 0 || videoPublisher->isInterrupted()) {
-			LOGI("videoPublisher->Init failed...");
-			pthread_mutex_lock(&interruptLock);
+		if (ret < 0 || video_publisher_->isInterrupted()) {
+			LOGI("video_publisher_->Init failed...");
+			pthread_mutex_lock(&interrupt_lock_);
 
-			this->releasePublisher();
+			this->ReleasePublisher();
 
-			pthread_cond_signal(&interruptCondition);
-			pthread_mutex_unlock(&interruptLock);
+			pthread_cond_signal(&interrupt_condition_);
+			pthread_mutex_unlock(&interrupt_lock_);
 			return ret;
 		}
-		if (!isStopping) {
-			videoPublisher->registerFillAACPacketCallback(fill_aac_packet_callback, this);
-			videoPublisher->registerFillVideoPacketCallback(fill_h264_packet_callback, this);
+		if (!stopping_) {
+			video_publisher_->registerFillAACPacketCallback(fill_aac_packet_callback, this);
+			video_publisher_->registerFillVideoPacketCallback(fill_h264_packet_callback, this);
 		} else {
 			LOGI("Client Cancel ...");
 			return CLIENT_CANCEL_CONNECT_ERR_CODE;
@@ -102,67 +104,67 @@ int VideoConsumerThread::init(char* videoOutputURI, int videoWidth, int videohei
 	return 0;
 }
 
-void VideoConsumerThread::releasePublisher() {
-	if (NULL != videoPublisher) {
-        videoPublisher->stop();
-        delete videoPublisher;
-        videoPublisher = NULL;
+void VideoConsumerThread::ReleasePublisher() {
+	if (NULL != video_publisher_) {
+		video_publisher_->Stop();
+        delete video_publisher_;
+        video_publisher_ = NULL;
 	}
 }
 
-void VideoConsumerThread::buildPublisherInstance() {
-	videoPublisher = new RecordingH264Publisher();
+void VideoConsumerThread::BuildPublisherInstance() {
+	video_publisher_ = new RecordingH264Publisher();
 }
 
-void VideoConsumerThread::stop() {
-	LOGI("enter VideoConsumerThread::stop...");
-	pthread_mutex_lock(&connectingLock);
-	if (isConnecting) {
+void VideoConsumerThread::Stop() {
+	LOGI("enter VideoConsumerThread::Stop...");
+	pthread_mutex_lock(&connecting_lock_);
+	if (connecting_) {
 		LOGI("before interruptPublisherPipe()");
-		videoPublisher->interruptPublisherPipe();
+		video_publisher_->interruptPublisherPipe();
 		LOGI("after interruptPublisherPipe()");
-		pthread_mutex_unlock(&connectingLock);
+		pthread_mutex_unlock(&connecting_lock_);
 
 		//等待init处理完
-		pthread_mutex_lock(&interruptLock);
-		pthread_cond_wait(&interruptCondition, &interruptLock);
-		pthread_mutex_unlock(&interruptLock);
+		pthread_mutex_lock(&interrupt_lock_);
+		pthread_cond_wait(&interrupt_condition_, &interrupt_lock_);
+		pthread_mutex_unlock(&interrupt_lock_);
 
-		LOGI("VideoConsumerThread::stop isConnecting return...");
+		LOGI("VideoConsumerThread::Stop connecting_ return...");
 		return;
 	}
-	pthread_mutex_unlock(&connectingLock);
+	pthread_mutex_unlock(&connecting_lock_);
 
 	int ret = -1;
 
-	isStopping = true;
-	packetPool->abortRecordingVideoPacketQueue();
-	aacPacketPool->abortAudioPacketQueue();
+	stopping_ = true;
+	packet_pool_->AbortRecordingVideoPacketQueue();
+    aac_packet_pool_->AbortAudioPacketQueue();
     long startEndingThreadTimeMills = platform_4_live::getCurrentTimeMills();
-	LOGI("before wait publisher encoder_ ...");
+	LOGI("before Wait publisher encoder_ ...");
 
-	if (videoPublisher != NULL){
-		videoPublisher->interruptPublisherPipe();
+	if (video_publisher_ != NULL){
+		video_publisher_->interruptPublisherPipe();
 	}
-	if ((ret = wait()) != 0) {
+	if ((ret = Wait()) != 0) {
 		LOGI("Couldn't cancel VideoConsumerThread: %d", ret);
 		//		return;
 	}
-	LOGI("after wait publisher encoder_ ... %d", (int)(platform_4_live::getCurrentTimeMills() - startEndingThreadTimeMills));
+	LOGI("after Wait publisher encoder_ ... %d", (int)(platform_4_live::getCurrentTimeMills() - startEndingThreadTimeMills));
 
-	this->releasePublisher();
+	this->ReleasePublisher();
 
-	packetPool->destoryRecordingVideoPacketQueue();
-	aacPacketPool->destoryAudioPacketQueue();
-	LOGI("leave VideoConsumerThread::stop...");
+	packet_pool_->DestroyRecordingVideoPacketQueue();
+	aac_packet_pool_->DestroyAudioPacketQueue();
+	LOGI("leave VideoConsumerThread::Stop...");
 }
 
-void VideoConsumerThread::handleRun(void* ptr) {
-	while (mRunning) {
-		LOGE("handleRun");
-		int ret = videoPublisher->encode();
+void VideoConsumerThread::HandleRun(void *ptr) {
+	while (running_) {
+		LOGE("HandleRun");
+		int ret = video_publisher_->Encode();
 		if (ret < 0) {
-			LOGI("videoPublisher->encode result is invalid, so we will stop encode...");
+			LOGI("video_publisher_->Encode result is invalid, so we will Stop Encode...");
 			break;
 		}
 	}

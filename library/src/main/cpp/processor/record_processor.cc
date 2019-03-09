@@ -3,66 +3,66 @@
 #define LOG_TAG "SongStudio RecordProcessor"
 
 RecordProcessor::RecordProcessor() {
-	audioSamples = NULL;
-	audioEncoder = NULL;
-	isRecordingFlag = false;
-	dataAccumulateTimeMills = 0;
+	audio_samples_ = NULL;
+	audio_encoder_ = NULL;
+	recording_flag_ = false;
+	data_accumulate_time_mills_ = 0;
 }
 
 RecordProcessor::~RecordProcessor() {
 }
 
-void RecordProcessor::initAudioBufferSize(int sampleRate, int audioBufferSizeParam) {
-	audioSamplesCursor = 0;
-	audioBufferSize = audioBufferSizeParam;
-	audioSampleRate = sampleRate;
-	audioSamples = new short[audioBufferSize];
-	packetPool = LiveCommonPacketPool::GetInstance();
-	corrector = new RecordCorrector();
-	audioBufferTimeMills = (float)audioBufferSize * 1000.0f / (float)audioSampleRate;
+void RecordProcessor::InitAudioBufferSize(int sampleRate, int audioBufferSizeParam) {
+	audio_samples_cursor_ = 0;
+	audio_buffer_size_ = audioBufferSizeParam;
+	audio_sample_rate_ = sampleRate;
+	audio_samples_ = new short[audio_buffer_size_];
+	packet_pool_ = LiveCommonPacketPool::GetInstance();
+	corrector_ = new RecordCorrector();
+	audio_buffer_time_mills_ = (float)audio_buffer_size_ * 1000.0f / (float)audio_sample_rate_;
 }
 
-void RecordProcessor::flushAudioBufferToQueue() {
-	if (audioSamplesCursor > 0) {
-		if(NULL == audioEncoder){
-			audioEncoder = new AudioProcessEncoderAdapter();
+void RecordProcessor::FlushAudioBufferToQueue() {
+	if (audio_samples_cursor_ > 0) {
+		if(NULL == audio_encoder_){
+			audio_encoder_ = new AudioProcessEncoderAdapter();
 			int audioChannels = 2;
 			int audioBitRate = 64 * 1024;
 			const char* audioCodecName = "libfdk_aac";
-			audioEncoder->init(packetPool, audioSampleRate, audioChannels, audioBitRate, audioCodecName);
+            audio_encoder_->Init(packet_pool_, audio_sample_rate_, audioChannels, audioBitRate, audioCodecName);
 		}
-		short* packetBuffer = new short[audioSamplesCursor];
+		short* packetBuffer = new short[audio_samples_cursor_];
 		if (NULL == packetBuffer) {
 			return;
 		}
-		memcpy(packetBuffer, audioSamples, audioSamplesCursor * sizeof(short));
+		memcpy(packetBuffer, audio_samples_, audio_samples_cursor_ * sizeof(short));
 		LiveAudioPacket * audioPacket = new LiveAudioPacket();
 		audioPacket->buffer = packetBuffer;
-		audioPacket->size = audioSamplesCursor;
-		packetPool->pushAudioPacketToQueue(audioPacket);
-		audioSamplesCursor = 0;
-		dataAccumulateTimeMills+=audioBufferTimeMills;
-//		LOGI("audioSamplesTimeMills is %.6f SampleCnt Cal timeMills %llu", audioSamplesTimeMills, dataAccumulateTimeMills);
+		audioPacket->size = audio_samples_cursor_;
+        packet_pool_->PushAudioPacketToQueue(audioPacket);
+		audio_samples_cursor_ = 0;
+		data_accumulate_time_mills_+=audio_buffer_time_mills_;
+//		LOGI("audio_samples_time_mills_ is %.6f SampleCnt Cal timeMills %llu", audio_samples_time_mills_, data_accumulate_time_mills_);
 		int correctDurationInTimeMills = 0;
-		if(corrector->detectNeedCorrect(dataAccumulateTimeMills, audioSamplesTimeMills, &correctDurationInTimeMills)){
+		if(corrector_->DetectNeedCorrect(data_accumulate_time_mills_, audio_samples_time_mills_, &correctDurationInTimeMills)){
 			//检测到有问题了, 需要进行修复
-			this->correctRecordBuffer(correctDurationInTimeMills);
+			this->CorrectRecordBuffer(correctDurationInTimeMills);
 		}
 	}
 }
 
-int RecordProcessor::correctRecordBuffer(int correctTimeMills) {
-	LOGI("RecordProcessor::correctRecordBuffer... correctTimeMills is %d", correctTimeMills);
-	int correctBufferSize = ((float)correctTimeMills / 1000.0f) * audioSampleRate;
-	LiveAudioPacket * audioPacket = getSilentDataPacket(correctBufferSize);
-	packetPool->pushAudioPacketToQueue(audioPacket);
-	LiveAudioPacket * accompanyPacket = getSilentDataPacket(correctBufferSize);
-	packetPool->pushAccompanyPacketToQueue(accompanyPacket);
-	dataAccumulateTimeMills+=correctTimeMills;
+int RecordProcessor::CorrectRecordBuffer(int correctTimeMills) {
+	LOGI("RecordProcessor::CorrectRecordBuffer... correctTimeMills is %d", correctTimeMills);
+	int correctBufferSize = ((float)correctTimeMills / 1000.0f) * audio_sample_rate_;
+	LiveAudioPacket * audioPacket = GetSilentDataPacket(correctBufferSize);
+    packet_pool_->PushAudioPacketToQueue(audioPacket);
+	LiveAudioPacket * accompanyPacket = GetSilentDataPacket(correctBufferSize);
+	packet_pool_->pushAccompanyPacketToQueue(accompanyPacket);
+	data_accumulate_time_mills_+=correctTimeMills;
 	return 0;
 }
 
-LiveAudioPacket* RecordProcessor::getSilentDataPacket(int audioBufferSize) {
+LiveAudioPacket* RecordProcessor::GetSilentDataPacket(int audioBufferSize) {
 	LiveAudioPacket * audioPacket = new LiveAudioPacket();
 	audioPacket->buffer = new short[audioBufferSize];
 	memset(audioPacket->buffer, 0, audioBufferSize * sizeof(short));
@@ -70,53 +70,53 @@ LiveAudioPacket* RecordProcessor::getSilentDataPacket(int audioBufferSize) {
 	return audioPacket;
 }
 
-int RecordProcessor::pushAudioBufferToQueue(short* samples, int size) {
+int RecordProcessor::PushAudioBufferToQueue(short *samples, int size) {
 	if (size <= 0) {
 		return size;
 	}
-	if(!isRecordingFlag){
-		isRecordingFlag = true;
-		startTimeMills = currentTimeMills();
+	if(!recording_flag_){
+		recording_flag_ = true;
+		start_time_mills_ = currentTimeMills();
 	}
 	int samplesCursor = 0;
 	int samplesCnt = size;
 	while (samplesCnt > 0) {
-		if ((audioSamplesCursor + samplesCnt) < audioBufferSize) {
-			this->cpyToAudioSamples(samples + samplesCursor, samplesCnt);
-			audioSamplesCursor += samplesCnt;
+		if ((audio_samples_cursor_ + samplesCnt) < audio_buffer_size_) {
+			this->CpyToAudioSamples(samples + samplesCursor, samplesCnt);
+			audio_samples_cursor_ += samplesCnt;
 			samplesCursor += samplesCnt;
 			samplesCnt = 0;
 		} else {
-			int subFullSize = audioBufferSize - audioSamplesCursor;
-			this->cpyToAudioSamples(samples + samplesCursor, subFullSize);
-			audioSamplesCursor += subFullSize;
+			int subFullSize = audio_buffer_size_ - audio_samples_cursor_;
+			this->CpyToAudioSamples(samples + samplesCursor, subFullSize);
+			audio_samples_cursor_ += subFullSize;
 			samplesCursor += subFullSize;
 			samplesCnt -= subFullSize;
-			flushAudioBufferToQueue();
+			FlushAudioBufferToQueue();
 		}
 	}
 	return size;
 }
 
-void RecordProcessor::cpyToAudioSamples(short* sourceBuffer, int cpyLength) {
-	if(0 == audioSamplesCursor){
-		audioSamplesTimeMills = currentTimeMills() - startTimeMills;
+void RecordProcessor::CpyToAudioSamples(short *sourceBuffer, int cpyLength) {
+	if(0 == audio_samples_cursor_){
+		audio_samples_time_mills_ = currentTimeMills() - start_time_mills_;
 	}
-	memcpy(audioSamples + audioSamplesCursor, sourceBuffer, cpyLength * sizeof(short));
+	memcpy(audio_samples_ + audio_samples_cursor_, sourceBuffer, cpyLength * sizeof(short));
 }
 
-void RecordProcessor::destroy() {
-	if(NULL != audioSamples){
-		delete[] audioSamples;
-		audioSamples = NULL;
+void RecordProcessor::Destroy() {
+	if(NULL != audio_samples_){
+		delete[] audio_samples_;
+		audio_samples_ = NULL;
 	}
-	if(NULL != audioEncoder){
-		audioEncoder->destroy();
-		delete audioEncoder;
-		audioEncoder = NULL;
+	if(NULL != audio_encoder_){
+		audio_encoder_->Destroy();
+		delete audio_encoder_;
+		audio_encoder_ = NULL;
 	}
-	if(NULL != corrector){
-		delete corrector;
-		corrector = NULL;
+	if(NULL != corrector_){
+		delete corrector_;
+		corrector_ = NULL;
 	}
 }

@@ -20,7 +20,7 @@
 #define PUBLISH_INVALID_FLAG -1
 #endif
 
-
+// TODO Rename
 class RecordingPublisher {
 public:
     RecordingPublisher();
@@ -31,7 +31,7 @@ public:
 
     int detectTimeout();
 
-    virtual int init(char *videoOutputURI,
+    virtual int Init(char *videoOutputURI,
                      int videoWidth, int videoHeight, float videoFrameRate, int videoBitRate,
                      int audioSampleRate, int audioChannels, int audioBitRate,
                      char *audio_codec_name,
@@ -56,10 +56,8 @@ public:
                                                void *context),
             void *context);
 
-    int encode();
-
-    virtual int stop();
-
+    int Encode();
+    virtual int Stop();
     void interruptPublisherPipe() {
         this->publishTimeout = PUBLISH_INVALID_FLAG;
     };

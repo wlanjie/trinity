@@ -45,7 +45,7 @@
 #define	NV_YUY2_G_V_UNKNOW     0.515
 #define	NV_YUY2_B_V_UNKNOW     0.100
 
-static char * vertexShaderStr =
+static const char * vertexShaderStr =
     "attribute highp vec2 posAttr;\n"
     "attribute highp vec2 texCoordAttr;\n"
     "varying highp vec2 texCoord;\n"
@@ -101,7 +101,7 @@ static char * vertexShaderStr =
     "uniform highp float sPerHalfTexel = 0.00069445;\n"
  */
 
-static char * convertToYUY2FragmentShaderStr =
+static const char * convertToYUY2FragmentShaderStr =
     "varying highp vec2 texCoord;\n"
     "uniform sampler2D sampler;\n"
     "uniform mediump vec4 coefY;\n"
@@ -137,35 +137,33 @@ public:
 	HostGPUCopier();
     virtual ~HostGPUCopier();
 
-    void copyYUY2Image(GLuint ipTex, byte* yuy2ImageBuffer, int width, int height);
-    void destroy();
+    void CopyYUY2Image(GLuint ipTex, byte *yuy2ImageBuffer, int width, int height);
+    void Destroy();
 private:
-    bool isRecording;
-    GLuint vertexShader;
-    GLuint pixelShader;
+    bool recording_;
+    GLuint vertex_shader_;
+    GLuint pixel_shader_;
 
-    GLuint FBO;
-    GLuint downloadTex;
+    GLuint fbo_;
+    GLuint download_texture_;
 
     char* mVertexShader;
     char* mFragmentShader;
-    GLuint mGLProgId;
+    GLuint prog_id_;
 
-    GLuint attrLoc_pos;
-    GLuint attrLoc_texCoord;
+    GLuint attrLoc_pos_;
+    GLuint attrLoc_texture_coord_;
     GLint mGLUniformTexture;
-    GLint uniformLoc_coefY;
-    GLint uniformLoc_coefU;
-    GLint uniformLoc_coefV;
+    GLint uniformLoc_coef_y_;
+    GLint uniformLoc_coef_u_;
+    GLint uniformLoc_coef_v_;
     GLint uniformLoc_sPerHalfTexel;
 
-    bool prepareConvertToYUY2Program();
-    void convertYUY2(GLuint ipTex, int width, int height);
-    void downloadImageFromTexture(GLuint texId, void *imageBuf, unsigned int imageWidth, unsigned int imageHeight);
-
-    int getBufferSizeInBytes(int width, int height);
-
-	void ensureTextureStorage(GLint internalFormat, const unsigned int yuy2Pairs, int height);
+    bool PrepareConvertToYUY2Program();
+    void ConvertYUY2(GLuint ipTex, int width, int height);
+    void DownloadImageFromTexture(GLuint texId, void *imageBuf, unsigned int imageWidth, unsigned int imageHeight);
+    int GetBufferSizeInBytes(int width, int height);
+	void EnsureTextureStorage(GLint internalFormat, const unsigned int yuy2Pairs, int height);
 };
 
 #endif // HOST_GPU_COPIER_H

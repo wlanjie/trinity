@@ -18,53 +18,43 @@ public:
 
     virtual ~AudioEncoderAdapter();
 
-    void init(LivePacketPool *pcmPacketPool, int audioSampleRate, int audioChannels,
+    void Init(LivePacketPool *pcmPacketPool, int audioSampleRate, int audioChannels,
               int audioBitRate, const char *audio_codec_name);
 
-    virtual void destroy();
+    virtual void Destroy();
 
 protected:
     /** 控制编码线程的状态量 **/
-    bool isEncoding;
+    bool encoding_;
     /** 编码线程的变量与方法 **/
-    AudioEncoder *audioEncoder;
-    pthread_t audioEncoderThread;
-
-    static void *startEncodeThread(void *ptr);
-
-    void startEncode();
-
+    AudioEncoder *audio_encoder_;
+    pthread_t audio_encoder_thread_;
+    static void *StartEncodeThread(void *ptr);
+    void StartEncode();
     /** 负责从pcmPacketPool中取数据, 调用编码器编码之后放入aacPacketPool中 **/
-    LivePacketPool *pcmPacketPool;
-    LiveAudioPacketPool *aacPacketPool;
+    LivePacketPool *pcm_packet_pool_;
+    LiveAudioPacketPool *aac_packet_pool_;
 
     /** 由于音频的buffer大小和每一帧的大小不一样，所以我们利用缓存数据的方式来 分次得到正确的音频数据 **/
-    int packetBufferSize;
-    short *packetBuffer;
-    int packetBufferCursor;
-    int audioSampleRate;
-    int audioChannels;
-    int audioBitRate;
-    char *audioCodecName;
-    double packetBufferPresentationTimeMills;
-
+    int packet_buffer_size_;
+    short *packet_buffer_;
+    int packet_buffer_cursor_;
+    int audio_sample_rate_;
+    int audio_channels_;
+    int audio_bit_rate_;
+    char *audio_codec_name_;
+    double packet_buffer_presentation_time_mills_;
     /** 安卓和iOS平台的输入声道是不一样的, 所以设置channelRatio这个参数 **/
-    float channelRatio;
-
-    int cpyToSamples(int16_t *samples, int samplesInShortCursor, int cpyPacketBufferSize,
+    float channel_ratio_;
+    int CpyToSamples(int16_t *samples, int samplesInShortCursor, int cpyPacketBufferSize,
                      double *presentationTimeMills);
-
-    int getAudioPacket();
-
-    virtual int processAudio() {
-        return packetBufferSize;
+    int GetAudioPacket();
+    virtual int ProcessAudio() {
+        return packet_buffer_size_;
     };
-
-    virtual void discardAudioPacket();
-
+    virtual void DiscardAudioPacket();
 public:
-    int
-    getAudioFrame(int16_t *samples, int frame_size, int nb_channels, double *presentationTimeMills);
+    int GetAudioFrame(int16_t *samples, int frame_size, int nb_channels, double *presentationTimeMills);
 
 };
 

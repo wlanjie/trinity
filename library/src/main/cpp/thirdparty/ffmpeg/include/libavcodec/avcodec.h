@@ -1033,7 +1033,7 @@ typedef struct RcOverride{
  * the codec would call get_format() with list that might contain HW accelerated
  * pixel formats (XvMC, VDPAU, VAAPI, etc). The application can pick any of them
  * including raw image format.
- * The application can use the passed context to determine bitstream version,
+ * The application can use the passed context_ to determine bitstream version,
  * chroma format, resolution etc.
  */
 #define CODEC_CAP_HWACCEL         0x0010
@@ -2732,17 +2732,17 @@ typedef struct AVCodecContext {
     int64_t timecode_frame_start;
 
     /* The RTP callback: This function is called    */
-    /* every time the encoder_ has a packet to send. */
+    /* every time the encoder_ has a packet_ to send. */
     /* It depends on the encoder_ if the data starts */
     /* with a Start Code (it should). H.263 does.   */
     /* mb_nb contains the number of macroblocks     */
     /* encoded in the RTP payload.                  */
     void (*rtp_callback)(struct AVCodecContext *avctx, void *data, int size, int mb_nb);
 
-    int rtp_payload_size;   /* The size of the RTP payload: the coder will  */
-                            /* do its best to deliver a chunk with size     */
-                            /* below rtp_payload_size, the chunk will start */
-                            /* with a start code on some codecs like H.263. */
+    int rtp_payload_size;   /* The Size of the RTP payload: the coder will  */
+                            /* do its best to deliver a chunk with Size     */
+                            /* below rtp_payload_size, the chunk will Start */
+                            /* with a Start code on some codecs like H.263. */
                             /* This doesn't take account of any particular  */
                             /* headers inside the transmitted RTP payload.  */
 
@@ -3328,11 +3328,11 @@ typedef struct AVCodecContext {
 
 #if !FF_API_LOWRES
     /**
-     * low resolution decoding, 1-> 1/2 size, 2->1/4 size
+     * low resolution decoding, 1-> 1/2 Size, 2->1/4 Size
      * - encoding: unused
      * - decoding: Set by user.
      * Code outside libavcodec should access this field using:
-     * av_codec_{get,set}_lowres(avctx)
+     * av_codec_{Get,set}_lowres(avctx)
      */
      int lowres;
 #endif
@@ -3798,8 +3798,8 @@ typedef struct AVSubtitleRect {
 
 typedef struct AVSubtitle {
     uint16_t format; /* 0 = graphics */
-    uint32_t start_display_time; /* relative to packet pts, in ms */
-    uint32_t end_display_time; /* relative to packet pts, in ms */
+    uint32_t start_display_time; /* relative to packet_ pts, in ms */
+    uint32_t end_display_time; /* relative to packet_ pts, in ms */
     unsigned num_rects;
     AVSubtitleRect **rects;
     int64_t pts;    ///< Same as packet pts, in AV_TIME_BASE
@@ -4533,16 +4533,16 @@ enum AVPictureStructure {
     AV_PICTURE_STRUCTURE_UNKNOWN,      //< unknown
     AV_PICTURE_STRUCTURE_TOP_FIELD,    //< coded as top field
     AV_PICTURE_STRUCTURE_BOTTOM_FIELD, //< coded as bottom field
-    AV_PICTURE_STRUCTURE_FRAME,        //< coded as frame
+    AV_PICTURE_STRUCTURE_FRAME,        //< coded as frame_
 };
 
 typedef struct AVCodecParserContext {
     void *priv_data;
     struct AVCodecParser *parser;
-    int64_t frame_offset; /* offset of the current frame */
+    int64_t frame_offset; /* offset of the current frame_ */
     int64_t cur_offset; /* current offset
                            (incremented by each av_parser_parse()) */
-    int64_t next_frame_offset; /* offset of the next frame */
+    int64_t next_frame_offset; /* offset of the next frame_ */
     /* video info */
     int pict_type; /* XXX: Put it back in AVCodecContext. */
     /**
@@ -4555,8 +4555,8 @@ typedef struct AVCodecParserContext {
      * It is used by codecs like H.264 to display telecined material.
      */
     int repeat_pict; /* XXX: Put it back in AVCodecContext. */
-    int64_t pts;     /* pts of the current frame */
-    int64_t dts;     /* dts of the current frame */
+    int64_t pts;     /* pts of the current frame_ */
+    int64_t dts;     /* dts of the current frame_ */
 
     /* private data */
     int64_t last_pts;
@@ -4719,7 +4719,7 @@ typedef struct AVCodecParser {
     int priv_data_size;
     int (*parser_init)(AVCodecParserContext *s);
     /* This callback never returns an error, a negative value means that
-     * the frame start was in a previous packet. */
+     * the frame_ Start was in a previous packet_. */
     int (*parser_parse)(AVCodecParserContext *s,
                         AVCodecContext *avctx,
                         const uint8_t **poutbuf, int *poutbuf_size,

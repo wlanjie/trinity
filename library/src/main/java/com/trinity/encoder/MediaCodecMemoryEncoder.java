@@ -172,7 +172,7 @@ public class MediaCodecMemoryEncoder {
 		try {
 			m_videoEncoder.start();
 		} catch (Exception e) {
-			Log.d(TAG, "Failed to start video encoder_");
+			Log.d(TAG, "Failed to Start video encoder_");
 			return false;
 		}
 
@@ -193,7 +193,7 @@ public class MediaCodecMemoryEncoder {
 		MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
 
 		if (m_verbose)
-			Log.d(TAG, "video input buffer length: " + frameData.length);
+			Log.d(TAG, "video input buffer_ length: " + frameData.length);
 
 		int encodedSize = 0;
 
@@ -210,14 +210,14 @@ public class MediaCodecMemoryEncoder {
 		} else {
 			// either all in use, or we timed out during initial setup
 			if (m_verbose)
-				Log.d(TAG, "video input buffer not available");
+				Log.d(TAG, "video input buffer_ not available");
 		}
 
 		int encoderStatus = m_videoEncoder.dequeueOutputBuffer(info, TIMEOUT_USEC);
 		
 		if (encoderStatus < 0) {
 			if (m_verbose)
-				Log.e(TAG, "can't encode frame");
+				Log.e(TAG, "can't Encode frame_");
 			
 			count++;
 		}
@@ -253,7 +253,7 @@ public class MediaCodecMemoryEncoder {
 			encodedSize = info.size;
 
 			if (m_verbose)
-				Log.d(TAG, "video encoderd size is: " + encodedSize);
+				Log.d(TAG, "video encoderd Size is: " + encodedSize);
 
 			val = encodedSize;
 
@@ -278,8 +278,8 @@ public class MediaCodecMemoryEncoder {
 		
 		boolean isEncodeAgain = false;
 		
-		// for this device, can't guarantee every input frame can encode out one packet,
-		// has to try encode again for this work around
+		// for this device, can't guarantee every input frame_ can Encode out one packet_,
+		// has to try Encode again for this work around
 		if ("HUAWEI".equals(manufacturer) && "HUAWEI MT2-L05".equals(model))
 			isEncodeAgain = true;
 		
@@ -305,14 +305,14 @@ public class MediaCodecMemoryEncoder {
 			} else {
 				// either all in use, or we timed out during initial setup
 				if (m_verbose)
-					Log.d(TAG, "video input buffer not available");
+					Log.d(TAG, "video input buffer_ not available");
 			}
 
 			encoderStatus = m_videoEncoder.dequeueOutputBuffer(info, TIMEOUT_USEC);
 			
 			if (encoderStatus < 0) {
 				if (m_verbose)
-					Log.e(TAG, "can't encode frame again");
+					Log.e(TAG, "can't Encode frame_ again");
 				
 				count1++;
 			}
@@ -348,7 +348,7 @@ public class MediaCodecMemoryEncoder {
 				encodedSize = info.size;
 
 				if (m_verbose)
-					Log.d(TAG, "video encoderd size is: " + encodedSize);
+					Log.d(TAG, "video encoderd Size is: " + encodedSize);
 
 				val = encodedSize;
 
@@ -370,7 +370,7 @@ public class MediaCodecMemoryEncoder {
 	
 	public void ClearUp() {
 		if (m_videoEncoder != null) {
-			// m_videoEncoder.flush();
+			// m_videoEncoder.Flush();
 			m_videoEncoder.stop();
 			m_videoEncoder.release();
 			m_videoEncoder = null;
@@ -380,8 +380,8 @@ public class MediaCodecMemoryEncoder {
 		m_outputEOS = false;	
 		
 		if (m_verbose) {
-			Log.d(TAG, "missing frame count is "+ count);
-			Log.d(TAG, "missing frame count again is "+ count1);
+			Log.d(TAG, "missing frame_ count is "+ count);
+			Log.d(TAG, "missing frame_ count again is "+ count1);
 		}
 	}
 
@@ -453,7 +453,7 @@ public class MediaCodecMemoryEncoder {
 				encodedSize = info.size;
 
 				if (m_verbose)
-					Log.d(TAG, "video encoderd size is: " + encodedSize);
+					Log.d(TAG, "video encoderd Size is: " + encodedSize);
 
 				val = encodedSize;
 
@@ -501,15 +501,15 @@ public class MediaCodecMemoryEncoder {
 		if ((manufacturer.compareTo("Xiaomi") == 0) && (model.indexOf("sc") != -1))
 			return true;
 		
-		// the encoder_ can't stop when flushing
+		// the encoder_ can't Stop when flushing
 		if ((manufacturer.compareTo("samsung") == 0) && (model.compareTo("GT-S7898I") == 0))
 			return true;
 		
-		// the encoder_ size returns a invalid value
+		// the encoder_ Size returns a invalid value
 		if ((manufacturer.compareTo("HUAWEI") == 0) && (model.compareTo("HUAWEI MT2-L01") == 0))
 			return true;
 		
-		// encode won't get output buffer
+		// Encode won't Get output buffer_
 		if ((manufacturer.compareTo("samsung") == 0) && (model.compareTo("GT-N7108") == 0))
 			return true;
 		

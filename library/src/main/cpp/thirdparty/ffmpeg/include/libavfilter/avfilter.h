@@ -1405,7 +1405,7 @@ int avfilter_graph_parse(AVFilterGraph *graph, const char *filters,
 /**
  * Add a graph described by a string to a graph.
  *
- * @param graph   the filter graph where to link the parsed graph context
+ * @param graph   the filter graph where to link the parsed graph context_
  * @param filters string to be parsed
  * @param inputs  pointer to a linked list to the inputs of the graph, may be NULL.
  *                If non-NULL, *inputs is updated to contain the list of open inputs

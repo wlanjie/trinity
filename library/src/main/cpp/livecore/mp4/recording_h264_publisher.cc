@@ -82,7 +82,7 @@ int RecordingH264Publisher::write_video_frame(AVFormatContext *oc, AVStream *st)
     LiveVideoPacket *h264Packet = NULL;
     fillH264PacketCallback(&h264Packet, fillH264PacketContext);
     if (h264Packet == NULL) {
-        LOGE("fillH264PacketCallback get null packet");
+        LOGE("fillH264PacketCallback Get null packet_");
         return VIDEO_QUEUE_ABORT_ERR_CODE;
     }
     int bufferSize = (h264Packet)->size;
@@ -182,12 +182,12 @@ int RecordingH264Publisher::write_video_frame(AVFormatContext *oc, AVStream *st)
         }
         /** 3、写出数据 **/
         if (pkt.size) {
-//        		LOGI("pkt : {%llu, %llu}", pkt.pts, pkt.dts);
+//        		LOGI("pkt_ : {%llu, %llu}", pkt_.pts, pkt_.dts);
             ret = RecordingPublisher::interleavedWriteFrame(oc, &pkt);
             if (ret != 0) {
-                LOGI("Error while writing Video frame: %s\n", av_err2str(ret));
+                LOGI("Error while writing Video frame_: %s\n", av_err2str(ret));
             }
-//            av_free_packet(&pkt);
+//            av_free_packet(&pkt_);
         } else {
             ret = 0;
         }
@@ -196,8 +196,8 @@ int RecordingH264Publisher::write_video_frame(AVFormatContext *oc, AVStream *st)
     return ret;
 }
 
-int RecordingH264Publisher::stop() {
-    int ret = RecordingPublisher::stop();
+int RecordingH264Publisher::Stop() {
+    int ret = RecordingPublisher::Stop();
     if (headerData) {
         delete [] headerData;
         headerData = NULL;

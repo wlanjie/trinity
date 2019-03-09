@@ -31,7 +31,7 @@ static inline GLuint loadShader(GLenum shaderType, const char* pSource) {
 					free(buf);
 				}
 			} else {
-				GL_LOGI( "Guessing at GL_INFO_LOG_LENGTH size\n");
+				GL_LOGI( "Guessing at GL_INFO_LOG_LENGTH Size\n");
 				char* buf = (char*) malloc(0x1000);
 				if (buf) {
 					glGetShaderInfoLog(shader, 0x1000, NULL, buf);
@@ -46,7 +46,7 @@ static inline GLuint loadShader(GLenum shaderType, const char* pSource) {
 	return shader;
 }
 
-static inline GLuint loadProgram(char* pVertexSource, char* pFragmentSource) {
+static inline GLuint loadProgram(const char* pVertexSource, const char* pFragmentSource) {
 	GLuint vertexShader = loadShader(GL_VERTEX_SHADER, pVertexSource);
 	if (!vertexShader) {
 		return 0;

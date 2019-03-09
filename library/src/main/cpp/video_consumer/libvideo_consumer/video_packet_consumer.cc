@@ -10,7 +10,7 @@ VideoPacketConsumerThread::VideoPacketConsumerThread() {
 VideoPacketConsumerThread::~VideoPacketConsumerThread() {
 }
 
-int VideoPacketConsumerThread::init(char *videoPath,
+int VideoPacketConsumerThread::Init(char *videoPath,
                                     int videoWidth, int videoHeight, int videoFrameRate,
                                     int videoBitRate,
                                     int audioSampleRate, int audioChannels, int audioBitRate,
@@ -19,11 +19,11 @@ int VideoPacketConsumerThread::init(char *videoPath,
                                     JavaVM *g_jvm, jobject obj) {
     this->g_jvm = g_jvm;
     this->obj = obj;
-    int ret = VideoConsumerThread::init(videoPath,
+    int ret = VideoConsumerThread::Init(videoPath,
                                         videoWidth, videoHeight, videoFrameRate, videoBitRate,
                                         audioSampleRate, audioChannels, audioBitRate,
                                         audio_codec_name, qualityStrategy);
-    packetPool = LiveCommonPacketPool::GetInstance();
+    packet_pool_ = LiveCommonPacketPool::GetInstance();
     if (ret < 0) {
         LOGI("VideoConsumerThread::Init failed...");
         return ret;
@@ -33,6 +33,6 @@ int VideoPacketConsumerThread::init(char *videoPath,
     return 1;
 }
 
-void VideoPacketConsumerThread::stop() {
-    VideoConsumerThread::stop();
+void VideoPacketConsumerThread::Stop() {
+    VideoConsumerThread::Stop();
 }

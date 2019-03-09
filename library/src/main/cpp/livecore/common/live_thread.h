@@ -9,25 +9,22 @@ public:
 	LiveThread();
 	~LiveThread();
 
-	void start();
-	void startAsync();
-	int wait();
-
-	void waitOnNotify();
-	void notify();
-	virtual void stop();
-
-protected:
-	bool mRunning;
-
-	virtual void handleRun(void* ptr);
+	void Start();
+	void StartAsync();
+	int Wait();
+	void WaitOnNotify();
+	void Notify();
+	virtual void Stop();
 
 protected:
-	pthread_t mThread;
-	pthread_mutex_t mLock;
-	pthread_cond_t mCondition;
+	bool running_;
+	virtual void HandleRun(void *ptr);
 
-	static void* startThread(void* ptr);
+protected:
+	pthread_t thread_;
+	pthread_mutex_t lock_;
+	pthread_cond_t condition_;
+	static void* StartThread(void *ptr);
 };
 
 #endif //LIVE_THREAD_H

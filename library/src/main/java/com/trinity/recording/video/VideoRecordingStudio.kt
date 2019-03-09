@@ -31,7 +31,7 @@ class VideoRecordingStudio(// 输出video的路径
 
   val audioBufferSize: Int
     get() {
-      // TODO size ?
+      // TODO Size ?
       return recorderService?.audioBufferSize ?: SAMPLE_RATE_IN_HZ
     }
 

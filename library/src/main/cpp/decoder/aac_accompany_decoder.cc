@@ -3,106 +3,106 @@
 #define LOG_TAG "AACAccompanyDecoder"
 
 AACAccompanyDecoder::AACAccompanyDecoder() {
-	accompanyFilePath = NULL;
-	avCodecContext = NULL;
-	avFormatContext = NULL;
-	swrBuffer = NULL;
-	swrContext = NULL;
-	pAudioFrame = NULL;
+	accompany_file_path_ = NULL;
+	codec_context_ = NULL;
+	format_context_ = NULL;
+	swr_buffer_ = NULL;
+	swr_context_ = NULL;
+	audio_frame_ = NULL;
 }
 
 AACAccompanyDecoder::~AACAccompanyDecoder() {
-	if(NULL != accompanyFilePath){
-		delete[] accompanyFilePath;
-		accompanyFilePath = NULL;
+	if(NULL != accompany_file_path_){
+		delete[] accompany_file_path_;
+		accompany_file_path_ = NULL;
 	}
 }
 
-int AACAccompanyDecoder::getMusicMeta(const char* fileString, int * metaData) {
-	init(fileString);
-	int sampleRate = avCodecContext->sample_rate;
+int AACAccompanyDecoder::GetMusicMeta(const char *fileString, int *metaData) {
+	Init(fileString);
+	int sampleRate = codec_context_->sample_rate;
 	LOGI("sampleRate is %d", sampleRate);
-	int bitRate = avCodecContext->bit_rate;
+	int bitRate = codec_context_->bit_rate;
 	LOGI("bitRate is %d", bitRate);
-	destroy();
+	Destroy();
 	metaData[0] = sampleRate;
 	metaData[1] = bitRate;
 	return 0;
 }
 
-void AACAccompanyDecoder::init(const char* fileString, int packetBufferSizeParam){
-	init(fileString);
-	packetBufferSize = packetBufferSizeParam;
+void AACAccompanyDecoder::Init(const char *fileString, int packetBufferSizeParam){
+	Init(fileString);
+	packet_buffer_size_ = packetBufferSizeParam;
 }
 
-void AACAccompanyDecoder::setPacketBufferSize(int packetBufferSizeParam){
-	packetBufferSize = packetBufferSizeParam;
+void AACAccompanyDecoder::SetPacketBufferSize(int packetBufferSizeParam){
+	packet_buffer_size_ = packetBufferSizeParam;
 }
 
-int AACAccompanyDecoder::init(const char* audioFile) {
+int AACAccompanyDecoder::Init(const char *audioFile) {
 	LOGI("enter AACAccompanyDecoder::Init");
-	audioBuffer = NULL;
-	position = -1.0f;
-	audioBufferCursor = 0;
-	audioBufferSize = 0;
-	swrContext = NULL;
-	swrBuffer = NULL;
-	swrBufferSize = 0;
-	seek_success_read_frame_success = true;
-	isNeedFirstFrameCorrectFlag = true;
-	firstFrameCorrectionInSecs = 0.0f;
-	avFormatContext = avformat_alloc_context();
+	audio_buffer_ = NULL;
+	position_ = -1.0f;
+	audio_buffer_cursor_ = 0;
+	audio_buffer_size_ = 0;
+	swr_context_ = NULL;
+	swr_buffer_ = NULL;
+	swr_buffer_size_ = 0;
+	seek_success_read_frame_success_ = true;
+	need_first_frame_correct_flag_ = true;
+	first_frame_correction_in_secs_ = 0.0f;
+	format_context_ = avformat_alloc_context();
 	LOGI("open accompany file %s....", audioFile);
 
-	if(NULL == accompanyFilePath){
+	if(NULL == accompany_file_path_){
 		int length = strlen(audioFile);
-		accompanyFilePath = new char[length + 1];
+		accompany_file_path_ = new char[length + 1];
 		//由于最后一个是'\0' 所以memset的长度要设置为length+1
-		memset(accompanyFilePath, 0, length + 1);
-		memcpy(accompanyFilePath, audioFile, length + 1);
+		memset(accompany_file_path_, 0, length + 1);
+		memcpy(accompany_file_path_, audioFile, length + 1);
 	}
 
-	int result = avformat_open_input(&avFormatContext, audioFile, NULL, NULL);
+	int result = avformat_open_input(&format_context_, audioFile, NULL, NULL);
 	if (result != 0) {
 		LOGI("can't open file %s result is %d", audioFile, result);
-		avFormatContext = NULL;
+		format_context_ = NULL;
 		return -1;
 	} else {
 		LOGI("open file %s success and result is %d", audioFile, result);
 	}
-	avFormatContext->max_analyze_duration = 50000;
+	format_context_->max_analyze_duration = 50000;
 	//检查在文件中的流的信息
-	result = avformat_find_stream_info(avFormatContext, NULL);
+	result = avformat_find_stream_info(format_context_, NULL);
 	if (result < 0) {
 		LOGI("fail avformat_find_stream_info result is %d", result);
 		return -1;
 	} else {
 		LOGI("sucess avformat_find_stream_info result is %d", result);
 	}
-	stream_index = av_find_best_stream(avFormatContext, AVMEDIA_TYPE_AUDIO, -1, -1, NULL, 0);
-	LOGI("stream_index is %d", stream_index);
+	stream_index_ = av_find_best_stream(format_context_, AVMEDIA_TYPE_AUDIO, -1, -1, NULL, 0);
+	LOGI("stream_index_ is %d", stream_index_);
 	// 没有音频
-	if (stream_index == -1) {
+	if (stream_index_ == -1) {
 		LOGI("no audio stream");
 		return -1;
 	}
 	//音频流
-	AVStream* audioStream = avFormatContext->streams[stream_index];
+	AVStream* audioStream = format_context_->streams[stream_index_];
 	if (audioStream->time_base.den && audioStream->time_base.num)
-		timeBase = av_q2d(audioStream->time_base);
+		time_base_ = av_q2d(audioStream->time_base);
 	else if (audioStream->codec->time_base.den && audioStream->codec->time_base.num)
-		timeBase = av_q2d(audioStream->codec->time_base);
+		time_base_ = av_q2d(audioStream->codec->time_base);
 	//获得音频流的解码器上下文
-	avCodecContext = audioStream->codec;
+	codec_context_ = audioStream->codec;
 	// 根据解码器上下文找到解码器
-	LOGI("avCodecContext->codec_id is %d AV_CODEC_ID_AAC is %d", avCodecContext->codec_id, AV_CODEC_ID_AAC);
-	AVCodec * avCodec = avcodec_find_decoder(avCodecContext->codec_id);
+	LOGI("codec_context_->codec_id is %d AV_CODEC_ID_AAC is %d", codec_context_->codec_id, AV_CODEC_ID_AAC);
+	AVCodec * avCodec = avcodec_find_decoder(codec_context_->codec_id);
 	if (avCodec == NULL) {
 		LOGI("Unsupported codec ");
 		return -1;
 	}
 	// 打开解码器
-	result = avcodec_open2(avCodecContext, avCodec, NULL);
+	result = avcodec_open2(codec_context_, avCodec, NULL);
 	if (result < 0) {
 		LOGI("fail avformat_find_stream_info result is %d", result);
 		return -1;
@@ -110,7 +110,7 @@ int AACAccompanyDecoder::init(const char* audioFile) {
 		LOGI("sucess avformat_find_stream_info result is %d", result);
 	}
 	//4、判断是否需要resampler
-	if (!audioCodecIsSupported()) {
+	if (!AudioCodecIsSupported()) {
 		LOGI("because of audio Codec Is Not Supported so we will Init swresampler...");
 		/**
 		 * 初始化resampler
@@ -124,62 +124,62 @@ int AACAccompanyDecoder::init(const char* audioFile) {
 		 * @param log_offset      logging level offset
 		 * @param log_ctx         parent logging context, can be NULL
 		 */
-		swrContext = swr_alloc_set_opts(NULL, av_get_default_channel_layout(OUT_PUT_CHANNELS), AV_SAMPLE_FMT_S16, avCodecContext->sample_rate,
-				av_get_default_channel_layout(avCodecContext->channels), avCodecContext->sample_fmt, avCodecContext->sample_rate, 0, NULL);
-		if (!swrContext || swr_init(swrContext)) {
-			if (swrContext)
-				swr_free(&swrContext);
-			avcodec_close(avCodecContext);
-			LOGI("Init resampler failed...");
+		swr_context_ = swr_alloc_set_opts(NULL, av_get_default_channel_layout(OUT_PUT_CHANNELS), AV_SAMPLE_FMT_S16, codec_context_->sample_rate,
+				av_get_default_channel_layout(codec_context_->channels), codec_context_->sample_fmt, codec_context_->sample_rate, 0, NULL);
+		if (!swr_context_ || swr_init(swr_context_)) {
+			if (swr_context_)
+				swr_free(&swr_context_);
+			avcodec_close(codec_context_);
+			LOGI("Init resampler_ failed...");
 			return -1;
 		}
 	}
-	LOGI("channels is %d sampleRate is %d", avCodecContext->channels, avCodecContext->sample_rate);
-	pAudioFrame = avcodec_alloc_frame();
+	LOGI("channels_ is %d sampleRate is %d", codec_context_->channels, codec_context_->sample_rate);
+	audio_frame_ = avcodec_alloc_frame();
 //	LOGI("leave AACAccompanyDecoder::Init");
 	return 1;
 }
 
-bool AACAccompanyDecoder::audioCodecIsSupported() {
-	return avCodecContext->sample_fmt == AV_SAMPLE_FMT_S16;
+bool AACAccompanyDecoder::AudioCodecIsSupported() {
+	return codec_context_->sample_fmt == AV_SAMPLE_FMT_S16;
 }
 
-LiveAudioPacket* AACAccompanyDecoder::decodePacket(){
-//	LOGI("MadDecoder::decodePacket packetBufferSize is %d", packetBufferSize);
-	short* samples = new short[packetBufferSize];
-//	LOGI("accompanyPacket buffer's addr is %x", samples);
-	int stereoSampleSize = readSamples(samples, packetBufferSize);
+LiveAudioPacket* AACAccompanyDecoder::DecodePacket(){
+//	LOGI("MadDecoder::DecodePacket packet_buffer_size_ is %d", packet_buffer_size_);
+	short* samples = new short[packet_buffer_size_];
+//	LOGI("accompanyPacket buffer_'s addr is %x", samples);
+	int stereoSampleSize = ReadSamples(samples, packet_buffer_size_);
 	LiveAudioPacket* samplePacket = new LiveAudioPacket();
 	if (stereoSampleSize > 0) {
 		//构造成一个packet
 		samplePacket->buffer = samples;
 		samplePacket->size = stereoSampleSize;
 		/** 这里由于每一个packet的大小不一样有可能是200ms 但是这样子position就有可能不准确了 **/
-		samplePacket->position = position;
+		samplePacket->position = position_;
 	} else {
 		samplePacket->size = -1;
 	}
 	return samplePacket;
 }
 
-int AACAccompanyDecoder::readSamples(short* samples, int size) {
-	if(seek_req){
-		audioBufferCursor = audioBufferSize;
+int AACAccompanyDecoder::ReadSamples(short *samples, int size) {
+	if(seek_req_){
+		audio_buffer_cursor_ = audio_buffer_size_;
 	}
 	int sampleSize = size;
 	while(size > 0){
-		if(audioBufferCursor < audioBufferSize){
-			int audioBufferDataSize = audioBufferSize - audioBufferCursor;
+		if(audio_buffer_cursor_ < audio_buffer_size_){
+			int audioBufferDataSize = audio_buffer_size_ - audio_buffer_cursor_;
 			int copySize = MIN(size, audioBufferDataSize);
-			memcpy(samples + (sampleSize - size), audioBuffer + audioBufferCursor, copySize * 2);
+			memcpy(samples + (sampleSize - size), audio_buffer_ + audio_buffer_cursor_, copySize * 2);
 			size -= copySize;
-			audioBufferCursor += copySize;
+			audio_buffer_cursor_ += copySize;
 		} else{
-			if(readFrame() < 0){
+			if(ReadFrame() < 0){
 				break;
 			}
 		}
-//		LOGI("size is %d", size);
+//		LOGI("Size is %d", Size);
 	}
 	int fillSize = sampleSize - size;
 	if(fillSize == 0){
@@ -189,21 +189,21 @@ int AACAccompanyDecoder::readSamples(short* samples, int size) {
 }
 
 
-void AACAccompanyDecoder::seek_frame(){
-	LOGI("\n seek frame firstFrameCorrectionInSecs is %.6f, seek_seconds=%f, position=%f \n", firstFrameCorrectionInSecs, seek_seconds, position);
-	float targetPosition = seek_seconds;
-	float currentPosition = position;
-	float frameDuration = duration;
+void AACAccompanyDecoder::SeekFrame(){
+	LOGI("\n seek frame_ first_frame_correction_in_secs_ is %.6f, seek_seconds_=%f, position_=%f \n", first_frame_correction_in_secs_, seek_seconds_, position_);
+	float targetPosition = seek_seconds_;
+	float currentPosition = position_;
+	float frameDuration = duration_;
 	if(targetPosition < currentPosition){
-		this->destroy();
-		this->init(accompanyFilePath);
+		this->Destroy();
+		this->Init(accompany_file_path_);
 		//TODO:这里GT的测试样本会差距25ms 不会累加
 		currentPosition = 0.0;
 	}
 	int readFrameCode = -1;
 	while (true) {
-		av_init_packet(&packet);
-		readFrameCode = av_read_frame(avFormatContext, &packet);
+		av_init_packet(&packet_);
+		readFrameCode = av_read_frame(format_context_, &packet_);
 		if (readFrameCode >= 0) {
 			currentPosition += frameDuration;
 			if (currentPosition >= targetPosition) {
@@ -211,83 +211,83 @@ void AACAccompanyDecoder::seek_frame(){
 			}
 		}
 //		LOGI("currentPosition is %.3f", currentPosition);
-		av_free_packet(&packet);
+		av_free_packet(&packet_);
 	}
-	seek_resp = true;
-	seek_req = false;
-	seek_success_read_frame_success = false;
+	seek_resp_ = true;
+	seek_req_ = false;
+	seek_success_read_frame_success_ = false;
 }
 
-int AACAccompanyDecoder::readFrame() {
-//	LOGI("enter AACAccompanyDecoder::readFrame");
-	if(seek_req){
-		this->seek_frame();
+int AACAccompanyDecoder::ReadFrame() {
+//	LOGI("enter AACAccompanyDecoder::ReadFrame");
+	if(seek_req_){
+		this->SeekFrame();
 	}
 	int ret = 1;
-	av_init_packet(&packet);
+	av_init_packet(&packet_);
 	int gotframe = 0;
 	int readFrameCode = -1;
 	while (true) {
-		readFrameCode = av_read_frame(avFormatContext, &packet);
-//		LOGI(" av_read_frame ...", duration);
+		readFrameCode = av_read_frame(format_context_, &packet_);
+//		LOGI(" av_read_frame ...", duration_);
 		if (readFrameCode >= 0) {
-			if (packet.stream_index == stream_index) {
-				int len = avcodec_decode_audio4(avCodecContext, pAudioFrame,
-						&gotframe, &packet);
-//				LOGI(" avcodec_decode_audio4 ...", duration);
+			if (packet_.stream_index == stream_index_) {
+				int len = avcodec_decode_audio4(codec_context_, audio_frame_,
+						&gotframe, &packet_);
+//				LOGI(" avcodec_decode_audio4 ...", duration_);
 				if (len < 0) {
-					LOGI("decode audio error, skip packet");
+					LOGI("decode audio error, skip packet_");
 				}
 				if (gotframe) {
 					int numChannels = OUT_PUT_CHANNELS;
 					int numFrames = 0;
 					void * audioData;
-					if (swrContext) {
+					if (swr_context_) {
 						const int ratio = 2;
 						const int bufSize = av_samples_get_buffer_size(NULL,
-								numChannels, pAudioFrame->nb_samples * ratio,
+								numChannels, audio_frame_->nb_samples * ratio,
 								AV_SAMPLE_FMT_S16, 1);
-						if (!swrBuffer || swrBufferSize < bufSize) {
-							swrBufferSize = bufSize;
-							swrBuffer = realloc(swrBuffer, swrBufferSize);
+						if (!swr_buffer_ || swr_buffer_size_ < bufSize) {
+							swr_buffer_size_ = bufSize;
+							swr_buffer_ = realloc(swr_buffer_, swr_buffer_size_);
 						}
-						byte *outbuf[2] = { (byte*) swrBuffer, NULL };
-						numFrames = swr_convert(swrContext, outbuf,
-								pAudioFrame->nb_samples * ratio,
-								(const uint8_t **) pAudioFrame->data,
-								pAudioFrame->nb_samples);
+						byte *outbuf[2] = { (byte*) swr_buffer_, NULL };
+						numFrames = swr_convert(swr_context_, outbuf,
+								audio_frame_->nb_samples * ratio,
+								(const uint8_t **) audio_frame_->data,
+								audio_frame_->nb_samples);
 						if (numFrames < 0) {
 							LOGI("fail resample audio");
 							ret = -1;
 							break;
 						}
-						audioData = swrBuffer;
+						audioData = swr_buffer_;
 					} else {
-						if (avCodecContext->sample_fmt != AV_SAMPLE_FMT_S16) {
+						if (codec_context_->sample_fmt != AV_SAMPLE_FMT_S16) {
 							LOGI("bucheck, audio format is invalid");
 							ret = -1;
 							break;
 						}
-						audioData = pAudioFrame->data[0];
-						numFrames = pAudioFrame->nb_samples;
+						audioData = audio_frame_->data[0];
+						numFrames = audio_frame_->nb_samples;
 					}
-					if(isNeedFirstFrameCorrectFlag && position >= 0){
-						float expectedPosition = position + duration;
-						float actualPosition = av_frame_get_best_effort_timestamp(pAudioFrame) * timeBase;
-						firstFrameCorrectionInSecs = actualPosition - expectedPosition;
-						isNeedFirstFrameCorrectFlag = false;
+					if(need_first_frame_correct_flag_ && position_ >= 0){
+						float expectedPosition = position_ + duration_;
+						float actualPosition = av_frame_get_best_effort_timestamp(audio_frame_) * time_base_;
+						first_frame_correction_in_secs_ = actualPosition - expectedPosition;
+						need_first_frame_correct_flag_ = false;
 					}
-					duration = av_frame_get_pkt_duration(pAudioFrame) * timeBase;
-					position = av_frame_get_best_effort_timestamp(pAudioFrame) * timeBase - firstFrameCorrectionInSecs;
-					if (!seek_success_read_frame_success) {
-						LOGI("position is %.6f", position);
-						actualSeekPosition = position;
-						seek_success_read_frame_success = true;
+					duration_ = av_frame_get_pkt_duration(audio_frame_) * time_base_;
+					position_ = av_frame_get_best_effort_timestamp(audio_frame_) * time_base_ - first_frame_correction_in_secs_;
+					if (!seek_success_read_frame_success_) {
+						LOGI("position_ is %.6f", position_);
+						actualSeekPosition = position_;
+						seek_success_read_frame_success_ = true;
 					}
-					audioBufferSize = numFrames * numChannels;
-//					LOGI(" \n duration is %.6f position is %.6f audioBufferSize is %d\n", duration, position, audioBufferSize);
-					audioBuffer = (short*) audioData;
-					audioBufferCursor = 0;
+					audio_buffer_size_ = numFrames * numChannels;
+//					LOGI(" \n duration_ is %.6f position_ is %.6f audio_buffer_size_ is %d\n", duration_, position_, audio_buffer_size_);
+					audio_buffer_ = (short*) audioData;
+					audio_buffer_cursor_ = 0;
 					break;
 				}
 			}
@@ -296,30 +296,30 @@ int AACAccompanyDecoder::readFrame() {
 			break;
 		}
 	}
-	av_free_packet(&packet);
+	av_free_packet(&packet_);
 	return ret;
 }
-void AACAccompanyDecoder::destroy() {
-	if (NULL != swrBuffer) {
-		free(swrBuffer);
-		swrBuffer = NULL;
-		swrBufferSize = 0;
+void AACAccompanyDecoder::Destroy() {
+	if (NULL != swr_buffer_) {
+		free(swr_buffer_);
+		swr_buffer_ = NULL;
+		swr_buffer_size_ = 0;
 	}
-	if (NULL != swrContext) {
-		swr_free(&swrContext);
-		swrContext = NULL;
+	if (NULL != swr_context_) {
+		swr_free(&swr_context_);
+		swr_context_ = NULL;
 	}
-	if (NULL != pAudioFrame) {
-		av_free (pAudioFrame);
-		pAudioFrame = NULL;
+	if (NULL != audio_frame_) {
+		av_free (audio_frame_);
+		audio_frame_ = NULL;
 	}
-	if (NULL != avCodecContext) {
-		avcodec_close(avCodecContext);
-		avCodecContext = NULL;
+	if (NULL != codec_context_) {
+		avcodec_close(codec_context_);
+		codec_context_ = NULL;
 	}
-	if (NULL != avFormatContext) {
-		LOGI("leave LiveReceiver::destroy");
-		avformat_close_input(&avFormatContext);
-		avFormatContext = NULL;
+	if (NULL != format_context_) {
+		LOGI("leave LiveReceiver::Destroy");
+		avformat_close_input(&format_context_);
+		format_context_ = NULL;
 	}
 }

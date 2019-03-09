@@ -2,44 +2,44 @@
 #define LOG_TAG "LiveVideoPacketQueue"
 
 LiveVideoPacketQueue::LiveVideoPacketQueue() {
-    init();
+    Init();
 }
 
 LiveVideoPacketQueue::LiveVideoPacketQueue(const char* queueNameParam) {
-    init();
-    queueName = queueNameParam;
+    Init();
+    queue_name_ = queueNameParam;
 }
 
-void LiveVideoPacketQueue::init() {
-    int initLockCode = pthread_mutex_init(&mLock, NULL);
-    int initConditionCode = pthread_cond_init(&mCondition, NULL);
-    mNbPackets = 0;
-    mFirst = NULL;
-    mLast = NULL;
-    mAbortRequest = false;
-    currentTimeMills = NON_DROP_FRAME_FLAG;
+void LiveVideoPacketQueue::Init() {
+    int initLockCode = pthread_mutex_init(&lock_, NULL);
+    int initConditionCode = pthread_cond_init(&condition_, NULL);
+    packet_size_ = 0;
+    first_ = NULL;
+    last_ = NULL;
+    abort_request_ = false;
+    current_time_mills_ = NON_DROP_FRAME_FLAG;
 }
 
 LiveVideoPacketQueue::~LiveVideoPacketQueue() {
-    LOGI("%s ~PacketQueue ....", queueName);
-    flush();
-    pthread_mutex_destroy(&mLock);
-    pthread_cond_destroy(&mCondition);
+    LOGI("%s ~PacketQueue ....", queue_name_);
+    Flush();
+    pthread_mutex_destroy(&lock_);
+    pthread_cond_destroy(&condition_);
 }
 
-int LiveVideoPacketQueue::size() {
-    pthread_mutex_lock(&mLock);
-    int size = mNbPackets;
-    pthread_mutex_unlock(&mLock);
+int LiveVideoPacketQueue::Size() {
+    pthread_mutex_lock(&lock_);
+    int size = packet_size_;
+    pthread_mutex_unlock(&lock_);
     return size;
 }
 
-void LiveVideoPacketQueue::flush() {
-    LOGI("\n %s flush .... and this time the queue_ size is %d \n", queueName, size());
+void LiveVideoPacketQueue::Flush() {
+    LOGI("\n %s Flush .... and this time the queue_ Size is %d \n", queue_name_, Size());
     LiveVideoPacketList *pkt, *pkt1;
     LiveVideoPacket *videoPacket;
-    pthread_mutex_lock(&mLock);
-    for (pkt = mFirst; pkt != NULL; pkt = pkt1) {
+    pthread_mutex_lock(&lock_);
+    for (pkt = first_; pkt != NULL; pkt = pkt1) {
         pkt1 = pkt->next;
         videoPacket = pkt->pkt;
         if (NULL != videoPacket) {
@@ -48,14 +48,14 @@ void LiveVideoPacketQueue::flush() {
         delete pkt;
         pkt = NULL;
     }
-    mLast = NULL;
-    mFirst = NULL;
-    mNbPackets = 0;
-    pthread_mutex_unlock(&mLock);
+    last_ = NULL;
+    first_ = NULL;
+    packet_size_ = 0;
+    pthread_mutex_unlock(&lock_);
 }
 
-int LiveVideoPacketQueue::put(LiveVideoPacket* pkt) {
-	if (mAbortRequest) {
+int LiveVideoPacketQueue::Put(LiveVideoPacket *pkt) {
+	if (abort_request_) {
 		delete pkt;
 		return -1;
 	}
@@ -64,27 +64,27 @@ int LiveVideoPacketQueue::put(LiveVideoPacket* pkt) {
 		return -1;
 	pkt1->pkt = pkt;
 	pkt1->next = NULL;
-	int getLockCode = pthread_mutex_lock(&mLock);
-	if (mLast == NULL) {
-		mFirst = pkt1;
+	int getLockCode = pthread_mutex_lock(&lock_);
+	if (last_ == NULL) {
+		first_ = pkt1;
 	} else {
-		mLast->next = pkt1;
+		last_->next = pkt1;
 	}
-	mLast = pkt1;
-	mNbPackets++;
-	pthread_cond_signal(&mCondition);
-	pthread_mutex_unlock(&mLock);
+	last_ = pkt1;
+	packet_size_++;
+	pthread_cond_signal(&condition_);
+	pthread_mutex_unlock(&lock_);
 	return 0;
 }
 
-int LiveVideoPacketQueue::discardGOP(int* discardVideoFrameCnt) {
+int LiveVideoPacketQueue::DiscardGOP(int *discardVideoFrameCnt) {
     int discardVideoFrameDuration = 0;
     (*discardVideoFrameCnt) = 0;
     LiveVideoPacketList *pktList = 0;
-    pthread_mutex_lock(&mLock);
+    pthread_mutex_lock(&lock_);
     bool isFirstFrameIDR = false;
-    if(mFirst){
-        LiveVideoPacket * pkt = mFirst->pkt;
+    if(first_){
+        LiveVideoPacket * pkt = first_->pkt;
         if (pkt) {
             int nalu_type = pkt->getNALUType();
             if (nalu_type == H264_NALU_TYPE_IDR_PICTURE){
@@ -93,28 +93,28 @@ int LiveVideoPacketQueue::discardGOP(int* discardVideoFrameCnt) {
         }
     }
     for (;;) {
-        if (mAbortRequest) {
+        if (abort_request_) {
             discardVideoFrameDuration = 0;
             break;
         }
-        pktList = mFirst;
+        pktList = first_;
         if (pktList) {
             LiveVideoPacket * pkt = pktList->pkt;
             if (pkt) {
                 int nalu_type = pkt->getNALUType();
-                if(NON_DROP_FRAME_FLAG == currentTimeMills){
-                    currentTimeMills = pkt->timeMills;
+                if(NON_DROP_FRAME_FLAG == current_time_mills_){
+                    current_time_mills_ = pkt->timeMills;
                 }
                 if (nalu_type == H264_NALU_TYPE_IDR_PICTURE){
                     if(isFirstFrameIDR){
                         isFirstFrameIDR = false;
-                        mFirst = pktList->next;
-                        if (!mFirst){
-                            mLast = NULL;
+                        first_ = pktList->next;
+                        if (!first_){
+                            last_ = NULL;
                         }
                         discardVideoFrameDuration += pkt->duration;
                         (*discardVideoFrameCnt)++;
-                        mNbPackets--;
+                        packet_size_--;
                         delete pkt;
                         pkt = NULL;
                         delete pktList;
@@ -124,13 +124,13 @@ int LiveVideoPacketQueue::discardGOP(int* discardVideoFrameCnt) {
                         break;
                     }
                 }else if (nalu_type == H264_NALU_TYPE_NON_IDR_PICTURE) {
-                    mFirst = pktList->next;
-                    if (!mFirst){
-                        mLast = NULL;
+                    first_ = pktList->next;
+                    if (!first_){
+                        last_ = NULL;
                     }
                     discardVideoFrameDuration += pkt->duration;
                     (*discardVideoFrameCnt)++;
-                    mNbPackets--;
+                    packet_size_--;
                     delete pkt;
                     pkt = NULL;
                     delete pktList;
@@ -145,31 +145,31 @@ int LiveVideoPacketQueue::discardGOP(int* discardVideoFrameCnt) {
             break;
         }
     }
-    pthread_mutex_unlock(&mLock);
+    pthread_mutex_unlock(&lock_);
     LOGI("discardVideoFrameDuration is %d", discardVideoFrameDuration);
     return discardVideoFrameDuration;
 }
 
-/* return < 0 if aborted, 0 if no packet and > 0 if packet.  */
-int LiveVideoPacketQueue::get(LiveVideoPacket **pkt, bool block) {
+/* return < 0 if aborted, 0 if no packet_ and > 0 if packet_.  */
+int LiveVideoPacketQueue::Get(LiveVideoPacket **pkt, bool block) {
     LiveVideoPacketList *pkt1;
     int ret;
-    int getLockCode = pthread_mutex_lock(&mLock);
+    int getLockCode = pthread_mutex_lock(&lock_);
     for (;;) {
-        if (mAbortRequest) {
+        if (abort_request_) {
             ret = -1;
             break;
         }
-        pkt1 = mFirst;
+        pkt1 = first_;
         if (pkt1) {
-            mFirst = pkt1->next;
-            if (!mFirst)
-                mLast = NULL;
-            mNbPackets--;
+            first_ = pkt1->next;
+            if (!first_)
+                last_ = NULL;
+            packet_size_--;
             *pkt = pkt1->pkt;
-            if(NON_DROP_FRAME_FLAG != currentTimeMills){
-                (*pkt)->timeMills = currentTimeMills;
-                currentTimeMills += (*pkt)->duration;
+            if(NON_DROP_FRAME_FLAG != current_time_mills_){
+                (*pkt)->timeMills = current_time_mills_;
+                current_time_mills_ += (*pkt)->duration;
             }
             delete pkt1;
             pkt1 = NULL;
@@ -179,16 +179,16 @@ int LiveVideoPacketQueue::get(LiveVideoPacket **pkt, bool block) {
             ret = 0;
             break;
         } else {
-            pthread_cond_wait(&mCondition, &mLock);
+            pthread_cond_wait(&condition_, &lock_);
         }
     }
-    pthread_mutex_unlock(&mLock);
+    pthread_mutex_unlock(&lock_);
     return ret;
 }
 
-void LiveVideoPacketQueue::abort() {
-    pthread_mutex_lock(&mLock);
-    mAbortRequest = true;
-    pthread_cond_signal(&mCondition);
-    pthread_mutex_unlock(&mLock);
+void LiveVideoPacketQueue::Abort() {
+    pthread_mutex_lock(&lock_);
+    abort_request_ = true;
+    pthread_cond_signal(&condition_);
+    pthread_mutex_unlock(&lock_);
 }

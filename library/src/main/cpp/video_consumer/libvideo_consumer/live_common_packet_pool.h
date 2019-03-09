@@ -7,8 +7,8 @@
 
 class LiveCommonPacketPool : public LivePacketPool {
 private:
-    LiveCommonPacketPool(); //注意:构造方法私有
-    static LiveCommonPacketPool *instance; //惟一实例
+    LiveCommonPacketPool();
+    static LiveCommonPacketPool *instance;
     /** 边录边合---伴奏的packet queue **/
     LiveAudioPacketQueue *accompanyPacketQueue;
     /** 解码线程---解码出来的伴奏的queue **/
@@ -22,7 +22,7 @@ private:
     short *accompanyBuffer;
     int accompanyBufferCursor;
 
-    virtual void recordDropVideoFrame(int discardVideoPacketDuration);
+    virtual void RecordDropVideoFrame(int discardVideoPacketDuration);
 
 public:
     static LiveCommonPacketPool *GetInstance(); //工厂方法(用来获得实例)

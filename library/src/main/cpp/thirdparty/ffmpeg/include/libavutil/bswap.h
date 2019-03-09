@@ -32,7 +32,7 @@
 
 #ifdef HAVE_AV_CONFIG_H
 
-#include "config.h"
+#include "config_.h"
 
 #if   ARCH_AARCH64
 #   include "aarch64/bswap.h"

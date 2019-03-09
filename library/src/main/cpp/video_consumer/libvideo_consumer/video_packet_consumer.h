@@ -11,14 +11,14 @@ public:
 
     virtual ~VideoPacketConsumerThread();
 
-    virtual int init(char *videoPath,
+    virtual int Init(char *videoPath,
                      int videoWidth, int videoHeight, int videoFrameRate, int videoBitRate,
                      int audioSampleRate, int audioChannels, int audioBitRate,
                      char *audio_codec_name,
                      int qualityStrategy,
                      JavaVM *g_jvm, jobject obj);
 
-    virtual void stop();
+    virtual void Stop();
 
 protected:
     JavaVM *g_jvm;

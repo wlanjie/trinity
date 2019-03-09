@@ -10,17 +10,17 @@ AudioProcessEncoderAdapter::AudioProcessEncoderAdapter() {
 AudioProcessEncoderAdapter::~AudioProcessEncoderAdapter() {
 }
 
-void AudioProcessEncoderAdapter::init(LivePacketPool* pcmPacketPool, int audioSampleRate, int audioChannels,
-		int audioBitRate, const char* audio_codec_name) {
+void AudioProcessEncoderAdapter::Init(LivePacketPool *pcmPacketPool, int audioSampleRate, int audioChannels,
+                                      int audioBitRate, const char *audio_codec_name) {
 	this->accompanyPacketPool = LiveCommonPacketPool::GetInstance();
 	musicMerger = new MusicMerger();
 	musicMerger->initWithAudioEffectProcessor(audioSampleRate);
-	AudioEncoderAdapter::init(pcmPacketPool, audioSampleRate, audioChannels, audioBitRate, audio_codec_name);
-	this->channelRatio = 2.0f;
+    AudioEncoderAdapter::Init(pcmPacketPool, audioSampleRate, audioChannels, audioBitRate, audio_codec_name);
+	this->channel_ratio_ = 2.0f;
 }
 
-int AudioProcessEncoderAdapter::processAudio() {
-	int ret = packetBufferSize;
+int AudioProcessEncoderAdapter::ProcessAudio() {
+	int ret = packet_buffer_size_;
 	//伴奏
 	LiveAudioPacket *accompanyPacket = NULL;
 	if (accompanyPacketPool->getAccompanyPacket(&accompanyPacket, true) < 0) {
@@ -30,16 +30,16 @@ int AudioProcessEncoderAdapter::processAudio() {
 		int accompanySampleSize = accompanyPacket->size;
 		short* accompanySamples = accompanyPacket->buffer;
 		long frameNum = accompanyPacket->frameNum;
-		ret = musicMerger->mixtureMusicBuffer(frameNum, accompanySamples, accompanySampleSize, packetBuffer, packetBufferSize);
+		ret = musicMerger->mixtureMusicBuffer(frameNum, accompanySamples, accompanySampleSize, packet_buffer_, packet_buffer_size_);
 		delete accompanyPacket;
 		accompanyPacket = NULL;
 	}
 	return ret;
 }
 
-void AudioProcessEncoderAdapter::destroy(){
+void AudioProcessEncoderAdapter::Destroy(){
 	accompanyPacketPool->abortAccompanyPacketQueue();
-	AudioEncoderAdapter::destroy();
+	AudioEncoderAdapter::Destroy();
 	accompanyPacketPool->destoryAccompanyPacketQueue();
 	if (NULL != musicMerger) {
 		musicMerger->stop();
@@ -48,8 +48,8 @@ void AudioProcessEncoderAdapter::destroy(){
 	}
 }
 
-void AudioProcessEncoderAdapter::discardAudioPacket() {
-	AudioEncoderAdapter::discardAudioPacket();
+void AudioProcessEncoderAdapter::DiscardAudioPacket() {
+	AudioEncoderAdapter::DiscardAudioPacket();
 	while (accompanyPacketPool->detectDiscardAccompanyPacket()) {
         if(!accompanyPacketPool->discardAccompanyPacket()){
             break;

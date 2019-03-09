@@ -7,7 +7,7 @@
 #include "opengl_media/texture/texture_frame.h"
 #include "egl_core/gl_tools.h"
 
-static char* NO_FILTER_VERTEX_SHADER =
+static const char* NO_FILTER_VERTEX_SHADER =
 		"attribute vec4 vPosition;\n"
 		"attribute vec4 vTexCords;\n"
 		"varying vec2 yuvTexCoords;\n"
@@ -18,7 +18,7 @@ static char* NO_FILTER_VERTEX_SHADER =
 		"  gl_Position = trans * vPosition;\n"
 		"}\n";
 
-static char* NO_FILTER_FRAGMENT_SHADER =
+static const char* NO_FILTER_FRAGMENT_SHADER =
 	    "varying vec2 yuvTexCoords;\n"
 	    "uniform sampler2D yuvTexSampler;\n"
 		"void main() {\n"
@@ -30,21 +30,21 @@ public:
 	TextureFrameCopier();
     virtual ~TextureFrameCopier();
 
-    virtual bool init() = 0;
-    virtual void renderWithCoords(TextureFrame* textureFrame, GLuint texId, GLfloat* vertexCoords, GLfloat* textureCoords) = 0;
-    virtual void destroy();
+    virtual bool Init() = 0;
+    virtual void RenderWithCoords(TextureFrame *textureFrame, GLuint texId, GLfloat *vertexCoords,
+								  GLfloat *textureCoords) = 0;
+    virtual void Destroy();
 
 protected:
-    char* mVertexShader;
-    char* mFragmentShader;
+    char* vertex_shader_;
+    char* fragment_shader_;
 
-	bool mIsInitialized;
-	GLuint mGLProgId;
-	GLuint mGLVertexCoords;
-	GLuint mGLTextureCoords;
-
-	GLint mUniformTexMatrix;
-	GLint mUniformTransforms;
+	bool initialized_;
+	GLuint prog_id_;
+	GLuint vertex_coords_;
+	GLuint texture_coords_;
+	GLint uniform_texture_matrix_;
+	GLint uniform_transforms_;
 };
 
 #endif // TEXTURE_FRAME_COPIER_H

@@ -127,7 +127,7 @@
 #include "libswresample/version.h"
 
 #if LIBSWRESAMPLE_VERSION_MAJOR < 1
-#define SWR_CH_MAX 32   ///< Maximum number of channels
+#define SWR_CH_MAX 32   ///< Maximum number of channels_
 #endif
 
 /**

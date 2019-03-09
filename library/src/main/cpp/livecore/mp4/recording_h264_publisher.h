@@ -9,7 +9,7 @@ public:
     virtual ~RecordingH264Publisher();
     
 public:
-    virtual int stop();
+    virtual int Stop();
     
 protected:
     int lastPresentationTimeMs;

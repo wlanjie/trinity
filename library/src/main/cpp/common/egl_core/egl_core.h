@@ -14,37 +14,26 @@ class EGLCore {
 public:
 	EGLCore();
     virtual ~EGLCore();
-
-    bool init();
-
-    bool init(EGLContext sharedContext);
-
-    bool initWithSharedContext();
-
-  	EGLSurface createWindowSurface(ANativeWindow* _window);
-    EGLSurface createOffscreenSurface(int width, int height);
-
-    bool makeCurrent(EGLSurface eglSurface);
-
-    void doneCurrent();
-
-    bool swapBuffers(EGLSurface eglSurface);
-
-    int querySurface(EGLSurface surface, int what);
-
-    int setPresentationTime(EGLSurface surface, khronos_stime_nanoseconds_t nsecs);
-
-    void releaseSurface(EGLSurface eglSurface);
-    void release();
-
-    EGLContext getContext();
-    EGLDisplay getDisplay();
-    EGLConfig getConfig();
+    bool Init();
+    bool Init(EGLContext sharedContext);
+    bool InitWithSharedContext();
+  	EGLSurface CreateWindowSurface(ANativeWindow *_window);
+    EGLSurface CreateOffscreenSurface(int width, int height);
+    bool MakeCurrent(EGLSurface eglSurface);
+    void DoneCurrent();
+    bool SwapBuffers(EGLSurface eglSurface);
+    int QuerySurface(EGLSurface surface, int what);
+    int SetPresentationTime(EGLSurface surface, khronos_stime_nanoseconds_t nsecs);
+    void ReleaseSurface(EGLSurface eglSurface);
+    void Release();
+    EGLContext GetContext();
+    EGLDisplay GetDisplay();
+    EGLConfig GetConfig();
 
 private:
-	EGLDisplay display;
-	EGLConfig config;
-	EGLContext context;
+	EGLDisplay display_;
+	EGLConfig config_;
+	EGLContext context_;
 
 	PFNEGLPRESENTATIONTIMEANDROIDPROC pfneglPresentationTimeANDROID;
 };

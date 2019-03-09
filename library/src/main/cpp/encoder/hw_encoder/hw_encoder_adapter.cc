@@ -10,73 +10,73 @@ namespace {
 
 HWEncoderAdapter::HWEncoderAdapter(JavaVM *g_jvm, jobject obj) {
 	LOGI("HWEncoderAdapter()");
-    outputBuffer = NULL;
-    queue = new MessageQueue("HWEncoder message queue_");
-    handler = new HWEncoderHandler(this, queue);
-    isNeedReconfigEncoder = false;
-    this->g_jvm = g_jvm;
-    this->obj = obj;
+    output_buffer_ = NULL;
+    queue_ = new MessageQueue("HWEncoder message queue_");
+    handler_ = new HWEncoderHandler(this, queue_);
+    need_reconfig_encoder_ = false;
+    this->vm_ = g_jvm;
+    this->obj_ = obj;
 
-    encoderWindow = NULL;
+    encoder_window_ = NULL;
 }
 
 HWEncoderAdapter::~HWEncoderAdapter() {
 }
 
-void HWEncoderAdapter::createHWEncoder(JNIEnv *env) {
-    jclass jcls = env->GetObjectClass(obj);
+void HWEncoderAdapter::CreateHWEncoder(JNIEnv *env) {
+    jclass jcls = env->GetObjectClass(obj_);
     jmethodID createMediaCodecSurfaceEncoderFunc = env->GetMethodID(jcls,
                                                                     "createMediaCodecSurfaceEncoderFromNative",
                                                                     "(IIII)V");
-    env->CallVoidMethod(obj, createMediaCodecSurfaceEncoderFunc, videoWidth, videoHeight,
-                        videoBitRate, (int) frameRate);
+    env->CallVoidMethod(obj_, createMediaCodecSurfaceEncoderFunc, video_width_, video_height_,
+                        video_bit_rate_, (int) frameRate);
     jmethodID getEncodeSurfaceFromNativeFunc = env->GetMethodID(jcls,
                                                                 "getEncodeSurfaceFromNative",
                                                                 "()Landroid/view/Surface;");
-    jobject surface = env->CallObjectMethod(obj,
+    jobject surface = env->CallObjectMethod(obj_,
                                             getEncodeSurfaceFromNativeFunc);
     // 2 create window surface
-    encoderWindow = ANativeWindow_fromSurface(env, surface);
-    encoderSurface = eglCore->createWindowSurface(encoderWindow);
-    renderer = new VideoGLSurfaceRender();
-    renderer->init(videoWidth, videoHeight);
+    encoder_window_ = ANativeWindow_fromSurface(env, surface);
+    encoder_surface_ = egl_core_->CreateWindowSurface(encoder_window_);
+    renderer_ = new VideoGLSurfaceRender();
+    renderer_->Init(video_width_, video_height_);
 }
 
-void HWEncoderAdapter::destroyHWEncoder(JNIEnv *env) {
-    jclass jcls = env->GetObjectClass(obj);
+void HWEncoderAdapter::DestroyHWEncoder(JNIEnv *env) {
+    jclass jcls = env->GetObjectClass(obj_);
     jmethodID closeMediaCodecFunc = env->GetMethodID(jcls, "closeMediaCodecCalledFromNative",
                                                      "()V");
-    env->CallVoidMethod(obj, closeMediaCodecFunc);
+    env->CallVoidMethod(obj_, closeMediaCodecFunc);
 
-    // 2 release surface
-    if (EGL_NO_SURFACE != encoderSurface) {
-        eglCore->releaseSurface(encoderSurface);
-        encoderSurface = EGL_NO_SURFACE;
+    // 2 Release surface
+    if (EGL_NO_SURFACE != encoder_surface_) {
+        egl_core_->ReleaseSurface(encoder_surface_);
+        encoder_surface_ = EGL_NO_SURFACE;
     }
 
-    //release window
-	if (NULL != encoderWindow) {
-		ANativeWindow_release(encoderWindow);
-		encoderWindow = NULL;
+    //Release window
+	if (NULL != encoder_window_) {
+		ANativeWindow_release(encoder_window_);
+		encoder_window_ = NULL;
 	}
 
-    if (renderer) {
+    if (renderer_) {
         LOGI("delete renderer_..");
-        renderer->dealloc();
-        delete renderer;
-        renderer = NULL;
+        renderer_->Destroy();
+        delete renderer_;
+        renderer_ = NULL;
     }
 }
 
-void HWEncoderAdapter::createEncoder(EGLCore *eglCore, int inputTexId) {
-    this->eglCore = eglCore;
-    this->texId = inputTexId;
+void HWEncoderAdapter::CreateEncoder(EGLCore *eglCore, int inputTexId) {
+    this->egl_core_ = eglCore;
+    this->texture_id_ = inputTexId;
     JNIEnv *env;
     int status = 0;
     bool needAttach = false;
-    status = g_jvm->GetEnv((void **) (&env), JNI_VERSION_1_4);
+    status = vm_->GetEnv((void **) (&env), JNI_VERSION_1_4);
     if (status < 0) {
-        if (g_jvm->AttachCurrentThread(&env, NULL) != JNI_OK) {
+        if (vm_->AttachCurrentThread(&env, NULL) != JNI_OK) {
             LOGE("%s: AttachCurrentThread() failed", __FUNCTION__);
             return;
         }
@@ -84,44 +84,44 @@ void HWEncoderAdapter::createEncoder(EGLCore *eglCore, int inputTexId) {
     }
 
     // 1 create encoder_
-    this->createHWEncoder(env);
+    this->CreateHWEncoder(env);
     // 2 allocate output memory
-    LOGI("width is %d %d", videoWidth, videoHeight);
+    LOGI("width is %d %d", video_width_, video_height_);
     jbyteArray tempOutputBuffer = env->NewByteArray(
-            videoWidth * videoHeight * 3 / 2);   // big enough
-    outputBuffer = static_cast<jbyteArray>(env->NewGlobalRef(tempOutputBuffer));
+            video_width_ * video_height_ * 3 / 2);   // big enough
+    output_buffer_ = static_cast<jbyteArray>(env->NewGlobalRef(tempOutputBuffer));
     env->DeleteLocalRef(tempOutputBuffer);
 
     if (needAttach) {
-        if (g_jvm->DetachCurrentThread() != JNI_OK) {
+        if (vm_->DetachCurrentThread() != JNI_OK) {
             LOGE("%s: DetachCurrentThread() failed", __FUNCTION__);
         }
     }
     // 3 Starting Encode Thread
-    pthread_create(&mEncoderThreadId, 0, encoderThreadCallback, this);
+    pthread_create(&encoder_thread_, 0, EncoderThreadCallback, this);
 
-    startTime = -1;
-    fpsChangeTime = -1;
+    start_time_ = -1;
+    fps_change_time_ = -1;
 
-    isEncoding = true;
-    isSPSUnWriteFlag = true;
+    encoding_ = true;
+    sps_unwrite_flag_ = true;
 }
 
-void *HWEncoderAdapter::encoderThreadCallback(void *myself) {
+void *HWEncoderAdapter::EncoderThreadCallback(void *myself) {
     HWEncoderAdapter *encoder = (HWEncoderAdapter *) myself;
-    encoder->encodeLoop();
+    encoder->EncodeLoop();
     pthread_exit(0);
     return 0;
 }
 
-void HWEncoderAdapter::reConfigureHWEncoder() {
+void HWEncoderAdapter::ReConfigureHWEncoder() {
     //调用Java端使用最新的码率重新配置MediaCodec
     JNIEnv *env;
     int status = 0;
     bool needAttach = false;
-    status = g_jvm->GetEnv((void **) (&env), JNI_VERSION_1_4);
+    status = vm_->GetEnv((void **) (&env), JNI_VERSION_1_4);
     if (status < 0) {
-        if (g_jvm->AttachCurrentThread(&env, NULL) != JNI_OK) {
+        if (vm_->AttachCurrentThread(&env, NULL) != JNI_OK) {
             LOGE("%s: AttachCurrentThread() failed", __FUNCTION__);
             return;
         }
@@ -129,193 +129,193 @@ void HWEncoderAdapter::reConfigureHWEncoder() {
     }
 //	jclass jcls = env->GetObjectClass(obj_);
 //	jmethodID reConfigureFunc = env->GetMethodID(jcls, "reConfigureFromNative", "(I)V");
-//	env->CallVoidMethod(obj_, reConfigureFunc, videoBitRate);
-    this->destroyHWEncoder(env);
-    this->createHWEncoder(env);
+//	env->CallVoidMethod(obj_, reConfigureFunc, video_bit_rate_);
+    this->DestroyHWEncoder(env);
+    this->CreateHWEncoder(env);
     if (needAttach) {
-        if (g_jvm->DetachCurrentThread() != JNI_OK) {
+        if (vm_->DetachCurrentThread() != JNI_OK) {
             LOGE("%s: DetachCurrentThread() failed", __FUNCTION__);
         }
     }
 }
 
-void HWEncoderAdapter::reConfigure(int maxBitRate, int avgBitRate, int fps) {
-    this->videoBitRate = maxBitRate;
-    isNeedReconfigEncoder = true;
+void HWEncoderAdapter::ReConfigure(int maxBitRate, int avgBitRate, int fps) {
+    this->video_bit_rate_ = maxBitRate;
+    need_reconfig_encoder_ = true;
 }
 
-void HWEncoderAdapter::hotConfigHWEncoder() {
-    LOGI("enter hotConfigHWEncoder");
+void HWEncoderAdapter::HotConfigHWEncoder() {
+    LOGI("enter HotConfigHWEncoder");
     JNIEnv *env;
     int status = 0;
     bool needAttach = false;
-    status = g_jvm->GetEnv((void **) (&env), JNI_VERSION_1_4);
+    status = vm_->GetEnv((void **) (&env), JNI_VERSION_1_4);
     if (status < 0) {
-        if (g_jvm->AttachCurrentThread(&env, NULL) != JNI_OK) {
+        if (vm_->AttachCurrentThread(&env, NULL) != JNI_OK) {
             LOGE("%s: AttachCurrentThread() failed", __FUNCTION__);
             return;
         }
         needAttach = true;
     }
-    jclass jcls = env->GetObjectClass(obj);
+    jclass jcls = env->GetObjectClass(obj_);
     jmethodID hotConfigMediaCodecFunc = env->GetMethodID(jcls,
                                                          "hotConfigEncoderFromNative",
                                                          "(IIII)V");
-    env->CallVoidMethod(obj, hotConfigMediaCodecFunc, videoWidth, videoHeight, videoBitRate,
+    env->CallVoidMethod(obj_, hotConfigMediaCodecFunc, video_width_, video_height_, video_bit_rate_,
                         (int) frameRate);
 
-    if (EGL_NO_SURFACE != encoderSurface) {
-        eglCore->releaseSurface(encoderSurface);
-        encoderSurface = EGL_NO_SURFACE;
+    if (EGL_NO_SURFACE != encoder_surface_) {
+        egl_core_->ReleaseSurface(encoder_surface_);
+        encoder_surface_ = EGL_NO_SURFACE;
     }
 
-    if (NULL != encoderWindow) {
-		ANativeWindow_release(encoderWindow);
-		encoderWindow = NULL;
+    if (NULL != encoder_window_) {
+		ANativeWindow_release(encoder_window_);
+		encoder_window_ = NULL;
 	}
     jmethodID getEncodeSurfaceFromNativeFunc = env->GetMethodID(jcls, "getEncodeSurfaceFromNative",
                                                                 "()Landroid/view/Surface;");
-    jobject surface = env->CallObjectMethod(obj, getEncodeSurfaceFromNativeFunc);
+    jobject surface = env->CallObjectMethod(obj_, getEncodeSurfaceFromNativeFunc);
     // 2 create window surface
-    encoderWindow = ANativeWindow_fromSurface(env, surface);
-    encoderSurface = eglCore->createWindowSurface(encoderWindow);
+    encoder_window_ = ANativeWindow_fromSurface(env, surface);
+    encoder_surface_ = egl_core_->CreateWindowSurface(encoder_window_);
 
     if (needAttach) {
-        if (g_jvm->DetachCurrentThread() != JNI_OK) {
+        if (vm_->DetachCurrentThread() != JNI_OK) {
             LOGE("%s: DetachCurrentThread() failed", __FUNCTION__);
         }
     }
 
-    LOGI("leave hotConfigHWEncoder");
+    LOGI("leave HotConfigHWEncoder");
 }
 
 
-void HWEncoderAdapter::hotConfig(int maxBitrate, int avgBitrate, int fps) {
-    this->videoBitRate = maxBitrate;
-    isNeedHotConfigEncoder = true;
-    resetFpsStartTimeIfNeed(fps);
+void HWEncoderAdapter::HotConfig(int maxBitrate, int avgBitrate, int fps) {
+    this->video_bit_rate_ = maxBitrate;
+    need_hot_config_encoder_ = true;
+    ResetFpsStartTimeIfNeed(fps);
 }
 
-void HWEncoderAdapter::destroyEncoder() {
+void HWEncoderAdapter::DestroyEncoder() {
     // 1 Stop Encoder Thread
-    handler->postMessage(new Message(MESSAGE_QUEUE_LOOP_QUIT_FLAG));
-    pthread_join(mEncoderThreadId, 0);
-    if (queue) {
-        queue->abort();
-        delete queue;
-        queue = NULL;
+    handler_->PostMessage(new Message(MESSAGE_QUEUE_LOOP_QUIT_FLAG));
+    pthread_join(encoder_thread_, 0);
+    if (queue_) {
+        queue_->Abort();
+        delete queue_;
+        queue_ = NULL;
     }
-    delete handler;
-    handler = NULL;
-    LOGI("before destroyEncoder");
+    delete handler_;
+    handler_ = NULL;
+    LOGI("before DestroyEncoder");
     JNIEnv *env;
     int status = 0;
     bool needAttach = false;
-    status = g_jvm->GetEnv((void **) (&env), JNI_VERSION_1_4);
+    status = vm_->GetEnv((void **) (&env), JNI_VERSION_1_4);
     if (status < 0) {
-        if (g_jvm->AttachCurrentThread(&env, NULL) != JNI_OK) {
+        if (vm_->AttachCurrentThread(&env, NULL) != JNI_OK) {
             LOGE("%s: AttachCurrentThread() failed", __FUNCTION__);
             return;
         }
         needAttach = true;
     }
-    // 2 release encoder_
-    this->destroyHWEncoder(env);
-    // 3 release output memory
-    if (outputBuffer)
-        env->DeleteGlobalRef(outputBuffer);
+    // 2 Release encoder_
+    this->DestroyHWEncoder(env);
+    // 3 Release output memory
+    if (output_buffer_)
+        env->DeleteGlobalRef(output_buffer_);
     if (needAttach) {
-        if (g_jvm->DetachCurrentThread() != JNI_OK) {
+        if (vm_->DetachCurrentThread() != JNI_OK) {
             LOGE("%s: DetachCurrentThread() failed", __FUNCTION__);
         }
     }
-    LOGI("after destroyEncoder");
+    LOGI("after DestroyEncoder");
 }
 
-void HWEncoderAdapter::encode() {
-    if (startTime == -1)
-        startTime = getCurrentTime();
+void HWEncoderAdapter::Encode() {
+    if (start_time_ == -1)
+        start_time_ = getCurrentTime();
 
-    if (fpsChangeTime == -1){
-        fpsChangeTime = getCurrentTime();
+    if (fps_change_time_ == -1){
+        fps_change_time_ = getCurrentTime();
     }
 
-    if (handler->getQueueSize() > MAX_ENCODER_Q_SIZE) {
-        LOGE("HWEncoderAdapter:dropped frame, encoder_ queue_ full");// See webrtc bug 2887.
+    if (handler_->GetQueueSize() > MAX_ENCODER_Q_SIZE) {
+        LOGE("HWEncoderAdapter:dropped frame_, encoder_ queue_ full");// See webrtc bug 2887.
         return;
     }
-    int64_t curTime = getCurrentTime() - startTime;
+    int64_t curTime = getCurrentTime() - start_time_;
     // need drop frames
-    int expectedFrameCount = (int) ((getCurrentTime() - fpsChangeTime) / 1000.0f * frameRate + 0.5f);
-    if (expectedFrameCount < encodedFrameCount) {
-//		LOGI("expectedFrameCount is %d while encodedFrameCount is %d", expectedFrameCount, encodedFrameCount);
+    int expectedFrameCount = (int) ((getCurrentTime() - fps_change_time_) / 1000.0f * frameRate + 0.5f);
+    if (expectedFrameCount < encoded_frame_count_) {
+//		LOGI("expectedFrameCount is %d while encoded_frame_count_ is %d", expectedFrameCount, encoded_frame_count_);
         return;
     }
-    encodedFrameCount++;
-    if (EGL_NO_SURFACE != encoderSurface) {
-        if (isNeedReconfigEncoder) {
-            reConfigureHWEncoder();
-            isNeedReconfigEncoder = false;
+    encoded_frame_count_++;
+    if (EGL_NO_SURFACE != encoder_surface_) {
+        if (need_reconfig_encoder_) {
+            ReConfigureHWEncoder();
+            need_reconfig_encoder_ = false;
         }
-        if (isNeedHotConfigEncoder) {
-            hotConfigHWEncoder();
-            isNeedHotConfigEncoder = false;
+        if (need_hot_config_encoder_) {
+            HotConfigHWEncoder();
+            need_hot_config_encoder_ = false;
         }
-        eglCore->makeCurrent(encoderSurface);
-        renderer->renderToView(texId, videoWidth, videoHeight);
-        eglCore->setPresentationTime(encoderSurface,
+        egl_core_->MakeCurrent(encoder_surface_);
+        renderer_->RenderToView(texture_id_, video_width_, video_height_);
+        egl_core_->SetPresentationTime(encoder_surface_,
                                      ((khronos_stime_nanoseconds_t) curTime) * 1000000);
-        handler->postMessage(new Message(FRAME_AVAILIBLE));
-        if (!eglCore->swapBuffers(encoderSurface)) {
-            LOGE("eglSwapBuffers(encoderSurface) returned error %d", eglGetError());
+        handler_->PostMessage(new Message(FRAME_AVAILIBLE));
+        if (!egl_core_->SwapBuffers(encoder_surface_)) {
+            LOGE("eglSwapBuffers(encoder_surface_) returned error %d", eglGetError());
         }
     }
 }
 
-void HWEncoderAdapter::encodeLoop() {
-    while (isEncoding) {
+void HWEncoderAdapter::EncodeLoop() {
+    while (encoding_) {
         Message *msg = NULL;
-        if (queue->dequeueMessage(&msg, true) > 0) {
-            if (MESSAGE_QUEUE_LOOP_QUIT_FLAG == msg->execute()) {
-                isEncoding = false;
+        if (queue_->DequeueMessage(&msg, true) > 0) {
+            if (MESSAGE_QUEUE_LOOP_QUIT_FLAG == msg->Execute()) {
+                encoding_ = false;
             }
             delete msg;
         }
     }
-    LOGI("HWEncoderAdapter encode Thread ending...");
+    LOGI("HWEncoderAdapter Encode Thread ending...");
 }
 
-void HWEncoderAdapter::drainEncodedData() {
+void HWEncoderAdapter::DrainEncodedData() {
     JNIEnv *env;
     int status = 0;
     bool needAttach = false;
-    status = g_jvm->GetEnv((void **) (&env), JNI_VERSION_1_4);
+    status = vm_->GetEnv((void **) (&env), JNI_VERSION_1_4);
     if (status < 0) {
-        if (g_jvm->AttachCurrentThread(&env, NULL) != JNI_OK) {
+        if (vm_->AttachCurrentThread(&env, NULL) != JNI_OK) {
             LOGE("%s: AttachCurrentThread() failed", __FUNCTION__);
             return;
         }
         needAttach = true;
     }
-    jclass jcls = env->GetObjectClass(obj);
+    jclass jcls = env->GetObjectClass(obj_);
     jmethodID drainEncoderFunc = env->GetMethodID(jcls, "pullH264StreamFromDrainEncoderFromNative",
                                                   "([B)J");
-    long bufferSize = (long) env->CallLongMethod(obj, drainEncoderFunc, outputBuffer);
-    byte *outputData = (uint8_t *) env->GetByteArrayElements(outputBuffer, 0);    // get data
+    long bufferSize = (long) env->CallLongMethod(obj_, drainEncoderFunc, output_buffer_);
+    byte *outputData = (uint8_t *) env->GetByteArrayElements(output_buffer_, 0);    // Get data
     int size = (int) bufferSize;
-//	LOGI("size is %d", size);
+//	LOGI("Size is %d", Size);
 
     jmethodID getLastPresentationTimeUsFunc = env->GetMethodID(jcls,
                                                                "getLastPresentationTimeUsFromNative",
                                                                "()J");
-    long long lastPresentationTimeUs = (long long) env->CallLongMethod(obj,
+    long long lastPresentationTimeUs = (long long) env->CallLongMethod(obj_,
                                                                        getLastPresentationTimeUsFunc);
 
     int timeMills = (int) (lastPresentationTimeUs / 1000.0f);
 
     // push to queue_
     int nalu_type = (outputData[4] & 0x1F);
-    LOGI("nalu_type is %d... size is %d", nalu_type, size);
+    LOGI("nalu_type is %d... Size is %d", nalu_type, size);
     if (H264_NALU_TYPE_SEQUENCE_PARAMETER_SET == nalu_type) {
         vector<NALUnit*>* units = new vector<NALUnit*>();
         parseH264SpsPps(outputData, size, units);
@@ -334,17 +334,17 @@ void HWEncoderAdapter::drainEncodedData() {
             videoPacket->size = idrSize;
             videoPacket->timeMills = timeMills;
             if (videoPacket->size > 0)
-                packetPool->pushRecordingVideoPacketToQueue(videoPacket);
+                packet_pool_->PushRecordingVideoPacketToQueue(videoPacket);
         }
-        if (isSPSUnWriteFlag) {
+        if (sps_unwrite_flag_) {
             LiveVideoPacket *videoPacket = new LiveVideoPacket();
             videoPacket->buffer = new byte[size];
             memcpy(videoPacket->buffer, outputData, size);
             videoPacket->size = size;
             videoPacket->timeMills = timeMills;
             if (videoPacket->size > 0)
-                packetPool->pushRecordingVideoPacketToQueue(videoPacket);
-            isSPSUnWriteFlag = false;
+                packet_pool_->PushRecordingVideoPacketToQueue(videoPacket);
+            sps_unwrite_flag_ = false;
         }
     } else  if (size > 0){
         //为了兼容有一些设备的MediaCodec编码出来的每一帧有多个Slice的问题(华为荣耀6，华为P9)
@@ -386,16 +386,16 @@ void HWEncoderAdapter::drainEncodedData() {
         videoPacket->size = frameBufferSize;
         videoPacket->timeMills = timeMills;
         if (videoPacket->size > 0)
-            packetPool->pushRecordingVideoPacketToQueue(videoPacket);
+            packet_pool_->PushRecordingVideoPacketToQueue(videoPacket);
     }
-    env->ReleaseByteArrayElements(outputBuffer, (jbyte *) outputData, 0);
+    env->ReleaseByteArrayElements(output_buffer_, (jbyte *) outputData, 0);
     if (needAttach) {
-        if (g_jvm->DetachCurrentThread() != JNI_OK) {
+        if (vm_->DetachCurrentThread() != JNI_OK) {
             LOGE("%s: DetachCurrentThread() failed", __FUNCTION__);
         }
     }
 
-    if (startEncodeTime == 0){
-        startEncodeTime = platform_4_live::getCurrentTimeSeconds();
+    if (start_encode_time_ == 0){
+        start_encode_time_ = platform_4_live::getCurrentTimeSeconds();
     }
 }

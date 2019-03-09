@@ -31,11 +31,11 @@ void RecordingPreviewRenderer::Init(int degress, bool isVFlip, int textureWidth,
 	this->camera_height_ = cameraHeight;
 
 	copier_ = new GPUTextureFrameCopier();
-	copier_->init();
+    copier_->Init();
 	renderer_ = new VideoGLSurfaceRender();
-	renderer_->init(textureWidth, textureHeight);
+    renderer_->Init(textureWidth, textureHeight);
 	camera_texutre_frame_ = new GPUTextureFrame();
-	camera_texutre_frame_->createTexture();
+    camera_texutre_frame_->CreateTexture();
 	glGenTextures(1, &input_texture_id_);
 	checkGlError("glGenTextures input_texture_id_");
 	glBindTexture(GL_TEXTURE_2D, input_texture_id_);
@@ -79,7 +79,7 @@ void RecordingPreviewRenderer::ProcessFrame(float position) {
 		glViewport(0, 0, camera_width_, camera_height_);
 
 	GLfloat* vertexCoords = this->GetVertexCoords();
-	copier_->renderWithCoords(camera_texutre_frame_, rotate_texture_id_, vertexCoords, texture_coords_);
+    copier_->RenderWithCoords(camera_texutre_frame_, rotate_texture_id_, vertexCoords, texture_coords_);
 
 	int rotateTexWidth = camera_width_;
 	int rotateTexHeight = camera_height_;
@@ -87,22 +87,22 @@ void RecordingPreviewRenderer::ProcessFrame(float position) {
 		rotateTexWidth = camera_height_;
 		rotateTexHeight = camera_width_;
 	}
-	renderer_->renderToAutoFitTexture(rotate_texture_id_, rotateTexWidth, rotateTexHeight, input_texture_id_);
+    renderer_->RenderToAutoFitTexture(rotate_texture_id_, rotateTexWidth, rotateTexHeight, input_texture_id_);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void RecordingPreviewRenderer::DrawToView(int videoWidth, int videoHeight) {
-	renderer_->renderToView(input_texture_id_, videoWidth, videoHeight);
+    renderer_->RenderToView(input_texture_id_, videoWidth, videoHeight);
 }
 
 void RecordingPreviewRenderer::DrawToViewWithAutoFit(int videoWidth, int videoHeight, int texWidth,
 													 int texHeight) {
-	renderer_->renderToViewWithAutofit(input_texture_id_, videoWidth, videoHeight, texWidth, texHeight);
+    renderer_->RenderToViewWithAutofit(input_texture_id_, videoWidth, videoHeight, texWidth, texHeight);
 }
 
 int RecordingPreviewRenderer::GetCameraTexId() {
 	if (camera_texutre_frame_) {
-		return camera_texutre_frame_->getDecodeTexId();
+		return camera_texutre_frame_->GetDecodeTexId();
 	}
 	return -1;
 }
@@ -110,14 +110,14 @@ int RecordingPreviewRenderer::GetCameraTexId() {
 void RecordingPreviewRenderer::Destroy(){
 	LOGI("enter RecordingPreviewRenderer::Destroy()");
 	if(copier_){
-		copier_->destroy();
+        copier_->Destroy();
 		delete copier_;
 		copier_ = NULL;
 	}
 	LOGI("after delete copier_");
 	if(renderer_) {
 		LOGI("delete renderer_..");
-		renderer_->dealloc();
+        renderer_->Destroy();
 		delete renderer_;
 		renderer_ = NULL;
 	}
@@ -131,7 +131,7 @@ void RecordingPreviewRenderer::Destroy(){
 		glDeleteBuffers(1, &fbo_);
 	}
 	if (camera_texutre_frame_ != NULL){
-		camera_texutre_frame_->dealloc();
+        camera_texutre_frame_->Dealloc();
 		delete camera_texutre_frame_;
 		camera_texutre_frame_ = NULL;
 	}

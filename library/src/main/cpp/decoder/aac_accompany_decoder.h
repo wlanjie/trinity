@@ -36,56 +36,53 @@ extern "C" {
 
 class AACAccompanyDecoder: public AccompanyDecoder {
 private:
-	AVFormatContext* avFormatContext;
-	AVCodecContext * avCodecContext;
-	int stream_index;
-	float timeBase;
-	AVFrame *pAudioFrame;
-	AVPacket packet;
-
-	char* accompanyFilePath;
-
-	bool seek_success_read_frame_success;
-	int packetBufferSize;
+	AVFormatContext* format_context_;
+	AVCodecContext * codec_context_;
+	int stream_index_;
+	float time_base_;
+	AVFrame *audio_frame_;
+	AVPacket packet_;
+	char* accompany_file_path_;
+	bool seek_success_read_frame_success_;
+	int packet_buffer_size_;
 
 	/** 每次解码出来的audioBuffer以及这个audioBuffer的时间戳以及当前类对于这个audioBuffer的操作情况 **/
-	short* audioBuffer;
-	float position;
-	int audioBufferCursor;
-	int audioBufferSize;
-	float duration;
-	bool isNeedFirstFrameCorrectFlag;
-	float firstFrameCorrectionInSecs;
+	short* audio_buffer_;
+	float position_;
+	int audio_buffer_cursor_;
+	int audio_buffer_size_;
+	float duration_;
+	bool need_first_frame_correct_flag_;
+	float first_frame_correction_in_secs_;
+	SwrContext *swr_context_;
+	void *swr_buffer_;
+	int swr_buffer_size_;
 
-	SwrContext *swrContext;
-	void *swrBuffer;
-	int swrBufferSize;
-
-	int readSamples(short* samples, int size);
-	int readFrame();
-	bool audioCodecIsSupported();
+	int ReadSamples(short *samples, int size);
+	int ReadFrame();
+	bool AudioCodecIsSupported();
 
 public:
 	AACAccompanyDecoder();
 	virtual ~AACAccompanyDecoder();
 
 	//获取采样率以及比特率
-	virtual int getMusicMeta(const char* fileString, int * metaData);
-	virtual int getSampleRate(){
+	virtual int GetMusicMeta(const char *fileString, int *metaData);
+	virtual int GetSampleRate(){
 		int sampleRate = -1;
-		if(NULL != avCodecContext){
-			sampleRate = avCodecContext->sample_rate;
+		if(NULL != codec_context_){
+			sampleRate = codec_context_->sample_rate;
 		}
 		return sampleRate;
 	};
 	//初始化这个decoder，即打开指定的mp3文件
-	int init(const char* fileString);
-	void setPacketBufferSize(int packetBufferSizeParam);
-	virtual void init(const char* fileString, int packetBufferSizeParam);
-	virtual LiveAudioPacket* decodePacket();
+	int Init(const char *fileString);
+	void SetPacketBufferSize(int packetBufferSizeParam);
+	virtual void Init(const char *fileString, int packetBufferSizeParam);
+	virtual LiveAudioPacket* DecodePacket();
 	//销毁这个decoder
-	virtual void destroy();
+	virtual void Destroy();
 
-	virtual void seek_frame();
+	virtual void SeekFrame();
 };
 #endif //AAC_ACCOMPANY_DECODER_H

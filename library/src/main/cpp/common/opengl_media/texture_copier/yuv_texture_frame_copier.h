@@ -7,7 +7,7 @@
 #include "texture_frame_copier.h"
 #include "matrix.h"
 
-static char* YUV_FRAME_FRAGMENT_SHADER =
+static const char* YUV_FRAME_FRAGMENT_SHADER =
 		"varying highp vec2 yuvTexCoords;\n"
 		"uniform sampler2D s_texture_y;\n"
 		"uniform sampler2D s_texture_u;\n"
@@ -29,8 +29,9 @@ public:
 	YUVTextureFrameCopier();
 	virtual ~YUVTextureFrameCopier();
 
-	virtual bool init();
-	virtual void renderWithCoords(TextureFrame* textureFrame, GLuint texId, GLfloat* vertexCoords, GLfloat* textureCoords);
+	virtual bool Init();
+	virtual void RenderWithCoords(TextureFrame *textureFrame, GLuint texId, GLfloat *vertexCoords,
+								  GLfloat *textureCoords);
 
 protected:
 	GLint _uniformSamplers[3];

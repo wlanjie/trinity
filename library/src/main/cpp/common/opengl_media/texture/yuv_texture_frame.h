@@ -11,19 +11,19 @@ class YUVTextureFrame: public TextureFrame {
 private:
 	bool writeFlag;
 	GLuint textures[3];
-	int initTexture();
+	int InitTexture();
 
-	VideoFrame *frame;
+	VideoFrame *frame_;
 public:
 	YUVTextureFrame();
 	virtual ~YUVTextureFrame();
 
-	void setVideoFrame(VideoFrame *yuvFrame);
+	void SetVideoFrame(VideoFrame *yuvFrame);
 
-	bool createTexture();
-	void updateTexImage();
-	bool bindTexture(GLint* uniformSamplers);
-	void dealloc();
+	bool CreateTexture();
+	void UpdateTexImage();
+	bool BindTexture(GLint *uniformSamplers);
+	void Dealloc();
 };
 
 #endif //VIDEO_PLAYER_YUV_TEXTURE_FRAME_H

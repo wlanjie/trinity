@@ -15,10 +15,10 @@ public:
 	TextureFrame();
 	virtual ~TextureFrame();
 
-	virtual bool createTexture() = 0;
-	virtual void updateTexImage() = 0;
-	virtual bool bindTexture(GLint* uniformSamplers) = 0;
-	virtual void dealloc() = 0;
+	virtual bool CreateTexture() = 0;
+	virtual void UpdateTexImage() = 0;
+	virtual bool BindTexture(GLint *uniformSamplers) = 0;
+	virtual void Dealloc() = 0;
 };
 
 #endif //VIDEO_PLAYER_TEXTURE_FRAME_H

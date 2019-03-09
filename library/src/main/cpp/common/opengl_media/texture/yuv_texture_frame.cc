@@ -10,22 +10,22 @@ YUVTextureFrame::~YUVTextureFrame() {
 
 }
 
-bool YUVTextureFrame::createTexture() {
-	LOGI("enter YUVTextureFrame::createTexture");
+bool YUVTextureFrame::CreateTexture() {
+	LOGI("enter YUVTextureFrame::CreateTexture");
 	textures[0] = 0;
 	textures[1] = 0;
 	textures[2] = 0;
-	int ret = initTexture();
+	int ret = InitTexture();
 	if (ret < 0) {
 		LOGI("Init texture failed...");
-		this->dealloc();
+		this->Dealloc();
 		return false;
 	}
 	return true;
 }
 
-void YUVTextureFrame::setVideoFrame(VideoFrame *yuvFrame){
-	this->frame = yuvFrame;
+void YUVTextureFrame::SetVideoFrame(VideoFrame *yuvFrame){
+	this->frame_ = yuvFrame;
 //	if (writeFlag) {
 //		LOGI("after glReadPixels... ");
 //		FILE* textureFrameFile = fopen("/mnt/sdcard/a_songstudio/texture.yuv", "wb+");
@@ -42,16 +42,16 @@ void YUVTextureFrame::setVideoFrame(VideoFrame *yuvFrame){
 //	}
 }
 
-void YUVTextureFrame::updateTexImage() {
+void YUVTextureFrame::UpdateTexImage() {
 //	LOGI("YUVTextureFrame::UpdateTexImage");
-	if (frame) {
-//		LOGI("start upload texture");
-		int frameWidth = frame->width;
-		int frameHeight = frame->height;
+	if (frame_) {
+//		LOGI("Start upload texture");
+		int frameWidth = frame_->width;
+		int frameHeight = frame_->height;
 		if(frameWidth % 16 != 0){
 			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		}
-		uint8_t *pixels[3] = { frame->luma, frame->chromaB, frame->chromaR };
+		uint8_t *pixels[3] = { frame_->luma, frame_->chromaB, frame_->chromaR };
 		int widths[3] = { frameWidth, frameWidth >> 1, frameWidth >> 1 };
 		int heights[3] = { frameHeight, frameHeight >> 1, frameHeight >> 1 };
 		for (int i = 0; i < 3; ++i) {
@@ -65,7 +65,7 @@ void YUVTextureFrame::updateTexImage() {
 	}
 }
 
-bool YUVTextureFrame::bindTexture(GLint* uniformSamplers) {
+bool YUVTextureFrame::BindTexture(GLint *uniformSamplers) {
 	for (int i = 0; i < 3; ++i) {
 		glActiveTexture(GL_TEXTURE0 + i);
 		glBindTexture(GL_TEXTURE_2D, textures[i]);
@@ -77,14 +77,14 @@ bool YUVTextureFrame::bindTexture(GLint* uniformSamplers) {
 	return true;
 }
 
-void YUVTextureFrame::dealloc() {
+void YUVTextureFrame::Dealloc() {
 	LOGI("enter YUVTextureFrame::Destroy");
 	if (textures[0]) {
 		glDeleteTextures(3, textures);
 	}
 }
 
-int YUVTextureFrame::initTexture() {
+int YUVTextureFrame::InitTexture() {
 	glGenTextures(3, textures);
 	for (int i = 0; i < 3; i++) {
 		glBindTexture(GL_TEXTURE_2D, textures[i]);

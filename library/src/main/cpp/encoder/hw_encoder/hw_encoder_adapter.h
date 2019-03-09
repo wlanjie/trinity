@@ -21,68 +21,59 @@ public:
 
     virtual ~HWEncoderAdapter();
 
-    virtual void createEncoder(EGLCore *eglCore, int inputTexId);
+    virtual void CreateEncoder(EGLCore *eglCore, int inputTexId);
 
-    virtual void destroyEncoder();
+    virtual void DestroyEncoder();
 
-    virtual void encode();
+    virtual void Encode();
 
-    void reConfigure(int maxBitRate, int avgBitRate, int fps);
+    void ReConfigure(int maxBitRate, int avgBitRate, int fps);
 
-    void reConfigureHWEncoder();
+    void ReConfigureHWEncoder();
 
-    void hotConfig(int maxBitrate, int avgBitrate, int fps);
+    void HotConfig(int maxBitrate, int avgBitrate, int fps);
 
-    void hotConfigHWEncoder();
+    void HotConfigHWEncoder();
 
-    void drainEncodedData();
+    void DrainEncodedData();
 
 private:
-    bool isEncoding;
-    bool isSPSUnWriteFlag;
-
-    JavaVM *g_jvm;
-    jobject obj;
-
-    EGLCore *eglCore;
-
-    HWEncoderHandler *handler;
-    MessageQueue *queue;
-
-    pthread_t mEncoderThreadId;
-
-    static void *encoderThreadCallback(void *myself);
-
-    void encodeLoop();
-
-    EGLSurface encoderSurface;
-    ANativeWindow *encoderWindow;
-    bool isNeedReconfigEncoder;
-    bool isNeedHotConfigEncoder;
-
-    jbyteArray outputBuffer;
-
-    int startEncodeTime = 0;
-
-    void destroyHWEncoder(JNIEnv *env);
-
-    void createHWEncoder(JNIEnv *env);
+    bool encoding_;
+    bool sps_unwrite_flag_;
+    JavaVM *vm_;
+    jobject obj_;
+    EGLCore *egl_core_;
+    HWEncoderHandler *handler_;
+    MessageQueue *queue_;
+    pthread_t encoder_thread_;
+    static void *EncoderThreadCallback(void *myself);
+    void EncodeLoop();
+    EGLSurface encoder_surface_;
+    ANativeWindow *encoder_window_;
+    bool need_reconfig_encoder_;
+    bool need_hot_config_encoder_;
+    jbyteArray output_buffer_;
+    int start_encode_time_ = 0;
+    void DestroyHWEncoder(JNIEnv *env);
+    void CreateHWEncoder(JNIEnv *env);
 };
 
 class HWEncoderHandler : public Handler {
 private:
-    HWEncoderAdapter *encoderAdapter;
+    HWEncoderAdapter *encoder_adapter_;
 public:
     HWEncoderHandler(HWEncoderAdapter *encoderAdapter, MessageQueue *queue) :
             Handler(queue) {
-        this->encoderAdapter = encoderAdapter;
+        this->encoder_adapter_ = encoderAdapter;
     }
 
-    void handleMessage(Message *msg) {
-        int what = msg->getWhat();
+    void HandleMessage(Message *msg) {
+        int what = msg->GetWhat();
         switch (what) {
             case FRAME_AVAILIBLE:
-                encoderAdapter->drainEncodedData();
+                encoder_adapter_->DrainEncodedData();
+                break;
+            default:
                 break;
         }
     }

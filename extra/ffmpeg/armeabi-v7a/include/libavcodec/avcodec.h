@@ -1180,7 +1180,7 @@ typedef struct RcOverride{
  * the codec would call get_format() with list that might contain HW accelerated
  * pixel formats (XvMC, VDPAU, VAAPI, etc). The application can pick any of them
  * including raw image format.
- * The application can use the passed context to determine bitstream version,
+ * The application can use the passed context_ to determine bitstream version,
  * chroma format, resolution etc.
  */
 #define CODEC_CAP_HWACCEL         0x0010

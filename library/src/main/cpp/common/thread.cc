@@ -19,7 +19,7 @@ void Thread::startAsync() {
 
 int Thread::wait() {
 	if (!mRunning) {
-		LOGI("mRunning is false so return 0");
+		LOGI("running_ is false so return 0");
 		return 0;
 	}
 	void* status;

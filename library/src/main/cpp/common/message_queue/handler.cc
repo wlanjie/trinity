@@ -10,12 +10,12 @@ Handler::Handler(MessageQueue* queue) {
 Handler::~Handler() {
 }
 
-int Handler::postMessage(Message* msg){
-	msg->handler = this;
-//	LOGI("enqueue msg what is %d", msg->getWhat());
-	return mQueue->enqueueMessage(msg);
+int Handler::PostMessage(Message *msg){
+	msg->handler_ = this;
+//	LOGI("enqueue msg what is %d", msg->GetWhat());
+	return mQueue->EnqueueMessage(msg);
 }
 
-int Handler::getQueueSize() {
-	return mQueue->size();
+int Handler::GetQueueSize() {
+	return mQueue->Size();
 }

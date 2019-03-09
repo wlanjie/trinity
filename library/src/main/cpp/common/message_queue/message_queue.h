@@ -4,7 +4,6 @@
 #include "common_tools.h"
 #include <pthread.h>
 
-
 #define MESSAGE_QUEUE_LOOP_QUIT_FLAG        19900909
 
 class Handler;
@@ -24,20 +23,20 @@ public:
 	Message(int what, int arg1, int arg2, void* obj);
 	~Message();
 
-	int execute();
-	int getWhat(){
+	int Execute();
+	int GetWhat(){
 		return what;
 	};
-	int getArg1(){
+	int GetArg1(){
 		return arg1;
 	};
-	int getArg2(){
+	int GetArg2(){
 		return arg2;
 	};
-	void* getObj(){
+	void* GetObj(){
 		return obj;
 	};
-	Handler* handler;
+	Handler* handler_;
 };
 
 typedef struct MessageNode {
@@ -51,13 +50,13 @@ typedef struct MessageNode {
 
 class MessageQueue {
 private:
-	MessageNode* mFirst;
-	MessageNode* mLast;
-	int mNbPackets;
-	bool mAbortRequest;
-	pthread_mutex_t mLock;
-	pthread_cond_t mCondition;
-	const char* queueName;
+	MessageNode* first_;
+	MessageNode* last_;
+	int packet_size_;
+	bool abort_request_;
+	pthread_mutex_t lock_;
+	pthread_cond_t condition_;
+	const char* queue_name_;
 
 
 public:
@@ -65,12 +64,12 @@ public:
 	MessageQueue(const char* queueNameParam);
 	~MessageQueue();
 
-	void init();
-	void flush();
-	int enqueueMessage(Message* msg);
-	int dequeueMessage(Message **msg, bool block);
-	int size();
-	void abort();
+	void Init();
+	void Flush();
+	int EnqueueMessage(Message *msg);
+	int DequeueMessage(Message **msg, bool block);
+	int Size();
+	void Abort();
 
 };
 

@@ -33,35 +33,30 @@ using namespace std;
 
 class VideoX264Encoder {
 private:
-	AVCodecContext* pCodecCtx;
-	AVCodec* pCodec;
-	AVPacket pkt;
+	AVCodecContext* codec_context_;
+	AVCodec* codec_;
+	AVPacket pkt_;
 	/** 扔给x264编码器编码的Frame **/
-	uint8_t* picture_buf;
-	AVFrame* pFrame;
+	uint8_t* picture_buf_;
+	AVFrame* frame_;
 	/** 从预览线程那边扔过来的YUY2数据 **/
-	uint8_t* yuy2_picture_buf;
-	AVFrame* video_yuy2_frame;
+	uint8_t* yuy2_picture_buf_;
+	AVFrame* video_yuy2_frame_;
+	LiveCommonPacketPool* packet_pool_;
+	bool sps_unwrite_flag_;
+	const int delta_ = 30*1000;
+	int frame_rate_;
+	int strategy_ = 0;
 
-	LiveCommonPacketPool* packetPool;
-	bool isSPSUnWriteFlag;
-	const int delta = 30*1000;
-
-	int frameRate;
-	int strategy = 0;
-
-	int allocVideoStream(int width, int height, int videoBitRate, float frameRate);
-	void allocAVFrame();
+	int AllocVideoStream(int width, int height, int videoBitRate, float frameRate);
+	void AllocAVFrame();
 public:
 	VideoX264Encoder(int strategy);
-
-
     virtual ~VideoX264Encoder();
-
-    int init(int width, int height, int videoBitRate, float frameRate, LiveCommonPacketPool* packetPool);
-    int encode(LiveVideoPacket *videoPacket);
-    void reConfigure(int bitRate);
-    void pushToQueue(byte* buffer, int size, int timeMills, int64_t pts, int64_t dts);
-    int destroy();
+    int Init(int width, int height, int videoBitRate, float frameRate, LiveCommonPacketPool *packetPool);
+    int Encode(LiveVideoPacket *videoPacket);
+    void ReConfigure(int bitRate);
+    void PushToQueue(byte *buffer, int size, int timeMills, int64_t pts, int64_t dts);
+    int Destroy();
 };
 #endif // VIDEO_ENCODER_X264_ENCODER_H

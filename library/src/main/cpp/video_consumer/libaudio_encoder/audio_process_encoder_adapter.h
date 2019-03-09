@@ -10,16 +10,16 @@ public:
 	AudioProcessEncoderAdapter();
     virtual ~AudioProcessEncoderAdapter();
 
-    void init(LivePacketPool* pcmPacketPool, int audioSampleRate, int audioChannels,
-    		int audioBitRate, const char* audio_codec_name);
+    void Init(LivePacketPool *pcmPacketPool, int audioSampleRate, int audioChannels,
+              int audioBitRate, const char *audio_codec_name);
 
-    virtual void destroy();
+    virtual void Destroy();
 protected:
 	LiveCommonPacketPool* accompanyPacketPool;
 	MusicMerger* musicMerger;
 
-    virtual void discardAudioPacket();
-    virtual int processAudio();
+    virtual void DiscardAudioPacket();
+    virtual int ProcessAudio();
 
 };
 #endif // AUDIO_PROCESS_ENCODER_ADAPTER_H

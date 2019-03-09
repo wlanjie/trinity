@@ -15,60 +15,50 @@ public:
 
     virtual ~SoftEncoderAdapter();
 
-    void createEncoder(EGLCore *eglCore, int inputTexId);
+    void CreateEncoder(EGLCore *eglCore, int inputTexId);
 
-    void encode();
+    void Encode();
 
     void renderLoop();
 
     void startEncode();
 
-    void destroyEncoder();
+    void DestroyEncoder();
 
-    void reConfigure(int maxBitRate, int avgBitRate, int fps);
+    void ReConfigure(int maxBitRate, int avgBitRate, int fps);
 
-    void hotConfig(int maxBitrate, int avgBitrate, int fps);
+    void HotConfig(int maxBitrate, int avgBitrate, int fps);
 
 private:
-    LiveYUY2PacketPool *yuy2PacketPool;
+    LiveYUY2PacketPool *yuy_packet_pool_;
     /** 这是创建RenderThread的context, 要共享给我们这个EGLContext线程 **/
-    EGLContext loadTextureContext;
+    EGLContext load_texture_context_;
     /** 操作纹理的FBO **/
-    GLuint mFBO;
-    GLuint outputTexId;
-    EGLCore *eglCore;
-    EGLSurface copyTexSurface;
+    GLuint fbo_;
+    GLuint output_texture_id_;
+    EGLCore *egl_core_;
+    EGLSurface copy_texture_surface_;
     enum DownloadThreadMessage {
         MSG_NONE = 0, MSG_WINDOW_SET, MSG_RENDER_LOOP_EXIT
     };
     /** 提示PreviewThread **/
-    pthread_mutex_t previewThreadLock;
-    pthread_cond_t previewThreadCondition;
-
-    pthread_mutex_t mLock;
-    pthread_cond_t mCondition;
-    enum DownloadThreadMessage _msg;
-    pthread_t imageDownloadThread;
-
-    int strategy = 0;
-
-    static void *startDownloadThread(void *ptr);
-
-    bool initialize();
-
-    void loadTexture();
-
-    void signalPreviewThread();
-
-    void destroy();
-
-    HostGPUCopier *hostGPUCopier;
-    int pixelSize;
-
-    VideoX264Encoder *encoder;
-    pthread_t x264EncoderThread;
-
-    static void *startEncodeThread(void *ptr);
+    pthread_mutex_t preview_thread_lock_;
+    pthread_cond_t preview_thread_condition_;
+    pthread_mutex_t lock_;
+    pthread_cond_t condition_;
+    enum DownloadThreadMessage msg_;
+    pthread_t image_download_thread_;
+    int strategy_ = 0;
+    static void *StartDownloadThread(void *ptr);
+    bool Initialize();
+    void LoadTexture();
+    void SignalPreviewThread();
+    void Destroy();
+    HostGPUCopier *host_gpu_copier_;
+    int pixel_size_;
+    VideoX264Encoder *encoder_;
+    pthread_t x264_encoder_thread_;
+    static void *StartEncodeThread(void *ptr);
 };
 
 #endif // RECORDING_X264_ENCODER_H

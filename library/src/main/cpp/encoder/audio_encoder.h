@@ -29,41 +29,28 @@ extern "C" {
 class AudioEncoder {
 private:
     /** 音频流数据输出 **/
-    AVCodecContext *avCodecContext;
-    AVFrame *encode_frame;
-    int64_t audio_next_pts;
-
-    uint8_t **audio_samples_data;
-    int audio_nb_samples;
-    int audio_samples_size;
-
-    int publishBitRate;
-    int audioChannels;
-    int audioSampleRate;
-
-    //初始化的时候，要进行的工作
-    int alloc_avframe();
-
-    int alloc_audio_stream(const char *codec_name);
-
-    /** 声明填充一帧PCM音频的方法 **/
-    typedef int (*fill_pcm_frame_callback)(int16_t *, int, int, double *, void *context);
-
-    /** 注册回调函数 **/
-    fill_pcm_frame_callback fillPCMFrameCallback;
-    void *fillPCMFrameContext;
+    AVCodecContext *codec_context_;
+    AVFrame *encode_frame_;
+    int64_t audio_next_pts_;
+    uint8_t **audio_samples_data_;
+    int audio_nb_samples_;
+    int audio_samples_size_;
+    int bit_rate_;
+    int channels_;
+    int sample_rate_;
+    int AllocAVFrame();
+    int AllocAudioStream(const char *codec_name);
+    typedef int (*FillPCMFrameCallback)(int16_t *, int, int, double *, void *context);
+    FillPCMFrameCallback fill_pcm_frame_callback_;
+    void *fill_pcm_frame_context_;
 public:
     AudioEncoder();
-
     virtual ~AudioEncoder();
-
-    int init(int bitRate, int channels, int sampleRate, const char *codec_name,
-             int (*fill_pcm_frame_callback)(int16_t *, int, int, double *, void *context),
+    int Init(int bitRate, int channels, int sampleRate, const char *codec_name,
+             int (*FillPCMFrameCallback)(int16_t *, int, int, double *, void *context),
              void *context);
-
-    int encode(LiveAudioPacket **audioPacket);
-
-    void destroy();
+    int Encode(LiveAudioPacket **audioPacket);
+    void Destroy();
 };
 
 #endif //AUDIO_ENCODER_H

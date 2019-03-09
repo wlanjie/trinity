@@ -1,27 +1,24 @@
-#ifndef 	VIDEO_PLAYER_GPU_TEXTURE_FRAME_H
+#ifndef VIDEO_PLAYER_GPU_TEXTURE_FRAME_H
 #define VIDEO_PLAYER_GPU_TEXTURE_FRAME_H
 
 #include "texture_frame.h"
 
-/**
- * Video Host Texture
- */
 class GPUTextureFrame: public TextureFrame {
 private:
-	GLuint decodeTexId;
-	int initTexture();
+	GLuint decode_texture_id_;
+	int InitTexture();
 
 public:
 	GPUTextureFrame();
 	virtual ~GPUTextureFrame();
 
-	bool createTexture();
-	void updateTexImage();
-	bool bindTexture(GLint* uniformSamplers);
-	void dealloc();
+	bool CreateTexture();
+	void UpdateTexImage();
+	bool BindTexture(GLint *uniformSamplers);
+	void Dealloc();
 
-	GLuint getDecodeTexId() {
-		return decodeTexId;
+	GLuint GetDecodeTexId() {
+		return decode_texture_id_;
 	};
 
 };

@@ -103,7 +103,7 @@ public class MediaCodecSurfaceEncoder {
                 mInputSurface = mEncoder.createInputSurface();
                 mEncoder.start();
 
-                Log.i(TAG, String.format("HotConfig success bitRate:%d, frameRate:%d", bitRate, frameRate));
+                Log.i(TAG, String.format("HotConfig success bitRate:%d, frame_rate_:%d", bitRate, frameRate));
             } catch (Exception e) {
                 throw e;
             }
@@ -199,7 +199,7 @@ public class MediaCodecSurfaceEncoder {
 
     /**
      * Drains all pending output from the decoder, and adds it to the circular
-     * buffer.
+     * buffer_.
      *
      */
     public void drainEncoder() {
@@ -225,7 +225,7 @@ public class MediaCodecSurfaceEncoder {
                 throw new RuntimeException("encoderOutputBuffer " + encoderStatus + " was null");
             }
             if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
-                // The codec config data was pulled out when we got the
+                // The codec config_ data was pulled out when we got the
                 // INFO_OUTPUT_FORMAT_CHANGED status. The MediaMuxer won't
                 // accept
                 // a single big blob -- it wants separate csd-0/csd-1 chunks --
@@ -245,7 +245,7 @@ public class MediaCodecSurfaceEncoder {
                                 "sent " + mBufferInfo.size + " bytes to muxer, ts=" + mBufferInfo.presentationTimeUs);
                     }
                 } else {
-                    Log.i(TAG, "why mBufferInfo.size is equals 0");
+                    Log.i(TAG, "why mBufferInfo.Size is equals 0");
                 }
             }
             mEncoder.releaseOutputBuffer(encoderStatus, false);
@@ -281,13 +281,13 @@ public class MediaCodecSurfaceEncoder {
                     throw new RuntimeException("encoderOutputBuffer " + encoderStatus + " was null");
                 }
                 if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
-                    // The codec config data was pulled out when we got the
+                    // The codec config_ data was pulled out when we got the
                     // INFO_OUTPUT_FORMAT_CHANGED status. The MediaMuxer won't
                     // accept
                     // a single big blob -- it wants separate csd-0/csd-1 chunks --
                     // so simply saving this off won't work.
                     if (VERBOSE)
-                        Log.d(TAG, "ignoring BUFFER_FLAG_CODEC_CONFIG, mBufferInfo.size = " + mBufferInfo.size);
+                        Log.d(TAG, "ignoring BUFFER_FLAG_CODEC_CONFIG, mBufferInfo.Size = " + mBufferInfo.size);
 
                     if (mBufferInfo.size != 0) {
                         encodedData.position(mBufferInfo.offset);
@@ -297,7 +297,7 @@ public class MediaCodecSurfaceEncoder {
 
                         encodedData.get(returnedData, 0, mBufferInfo.size);
                     } else {
-                        Log.i(TAG, "why mBufferInfo.size is equals 0");
+                        Log.i(TAG, "why mBufferInfo.Size is equals 0");
                     }
 
                     mBufferInfo.size = 0;
@@ -323,7 +323,7 @@ public class MediaCodecSurfaceEncoder {
                                     "sent " + mBufferInfo.size + " bytes to muxer, ts=" + mBufferInfo.presentationTimeUs);
                         }
                     } else {
-                        Log.i(TAG, "why mBufferInfo.size is equals 0");
+                        Log.i(TAG, "why mBufferInfo.Size is equals 0");
                     }
                 } else {
                     Log.d(TAG, "mBufferInfo.presentationTimeUs < lastPresentationTimeUs");

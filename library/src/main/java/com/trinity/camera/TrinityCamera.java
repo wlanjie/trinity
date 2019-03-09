@@ -239,7 +239,7 @@ public class TrinityCamera {
 		return isSupportPreviewSize;
 	}
 
-	/** A safe way to get an instance of the Camera object. */
+	/** A safe way to Get an instance_ of the Camera object. */
 	private Camera getCameraInstance(final int id) throws CameraParamSettingException {
 		Log.i("problem", "getCameraInstance id is" + id);
 		Camera c = null;

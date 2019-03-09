@@ -102,7 +102,7 @@
 /* misc math functions */
 
 #ifdef HAVE_AV_CONFIG_H
-#   include "config.h"
+#   include "config_.h"
 #   include "intmath.h"
 #endif
 

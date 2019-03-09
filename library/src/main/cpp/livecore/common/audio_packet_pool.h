@@ -5,22 +5,21 @@
 class LiveAudioPacketPool {
 protected:
 	LiveAudioPacketPool(); //注意:构造方法私有
-    static LiveAudioPacketPool* instance; //惟一实例
+    static LiveAudioPacketPool* instance_; //惟一实例
     /** 边录边合---人声的packet queue **/
-    LiveAudioPacketQueue* audioPacketQueue;
+    LiveAudioPacketQueue* audio_packet_queue_;
 
 public:
     static LiveAudioPacketPool* GetInstance(); //工厂方法(用来获得实例)
     virtual ~LiveAudioPacketPool();
 
     /** 人声的packet queue的所有操作 **/
-    virtual void initAudioPacketQueue();
-    virtual void abortAudioPacketQueue();
-    virtual void destoryAudioPacketQueue();
-    virtual int getAudioPacket(LiveAudioPacket **audioPacket, bool block);
-    virtual void pushAudioPacketToQueue(LiveAudioPacket* audioPacket);
-    virtual int getAudioPacketQueueSize();
-
+    virtual void InitAudioPacketQueue();
+    virtual void AbortAudioPacketQueue();
+    virtual void DestroyAudioPacketQueue();
+    virtual int GetAudioPacket(LiveAudioPacket **audioPacket, bool block);
+    virtual void PushAudioPacketToQueue(LiveAudioPacket *audioPacket);
+    virtual int GetAudioPacketQueueSize();
 };
 
 #endif //LIVE_AUDIO_PACKET_POOL_H

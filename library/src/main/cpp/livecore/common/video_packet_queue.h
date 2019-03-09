@@ -10,7 +10,6 @@
 #define H264_NALU_TYPE_PICTURE_PARAMETER_SET							8
 #define H264_NALU_TYPE_SEI                                          	6
 
-
 #define NON_DROP_FRAME_FLAG                                             -1.0f
 #define DTS_PARAM_UN_SETTIED_FLAG										-1
 #define DTS_PARAM_NOT_A_NUM_FLAG										-2
@@ -74,25 +73,24 @@ public:
     LiveVideoPacketQueue(const char* queueNameParam);
     ~LiveVideoPacketQueue();
 
-    void init();
-    void flush();
-    int put(LiveVideoPacket* videoPacket);
-    /* return < 0 if aborted, 0 if no packet and > 0 if packet.  */
-    int get(LiveVideoPacket **videoPacket, bool block);
-    int discardGOP(int* discardVideoFrameCnt);
-    int size();
-    void abort();
+    void Init();
+    void Flush();
+    int Put(LiveVideoPacket *videoPacket);
+    /* return < 0 if aborted, 0 if no packet_ and > 0 if packet_.  */
+    int Get(LiveVideoPacket **videoPacket, bool block);
+    int DiscardGOP(int *discardVideoFrameCnt);
+    int Size();
+    void Abort();
 
 private:
-    LiveVideoPacketList* mFirst;
-    LiveVideoPacketList* mLast;
-    int mNbPackets;
-    bool mAbortRequest;
-    pthread_mutex_t mLock;
-    pthread_cond_t mCondition;
-    const char* queueName;
-    
-    float currentTimeMills;
+    LiveVideoPacketList* first_;
+    LiveVideoPacketList* last_;
+    int packet_size_;
+    bool abort_request_;
+    pthread_mutex_t lock_;
+    pthread_cond_t condition_;
+    const char* queue_name_;
+    float current_time_mills_;
 };
 
 #endif // LIVE_VIDEO_PACKETQUEUE_H

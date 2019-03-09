@@ -8,20 +8,20 @@ public:
 	~EglShareContext() {
 	}
 	static EGLContext getSharedContext() {
-		if (instance_->sharedDisplay == EGL_NO_DISPLAY){
-			instance_->init();
+		if (instance_->shared_display_ == EGL_NO_DISPLAY){
+			instance_->Init();
 		}
-		return instance_->sharedContext;
+		return instance_->shared_context_;
 	}
 protected:
 	EglShareContext();
-	void init();
+	void Init();
 
 
 private:
 	static EglShareContext* instance_;
-	EGLContext sharedContext;
-	EGLDisplay sharedDisplay;
+	EGLContext shared_context_;
+	EGLDisplay shared_display_;
 };
 
 #endif

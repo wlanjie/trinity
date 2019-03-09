@@ -3,55 +3,55 @@
 #define LOG_TAG "LiveThread"
 
 LiveThread::LiveThread() {
-	pthread_mutex_init(&mLock, NULL);
-	pthread_cond_init(&mCondition, NULL);
+	pthread_mutex_init(&lock_, NULL);
+	pthread_cond_init(&condition_, NULL);
 }
 
 LiveThread::~LiveThread() {
 }
 
-void LiveThread::start() {
-	handleRun( NULL);
+void LiveThread::Start() {
+	HandleRun(NULL);
 }
 
-void LiveThread::startAsync() {
-	pthread_create(&mThread, NULL, startThread, this);
+void LiveThread::StartAsync() {
+	pthread_create(&thread_, NULL, StartThread, this);
 }
 
-int LiveThread::wait() {
-	if (!mRunning) {
-		LOGI("mRunning is false so return 0");
+int LiveThread::Wait() {
+	if (!running_) {
+		LOGI("running_ is false so return 0");
 		return 0;
 	}
 	void* status;
-    int ret = pthread_join(mThread,&status);
+    int ret = pthread_join(thread_,&status);
 	LOGI("pthread_join thread return result is %d ", status);
 	return (int)ret;
 }
 
-void LiveThread::stop() {
+void LiveThread::Stop() {
 }
 
-void* LiveThread::startThread(void* ptr) {
+void* LiveThread::StartThread(void *ptr) {
 	LOGI("starting thread");
 	LiveThread* thread = (LiveThread *) ptr;
-	thread->mRunning = true;
-	thread->handleRun(ptr);
-	thread->mRunning = false;
+	thread->running_ = true;
+	thread->HandleRun(ptr);
+	thread->running_ = false;
 	return NULL;
 }
 
-void LiveThread::waitOnNotify() {
-	pthread_mutex_lock(&mLock);
-	pthread_cond_wait(&mCondition, &mLock);
-	pthread_mutex_unlock(&mLock);
+void LiveThread::WaitOnNotify() {
+	pthread_mutex_lock(&lock_);
+	pthread_cond_wait(&condition_, &lock_);
+	pthread_mutex_unlock(&lock_);
 }
 
-void LiveThread::notify() {
-	pthread_mutex_lock(&mLock);
-	pthread_cond_signal(&mCondition);
-	pthread_mutex_unlock(&mLock);
+void LiveThread::Notify() {
+	pthread_mutex_lock(&lock_);
+	pthread_cond_signal(&condition_);
+	pthread_mutex_unlock(&lock_);
 }
 
-void LiveThread::handleRun(void* ptr) {
+void LiveThread::HandleRun(void *ptr) {
 }

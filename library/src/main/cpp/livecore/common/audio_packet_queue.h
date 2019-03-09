@@ -53,25 +53,23 @@ public:
 	LiveAudioPacketQueue(const char* queueNameParam);
 	~LiveAudioPacketQueue();
 
-	void init();
-	void flush();
-	int put(LiveAudioPacket* audioPacket);
+	void Init();
+	void Flush();
+	int Put(LiveAudioPacket *audioPacket);
 
-	/* return < 0 if aborted, 0 if no packet and > 0 if packet.  */
-	int get(LiveAudioPacket **audioPacket, bool block);
-
-	int size();
-
-	void abort();
+	/* return < 0 if aborted, 0 if no packet_ and > 0 if packet_.  */
+	int Get(LiveAudioPacket **audioPacket, bool block);
+	int Size();
+	void Abort();
 
 private:
-	LiveAudioPacketList* mFirst;
-	LiveAudioPacketList* mLast;
-	int mNbPackets;
-	bool mAbortRequest;
-	pthread_mutex_t mLock;
-	pthread_cond_t mCondition;
-	const char* queueName;
+	LiveAudioPacketList* first_;
+	LiveAudioPacketList* last_;
+	int packet_size_;
+	bool abort_request_;
+	pthread_mutex_t lock_;
+	pthread_cond_t condition_;
+	const char* queue_name_;
 };
 
 #endif // LIVE_AUDIO_PACKETQUEUE_H

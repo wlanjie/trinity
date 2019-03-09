@@ -57,7 +57,7 @@ int RecordingPublisher::interrupt_cb(void *ctx) {
     return publisher->detectTimeout();
 }
 
-int RecordingPublisher::init(char *videoOutputURI,
+int RecordingPublisher::Init(char *videoOutputURI,
                              int videoWidth, int videoHeight, float videoFrameRate,
                              int videoBitRate,
                              int audioSampleRate, int audioChannels, int audioBitRate,
@@ -80,7 +80,7 @@ int RecordingPublisher::init(char *videoOutputURI,
     av_register_all();
     avformat_network_init();
     LOGI("Publish URL %s", videoOutputURI);
-    /* 2:allocate the output media context */
+    /* 2:allocate the output media context_ */
     avformat_alloc_output_context2(&oc, NULL, "flv", videoOutputURI);
     if (!oc) {
         return -1;
@@ -118,7 +118,7 @@ int RecordingPublisher::init(char *videoOutputURI,
     return 1;
 }
 
-int RecordingPublisher::encode() {
+int RecordingPublisher::Encode() {
     int ret = 0;
     /* Compute current audio and video time. */
     double video_time = getVideoStreamTimeInSecs();
@@ -136,11 +136,11 @@ int RecordingPublisher::encode() {
     return ret;
 }
 
-int RecordingPublisher::stop() {
-    LOGI("enter RecordingPublisher::stop...");
+int RecordingPublisher::Stop() {
+    LOGI("enter RecordingPublisher::Stop...");
     int ret = 0;
     if (isWriteHeaderSuccess) {
-        LOGI("leave RecordingPublisher::stop() if (isConnected && isWriteHeaderSuccess)");
+        LOGI("leave RecordingPublisher::Stop() if (isConnected && isWriteHeaderSuccess)");
         av_write_trailer(oc);
         //设置视频长度
         oc->duration = duration * AV_TIME_BASE;
@@ -165,7 +165,7 @@ int RecordingPublisher::stop() {
         avformat_free_context(oc);
         oc = NULL;
     }
-    LOGI("leave RecordingPublisher::stop...");
+    LOGI("leave RecordingPublisher::Stop...");
     return ret;
 }
 
@@ -193,7 +193,7 @@ int RecordingPublisher::buildVideoStream() {
         video_st = add_stream(oc, &video_codec, fmt->video_codec, NULL);
     }
     /* Now that all the parameters are set, we can open the audio and
-     * video codecs and allocate the necessary encode buffers. */
+     * video codecs and allocate the necessary Encode buffers. */
     if (video_st && video_codec) {
         if ((ret = open_video(oc, video_codec, video_st)) < 0) {
             LOGI("open_video failed....\n");
@@ -230,7 +230,7 @@ AVStream *RecordingPublisher::add_stream(AVFormatContext *oc, AVCodec **codec,
 
     switch ((*codec)->type) {
         case AVMEDIA_TYPE_AUDIO:
-            LOGI("audioBitRate is %d audioChannels is %d audioSampleRate is %d", audioBitRate,
+            LOGI("audio_bit_rate_ is %d channels_ is %d sample_rate_ is %d", audioBitRate,
                  audioChannels, audioSampleRate);
             c->sample_fmt = AV_SAMPLE_FMT_S16;
             c->bit_rate = audioBitRate;
@@ -355,7 +355,7 @@ int RecordingPublisher::write_audio_frame(AVFormatContext *oc, AVStream *st) {
     int ret = AUDIO_QUEUE_ABORT_ERR_CODE;
     LiveAudioPacket *audioPacket = NULL;
     if ((ret = fillAACPacketCallback(&audioPacket, fillAACPacketContext)) > 0) {
-        AVPacket pkt = {0}; // data and size must be 0;
+        AVPacket pkt = {0}; // data and Size must be 0;
         av_init_packet(&pkt);
         lastAudioPacketPresentationTimeMills = audioPacket->position;
         pkt.data = audioPacket->data;
@@ -363,7 +363,7 @@ int RecordingPublisher::write_audio_frame(AVFormatContext *oc, AVStream *st) {
         /** 3、给编码后的packet计算正确的pts/dts/duration/stream_index **/
         pkt.dts = pkt.pts = lastAudioPacketPresentationTimeMills / 1000.0f / av_q2d(st->time_base);
         pkt.duration = 1024;
-//		pkt.flags |= AV_PKT_FLAG_KEY;
+//		pkt_.flags |= AV_PKT_FLAG_KEY;
         pkt.stream_index = st->index;
         AVPacket newpacket;
         av_init_packet(&newpacket);
@@ -377,7 +377,7 @@ int RecordingPublisher::write_audio_frame(AVFormatContext *oc, AVStream *st) {
             newpacket.stream_index = pkt.stream_index;
             ret = this->interleavedWriteFrame(oc, &newpacket);
             if (ret != 0) {
-                LOGI("Error while writing audio frame: %s\n", av_err2str(ret));
+                LOGI("Error while writing audio frame_: %s\n", av_err2str(ret));
             }
         } else {
             LOGI("Error av_bitstream_filter_filter: %s\n", av_err2str(ret));

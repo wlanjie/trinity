@@ -3,46 +3,46 @@
 #define LOG_TAG "GPUTextureFrame"
 
 GPUTextureFrame::GPUTextureFrame() {
-	decodeTexId = 0;
+	decode_texture_id_ = 0;
 }
 
 GPUTextureFrame::~GPUTextureFrame() {
 
 }
 
-bool GPUTextureFrame::createTexture() {
-	LOGI("enter GPUTextureFrame::createTexture");
-	decodeTexId = 0;
-	int ret = initTexture();
+bool GPUTextureFrame::CreateTexture() {
+	LOGI("enter GPUTextureFrame::CreateTexture");
+	decode_texture_id_ = 0;
+	int ret = InitTexture();
 	if (ret < 0) {
 		LOGI("Init texture failed...");
-		this->dealloc();
+		this->Dealloc();
 		return false;
 	}
 	return true;
 }
 
-void GPUTextureFrame::updateTexImage() {
+void GPUTextureFrame::UpdateTexImage() {
 //TODO:调用surfaceTexture
 }
 
-bool GPUTextureFrame::bindTexture(GLint* uniformSamplers) {
+bool GPUTextureFrame::BindTexture(GLint *uniformSamplers) {
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_EXTERNAL_OES, decodeTexId);
+	glBindTexture(GL_TEXTURE_EXTERNAL_OES, decode_texture_id_);
     glUniform1i(*uniformSamplers, 0);
 	return true;
 }
 
-void GPUTextureFrame::dealloc() {
+void GPUTextureFrame::Dealloc() {
 	LOGI("enter GPUTextureFrame::Destroy");
-	if (decodeTexId) {
-		glDeleteTextures(1, &decodeTexId);
+	if (decode_texture_id_) {
+		glDeleteTextures(1, &decode_texture_id_);
 	}
 }
 
-int GPUTextureFrame::initTexture() {
-	glGenTextures(1, &decodeTexId);
-	glBindTexture(GL_TEXTURE_EXTERNAL_OES, decodeTexId);
+int GPUTextureFrame::InitTexture() {
+	glGenTextures(1, &decode_texture_id_);
+	glBindTexture(GL_TEXTURE_EXTERNAL_OES, decode_texture_id_);
 	if (checkGlError("glBindTexture")) {
 		return -1;
 	}

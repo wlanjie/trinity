@@ -8,10 +8,10 @@ TextureFrameCopier::TextureFrameCopier() {
 TextureFrameCopier::~TextureFrameCopier() {
 }
 
-void TextureFrameCopier::destroy() {
-	mIsInitialized = false;
-	if (mGLProgId) {
-		glDeleteProgram(mGLProgId);
-		mGLProgId = 0;
+void TextureFrameCopier::Destroy() {
+	initialized_ = false;
+	if (prog_id_) {
+		glDeleteProgram(prog_id_);
+		prog_id_ = 0;
 	}
 }

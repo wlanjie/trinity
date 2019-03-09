@@ -3,7 +3,7 @@
 #define LOG_TAG "MVRecordingPreviewController"
 
 RecordingPreviewController::RecordingPreviewController() {
-    LOGI("RecordingPreviewController instance created");
+    LOGI("RecordingPreviewController instance_ created");
     facing_id_ = CAMERA_FACING_FRONT;
     start_time_ = -1;
     egl_core_ = NULL;
@@ -17,7 +17,7 @@ RecordingPreviewController::RecordingPreviewController() {
 }
 
 RecordingPreviewController::~RecordingPreviewController() {
-    LOGI("RecordingPreviewController instance destroyed");
+    LOGI("RecordingPreviewController instance_ destroyed");
 }
 
 void RecordingPreviewController::PrepareEGLContext(ANativeWindow *window, JavaVM *g_jvm,
@@ -30,7 +30,7 @@ void RecordingPreviewController::PrepareEGLContext(ANativeWindow *window, JavaVM
     this->screen_width_ = screenWidth;
     this->screen_height_ = screenHeight;
     this->facing_id_ = cameraFacingId;
-    handler_->postMessage(new Message(MSG_EGL_THREAD_CREATE));
+    handler_->PostMessage(new Message(MSG_EGL_THREAD_CREATE));
     int resCode = pthread_create(&thread_id_, 0, ThreadStartCallback, this);
     if (resCode == 0) {
         thread_create_succeed_ = true;
@@ -48,8 +48,8 @@ void RecordingPreviewController::ProcessMessage() {
     bool renderingEnabled = true;
     while (renderingEnabled) {
         Message *msg = NULL;
-        if (queue_->dequeueMessage(&msg, true) > 0) {
-            if (MESSAGE_QUEUE_LOOP_QUIT_FLAG == msg->execute()) {
+        if (queue_->DequeueMessage(&msg, true) > 0) {
+            if (MESSAGE_QUEUE_LOOP_QUIT_FLAG == msg->Execute()) {
                 renderingEnabled = false;
             }
             delete msg;
@@ -59,7 +59,7 @@ void RecordingPreviewController::ProcessMessage() {
 
 void RecordingPreviewController::NotifyFrameAvailable() {
     if (handler_ && !switch_camera_)
-        handler_->postMessage(new Message(MSG_RENDER_FRAME));
+        handler_->PostMessage(new Message(MSG_RENDER_FRAME));
 }
 
 void RecordingPreviewController::StartEncoding(
@@ -78,30 +78,30 @@ void RecordingPreviewController::StartEncoding(
 
     encoder_->init(width, height, videoBitRate, frameRate);
     if (handler_) {
-        handler_->postMessage(new Message(MSG_START_RECORDING));
+        handler_->PostMessage(new Message(MSG_START_RECORDING));
     }
 }
 
 void RecordingPreviewController::StopEncoding() {
     LOGI("StopEncoding");
     if (handler_) {
-        handler_->postMessage(new Message(MSG_STOP_RECORDING));
+        handler_->PostMessage(new Message(MSG_STOP_RECORDING));
     }
 }
 
 void RecordingPreviewController::AdaptiveVideoQuality(int maxBitRate, int avgBitRate, int fps) {
     if (encoder_) {
-        encoder_->reConfigure(maxBitRate, avgBitRate, fps);
+        encoder_->ReConfigure(maxBitRate, avgBitRate, fps);
     }
 }
 
 void RecordingPreviewController::SwitchCameraFacing() {
     LOGI("RecordingPreviewController::refereshCameraFacing");
     switch_camera_ = true;
-    /*notify render thread that camera has changed*/
+    /*Notify render thread that camera has changed*/
     facing_id_ = facing_id_ == CAMERA_FACING_BACK ? CAMERA_FACING_FRONT : CAMERA_FACING_BACK;
     if (handler_) {
-        handler_->postMessage(new Message(MSG_SWITCH_CAMERA_FACING));
+        handler_->PostMessage(new Message(MSG_SWITCH_CAMERA_FACING));
     }
     LOGI("leave RecordingPreviewController::refereshCameraFacing");
 }
@@ -116,15 +116,15 @@ void RecordingPreviewController::ResetRenderSize(int screenWidth, int screenHeig
 void RecordingPreviewController::DestroyEGLContext() {
     LOGI("Stopping RecordingPreviewController thread");
     if (handler_) {
-        handler_->postMessage(new Message(MSG_EGL_THREAD_EXIT));
-        handler_->postMessage(new Message(MESSAGE_QUEUE_LOOP_QUIT_FLAG));
+        handler_->PostMessage(new Message(MSG_EGL_THREAD_EXIT));
+        handler_->PostMessage(new Message(MESSAGE_QUEUE_LOOP_QUIT_FLAG));
     }
 
     if (thread_create_succeed_) {
         pthread_join(thread_id_, 0);
     }
     if (queue_) {
-        queue_->abort();
+        queue_->Abort();
         delete queue_;
         queue_ = NULL;
     }
@@ -140,7 +140,7 @@ void RecordingPreviewController::CreateWindowSurface(ANativeWindow *window) {
     if (this->window_ == NULL) {
         this->window_ = window;
         if (handler_) {
-            handler_->postMessage(new Message(MSG_EGL_CREATE_PREVIEW_SURFACE));
+            handler_->PostMessage(new Message(MSG_EGL_CREATE_PREVIEW_SURFACE));
         }
     }
 }
@@ -148,7 +148,7 @@ void RecordingPreviewController::CreateWindowSurface(ANativeWindow *window) {
 void RecordingPreviewController::DestroyWindowSurface() {
     LOGI("enter RecordingPreviewController::DestroyWindowSurface");
     if (handler_) {
-        handler_->postMessage(new Message(MSG_EGL_DESTROY_PREVIEW_SURFACE));
+        handler_->PostMessage(new Message(MSG_EGL_DESTROY_PREVIEW_SURFACE));
     }
 }
 
@@ -157,9 +157,9 @@ void RecordingPreviewController::BuildRenderInstance() {
 }
 
 bool RecordingPreviewController::Initialize() {
-    LOGI("Initializing context");
+    LOGI("Initializing context_");
     egl_core_ = new EGLCore();
-    egl_core_->init();
+    egl_core_->Init();
     this->CreatePreviewSurface();
 
     this->BuildRenderInstance();
@@ -171,20 +171,20 @@ bool RecordingPreviewController::Initialize() {
 
     switch_camera_ = false;
 
-    LOGI("leave Initializing context");
+    LOGI("leave Initializing context_");
     return true;
 }
 
 void RecordingPreviewController::CreatePreviewSurface() {
-    preview_surface_ = egl_core_->createWindowSurface(window_);
+    preview_surface_ = egl_core_->CreateWindowSurface(window_);
     if (preview_surface_ != NULL) {
-        egl_core_->makeCurrent(preview_surface_);
+        egl_core_->MakeCurrent(preview_surface_);
     }
 }
 
 void RecordingPreviewController::DestroyPreviewSurface() {
     if (EGL_NO_SURFACE != preview_surface_) {
-        egl_core_->releaseSurface(preview_surface_);
+        egl_core_->ReleaseSurface(preview_surface_);
         preview_surface_ = EGL_NO_SURFACE;
         if (window_) {
             LOGI("VideoOutput Releasing surfaceWindow");
@@ -211,14 +211,14 @@ void RecordingPreviewController::Destroy() {
         renderer_ = NULL;
     }
     this->ReleaseCamera();
-    egl_core_->release();
+    egl_core_->Release();
     delete egl_core_;
     egl_core_ = NULL;
     LOGI("leave RecordingPreviewController::Destroy...");
 }
 
 void RecordingPreviewController::StartRecording() {
-    encoder_->createEncoder(egl_core_, renderer_->GetInputTexId());
+    encoder_->CreateEncoder(egl_core_, renderer_->GetInputTexId());
     encoding_ = true;
 }
 
@@ -226,7 +226,7 @@ void RecordingPreviewController::StopRecording() {
     LOGI("StopRecording....");
     encoding_ = false;
     if (encoder_) {
-        encoder_->destroyEncoder();
+        encoder_->DestroyEncoder();
         delete encoder_;
         encoder_ = NULL;
     }
@@ -234,7 +234,7 @@ void RecordingPreviewController::StopRecording() {
 
 void RecordingPreviewController::RenderFrame() {
     if (NULL != egl_core_ && !switch_camera_) {
-//		long startTimeMills = getCurrentTime();
+//		long start_time_mills_ = getCurrentTime();
         if (start_time_ == -1) {
             start_time_ = getCurrentTime();
         }
@@ -243,17 +243,17 @@ void RecordingPreviewController::RenderFrame() {
         if (preview_surface_ != EGL_NO_SURFACE) {
             this->Draw();
         }
-//			LOGI("process Frame waste TimeMills 【%d】", (int)(getCurrentTime() - startTimeMills));
+//			LOGI("process Frame waste TimeMills 【%d】", (int)(getCurrentTime() - start_time_mills_));
         if (encoding_) {
-            encoder_->encode();
+            encoder_->Encode();
         }
     }
 }
 
 void RecordingPreviewController::Draw() {
-    egl_core_->makeCurrent(preview_surface_);
+    egl_core_->MakeCurrent(preview_surface_);
     renderer_->DrawToViewWithAutoFit(screen_width_, screen_height_, texture_width_, texture_height_);
-    if (!egl_core_->swapBuffers(preview_surface_)) {
+    if (!egl_core_->SwapBuffers(preview_surface_)) {
         LOGE("eglSwapBuffers(preview_surface_) returned error %d", eglGetError());
     }
 }
@@ -388,14 +388,14 @@ void RecordingPreviewController::StartCameraPreview() {
 
 void RecordingPreviewController::HotConfigQuality(int maxBitrate, int avgBitrate, int fps) {
     if (encoder_) {
-        encoder_->hotConfig(maxBitrate, avgBitrate, fps);
+        encoder_->HotConfig(maxBitrate, avgBitrate, fps);
     }
 }
 
 void RecordingPreviewController::HotConfig(int bitRate, int fps, int gopSize) {
     LOGI("RecordingPreviewController::HotConfig");
     if (encoder_) {
-        encoder_->hotConfig(bitRate, fps, gopSize);
+        encoder_->HotConfig(bitRate, fps, gopSize);
     }
 }
 

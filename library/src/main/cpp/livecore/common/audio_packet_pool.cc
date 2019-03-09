@@ -3,50 +3,50 @@
 #define LOG_TAG "LiveAudioPacketPool"
 
 LiveAudioPacketPool::LiveAudioPacketPool() {
-    audioPacketQueue = NULL;
+    audio_packet_queue_ = NULL;
 }
 
 LiveAudioPacketPool::~LiveAudioPacketPool() {
 }
 //初始化静态成员
-LiveAudioPacketPool* LiveAudioPacketPool::instance = new LiveAudioPacketPool();
+LiveAudioPacketPool* LiveAudioPacketPool::instance_ = new LiveAudioPacketPool();
 LiveAudioPacketPool* LiveAudioPacketPool::GetInstance() {
-    return instance;
+    return instance_;
 }
 
 /**************************start audio packet queue process**********************************************/
-void LiveAudioPacketPool::initAudioPacketQueue() {
+void LiveAudioPacketPool::InitAudioPacketQueue() {
     const char* name = "audioPacket AAC Data queue_";
-    audioPacketQueue = new LiveAudioPacketQueue(name);
+    audio_packet_queue_ = new LiveAudioPacketQueue(name);
 }
 
-void LiveAudioPacketPool::abortAudioPacketQueue() {
-    if(NULL != audioPacketQueue){
-        audioPacketQueue->abort();
+void LiveAudioPacketPool::AbortAudioPacketQueue() {
+    if(NULL != audio_packet_queue_){
+        audio_packet_queue_->Abort();
     }
 }
-void LiveAudioPacketPool::destoryAudioPacketQueue() {
-    if(NULL != audioPacketQueue){
-        delete audioPacketQueue;
-        audioPacketQueue = NULL;
+void LiveAudioPacketPool::DestroyAudioPacketQueue() {
+    if(NULL != audio_packet_queue_){
+        delete audio_packet_queue_;
+        audio_packet_queue_ = NULL;
     }
 }
 
-int LiveAudioPacketPool::getAudioPacket(LiveAudioPacket **audioPacket, bool block) {
+int LiveAudioPacketPool::GetAudioPacket(LiveAudioPacket **audioPacket, bool block) {
     int result = -1;
-    if(NULL != audioPacketQueue){
-        result = audioPacketQueue->get(audioPacket, block);
+    if(NULL != audio_packet_queue_){
+        result = audio_packet_queue_->Get(audioPacket, block);
     }
     return result;
 }
 
-int LiveAudioPacketPool::getAudioPacketQueueSize() {
-    return audioPacketQueue->size();
+int LiveAudioPacketPool::GetAudioPacketQueueSize() {
+    return audio_packet_queue_->Size();
 }
 
-void LiveAudioPacketPool::pushAudioPacketToQueue(LiveAudioPacket* audioPacket) {
-    if(NULL != audioPacketQueue){
-		audioPacketQueue->put(audioPacket);
+void LiveAudioPacketPool::PushAudioPacketToQueue(LiveAudioPacket *audioPacket) {
+    if(NULL != audio_packet_queue_){
+        audio_packet_queue_->Put(audioPacket);
     }
 }
 /**************************end audio packet queue process**********************************************/

@@ -3,65 +3,65 @@
 #define LOG_TAG "LiveYUY2PacketPool"
 
 LiveYUY2PacketPool::LiveYUY2PacketPool() {
-	yuy2PacketQueue = NULL;
+	yuy_packet_queue_ = NULL;
 }
 
 LiveYUY2PacketPool::~LiveYUY2PacketPool() {
 }
 //初始化静态成员
-LiveYUY2PacketPool* LiveYUY2PacketPool::instance = new LiveYUY2PacketPool();
+LiveYUY2PacketPool* LiveYUY2PacketPool::instance_ = new LiveYUY2PacketPool();
 LiveYUY2PacketPool* LiveYUY2PacketPool::GetInstance() {
-	return instance;
+	return instance_;
 }
 
 /************************** YUY2的视频帧 packet queue *******************************************/
 
-void LiveYUY2PacketPool::initYUY2PacketQueue() {
-	if (NULL == yuy2PacketQueue) {
-		const char* name = "recording video yuy2 frame packet queue_";
-		yuy2PacketQueue = new LiveVideoPacketQueue(name);
+void LiveYUY2PacketPool::InitYUY2PacketQueue() {
+	if (NULL == yuy_packet_queue_) {
+		const char* name = "recording video yuy2 frame_ packet_ queue_";
+		yuy_packet_queue_ = new LiveVideoPacketQueue(name);
 	}
 }
 
-void LiveYUY2PacketPool::abortYUY2PacketQueue() {
-	if (NULL != yuy2PacketQueue) {
-		yuy2PacketQueue->abort();
+void LiveYUY2PacketPool::AbortYUY2PacketQueue() {
+	if (NULL != yuy_packet_queue_) {
+		yuy_packet_queue_->Abort();
 	}
 }
 
-void LiveYUY2PacketPool::destoryYUY2PacketQueue() {
-	if (NULL != yuy2PacketQueue) {
-		delete yuy2PacketQueue;
-		yuy2PacketQueue = NULL;
+void LiveYUY2PacketPool::DestroyYUY2PacketQueue() {
+	if (NULL != yuy_packet_queue_) {
+		delete yuy_packet_queue_;
+		yuy_packet_queue_ = NULL;
 	}
 }
 
-int LiveYUY2PacketPool::getYUY2Packet(LiveVideoPacket **videoPacket, bool block) {
+int LiveYUY2PacketPool::GetYUY2Packet(LiveVideoPacket **videoPacket, bool block) {
 	int result = -1;
-	if (NULL != yuy2PacketQueue) {
-		result = yuy2PacketQueue->get(videoPacket, block);
+	if (NULL != yuy_packet_queue_) {
+		result = yuy_packet_queue_->Get(videoPacket, block);
 	}
 	return result;
 }
 
-bool LiveYUY2PacketPool::pushYUY2PacketToQueue(LiveVideoPacket* videoPacket) {
+bool LiveYUY2PacketPool::PushYUY2PacketToQueue(LiveVideoPacket *videoPacket) {
 	bool dropFrame = false;
-	if (NULL != yuy2PacketQueue) {
-		yuy2PacketQueue->put(videoPacket);
+	if (NULL != yuy_packet_queue_) {
+		yuy_packet_queue_->Put(videoPacket);
 	}
 	return dropFrame;
 }
 
-int LiveYUY2PacketPool::getYUY2PacketQueueSize() {
-	if (NULL != yuy2PacketQueue) {
-		return yuy2PacketQueue->size();
+int LiveYUY2PacketPool::GetYUY2PacketQueueSize() {
+	if (NULL != yuy_packet_queue_) {
+		return yuy_packet_queue_->Size();
 	}
 	return 0;
 }
 
-void LiveYUY2PacketPool::clearYUY2PacketToQueue() {
-	if (NULL != yuy2PacketQueue) {
-		return yuy2PacketQueue->flush();
+void LiveYUY2PacketPool::ClearYUY2PacketToQueue() {
+	if (NULL != yuy_packet_queue_) {
+		return yuy_packet_queue_->Flush();
 	}
 }
 /************************** YUY2的视频帧 packet queue *******************************************/

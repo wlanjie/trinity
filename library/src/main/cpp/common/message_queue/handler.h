@@ -12,9 +12,9 @@ public:
 	Handler(MessageQueue* mQueue);
 	~Handler();
 
-	int postMessage(Message* msg);
-	int getQueueSize();
-	virtual void handleMessage(Message* msg){};
+	int PostMessage(Message *msg);
+	int GetQueueSize();
+	virtual void HandleMessage(Message *msg){};
 };
 
 #endif // VIDEO_COMMON_HANDLER_H

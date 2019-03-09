@@ -14,32 +14,29 @@ public:
 
     virtual void init(int width, int height, int videoBitRate, float frameRate);
 
-    virtual void createEncoder(EGLCore *eglCore, int inputTexId) = 0;
+    virtual void CreateEncoder(EGLCore *eglCore, int inputTexId) = 0;
 
-    virtual void encode() = 0;
+    virtual void Encode() = 0;
 
-    virtual void destroyEncoder() = 0;
+    virtual void DestroyEncoder() = 0;
 
-    virtual void reConfigure(int maxBitRate, int avgBitRate, int fps) = 0;
+    virtual void ReConfigure(int maxBitRate, int avgBitRate, int fps) = 0;
 
-    virtual void hotConfig(int maxBitrate, int avgBitrate, int fps) = 0;
+    virtual void HotConfig(int maxBitrate, int avgBitrate, int fps) = 0;
 
-    void resetFpsStartTimeIfNeed(int fps);
+    void ResetFpsStartTimeIfNeed(int fps);
 
 protected:
-    int encodedFrameCount;
-    int videoWidth;
-    int videoHeight;
-    int videoBitRate;
+    int encoded_frame_count_;
+    int video_width_;
+    int video_height_;
+    int video_bit_rate_;
     float frameRate;
-    LiveCommonPacketPool *packetPool;
-
-    int64_t startTime;
-    int64_t fpsChangeTime;
-
-    VideoGLSurfaceRender *renderer;
-    int texId;
-
+    LiveCommonPacketPool *packet_pool_;
+    int64_t start_time_;
+    int64_t fps_change_time_;
+    VideoGLSurfaceRender *renderer_;
+    int texture_id_;
     const float FLOAT_DELTA = 1e-4;
 
 };

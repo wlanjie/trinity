@@ -18,8 +18,8 @@ LiveCommonPacketPool *LiveCommonPacketPool::GetInstance() {
     return instance;
 }
 
-void LiveCommonPacketPool::recordDropVideoFrame(int discardVideoPacketDuration) {
-    LivePacketPool::recordDropVideoFrame(discardVideoPacketDuration);
+void LiveCommonPacketPool::RecordDropVideoFrame(int discardVideoPacketDuration) {
+    LivePacketPool::RecordDropVideoFrame(discardVideoPacketDuration);
     pthread_rwlock_wrlock(&accompanyDropFrameRwlock);
     totalDiscardVideoPacketDurationCopy += discardVideoPacketDuration;
     pthread_rwlock_unlock(&accompanyDropFrameRwlock);
@@ -38,7 +38,7 @@ void LiveCommonPacketPool::initAccompanyPacketQueue(int sampleRate, int channels
 
 void LiveCommonPacketPool::abortAccompanyPacketQueue() {
     if (NULL != accompanyPacketQueue) {
-        accompanyPacketQueue->abort();
+        accompanyPacketQueue->Abort();
     }
 }
 
@@ -56,13 +56,13 @@ void LiveCommonPacketPool::destoryAccompanyPacketQueue() {
 int LiveCommonPacketPool::getAccompanyPacket(LiveAudioPacket **accompanyPacket, bool block) {
     int result = -1;
     if (NULL != accompanyPacketQueue) {
-        result = accompanyPacketQueue->get(accompanyPacket, block);
+        result = accompanyPacketQueue->Get(accompanyPacket, block);
     }
     return result;
 }
 
 int LiveCommonPacketPool::getAccompanyPacketQueueSize() {
-    return accompanyPacketQueue->size();
+    return accompanyPacketQueue->Size();
 }
 
 void LiveCommonPacketPool::pushAccompanyPacketToQueue(LiveAudioPacket *accompanyPacket) {
@@ -83,7 +83,7 @@ void LiveCommonPacketPool::pushAccompanyPacketToQueue(LiveAudioPacket *accompany
             targetAudioPacket->buffer = audioBuffer;
             targetAudioPacket->position = accompanyPacket->position;
             targetAudioPacket->frameNum = accompanyPacket->frameNum;
-            accompanyPacketQueue->put(targetAudioPacket);
+            accompanyPacketQueue->Put(targetAudioPacket);
             accompanyBufferCursor = 0;
         }
     }
@@ -93,7 +93,7 @@ void LiveCommonPacketPool::pushAccompanyPacketToQueue(LiveAudioPacket *accompany
 bool LiveCommonPacketPool::discardAccompanyPacket() {
     bool ret = false;
     LiveAudioPacket *tempAccompanyPacket = NULL;
-    int resultCode = accompanyPacketQueue->get(&tempAccompanyPacket, true);
+    int resultCode = accompanyPacketQueue->Get(&tempAccompanyPacket, true);
     if (resultCode > 0) {
         delete tempAccompanyPacket;
         tempAccompanyPacket = NULL;
@@ -117,13 +117,13 @@ bool LiveCommonPacketPool::detectDiscardAccompanyPacket() {
 
 /**************************start decoder accompany packet queue process*******************************************/
 void LiveCommonPacketPool::initDecoderAccompanyPacketQueue() {
-    const char *name = "decoder accompany packet queue_";
+    const char *name = "decoder accompany packet_ queue_";
     decoderAccompanyPacketQueue = new LiveAudioPacketQueue(name);
 }
 
 void LiveCommonPacketPool::abortDecoderAccompanyPacketQueue() {
     if (NULL != decoderAccompanyPacketQueue) {
-        decoderAccompanyPacketQueue->abort();
+        decoderAccompanyPacketQueue->Abort();
     }
 }
 
@@ -137,21 +137,21 @@ void LiveCommonPacketPool::destoryDecoderAccompanyPacketQueue() {
 int LiveCommonPacketPool::getDecoderAccompanyPacket(LiveAudioPacket **audioPacket, bool block) {
     int result = -1;
     if (NULL != decoderAccompanyPacketQueue) {
-        result = decoderAccompanyPacketQueue->get(audioPacket, block);
+        result = decoderAccompanyPacketQueue->Get(audioPacket, block);
     }
     return result;
 }
 
 int LiveCommonPacketPool::geDecoderAccompanyPacketQueueSize() {
-    return decoderAccompanyPacketQueue->size();
+    return decoderAccompanyPacketQueue->Size();
 }
 
 void LiveCommonPacketPool::clearDecoderAccompanyPacketToQueue() {
-    decoderAccompanyPacketQueue->flush();
+    decoderAccompanyPacketQueue->Flush();
 }
 
 void LiveCommonPacketPool::pushDecoderAccompanyPacketToQueue(LiveAudioPacket *audioPacket) {
-    decoderAccompanyPacketQueue->put(audioPacket);
+    decoderAccompanyPacketQueue->Put(audioPacket);
 }
 /**************************end decoder accompany packet queue process*******************************************/
 

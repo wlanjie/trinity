@@ -187,7 +187,7 @@ static void Android_JNI_musicDecoderInit(JNIEnv *env, jobject object, jlong id, 
         return;
     }
     auto *decoder = reinterpret_cast<LiveSongDecoderController *>(id);
-    decoder->init(packetBufferTimePercent, vocalSampleRate);
+    decoder->Init(packetBufferTimePercent, vocalSampleRate);
 }
 
 static int Android_JNI_music_decoder_read_samples(JNIEnv *env, jobject object, jlong id, jshortArray array, jint size,
@@ -199,7 +199,7 @@ static int Android_JNI_music_decoder_read_samples(JNIEnv *env, jobject object, j
     jshort *target = env->GetShortArrayElements(array, 0);
     jint *slientSizeArr = env->GetIntArrayElements(extraSlientSampleSize, 0);
     jint *extraAccompanyTypeArr = env->GetIntArrayElements(extraAccompanyType, 0);
-    int result = decoder->readSamplesAndProducePacket(target, size, slientSizeArr, extraAccompanyTypeArr);
+    int result = decoder->ReadSamplesAndProducePacket(target, size, slientSizeArr, extraAccompanyTypeArr);
     env->ReleaseIntArrayElements(extraSlientSampleSize, slientSizeArr, 0);
     env->ReleaseIntArrayElements(extraAccompanyType, extraAccompanyTypeArr, 0);
     env->ReleaseShortArrayElements(array, target, 0);
@@ -212,7 +212,7 @@ Android_JNI_music_decoder_set_volume(JNIEnv *env, jobject object, jlong id, jflo
         return;
     }
     auto *decoder = reinterpret_cast<LiveSongDecoderController *>(id);
-    decoder->setVolume(volume, accompanyMax);
+    decoder->SetVolume(volume, accompanyMax);
 }
 
 static void Android_JNI_music_decoder_start(JNIEnv *env, jobject object, jlong id, jstring accompanyFilePathParam) {
@@ -221,7 +221,7 @@ static void Android_JNI_music_decoder_start(JNIEnv *env, jobject object, jlong i
     }
     auto *decoder = reinterpret_cast<LiveSongDecoderController *>(id);
     const char *accompanyFilePath = env->GetStringUTFChars(accompanyFilePathParam, NULL);
-    decoder->startAccompany(accompanyFilePath);
+    decoder->StartAccompany(accompanyFilePath);
     env->ReleaseStringUTFChars(accompanyFilePathParam, accompanyFilePath);
 }
 
@@ -230,7 +230,7 @@ static void Android_JNI_music_decoder_pause(JNIEnv *env, jobject object, jlong i
         return;
     }
     auto *decoder = reinterpret_cast<LiveSongDecoderController *>(id);
-    decoder->pauseAccompany();
+    decoder->PauseAccompany();
 }
 
 static void Android_JNI_music_decoder_resume(JNIEnv *env, jobject object, jlong id) {
@@ -238,7 +238,7 @@ static void Android_JNI_music_decoder_resume(JNIEnv *env, jobject object, jlong 
         return;
     }
     auto *decoder = reinterpret_cast<LiveSongDecoderController *>(id);
-    decoder->resumeAccompany();
+    decoder->ResumeAccompany();
 }
 
 static void Android_JNI_music_decoder_stop(JNIEnv *env, jobject object, jlong id) {
@@ -246,7 +246,7 @@ static void Android_JNI_music_decoder_stop(JNIEnv *env, jobject object, jlong id
         return;
     }
     auto *decoder = reinterpret_cast<LiveSongDecoderController *>(id);
-    decoder->stopAccompany();
+    decoder->StopAccompany();
 }
 
 static void Android_JNI_music_decoder_destory(JNIEnv *env, jobject object, jlong id) {
@@ -254,7 +254,7 @@ static void Android_JNI_music_decoder_destory(JNIEnv *env, jobject object, jlong
         return;
     }
     auto *decoder = reinterpret_cast<LiveSongDecoderController *>(id);
-    decoder->destroy();
+    decoder->Destroy();
 }
 
 static void Android_JNI_music_decoder_release(JNIEnv *env, jobject object, jlong id) {
@@ -268,7 +268,7 @@ static void Android_JNI_music_decoder_release(JNIEnv *env, jobject object, jlong
 static jlong
 Android_JNI_audio_record_processor_init(JNIEnv *env, jobject object, jint sampleRate, jint audioBufferSize) {
     auto *recorder = new RecordProcessor();
-    recorder->initAudioBufferSize(sampleRate, audioBufferSize);
+    recorder->InitAudioBufferSize(sampleRate, audioBufferSize);
     return reinterpret_cast<jlong>(recorder);
 }
 
@@ -277,8 +277,8 @@ static void Android_JNI_audio_record_processor_flush_audio_buffer_to_queue(JNIEn
         return;
     }
     auto *recorder = reinterpret_cast<RecordProcessor *>(handle);
-    recorder->flushAudioBufferToQueue();
-    recorder->destroy();
+    recorder->FlushAudioBufferToQueue();
+    recorder->Destroy();
     delete recorder;
 }
 
@@ -290,7 +290,7 @@ static jint Android_JNI_audio_record_processor_push_audio_buffer_to_queue(JNIEnv
     }
     auto *recorder = reinterpret_cast<RecordProcessor *>(handle);
     jshort *samples = env->GetShortArrayElements(audioSamples, 0);
-    int result = recorder->pushAudioBufferToQueue(samples, audioSampleSize);
+    int result = recorder->PushAudioBufferToQueue(samples, audioSampleSize);
     env->ReleaseShortArrayElements(audioSamples, samples, 0);
     return result;
 }
@@ -300,7 +300,7 @@ static void Android_JNI_audio_record_processor_destroy(JNIEnv *env, jobject obje
         return;
     }
     auto *recorder = reinterpret_cast<RecordProcessor *>(handle);
-    recorder->destroy();
+    recorder->Destroy();
     delete recorder;
 }
 
@@ -328,22 +328,22 @@ static jint Android_JNI_video_studio_start_record(JNIEnv *env, jobject object, j
     remove(videoPath);
     /** 预先初始化3个队列, 防止在init过程中把Statistics重新置为空的问题；
      * 由于先初始化消费者，在初始化生产者，所以队列初始化放到这里 **/
-    LiveCommonPacketPool::GetInstance()->initRecordingVideoPacketQueue();
-    LiveCommonPacketPool::GetInstance()->initAudioPacketQueue(audioSampleRate);
-    LiveAudioPacketPool::GetInstance()->initAudioPacketQueue();
+    LiveCommonPacketPool::GetInstance()->InitRecordingVideoPacketQueue();
+    LiveCommonPacketPool::GetInstance()->InitAudioPacketQueue(audioSampleRate);
+    LiveAudioPacketPool::GetInstance()->InitAudioPacketQueue();
 
-    initCode = videoPacketConsumerThread->init(videoPath, videoWidth, videoheight, videoFrameRate, videoBitRate,
+    initCode = videoPacketConsumerThread->Init(videoPath, videoWidth, videoheight, videoFrameRate, videoBitRate,
                                                audioSampleRate,
                                                audioChannels, audioBitRate, "libfdk_aac", qualityStrategy,
                                                g_jvm, g_obj);
     LOGI("initCode is %d...qualityStrategy:%d", initCode, qualityStrategy);
     if (initCode >= 0) {
-        videoPacketConsumerThread->startAsync();
+        videoPacketConsumerThread->StartAsync();
     } else {
         /** 如果初始化失败, 那么就把队列销毁掉 **/
-        LiveCommonPacketPool::GetInstance()->destoryRecordingVideoPacketQueue();
-        LiveCommonPacketPool::GetInstance()->destoryAudioPacketQueue();
-        LiveAudioPacketPool::GetInstance()->destoryAudioPacketQueue();
+        LiveCommonPacketPool::GetInstance()->DestroyRecordingVideoPacketQueue();
+        LiveCommonPacketPool::GetInstance()->DestroyAudioPacketQueue();
+        LiveAudioPacketPool::GetInstance()->DestroyAudioPacketQueue();
     }
     env->ReleaseStringUTFChars(outputPath, videoPath);
     return initCode;
@@ -354,7 +354,7 @@ static void Android_JNI_video_studio_stop_record(JNIEnv *env, jobject object, jl
         return;
     }
     auto *videoPacketConsumerThread = reinterpret_cast<VideoPacketConsumerThread *>(handle);
-    videoPacketConsumerThread->stop();
+    videoPacketConsumerThread->Stop();
 }
 
 static void Android_JNI_video_studio_release(JNIEnv *env, jobject object, jlong handle) {
@@ -411,8 +411,8 @@ static JNINativeMethod musicDecoderMethods[] = {
 //        {"initMetaData",                  "(IIII)Z", (void **) Anroid_JNI_sound_record_controller_init_meta_data},
 //        {"initAudioRecordProcessor",      "(I)Z",    (void **) Android_JNI_sound_record_controller_init_record_processor},
 //        {"destroyAudioRecorderProcessor", "()V",     (void **) Android_JNI_sound_record_controller_destroy_processor},
-//        {"start",                         "()V",     (void **) Android_JNI_sound_record_controller_start},
-//        {"stop",                          "()V",     (void **) Android_JNI_sound_record_controller_stop},
+//        {"Start",                         "()V",     (void **) Android_JNI_sound_record_controller_start},
+//        {"Stop",                          "()V",     (void **) Android_JNI_sound_record_controller_stop},
 //        {"initScoring",                   "(IIII)V", (void **) Android_JNI_sound_record_controller_init_scoring},
 //        {"setDestroyScoreProcessorFlag",  "(Z)V",    (void **) Android_JNI_sound_record_controller_score_processor_flag},
 //        {"getRenderData",                 "(J[F)V",  (void **) Android_JNI_sound_record_controller_render_data},
@@ -426,10 +426,10 @@ static JNINativeMethod musicDecoderMethods[] = {
 //        {"getAccompanySampleRate", "()I",                    (void **) Android_JNI_sound_track_get_accompany_sample_rate},
 //        {"play",                   "()V",                    (void **) Android_JNI_sound_track_play},
 //        {"getCurrentTimeMills",    "()I",                    (void **) Android_JNI_sound_track_get_current_time_mills},
-//        {"setVolume",              "(F)V",                   (void **) Android_JNI_sound_track_set_volume},
+//        {"SetVolume",              "(F)V",                   (void **) Android_JNI_sound_track_set_volume},
 //        {"isPlaying",              "()Z",                    (void **) Android_JNI_sound_track_set_is_playing},
 //        {"setMusicSourceFlag",     "(Z)V",                   (void **) Android_JNI_sound_track_set_music_source_flag},
-//        {"stop",                   "()V",                    (void **) Android_JNI_sound_track_stop},
+//        {"Stop",                   "()V",                    (void **) Android_JNI_sound_track_stop},
 //        {"pause",                  "()V",                    (void **) Android_JNI_sound_track_pause},
 //        {"seekToPosition",         "(FF)V",                  (void **) Android_JNI_sound_track_seek_to_position}
 //};

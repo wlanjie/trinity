@@ -3,62 +3,62 @@
 #define LOG_TAG "VideoGLSurfaceRender"
 
 VideoGLSurfaceRender::VideoGLSurfaceRender() {
-	mVertexShader = OUTPUT_VIEW_VERTEX_SHADER;
-	mFragmentShader = OUTPUT_VIEW_FRAG_SHADER;
+	vertex_shader_ = const_cast<char *>(OUTPUT_VIEW_VERTEX_SHADER);
+	fragment_shader_ = const_cast<char *>(OUTPUT_VIEW_FRAG_SHADER);
 }
 
 VideoGLSurfaceRender::~VideoGLSurfaceRender() {
 }
 
-bool VideoGLSurfaceRender::init(int width, int height) {
-	this->_backingLeft = 0;
-	this->_backingTop = 0;
-	this->_backingWidth = width;
-	this->_backingHeight = height;
-	mGLProgId = loadProgram(mVertexShader, mFragmentShader);
-	if (!mGLProgId) {
+bool VideoGLSurfaceRender::Init(int width, int height) {
+	this->backing_left_ = 0;
+	this->backing_top_ = 0;
+	this->backing_width_ = width;
+	this->backing_height_ = height;
+	prog_id_ = LoadProgram(vertex_shader_, fragment_shader_);
+	if (!prog_id_) {
 		LOGE("Could not create program.");
 		return false;
 	}
-	mGLVertexCoords = glGetAttribLocation(mGLProgId, "position");
-	checkGlError("glGetAttribLocation vPosition");
-	mGLTextureCoords = glGetAttribLocation(mGLProgId, "texcoord");
-	checkGlError("glGetAttribLocation vTexCords");
-	mGLUniformTexture = glGetUniformLocation(mGLProgId, "yuvTexSampler");
-	checkGlError("glGetAttribLocation yuvTexSampler");
+	vertex_coords_ = glGetAttribLocation(prog_id_, "position_");
+    CheckGlError("glGetAttribLocation vPosition");
+	texture_coords_ = glGetAttribLocation(prog_id_, "texcoord");
+    CheckGlError("glGetAttribLocation vTexCords");
+	uniform_texture_ = glGetUniformLocation(prog_id_, "yuvTexSampler");
+    CheckGlError("glGetAttribLocation yuvTexSampler");
 
-	mIsInitialized = true;
+	initialized_ = true;
 	return true;
 }
 
-void VideoGLSurfaceRender::renderToView(GLuint texID, int screenWidth, int screenHeight) {
+void VideoGLSurfaceRender::RenderToView(GLuint texID, int screenWidth, int screenHeight) {
 	glViewport(0, 0, screenWidth, screenHeight);
 
-	if (!mIsInitialized) {
+	if (!initialized_) {
 		LOGE("ViewRenderEffect::renderEffect effect not initialized!");
 		return;
 	}
 
-	glUseProgram (mGLProgId);
+	glUseProgram (prog_id_);
 	static const GLfloat _vertices[] = { -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f };
-	glVertexAttribPointer(mGLVertexCoords, 2, GL_FLOAT, 0, 0, _vertices);
-	glEnableVertexAttribArray(mGLVertexCoords);
+	glVertexAttribPointer(vertex_coords_, 2, GL_FLOAT, 0, 0, _vertices);
+	glEnableVertexAttribArray(vertex_coords_);
 	static const GLfloat texCoords[] = { 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f };
-	glVertexAttribPointer(mGLTextureCoords, 2, GL_FLOAT, 0, 0, texCoords);
-	glEnableVertexAttribArray(mGLTextureCoords);
+	glVertexAttribPointer(texture_coords_, 2, GL_FLOAT, 0, 0, texCoords);
+	glEnableVertexAttribArray(texture_coords_);
 
 	/* Binding the input texture */
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texID);
-    glUniform1i(mGLUniformTexture, 0);
+    glUniform1i(uniform_texture_, 0);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-	glDisableVertexAttribArray(mGLVertexCoords);
-	glDisableVertexAttribArray(mGLTextureCoords);
+	glDisableVertexAttribArray(vertex_coords_);
+	glDisableVertexAttribArray(texture_coords_);
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-float VideoGLSurfaceRender::calcCropRatio(int screenWidth, int screenHeight, int texWidth, int texHeight) {
+float VideoGLSurfaceRender::CalcCropRatio(int screenWidth, int screenHeight, int texWidth, int texHeight) {
 	int fitHeight = (int)((float)texHeight*screenWidth/texWidth+0.5f);
 
 	float ratio = (float)(fitHeight-screenHeight)/(2*fitHeight);
@@ -67,73 +67,75 @@ float VideoGLSurfaceRender::calcCropRatio(int screenWidth, int screenHeight, int
 }
 
 // 肯定是竖屏录制
-void VideoGLSurfaceRender::renderToViewWithAutofit(GLuint texID, int screenWidth, int screenHeight, int texWidth, int texHeight) {
+void VideoGLSurfaceRender::RenderToViewWithAutofit(GLuint texID, int screenWidth, int screenHeight, int texWidth,
+                                                   int texHeight) {
 	glViewport(0, 0, screenWidth, screenHeight);
 
-	if (!mIsInitialized) {
+	if (!initialized_) {
 		LOGE("ViewRenderEffect::renderEffect effect not initialized!");
 		return;
 	}
 
-	float cropRatio = calcCropRatio(screenWidth, screenHeight, texWidth, texHeight);
+	float cropRatio = CalcCropRatio(screenWidth, screenHeight, texWidth, texHeight);
 
 	if (cropRatio < 0)
 		cropRatio = 0.0f;
 
-	glUseProgram(mGLProgId);
+	glUseProgram(prog_id_);
 	static const GLfloat _vertices[] = { -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f,
 			1.0f, 1.0f };
-	glVertexAttribPointer(mGLVertexCoords, 2, GL_FLOAT, 0, 0, _vertices);
-	glEnableVertexAttribArray(mGLVertexCoords);
+	glVertexAttribPointer(vertex_coords_, 2, GL_FLOAT, 0, 0, _vertices);
+	glEnableVertexAttribArray(vertex_coords_);
 	static const GLfloat texCoords[] = { 0.0f, cropRatio, 1.0f, cropRatio, 0.0f, 1.0f-cropRatio,
 			1.0f, 1.0f-cropRatio };
-	glVertexAttribPointer(mGLTextureCoords, 2, GL_FLOAT, 0, 0, texCoords);
-	glEnableVertexAttribArray(mGLTextureCoords);
+	glVertexAttribPointer(texture_coords_, 2, GL_FLOAT, 0, 0, texCoords);
+	glEnableVertexAttribArray(texture_coords_);
 
 	/* Binding the input texture */
 	glActiveTexture (GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texID);
-	glUniform1i(mGLUniformTexture, 0);
+	glUniform1i(uniform_texture_, 0);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-	glDisableVertexAttribArray(mGLVertexCoords);
-	glDisableVertexAttribArray(mGLTextureCoords);
+	glDisableVertexAttribArray(vertex_coords_);
+	glDisableVertexAttribArray(texture_coords_);
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void VideoGLSurfaceRender::renderToView(GLuint texID) {
-	glViewport(_backingLeft, _backingTop, GLsizei (_backingWidth), GLsizei (_backingHeight));
-	if (!mIsInitialized) {
+void VideoGLSurfaceRender::RenderToView(GLuint texID) {
+	glViewport(backing_left_, backing_top_, GLsizei (backing_width_), GLsizei (backing_height_));
+	if (!initialized_) {
 		LOGE("ViewRenderEffect::renderEffect effect not initialized!");
 		return;
 	}
 
-	glUseProgram (mGLProgId);
+	glUseProgram (prog_id_);
 	static const GLfloat _vertices[] = { -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f };
-	glVertexAttribPointer(mGLVertexCoords, 2, GL_FLOAT, 0, 0, _vertices);
-	glEnableVertexAttribArray(mGLVertexCoords);
+	glVertexAttribPointer(vertex_coords_, 2, GL_FLOAT, 0, 0, _vertices);
+	glEnableVertexAttribArray(vertex_coords_);
 //  todo: 这里有疑问，按照预想的应该是被注释掉的纹理坐标，但实际上是下面的正常工作。只有在往preview上去渲染时
 //  才这样，why?
 //	static const GLfloat texCoords[] = { 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f };
 	static const GLfloat texCoords[] = { 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f };
-	glVertexAttribPointer(mGLTextureCoords, 2, GL_FLOAT, 0, 0, texCoords);
-	glEnableVertexAttribArray(mGLTextureCoords);
+	glVertexAttribPointer(texture_coords_, 2, GL_FLOAT, 0, 0, texCoords);
+	glEnableVertexAttribArray(texture_coords_);
 
 	/* Binding the input texture */
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texID);
-    glUniform1i(mGLUniformTexture, 0);
+    glUniform1i(uniform_texture_, 0);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-	glDisableVertexAttribArray(mGLVertexCoords);
-	glDisableVertexAttribArray(mGLTextureCoords);
+	glDisableVertexAttribArray(vertex_coords_);
+	glDisableVertexAttribArray(texture_coords_);
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void VideoGLSurfaceRender::renderToViewWithAutoFill(GLuint texID, int screenWidth, int screenHeight, int texWidth, int texHeight) {
+void VideoGLSurfaceRender::RenderToViewWithAutoFill(GLuint texID, int screenWidth, int screenHeight, int texWidth,
+                                                    int texHeight) {
 	glViewport(0, 0, screenWidth, screenHeight);
 
-	if (!mIsInitialized) {
+	if (!initialized_) {
 		LOGE("ViewRenderEffect::renderEffect effect not initialized!");
 		return;
 	}
@@ -154,80 +156,81 @@ void VideoGLSurfaceRender::renderToViewWithAutoFill(GLuint texID, int screenWidt
 //		LOGI("xOffset is %.3f", xOffset);
 	}
 
-	glUseProgram(mGLProgId);
+	glUseProgram(prog_id_);
 	static const GLfloat _vertices[] = { -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f };
-	glVertexAttribPointer(mGLVertexCoords, 2, GL_FLOAT, 0, 0, _vertices);
-	glEnableVertexAttribArray(mGLVertexCoords);
+	glVertexAttribPointer(vertex_coords_, 2, GL_FLOAT, 0, 0, _vertices);
+	glEnableVertexAttribArray(vertex_coords_);
     static const GLfloat texCoords[] = { xOffset, (GLfloat)(1.0 - yOffset), (GLfloat)(1.0 - xOffset), (GLfloat)(1.0 - yOffset), xOffset, yOffset,
                                          (GLfloat)(1.0 - xOffset), yOffset };
-	glVertexAttribPointer(mGLTextureCoords, 2, GL_FLOAT, 0, 0, texCoords);
-	glEnableVertexAttribArray(mGLTextureCoords);
+	glVertexAttribPointer(texture_coords_, 2, GL_FLOAT, 0, 0, texCoords);
+	glEnableVertexAttribArray(texture_coords_);
 
 	/* Binding the input texture */
 	glActiveTexture (GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texID);
-	glUniform1i(mGLUniformTexture, 0);
+	glUniform1i(uniform_texture_, 0);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-	glDisableVertexAttribArray(mGLVertexCoords);
-	glDisableVertexAttribArray(mGLTextureCoords);
+	glDisableVertexAttribArray(vertex_coords_);
+	glDisableVertexAttribArray(texture_coords_);
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 
-void VideoGLSurfaceRender::renderToAutoFitTexture(GLuint inputTexId, int width, int height, GLuint outputTexId) {
+void VideoGLSurfaceRender::RenderToAutoFitTexture(GLuint inputTexId, int width, int height, GLuint outputTexId) {
 	float textureAspectRatio = (float)height / (float)width;
-	float viewAspectRatio = (float)_backingHeight / (float)_backingWidth;
+	float viewAspectRatio = (float)backing_height_ / (float)backing_width_;
 	float xOffset = 0.0f;
 	float yOffset = 0.0f;
 	if(textureAspectRatio > viewAspectRatio){
 		//Update Y Offset
-		int expectedHeight = (int)((float)height*_backingWidth/(float)width+0.5f);
-		yOffset = (float)(expectedHeight-_backingHeight)/(2*expectedHeight);
+		int expectedHeight = (int)((float)height*backing_width_/(float)width+0.5f);
+		yOffset = (float)(expectedHeight-backing_height_)/(2*expectedHeight);
 //		LOGI("yOffset is %.3f", yOffset);
 	} else if(textureAspectRatio < viewAspectRatio){
 		//Update X Offset
-		int expectedWidth = (int)((float)(height * _backingWidth) / (float)_backingHeight + 0.5);
+		int expectedWidth = (int)((float)(height * backing_width_) / (float)backing_height_ + 0.5);
 		xOffset = (float)(width - expectedWidth)/(2*width);
 //		LOGI("xOffset is %.3f", xOffset);
 	}
 
-	glViewport(_backingLeft, _backingTop, _backingWidth, _backingHeight);
+	glViewport(backing_left_, backing_top_, backing_width_, backing_height_);
 
-	if (!mIsInitialized) {
+	if (!initialized_) {
 		LOGE("ViewRenderEffect::renderEffect effect not initialized!");
 		return;
 	}
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, outputTexId, 0);
-	checkGlError("PassThroughRender::renderEffect glFramebufferTexture2D");
+    CheckGlError("PassThroughRender::renderEffect glFramebufferTexture2D");
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (status != GL_FRAMEBUFFER_COMPLETE) {
 		LOGI("failed to make complete framebuffer object %x", status);
 	}
 
-	glUseProgram(mGLProgId);
+	glUseProgram(prog_id_);
 	const GLfloat _vertices[] = { -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f };
-	glVertexAttribPointer(mGLVertexCoords, 2, GL_FLOAT, 0, 0, _vertices);
-	glEnableVertexAttribArray(mGLVertexCoords);
+	glVertexAttribPointer(vertex_coords_, 2, GL_FLOAT, 0, 0, _vertices);
+	glEnableVertexAttribArray(vertex_coords_);
     static const GLfloat texCoords[] = { xOffset, yOffset, (GLfloat)(1.0 - xOffset), yOffset, xOffset, (GLfloat)1.0 - yOffset,
                                          (GLfloat)(1.0 - xOffset), (GLfloat)(1.0 - yOffset) };
-	glVertexAttribPointer(mGLTextureCoords, 2, GL_FLOAT, 0, 0, texCoords);
-	glEnableVertexAttribArray(mGLTextureCoords);
+	glVertexAttribPointer(texture_coords_, 2, GL_FLOAT, 0, 0, texCoords);
+	glEnableVertexAttribArray(texture_coords_);
 
 	/* Binding the input texture */
 	glActiveTexture (GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, inputTexId);
-	glUniform1i(mGLUniformTexture, 0);
+	glUniform1i(uniform_texture_, 0);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-	glDisableVertexAttribArray(mGLVertexCoords);
-	glDisableVertexAttribArray(mGLTextureCoords);
+	glDisableVertexAttribArray(vertex_coords_);
+	glDisableVertexAttribArray(texture_coords_);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
 }
 
-void VideoGLSurfaceRender::renderToCroppedTexture(GLuint inputTexId, GLuint outputTexId, int originalWidth, int originalHeight){
+void VideoGLSurfaceRender::RenderToCroppedTexture(GLuint inputTexId, GLuint outputTexId, int originalWidth,
+                                                  int originalHeight){
 	int targetWidth = MIN(originalWidth, originalHeight);
 	int targetHeight = MIN(originalWidth, originalHeight);
 	int squareLength = targetHeight;
@@ -238,179 +241,179 @@ void VideoGLSurfaceRender::renderToCroppedTexture(GLuint inputTexId, GLuint outp
 	float factor = (float)(rectangleLength - squareLength) / (float)rectangleLength;
 	float fromYPosition = factor / 2;
 	float toYPosition = 1.0 - factor / 2;
-	LOGI("originalWidth is %d originalHeight is %d _backingWidth is %d _backingHeight is %d", originalWidth, originalHeight, _backingWidth, _backingHeight);
-	glViewport(_backingLeft, _backingTop, _backingWidth, _backingHeight);
+	LOGI("originalWidth is %d originalHeight is %d backing_width_ is %d backing_height_ is %d", originalWidth, originalHeight, backing_width_, backing_height_);
+	glViewport(backing_left_, backing_top_, backing_width_, backing_height_);
 
-	if (!mIsInitialized) {
+	if (!initialized_) {
 		LOGE("ViewRenderEffect::renderEffect effect not initialized!");
 		return;
 	}
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, outputTexId, 0);
-	checkGlError("PassThroughRender::renderEffect glFramebufferTexture2D");
+    CheckGlError("PassThroughRender::renderEffect glFramebufferTexture2D");
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (status != GL_FRAMEBUFFER_COMPLETE) {
 		LOGI("failed to make complete framebuffer object %x", status);
 	}
 
-	glUseProgram (mGLProgId);
+	glUseProgram (prog_id_);
     static const GLfloat _vertices[] = { -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f };
-	glVertexAttribPointer(mGLVertexCoords, 2, GL_FLOAT, 0, 0, _vertices);
-	glEnableVertexAttribArray(mGLVertexCoords);
+	glVertexAttribPointer(vertex_coords_, 2, GL_FLOAT, 0, 0, _vertices);
+	glEnableVertexAttribArray(vertex_coords_);
     static const GLfloat texCoords[] = { 0.0f, fromYPosition, 1.0f, fromYPosition, 0.0f, toYPosition, 1.0f, toYPosition };
-	glVertexAttribPointer(mGLTextureCoords, 2, GL_FLOAT, 0, 0, texCoords);
-	glEnableVertexAttribArray(mGLTextureCoords);
+	glVertexAttribPointer(texture_coords_, 2, GL_FLOAT, 0, 0, texCoords);
+	glEnableVertexAttribArray(texture_coords_);
 
 	/* Binding the input texture */
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, inputTexId);
-	glUniform1i(mGLUniformTexture, 0);
+	glUniform1i(uniform_texture_, 0);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-	glDisableVertexAttribArray(mGLVertexCoords);
-	glDisableVertexAttribArray(mGLTextureCoords);
+	glDisableVertexAttribArray(vertex_coords_);
+	glDisableVertexAttribArray(texture_coords_);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
 }
 
-void VideoGLSurfaceRender::renderToEncoderTexture(GLuint inputTexId, GLuint outputTexId) {
-	glViewport(_backingLeft, _backingTop, GLsizei(_backingWidth), GLsizei(_backingHeight));
+void VideoGLSurfaceRender::RenderToEncoderTexture(GLuint inputTexId, GLuint outputTexId) {
+	glViewport(backing_left_, backing_top_, GLsizei(backing_width_), GLsizei(backing_height_));
 
-	if (!mIsInitialized) {
+	if (!initialized_) {
 		LOGE("ViewRenderEffect::renderEffect effect not initialized!");
 		return;
 	}
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, outputTexId, 0);
-	checkGlError("PassThroughRender::renderEffect glFramebufferTexture2D");
+    CheckGlError("PassThroughRender::renderEffect glFramebufferTexture2D");
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (status != GL_FRAMEBUFFER_COMPLETE) {
 		LOGI("failed to make complete framebuffer object %x", status);
 	}
 
-	glUseProgram (mGLProgId);
+	glUseProgram (prog_id_);
 	static const GLfloat _vertices[] = { -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f };
-	glVertexAttribPointer(mGLVertexCoords, 2, GL_FLOAT, 0, 0, _vertices);
-	glEnableVertexAttribArray(mGLVertexCoords);
+	glVertexAttribPointer(vertex_coords_, 2, GL_FLOAT, 0, 0, _vertices);
+	glEnableVertexAttribArray(vertex_coords_);
 	static const GLfloat texCoords[] = { 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f };
-	glVertexAttribPointer(mGLTextureCoords, 2, GL_FLOAT, 0, 0, texCoords);
-	glEnableVertexAttribArray(mGLTextureCoords);
+	glVertexAttribPointer(texture_coords_, 2, GL_FLOAT, 0, 0, texCoords);
+	glEnableVertexAttribArray(texture_coords_);
 
 	/* Binding the input texture */
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, inputTexId);
-	glUniform1i(mGLUniformTexture, 0);
+	glUniform1i(uniform_texture_, 0);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-	glDisableVertexAttribArray(mGLVertexCoords);
-	glDisableVertexAttribArray(mGLTextureCoords);
+	glDisableVertexAttribArray(vertex_coords_);
+	glDisableVertexAttribArray(texture_coords_);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
 }
 
-void VideoGLSurfaceRender::renderToTexture(GLuint inputTexId, GLuint outputTexId) {
-	glViewport(_backingLeft, _backingTop, GLsizei(_backingWidth), GLsizei(_backingHeight));
+void VideoGLSurfaceRender::RenderToTexture(GLuint inputTexId, GLuint outputTexId) {
+	glViewport(backing_left_, backing_top_, GLsizei(backing_width_), GLsizei(backing_height_));
 
-	if (!mIsInitialized) {
+	if (!initialized_) {
 		LOGE("ViewRenderEffect::renderEffect effect not initialized!");
 		return;
 	}
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, outputTexId, 0);
-	checkGlError("PassThroughRender::renderEffect glFramebufferTexture2D");
+    CheckGlError("PassThroughRender::renderEffect glFramebufferTexture2D");
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (status != GL_FRAMEBUFFER_COMPLETE) {
 		LOGI("failed to make complete framebuffer object %x", status);
 	}
 
-	glUseProgram (mGLProgId);
+	glUseProgram (prog_id_);
 	static const GLfloat _vertices[] = { -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, -1.0f };
-	glVertexAttribPointer(mGLVertexCoords, 2, GL_FLOAT, 0, 0, _vertices);
-	glEnableVertexAttribArray(mGLVertexCoords);
+	glVertexAttribPointer(vertex_coords_, 2, GL_FLOAT, 0, 0, _vertices);
+	glEnableVertexAttribArray(vertex_coords_);
 	static const GLfloat texCoords[] = {0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f };
-	glVertexAttribPointer(mGLTextureCoords, 2, GL_FLOAT, 0, 0, texCoords);
-	glEnableVertexAttribArray(mGLTextureCoords);
+	glVertexAttribPointer(texture_coords_, 2, GL_FLOAT, 0, 0, texCoords);
+	glEnableVertexAttribArray(texture_coords_);
 
 	/* Binding the input texture */
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, inputTexId);
-	glUniform1i(mGLUniformTexture, 0);
+	glUniform1i(uniform_texture_, 0);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-	glDisableVertexAttribArray(mGLVertexCoords);
-	glDisableVertexAttribArray(mGLTextureCoords);
+	glDisableVertexAttribArray(vertex_coords_);
+	glDisableVertexAttribArray(texture_coords_);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
 }
 
-void VideoGLSurfaceRender::checkGlError(const char* op){
+void VideoGLSurfaceRender::CheckGlError(const char *op){
 	for (GLint error = glGetError(); error; error = glGetError()) {
 		LOGE("after %s() glError (0x%x)\n", op, error);
 	}
 }
 
-void VideoGLSurfaceRender::dealloc() {
-	mIsInitialized = false;
-	glDeleteProgram(mGLProgId);
+void VideoGLSurfaceRender::Destroy() {
+	initialized_ = false;
+	glDeleteProgram(prog_id_);
 }
 
-void VideoGLSurfaceRender::renderToVFlipTexture(GLuint inputTexId, GLuint outputTexId) {
-	glViewport(_backingLeft, _backingTop, GLsizei(_backingWidth), GLsizei(_backingHeight));
+void VideoGLSurfaceRender::RenderToVFlipTexture(GLuint inputTexId, GLuint outputTexId) {
+	glViewport(backing_left_, backing_top_, GLsizei(backing_width_), GLsizei(backing_height_));
 
-	if (!mIsInitialized) {
+	if (!initialized_) {
 		LOGE("ViewRenderEffect::renderEffect effect not initialized!");
 		return;
 	}
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, outputTexId, 0);
-	checkGlError("PassThroughRender::renderEffect glFramebufferTexture2D");
+    CheckGlError("PassThroughRender::renderEffect glFramebufferTexture2D");
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (status != GL_FRAMEBUFFER_COMPLETE) {
 		LOGI("failed to make complete framebuffer object %x", status);
 	}
 
-	glUseProgram (mGLProgId);
+	glUseProgram (prog_id_);
 	static const GLfloat _vertices[] = { -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, -1.0f };
-	glVertexAttribPointer(mGLVertexCoords, 2, GL_FLOAT, 0, 0, _vertices);
-	glEnableVertexAttribArray(mGLVertexCoords);
+	glVertexAttribPointer(vertex_coords_, 2, GL_FLOAT, 0, 0, _vertices);
+	glEnableVertexAttribArray(vertex_coords_);
 	static const GLfloat texCoords[] = {0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f };
-	glVertexAttribPointer(mGLTextureCoords, 2, GL_FLOAT, 0, 0, texCoords);
-	glEnableVertexAttribArray(mGLTextureCoords);
+	glVertexAttribPointer(texture_coords_, 2, GL_FLOAT, 0, 0, texCoords);
+	glEnableVertexAttribArray(texture_coords_);
 
 	/* Binding the input texture */
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, inputTexId);
-	glUniform1i(mGLUniformTexture, 0);
+	glUniform1i(uniform_texture_, 0);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-	glDisableVertexAttribArray(mGLVertexCoords);
-	glDisableVertexAttribArray(mGLTextureCoords);
+	glDisableVertexAttribArray(vertex_coords_);
+	glDisableVertexAttribArray(texture_coords_);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
 }
 
-void VideoGLSurfaceRender::resetRenderSize(int left, int top, int width, int height){
-	this->_backingLeft = left;
-	this->_backingTop = top;
-	this->_backingWidth = width;
-	this->_backingHeight = height;
+void VideoGLSurfaceRender::ResetRenderSize(int left, int top, int width, int height){
+	this->backing_left_ = left;
+	this->backing_top_ = top;
+	this->backing_width_ = width;
+	this->backing_height_ = height;
 }
 
-GLuint VideoGLSurfaceRender::loadProgram(char* pVertexSource, char* pFragmentSource) {
-	GLuint vertexShader = loadShader(GL_VERTEX_SHADER, pVertexSource);
+GLuint VideoGLSurfaceRender::LoadProgram(char *pVertexSource, char *pFragmentSource) {
+	GLuint vertexShader = LoadShader(GL_VERTEX_SHADER, pVertexSource);
 	if (!vertexShader) {
 		return 0;
 	}
-	GLuint pixelShader = loadShader(GL_FRAGMENT_SHADER, pFragmentSource);
+	GLuint pixelShader = LoadShader(GL_FRAGMENT_SHADER, pFragmentSource);
 	if (!pixelShader) {
 		return 0;
 	}
 	GLuint program = glCreateProgram();
 	if (program) {
 		glAttachShader(program, vertexShader);
-		checkGlError("glAttachShader");
+        CheckGlError("glAttachShader");
 		glAttachShader(program, pixelShader);
-		checkGlError("glAttachShader");
+        CheckGlError("glAttachShader");
 		glLinkProgram(program);
 		GLint linkStatus = GL_FALSE;
 		glGetProgramiv(program, GL_LINK_STATUS, &linkStatus);
@@ -432,7 +435,7 @@ GLuint VideoGLSurfaceRender::loadProgram(char* pVertexSource, char* pFragmentSou
 	return program;
 }
 
-GLuint VideoGLSurfaceRender::loadShader(GLenum shaderType, const char* pSource) {
+GLuint VideoGLSurfaceRender::LoadShader(GLenum shaderType, const char *pSource) {
 	GLuint shader = glCreateShader(shaderType);
 	if (shader) {
 		glShaderSource(shader, 1, &pSource, NULL);
@@ -450,7 +453,7 @@ GLuint VideoGLSurfaceRender::loadShader(GLenum shaderType, const char* pSource) 
 					free(buf);
 				}
 			} else {
-				LOGI( "Guessing at GL_INFO_LOG_LENGTH size\n");
+				LOGI( "Guessing at GL_INFO_LOG_LENGTH Size\n");
 				char* buf = (char*) malloc(0x1000);
 				if (buf) {
 					glGetShaderInfoLog(shader, 0x1000, NULL, buf);

@@ -112,9 +112,9 @@ static inline long getCurrentTimeSecSinceReferenceDate()
 }
 inline int readShortFromFile(short *shortarray, int size, FILE* fp) {
 	int actualSize = fread(shortarray, 2, size, fp);
-	//	LOGI("read data expected size is %d and size is %d", size, actualSize);
+	//	LOGI("read data expected Size is %d and Size is %d", Size, actualSize);
 	if (actualSize != size) {
-//		__android_log_print(ANDROID_LOG_INFO, "COMMON_TOOLS", "actualSize is %d size is %d", actualSize, size);
+//		__android_log_print(ANDROID_LOG_INFO, "COMMON_TOOLS", "actualSize is %d Size is %d", actualSize, Size);
 		int flag = feof(fp);
 		if (flag != 0 && actualSize == 0) {
 			//到达文件末尾
@@ -127,7 +127,7 @@ inline int readShortFromFile(short *shortarray, int size, FILE* fp) {
 
 inline int readByteFromFile(byte *bytearray, int size, FILE* fp) {
 	int actualSize = fread(bytearray, 1, size, fp);
-	//	LOGI("read data expected size is %d and size is %d", size, actualSize);
+	//	LOGI("read data expected Size is %d and Size is %d", Size, actualSize);
 	if (actualSize != size) {
 		int flag = feof(fp);
 		if (flag != 0 && actualSize == 0) {
@@ -204,7 +204,7 @@ inline void convertShortArrayFromByteArray(byte *bytearray, int size, SInt16 *sh
 }
 
 //客户端代码需要根据accompanySampleRate / audioSampleRate算出transfer_ratio;
-//以及根据(int)((float)(sample_count) / accompanySampleRate * audioSampleRate)算出transfered_sample_count;
+//以及根据(int)((float)(sample_count) / accompany_sample_rate_ * sample_rate_)算出transfered_sample_count;
 //并且分配出samples_transfered---将伴奏mp3解析成为pcm的short数组，需要先进行转换为录音的采样频率
 inline void convertAccompanySampleRateByAudioSampleRate(SInt16 *samples, SInt16 *samples_transfered, int transfered_sample_count, float transfer_ratio) {
 	for (int i = 0; i < transfered_sample_count; i++) {
