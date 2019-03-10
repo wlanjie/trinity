@@ -1,22 +1,22 @@
-#include "./recording_h264_publisher.h"
+#include "mux_h264.h"
 #define LOG_TAG "RecordingH264Publisher"
 #define is_start_code(code)	(((code) & 0x0ffffff) == 0x01)
 
-RecordingH264Publisher::RecordingH264Publisher() {
-    headerData = NULL;
-    headerSize = 0;
+MuxH264::MuxH264() {
+    header_data_ = NULL;
+    header_size_ = 0;
     lastPresentationTimeMs = -1;
 }
 
-RecordingH264Publisher::~RecordingH264Publisher() {
+MuxH264::~MuxH264() {
 }
 
-double RecordingH264Publisher::getVideoStreamTimeInSecs(){
+double MuxH264::GetVideoStreamTimeInSecs(){
     return lastPresentationTimeMs / 1000.0f;
 }
 
-uint32_t RecordingH264Publisher::findStartCode(uint8_t* in_pBuffer, uint32_t in_ui32BufferSize,
-                                               uint32_t in_ui32Code, uint32_t& out_ui32ProcessedBytes) {
+uint32_t MuxH264::FindStartCode(uint8_t *in_pBuffer, uint32_t in_ui32BufferSize,
+                                               uint32_t in_ui32Code, uint32_t &out_ui32ProcessedBytes) {
     uint32_t ui32Code = in_ui32Code;
     
     const uint8_t * ptr = in_pBuffer;
@@ -31,9 +31,9 @@ uint32_t RecordingH264Publisher::findStartCode(uint8_t* in_pBuffer, uint32_t in_
     return ui32Code;
 }
 
-void RecordingH264Publisher::parseH264SequenceHeader(uint8_t* in_pBuffer, uint32_t in_ui32Size,
-                                                     uint8_t** inout_pBufferSPS, int& inout_ui32SizeSPS,
-                                                     uint8_t** inout_pBufferPPS, int& inout_ui32SizePPS) {
+void MuxH264::ParseH264SequenceHeader(uint8_t *in_pBuffer, uint32_t in_ui32Size,
+                                                     uint8_t **inout_pBufferSPS, int &inout_ui32SizeSPS,
+                                                     uint8_t **inout_pBufferPPS, int &inout_ui32SizePPS) {
     uint32_t ui32StartCode = 0x0ff;
     
     uint8_t* pBuffer = in_pBuffer;
@@ -46,7 +46,7 @@ void RecordingH264Publisher::parseH264SequenceHeader(uint8_t* in_pBuffer, uint32
     
     do {
         uint32_t ui32ProcessedBytes = 0;
-        ui32StartCode = findStartCode(pBuffer, ui32BufferSize, ui32StartCode,
+        ui32StartCode = FindStartCode(pBuffer, ui32BufferSize, ui32StartCode,
                                       ui32ProcessedBytes);
         pBuffer += ui32ProcessedBytes;
         ui32BufferSize -= ui32ProcessedBytes;
@@ -74,15 +74,15 @@ void RecordingH264Publisher::parseH264SequenceHeader(uint8_t* in_pBuffer, uint32
     inout_ui32SizePPS = idr - pps + 4;
 }
 
-int RecordingH264Publisher::write_video_frame(AVFormatContext *oc, AVStream *st) {
+int MuxH264::WriteVideoFrame(AVFormatContext *oc, AVStream *st) {
     int ret = 0;
     AVCodecContext *c = st->codec;
     
     /** 1、调用注册的回调方法来拿到我们的h264的EncodedData **/
     LiveVideoPacket *h264Packet = NULL;
-    fillH264PacketCallback(&h264Packet, fillH264PacketContext);
+    fill_h264_packet_callback_(&h264Packet, fill_h264_packet_context_);
     if (h264Packet == NULL) {
-        LOGE("fillH264PacketCallback Get null packet_");
+        LOGE("fill_h264_packet_callback_ Get null packet_");
         return VIDEO_QUEUE_ABORT_ERR_CODE;
     }
     int bufferSize = (h264Packet)->size;
@@ -92,8 +92,8 @@ int RecordingH264Publisher::write_video_frame(AVFormatContext *oc, AVStream *st)
     AVPacket pkt = { 0 };
     av_init_packet(&pkt);
     pkt.stream_index = st->index;
-//    int64_t pts = lastPresentationTimeMs / 1000.0f / av_q2d(video_st->time_base);
-    int64_t cal_pts = lastPresentationTimeMs / 1000.0f / av_q2d(video_st->time_base);
+//    int64_t pts = lastPresentationTimeMs / 1000.0f / av_q2d(video_stream_->time_base);
+    int64_t cal_pts = lastPresentationTimeMs / 1000.0f / av_q2d(video_stream_->time_base);
     int64_t pts = h264Packet->pts == PTS_PARAM_UN_SETTIED_FLAG ? cal_pts : h264Packet->pts;
     int64_t dts = h264Packet->dts == DTS_PARAM_UN_SETTIED_FLAG ? pts : h264Packet->dts == DTS_PARAM_NOT_A_NUM_FLAG ? AV_NOPTS_VALUE : h264Packet->dts;
 //    LOGI("h264Packet is {%llu, %llu}", h264Packet->pts, h264Packet->dts);
@@ -101,17 +101,17 @@ int RecordingH264Publisher::write_video_frame(AVFormatContext *oc, AVStream *st)
 //    LOGI("Final is {%llu, %llu} nalu_type is %d", pts, dts, nalu_type);
     if (nalu_type == H264_NALU_TYPE_SEQUENCE_PARAMETER_SET) {
         //我们这里要求sps和pps一块拼接起来构造成AVPacket传过来
-        headerSize = bufferSize;
-        headerData = new uint8_t[headerSize];
-        memcpy(headerData, outputData, bufferSize);
+        header_size_ = bufferSize;
+        header_data_ = new uint8_t[header_size_];
+        memcpy(header_data_, outputData, bufferSize);
         
         uint8_t* spsFrame = 0;
         uint8_t* ppsFrame = 0;
         
         int spsFrameLen = 0;
         int ppsFrameLen = 0;
-        
-        parseH264SequenceHeader(headerData, headerSize, &spsFrame, spsFrameLen,
+
+        ParseH264SequenceHeader(header_data_, header_size_, &spsFrame, spsFrameLen,
                                 &ppsFrame, ppsFrameLen);
         
         // Extradata contains PPS & SPS for AVCC format
@@ -141,7 +141,7 @@ int RecordingH264Publisher::write_video_frame(AVFormatContext *oc, AVStream *st)
         if (ret < 0) {
             LOGI("Error occurred when opening output file: %s\n", av_err2str(ret));
         } else{
-        		isWriteHeaderSuccess = true;
+        		write_header_success_ = true;
         }
     } else {
         if (nalu_type == H264_NALU_TYPE_IDR_PICTURE || nalu_type == H264_NALU_TYPE_SEI) {
@@ -183,7 +183,7 @@ int RecordingH264Publisher::write_video_frame(AVFormatContext *oc, AVStream *st)
         /** 3、写出数据 **/
         if (pkt.size) {
 //        		LOGI("pkt_ : {%llu, %llu}", pkt_.pts, pkt_.dts);
-            ret = RecordingPublisher::interleavedWriteFrame(oc, &pkt);
+            ret = Mp4Mux::InterleavedWriteFrame(oc, &pkt);
             if (ret != 0) {
                 LOGI("Error while writing Video frame_: %s\n", av_err2str(ret));
             }
@@ -196,11 +196,11 @@ int RecordingH264Publisher::write_video_frame(AVFormatContext *oc, AVStream *st)
     return ret;
 }
 
-int RecordingH264Publisher::Stop() {
-    int ret = RecordingPublisher::Stop();
-    if (headerData) {
-        delete [] headerData;
-        headerData = NULL;
+int MuxH264::Stop() {
+    int ret = Mp4Mux::Stop();
+    if (header_data_) {
+        delete [] header_data_;
+        header_data_ = NULL;
     }
     return ret;
 }

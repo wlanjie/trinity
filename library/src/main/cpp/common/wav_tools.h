@@ -96,11 +96,11 @@ static inline byte* WriteWaveFileHeader(WaveHeader* waveHeader) {
 	header[9] = 'A';
 	header[10] = 'V';
 	header[11] = 'E';
-	header[12] = 'f'; // 'fmt ' chunk
+	header[12] = 'f'; // 'output_format_ ' chunk
 	header[13] = 'm';
 	header[14] = 't';
 	header[15] = ' ';
-	header[16] = 16; // 4 bytes: Size of 'fmt ' chunk
+	header[16] = 16; // 4 bytes: Size of 'output_format_ ' chunk
 	header[17] = 0;
 	header[18] = 0;
 	header[19] = 0;

@@ -5,8 +5,8 @@
 #include "./../common/live_thread.h"
 #include "livecore/common/packet_pool.h"
 #include "livecore/common/audio_packet_pool.h"
-#include "../mp4/recording_h264_publisher.h"
-#include "../mp4/recording_publisher.h"
+#include "livecore/mp4/mux_h264.h"
+#include "livecore/mp4/mp4_mux.h"
 
 #define LIVE_AUDIO_PCM_OUTPUT_CHANNEL 2
 
@@ -49,7 +49,7 @@ protected:
     pthread_mutex_t interrupt_lock_;
     pthread_cond_t interrupt_condition_;
 
-    RecordingPublisher *video_publisher_;
+    Mp4Mux *video_publisher_;
     virtual void Init();
     virtual void BuildPublisherInstance();
     void ReleasePublisher();

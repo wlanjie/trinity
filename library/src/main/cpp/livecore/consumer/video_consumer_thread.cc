@@ -113,7 +113,7 @@ void VideoConsumerThread::ReleasePublisher() {
 }
 
 void VideoConsumerThread::BuildPublisherInstance() {
-	video_publisher_ = new RecordingH264Publisher();
+	video_publisher_ = new MuxH264();
 }
 
 void VideoConsumerThread::Stop() {

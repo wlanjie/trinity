@@ -85,7 +85,7 @@ public class TrinityCamera {
 				@Override
 				public void onFrameAvailable(SurfaceTexture surfaceTexture) {
 					if (null != mCallback) {
-//						Log.d("RecordingPublisher", "surfaceTexture time stamp is "+surfaceTexture.getTimestamp()/1000000000.0f);
+//						Log.d("Mp4Mux", "surfaceTexture time stamp is "+surfaceTexture.getTimestamp()/1000000000.0f);
 						mCallback.notifyFrameAvailable();
 					}
 				}
