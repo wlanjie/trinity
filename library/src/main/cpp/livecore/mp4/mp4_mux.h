@@ -9,12 +9,8 @@
 #include <map>
 
 #define COLOR_FORMAT            AV_PIX_FMT_YUV420P
-#endif
-
 #define AUDIO_QUEUE_ABORT_ERR_CODE               -100200
 #define VIDEO_QUEUE_ABORT_ERR_CODE               -100201
-
-#endif
 
 class Mp4Mux {
 public:

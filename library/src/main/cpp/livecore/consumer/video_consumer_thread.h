@@ -25,17 +25,6 @@ public:
 
     virtual void Stop();
 
-    void registerPublishTimeoutCallback(int (*on_publish_timeout_callback)(void *context),
-                                        void *context);
-
-    void registerHotAdaptiveBitrateCallback(
-            int (*hot_adaptive_bitrate_callback)(int maxBitrate, int avgBitrate, int fps,
-                                                 void *context), void *context);
-
-    void registerStatisticsBitrateCallback(
-            int (*statistics_bitrate_callback)(int sendBitrate, int compressedBitrate,
-                                               void *context), void *context);
-
     int GetH264Packet(LiveVideoPacket **packet);
 
     int GetAudioPacket(LiveAudioPacket **audioPacket);
@@ -44,11 +33,6 @@ protected:
     LivePacketPool *packet_pool_;
     LiveAudioPacketPool *aac_packet_pool_;
     bool stopping_;
-    bool connecting_;
-    pthread_mutex_t connecting_lock_;
-    pthread_mutex_t interrupt_lock_;
-    pthread_cond_t interrupt_condition_;
-
     Mp4Mux *video_publisher_;
     virtual void Init();
     virtual void BuildPublisherInstance();

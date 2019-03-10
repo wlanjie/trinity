@@ -10,12 +10,10 @@ Mp4Mux::Mp4Mux() {
     audio_stream_ = NULL;
     bit_stream_filter_context_ = NULL;
     format_context_ = NULL;
-    publishTimeout = 0;
     last_audio_packet_presentation_time_mills_ = 0;
 }
 
 Mp4Mux::~Mp4Mux() {
-    publishTimeout = 0;
 }
 
 void Mp4Mux::registerFillAACPacketCallback(
