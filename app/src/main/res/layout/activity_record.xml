@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+    <com.trinity.camera.TrinityPreviewView
+            android:id="@+id/preview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+    <LinearLayout android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal"
+                  android:layout_centerHorizontal="true"
+                  android:layout_alignParentBottom="true"
+                  android:layout_marginBottom="16dp">
+
+        <Button
+                android:id="@+id/start_record"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="开始录制 "/>
+
+        <Button
+                android:id="@+id/stop_record"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="结束录制"/>
+    </LinearLayout>
+</RelativeLayout>
