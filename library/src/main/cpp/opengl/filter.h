@@ -69,6 +69,21 @@ public:
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
+    void UpdateLut(uint8_t* lut, int width, int height) {
+        if (0 != filter_texture_id_) {
+            glDeleteTextures(1, &filter_texture_id_);
+            filter_texture_id_ = 0;
+        }
+        glGenTextures(1, &filter_texture_id_);
+        glBindTexture(GL_TEXTURE_2D, filter_texture_id_);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 512, 512, 0, GL_RGBA, GL_UNSIGNED_BYTE, lut);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
     ~Filter() {
         if (filter_texture_id_ != 0) {
             glDeleteTextures(1, &filter_texture_id_);

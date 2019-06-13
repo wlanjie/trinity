@@ -6,7 +6,12 @@ import android.view.SurfaceView
 
 class VideoEditor : TrinityVideoEditor, SurfaceHolder.Callback {
 
+  companion object {
+    const val NO_ACTION = -1
+  }
+
   private var mId: Long = 0
+  private var mFilterActionId = NO_ACTION
 
   init {
     mId = create()
@@ -161,11 +166,12 @@ class VideoEditor : TrinityVideoEditor, SurfaceHolder.Callback {
 
   private external fun addAction(): Int
 
-  override fun addFilter(lut: ByteArray): Int {
-    return addFilter(mId, lut)
+  override fun addFilter(lut: ByteArray, startTime: Long, endTime: Long): Int {
+    mFilterActionId = addFilter(mId, lut, startTime, endTime, mFilterActionId)
+    return mFilterActionId
   }
 
-  private external fun addFilter(id: Long, lut: ByteArray): Int
+  private external fun addFilter(id: Long, lut: ByteArray, startTime: Long, endTime: Long, actionId: Int): Int
 
   /**
    * 开始播放

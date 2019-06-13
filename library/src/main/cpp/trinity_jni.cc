@@ -401,16 +401,16 @@ static jint Android_JNI_video_editor_getClipIndex(JNIEnv* env, jobject object, j
     return editor->GetClipIndex(time);
 }
 
-static jint Android_JNI_video_editor_addFilter(JNIEnv* env, jobject object, jlong handle, jbyteArray lut) {
+static jint Android_JNI_video_editor_addFilter(JNIEnv* env, jobject object, jlong handle, jbyteArray lut, jlong start_time, jlong end_time, jint action_id) {
     if (handle <= 0) {
         return 0;
     }
     VideoEditor* editor = reinterpret_cast<VideoEditor*>(handle);
     jbyte* lut_buffer = env->GetByteArrayElements(lut, JNI_FALSE);
     int lut_size = env->GetArrayLength(lut);
-    int action_id = editor->AddFilter(reinterpret_cast<uint8_t *>(lut_buffer), lut_size, 0, 3000);
+    int id = editor->AddFilter(reinterpret_cast<uint8_t *>(lut_buffer), lut_size, start_time, end_time, action_id);
     env->ReleaseByteArrayElements(lut, lut_buffer, 0);
-    return action_id;
+    return id;
 }
 
 static int Android_JNI_video_editor_play(JNIEnv* env, jobject object, jlong handle, jboolean repeat) {
@@ -503,7 +503,7 @@ static JNINativeMethod videoEditorMethods[] = {
         {"getVideoTime",        "(JIJ)J",                                                (void **) Android_JNI_video_editor_getVideoTime },
         {"getClipTime",         "(JIJ)J",                                                (void **) Android_JNI_video_editor_getClipTime },
         {"getClipIndex",        "(JJ)I",                                                 (void **) Android_JNI_video_editor_getClipIndex },
-        {"addFilter",           "(J[B)I",                                                (void **) Android_JNI_video_editor_addFilter },
+        {"addFilter",           "(J[BJJI)I",                                             (void **) Android_JNI_video_editor_addFilter },
         {"play",                "(JZ)I",                                                 (void **) Android_JNI_video_editor_play },
         {"pause",               "(J)V",                                                  (void **) Android_JNI_video_editor_pause },
         {"resume",              "(J)V",                                                  (void **) Android_JNI_video_editor_resume },

@@ -79,7 +79,7 @@ interface TrinityVideoEditor {
    */
   fun getClipIndex(time: Long): Int
 
-  fun addFilter(lut: ByteArray): Int
+  fun addFilter(lut: ByteArray, startTime: Long, endTime: Long): Int
 
   /**
    * 开始播放

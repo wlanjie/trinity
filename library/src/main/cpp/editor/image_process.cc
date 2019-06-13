@@ -42,6 +42,9 @@ int ImageProcess::OnProcess(int texture_id, uint64_t current_time, int width, in
             if (nullptr == filter_) {
                 filter_ = new Filter(action->lut, width, height);
             }
+            if (action->update_lut == 1) {
+                filter_->UpdateLut(action->lut, width, height);
+            }
             if (current_time >= action->start_time && current_time <= action->end_time) {
                 texture = filter_->OnDrawFrame(texture_id);
             }
@@ -123,6 +126,7 @@ int ImageProcess::AddFilterAction(uint8_t *lut, int lut_size, uint64_t start_tim
         action->lut = buffer;
         action->start_time = start_time;
         action->end_time = end_time;
+        action->update_lut = 0;
         actId = AddAction(FILTER, action);
     } else {
         auto it = std::find_if(actions_.begin(), actions_.end(), [action_id](const Action& action) -> bool {
@@ -141,6 +145,7 @@ int ImageProcess::AddFilterAction(uint8_t *lut, int lut_size, uint64_t start_tim
             filterInfo->lut = buffer;
             filterInfo->start_time = start_time;
             filterInfo->end_time = end_time;
+            filterInfo->update_lut = 1;
         }
     }
     return actId;

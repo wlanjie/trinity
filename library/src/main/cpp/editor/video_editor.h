@@ -100,7 +100,7 @@ public:
     int GetClipIndex(int64_t time);
 
     // 添加滤镜
-    int AddFilter(uint8_t* lut, int lut_size, uint64_t start_time, uint64_t end_time);
+    int AddFilter(uint8_t* lut, int lut_size, uint64_t start_time, uint64_t end_time, int action_id);
 
     // 开始播放
     // 是否循环播放
