@@ -108,7 +108,6 @@ int MessageQueue::DequeueMessage(Message **msg, bool block) {
             ret = 0;
             break;
         } else {
-            LOGE("pthread_cond_wait(&condition_, &lock_);");
             pthread_cond_wait(&condition_, &lock_);
         }
     }

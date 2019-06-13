@@ -41,6 +41,7 @@ typedef struct {
     uint64_t start_time;
     uint64_t end_time;
     uint8_t* lut;
+    int update_lut;
 } FilterAction;
 
 #endif //TRINITY_ACTION_H

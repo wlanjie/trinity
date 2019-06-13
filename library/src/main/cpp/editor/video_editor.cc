@@ -299,9 +299,9 @@ int VideoEditor::GetClipIndex(int64_t time) {
     return 0;
 }
 
-int VideoEditor::AddFilter(uint8_t *lut, int lut_size, uint64_t start_time, uint64_t end_time) {
+int VideoEditor::AddFilter(uint8_t *lut, int lut_size, uint64_t start_time, uint64_t end_time, int action_id) {
     if (nullptr != image_process_) {
-        return image_process_->AddFilterAction(lut, lut_size, start_time, end_time);
+        return image_process_->AddFilterAction(lut, lut_size, start_time, end_time, action_id);
     }
     return 0;
 }
