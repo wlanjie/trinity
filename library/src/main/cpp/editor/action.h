@@ -9,7 +9,8 @@ enum ActionType {
     NONE,
     ROTATE,
     FLASH_WHITE,
-    FILTER
+    FILTER,
+    SPLIT_SCREEN
 };
 
 enum RotateType {
@@ -43,5 +44,11 @@ typedef struct {
     uint8_t* lut;
     int update_lut;
 } FilterAction;
+
+typedef struct {
+    uint64_t start_time;
+    uint64_t end_time;
+    int split_screen_count;
+} SplitScreenAction;
 
 #endif //TRINITY_ACTION_H

@@ -28,9 +28,6 @@ public:
     }
 
     void SetFrame(int frame, int screen_width, int screen_height);
-protected:
-    virtual void RunOnDrawTasks();
-    virtual void OnDrawArrays();
 
 private:
     void ResetVertexCoordinate();

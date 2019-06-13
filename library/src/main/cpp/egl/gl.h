@@ -34,7 +34,7 @@ static const char* DEFAULT_VERTEX_SHADER =
         "}";
 
 static const char* DEFAULT_FRAGMENT_SHADER =
-        "precision mediump float;\n"
+        "precision highp float;\n"
         "varying vec2 textureCoordinate;\n"
         "uniform sampler2D inputImageTexture;\n"
         "void main() {\n"
@@ -42,7 +42,7 @@ static const char* DEFAULT_FRAGMENT_SHADER =
         "}";
 
 static const char* FLASH_WHITE_FRAGMENT_SHADER =
-        "precision mediump float;\n"
+        "precision highp float;\n"
         "varying vec2 textureCoordinate;\n"
         "uniform sampler2D inputImageTexture;\n"
         "uniform float exposureColor;\n"
@@ -51,4 +51,67 @@ static const char* FLASH_WHITE_FRAGMENT_SHADER =
         "    gl_FragColor = vec4(textureColor.r + exposureColor, textureColor.g + exposureColor, textureColor.b + exposureColor, textureColor.a);\n"
         "}\n";
 
+static const char *SCREEN_TWO_FRAGMENT_SHADER =
+        "precision highp float;                                                                 \n"
+        "uniform sampler2D inputImageTexture;                                                   \n"
+        "varying highp vec2 textureCoordinate;                                                  \n"
+        "void main() {                                                                          \n"
+        "    int col = int(textureCoordinate.y * 2.0);                                          \n"
+        "    vec2 textureCoordinateToUse = textureCoordinate;                                   \n"
+        "    textureCoordinateToUse.y = (textureCoordinate.y - float(col) / 2.0) * 2.0;         \n"
+        "    textureCoordinateToUse.y = textureCoordinateToUse.y/960.0*480.0+1.0/4.0;           \n"
+        "    gl_FragColor=texture2D(inputImageTexture, textureCoordinateToUse);                 \n"
+        "}                                                                                      \n";
+
+static const char* SCREEN_THREE_FRAGMENT_SHADER =
+        "precision highp float;                                                                 \n"
+        "uniform sampler2D inputImageTexture;                                                   \n"
+        "varying highp vec2 textureCoordinate;                                                  \n"
+        "void main() {                                                                          \n"
+        "    int col = int(textureCoordinate.y * 3.0);                                          \n"
+        "    vec2 textureCoordinateToUse = textureCoordinate;                                   \n"
+        "    textureCoordinateToUse.y = (textureCoordinate.y - float(col) / 3.0) * 3.0;         \n"
+        "    textureCoordinateToUse.y = textureCoordinateToUse.y/960.0*320.0+1.0/3.0;           \n"
+        "    gl_FragColor=texture2D(inputImageTexture, textureCoordinateToUse);                 \n"
+        "}                                                                                      \n";
+
+static const char* SCREEN_FOUR_FRAGMENT_SHADER =
+        "precision highp float;                                                                 \n"
+        "uniform sampler2D inputImageTexture;                                                   \n"
+        "varying highp vec2 textureCoordinate;                                                  \n"
+        "void main() {                                                                          \n"
+        "    int row = int(textureCoordinate.x * 2.0);                                          \n"
+        "    int col = int(textureCoordinate.y * 2.0);                                          \n"
+        "    vec2 textureCoordinateToUse = textureCoordinate;                                   \n"
+        "    textureCoordinateToUse.x = (textureCoordinate.x - float(row) / 2.0) * 2.0;         \n"
+        "    textureCoordinateToUse.y = (textureCoordinate.y - float(col) / 2.0) * 2.0;         \n"
+        "    gl_FragColor=texture2D(inputImageTexture, textureCoordinateToUse);                 \n"
+        "}                                                                                      \n";
+
+static const char* SCREEN_SIX_FRAGMENT_SHADER =
+        "precision highp float;                                                                 \n"
+        "uniform sampler2D inputImageTexture;                                                   \n"
+        "varying highp vec2 textureCoordinate;                                                  \n"
+        "void main() {                                                                          \n"
+        "    int row = int(textureCoordinate.x * 3.0);                                          \n"
+        "    int col = int(textureCoordinate.y * 2.0);                                          \n"
+        "    vec2 textureCoordinateToUse = textureCoordinate;                                   \n"
+        "    textureCoordinateToUse.x = (textureCoordinate.x - float(row) / 3.0) * 3.0;         \n"
+        "    textureCoordinateToUse.y = (textureCoordinate.y - float(col) / 2.0) * 2.0;         \n"
+        "    textureCoordinateToUse.x = textureCoordinateToUse.x/540.0*360.0+90.0/540.0;        \n"
+        "    gl_FragColor=texture2D(inputImageTexture, textureCoordinateToUse);                 \n"
+        "}                                                                                      \n";
+
+static const char* SCREEN_NINE_FRAGMENT_SHADER =
+        "precision highp float;                                                                 \n"
+        "uniform sampler2D inputImageTexture;                                                   \n"
+        "varying highp vec2 textureCoordinate;                                                  \n"
+        "void main() {                                                                          \n"
+        "    int row = int(textureCoordinate.x * 3.0);                                          \n"
+        "    int col = int(textureCoordinate.y * 3.0);                                          \n"
+        "    vec2 textureCoordinateToUse = textureCoordinate;                                   \n"
+        "    textureCoordinateToUse.x = (textureCoordinate.x - float(row) / 3.0) * 3.0;         \n"
+        "    textureCoordinateToUse.y = (textureCoordinate.y - float(col) / 3.0) * 3.0;         \n"
+        "    gl_FragColor=texture2D(inputImageTexture, textureCoordinateToUse);                 \n"
+        "}                                                                                      \n";
 #endif //TRINITY_GL_H

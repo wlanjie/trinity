@@ -79,14 +79,6 @@ FrameBuffer::OnDrawFrame(GLuint texture_id, const GLfloat *vertex_coordinate, co
     return texture_id_;
 }
 
-void FrameBuffer::RunOnDrawTasks() {
-    OpenGL::RunOnDrawTasks();
-}
-
-void FrameBuffer::OnDrawArrays() {
-    OpenGL::OnDrawArrays();
-}
-
 void FrameBuffer::SetFrame(int frame, int screen_width, int screen_height) {
     int width = 0;
     int height = 0;

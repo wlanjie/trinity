@@ -27,6 +27,7 @@ VideoEditor::VideoEditor() {
     frame_height_ = 0;
     video_play_state_ = kNone;
     image_process_ = new ImageProcess();
+//    image_process_->AddSplitScreenAction(9, 0, INT64_MAX);
 
     message_queue_ = new MessageQueue("Video Render Message Queue");
     handler_ = new VideoRenderHandler(this, message_queue_);

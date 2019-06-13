@@ -35,6 +35,7 @@ public:
     int AddRotateAction(float rotate, int action_id);
     int AddFlashWhiteAction(int time, uint64_t start_time, uint64_t end_time, int action_id = NO_ACTION);
     int AddFilterAction(uint8_t* lut, int lut_size, uint64_t start_time, uint64_t end_time, int action_id = NO_ACTION);
+    int AddSplitScreenAction(int screen_count, uint64_t start_time, uint64_t end_time, int action_id = NO_ACTION);
 private:
     int AddAction(ActionType type, void* args);
     int OnProcess(int texture_id, uint64_t current_time, int width, int height);
@@ -45,6 +46,11 @@ private:
 
     FlashWhite* flash_white_;
     Filter* filter_;
+    FrameBuffer* screen_two_;
+    FrameBuffer* screen_three_;
+    FrameBuffer* screen_four_;
+    FrameBuffer* screen_six_;
+    FrameBuffer* screen_nine_;
 };
 
 }
