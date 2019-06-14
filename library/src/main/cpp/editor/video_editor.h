@@ -23,6 +23,7 @@ extern "C" {
 #include "opengl.h"
 #include "audio_render.h"
 #include "image_process.h"
+#include "music_decoder_controller.h"
 
 using namespace std;
 
@@ -101,6 +102,8 @@ public:
 
     // 添加滤镜
     int AddFilter(uint8_t* lut, int lut_size, uint64_t start_time, uint64_t end_time, int action_id);
+
+    int AddMusic(const char* path, uint64_t start_time, uint64_t end_time);
 
     // 开始播放
     // 是否循环播放
@@ -187,6 +190,8 @@ private:
 
     GLfloat* vertex_coordinate_;
     GLfloat* texture_coordinate_;
+
+    MusicDecoderController* music_player_;
 };
 
 class VideoRenderHandler : public Handler {

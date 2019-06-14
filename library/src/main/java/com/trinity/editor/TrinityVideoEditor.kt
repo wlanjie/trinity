@@ -81,6 +81,8 @@ interface TrinityVideoEditor {
 
   fun addFilter(lut: ByteArray, startTime: Long, endTime: Long): Int
 
+  fun addMusic(path: String, startTime: Long, endTime: Long): Int
+
   /**
    * 开始播放
    * @param repeat 是否循环播放

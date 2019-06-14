@@ -413,6 +413,17 @@ static jint Android_JNI_video_editor_addFilter(JNIEnv* env, jobject object, jlon
     return id;
 }
 
+static jint Android_JNI_video_editor_addMusic(JNIEnv* env, jobject object, jlong handle, jstring music_path, jlong start_time, jlong end_time) {
+    if (handle <= 0) {
+        return 0;
+    }
+    VideoEditor* editor = reinterpret_cast<VideoEditor*>(handle);
+    const char* path = env->GetStringUTFChars(music_path, JNI_FALSE);
+    int result = editor->AddMusic(path, start_time, end_time);
+    env->ReleaseStringUTFChars(music_path, path);
+    return result;
+}
+
 static int Android_JNI_video_editor_play(JNIEnv* env, jobject object, jlong handle, jboolean repeat) {
     if (handle <= 0) {
         return 0;
@@ -504,6 +515,7 @@ static JNINativeMethod videoEditorMethods[] = {
         {"getClipTime",         "(JIJ)J",                                                (void **) Android_JNI_video_editor_getClipTime },
         {"getClipIndex",        "(JJ)I",                                                 (void **) Android_JNI_video_editor_getClipIndex },
         {"addFilter",           "(J[BJJI)I",                                             (void **) Android_JNI_video_editor_addFilter },
+        {"addMusic",            "(JLjava/lang/String;JJ)I",                              (void **) Android_JNI_video_editor_addMusic },
         {"play",                "(JZ)I",                                                 (void **) Android_JNI_video_editor_play },
         {"pause",               "(J)V",                                                  (void **) Android_JNI_video_editor_pause },
         {"resume",              "(J)V",                                                  (void **) Android_JNI_video_editor_resume },
