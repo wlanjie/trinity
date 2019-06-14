@@ -125,6 +125,18 @@ void ImageProcess::ClearAction() {
                 delete screen_three_;
                 screen_three_ = nullptr;
             }
+            if (nullptr != screen_four_) {
+                delete screen_four_;
+                screen_four_ = nullptr;
+            }
+            if (nullptr != screen_six_) {
+                delete screen_six_;
+                screen_six_ = nullptr;
+            }
+            if (nullptr != screen_nine_) {
+                delete screen_nine_;
+                screen_nine_ = nullptr;
+            }
         }
     }
 }

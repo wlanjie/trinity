@@ -3,6 +3,8 @@ package com.trinity.editor
 import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+import com.trinity.ErrorCode
+import java.io.File
 
 class VideoEditor : TrinityVideoEditor, SurfaceHolder.Callback {
 
@@ -166,12 +168,37 @@ class VideoEditor : TrinityVideoEditor, SurfaceHolder.Callback {
 
   private external fun addAction(): Int
 
+  /**
+   * 添加滤镜
+   * @param lut 色阶图buffer
+   * @param startTime 从哪里开始加
+   * @param endTime 到哪里结束
+   * @return 滤镜对应的id, 删除或者更新滤镜时需要用到
+   */
   override fun addFilter(lut: ByteArray, startTime: Long, endTime: Long): Int {
     mFilterActionId = addFilter(mId, lut, startTime, endTime, mFilterActionId)
     return mFilterActionId
   }
 
   private external fun addFilter(id: Long, lut: ByteArray, startTime: Long, endTime: Long, actionId: Int): Int
+
+  /**
+   * 添加背景音乐
+   * @param path 音乐路径
+   * @param startTime 从哪里开始
+   * @param endTime 到哪里结束
+   * @return
+   */
+  override fun addMusic(path: String, startTime: Long, endTime: Long): Int {
+    val file = File(path)
+    if (!file.exists() || file.length() == 0L) {
+      // 文件不存在
+      return ErrorCode.FILE_NOT_FOUND
+    }
+    return addMusic(mId, path, startTime, endTime)
+  }
+
+  private external fun addMusic(id: Long, path: String, startTime: Long, endTime: Long): Int
 
   /**
    * 开始播放

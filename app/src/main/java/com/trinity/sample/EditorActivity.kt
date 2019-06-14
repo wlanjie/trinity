@@ -11,6 +11,7 @@ import android.view.View
 import android.widget.Button
 import androidx.annotation.NonNull
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -23,6 +24,7 @@ import com.trinity.editor.VideoEditor
 import com.trinity.player.OnInitializedCallback
 import com.trinity.player.TrinityPlayer
 import com.trinity.sample.adapter.FilterAdapter
+import com.trinity.sample.adapter.MusicAdapter
 import com.trinity.sample.entity.Filter
 import com.trinity.sample.view.SpacesItemDecoration
 import org.json.JSONObject
@@ -75,6 +77,21 @@ class EditorActivity : AppCompatActivity() {
       }
     }
 
+    val douyinMusicCacheFile = externalCacheDir?.absolutePath + "/douyin_quanjiwu.mp3"
+    val douyinMusicFile = File(douyinMusicCacheFile)
+    if (!douyinMusicFile.exists()) {
+      val stream = assets.open("douyin_quanjiwu.mp3")
+      val outputStream = FileOutputStream(douyinMusicFile)
+      val buffer = ByteArray(2048)
+      while (true) {
+        val length = stream.read(buffer)
+        if (length == -1) {
+          break
+        }
+        outputStream.write(buffer)
+      }
+    }
+
     val surfaceView = findViewById<SurfaceView>(R.id.surface_view)
     mVideoEditor.setSurfaceView(surfaceView)
     val clip = MediaClip(file.absolutePath)
@@ -86,7 +103,21 @@ class EditorActivity : AppCompatActivity() {
     findViewById<Button>(R.id.pause).setOnClickListener { mVideoEditor.pause() }
     findViewById<Button>(R.id.release).setOnClickListener { mVideoEditor.destroy() }
     findViewById<Button>(R.id.filter).setOnClickListener { showFilter() }
+    findViewById<Button>(R.id.music).setOnClickListener { showMusic() }
     mVideoEditor.play(true)
+  }
+
+  private fun showMusic() {
+    val dialog = BottomSheetDialog(this)
+    val view = LayoutInflater.from(this).inflate(R.layout.bottom_sheet_filter, null)
+    val recyclerView = view as RecyclerView
+    recyclerView.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
+    recyclerView.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
+    recyclerView.adapter = MusicAdapter(this)
+    dialog.setContentView(view)
+    dialog.setCancelable(true)
+    dialog.setCanceledOnTouchOutside(true)
+    dialog.show()
   }
 
   private fun showFilter() {

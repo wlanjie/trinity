@@ -27,6 +27,7 @@ VideoEditor::VideoEditor() {
     frame_height_ = 0;
     video_play_state_ = kNone;
     image_process_ = new ImageProcess();
+    music_player_ = nullptr;
 //    image_process_->AddSplitScreenAction(9, 0, INT64_MAX);
 
     message_queue_ = new MessageQueue("Video Render Message Queue");
@@ -303,6 +304,15 @@ int VideoEditor::GetClipIndex(int64_t time) {
 int VideoEditor::AddFilter(uint8_t *lut, int lut_size, uint64_t start_time, uint64_t end_time, int action_id) {
     if (nullptr != image_process_) {
         return image_process_->AddFilterAction(lut, lut_size, start_time, end_time, action_id);
+    }
+    return 0;
+}
+
+int VideoEditor::AddMusic(const char *path, uint64_t start_time, uint64_t end_time) {
+    if (nullptr == music_player_) {
+        music_player_ = new MusicDecoderController();
+        music_player_->Init(0.2f, 44100);
+        music_player_->Start(path);
     }
     return 0;
 }
