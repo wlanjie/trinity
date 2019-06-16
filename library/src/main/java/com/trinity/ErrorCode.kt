@@ -17,5 +17,5 @@ object ErrorCode {
   const val RECORDING = -1001
   const val FILE_NOT_EXISTS = -1002
 
-  // 编辑模块
+  // 编辑模块 -2000开始
 }

@@ -24,6 +24,7 @@ extern "C" {
 #include "audio_render.h"
 #include "image_process.h"
 #include "music_decoder_controller.h"
+#include "video_export.h"
 
 using namespace std;
 
@@ -46,12 +47,6 @@ typedef enum {
     kPause,
     kStop
 } VideoRenderMessage;
-
-typedef struct MediaClip {
-    char* file_name;
-    int64_t start_time;
-    int64_t end_time;
-} MediaClip;
 
 class VideoEditor {
 public:
@@ -104,6 +99,9 @@ public:
     int AddFilter(uint8_t* lut, int lut_size, uint64_t start_time, uint64_t end_time, int action_id);
 
     int AddMusic(const char* path, uint64_t start_time, uint64_t end_time);
+
+    int Export(const char* path, int width, int height, int frame_rate, int video_bit_rate,
+            int sample_rate, int channel_count, int audio_bit_rate);
 
     // 开始播放
     // 是否循环播放

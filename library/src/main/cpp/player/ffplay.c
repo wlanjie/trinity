@@ -1691,9 +1691,6 @@ void* read_thread(void *arg) {
             if (ic->pb && ic->pb->error) {
                 break;
             }
-//            pthread_mutex_lock(&wait_mutex);
-//            SDL_CondWaitTimeout(is->continue_read_thread, wait_mutex, 10);
-//            pthread_mutex_unlock(&wait_mutex);
             continue;
         } else {
             is->eof = 0;

@@ -98,13 +98,18 @@ class EditorActivity : AppCompatActivity() {
     mVideoEditor.insertClip(clip)
 
     val clip1 = MediaClip(xialuFile.absolutePath)
-    mVideoEditor.insertClip(clip1)
+//    mVideoEditor.insertClip(clip1)
     findViewById<Button>(R.id.play).setOnClickListener { mVideoEditor.resume() }
     findViewById<Button>(R.id.pause).setOnClickListener { mVideoEditor.pause() }
     findViewById<Button>(R.id.release).setOnClickListener { mVideoEditor.destroy() }
     findViewById<Button>(R.id.filter).setOnClickListener { showFilter() }
     findViewById<Button>(R.id.music).setOnClickListener { showMusic() }
+    findViewById<Button>(R.id.export).setOnClickListener { export() }
     mVideoEditor.play(true)
+  }
+
+  private fun export() {
+    mVideoEditor.export("/sdcard/export.mp4", 540, 960, 25, 3000 * 1024, 44100, 1, 128 * 1000)
   }
 
   private fun showMusic() {

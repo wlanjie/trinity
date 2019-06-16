@@ -33,6 +33,12 @@ class MainActivity : AppCompatActivity() {
                 val intent = Intent(this, EditorActivity::class.java)
                 startActivity(intent)
             }
+
+        findViewById<Button>(R.id.music)
+            .setOnClickListener {
+                val intent = Intent(this, MusicActivity::class.java)
+                startActivity(intent)
+            }
     }
 
     private fun requestPermission() {
