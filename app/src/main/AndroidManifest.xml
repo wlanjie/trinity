@@ -24,6 +24,7 @@
         </activity>
         <activity android:name=".RecordActivity"/>
         <activity android:name=".EditorActivity" />
+        <activity android:name=".MusicActivity"/>
     </application>
 
 </manifest>

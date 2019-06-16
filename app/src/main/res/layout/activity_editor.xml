@@ -48,4 +48,10 @@
             android:layout_toRightOf="@id/filter"
             android:layout_alignParentBottom="true"
             android:text="音乐"/>
+
+    <Button
+            android:id="@+id/export"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="导出"/>
 </RelativeLayout>

@@ -317,6 +317,12 @@ int VideoEditor::AddMusic(const char *path, uint64_t start_time, uint64_t end_ti
     return 0;
 }
 
+int VideoEditor::Export(const char *path, int width, int height, int frame_rate, int video_bit_rate, int sample_rate,
+                        int channel_count, int audio_bit_rate) {
+    VideoExport* video_export = new VideoExport();
+    return video_export->Export(clip_deque_, path, width, height, frame_rate, video_bit_rate, sample_rate, channel_count, audio_bit_rate);
+}
+
 int VideoEditor::Play(bool repeat, JNIEnv* env, jobject object) {
     if (clip_deque_.empty()) {
         return -1;
