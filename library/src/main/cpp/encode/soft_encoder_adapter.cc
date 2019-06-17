@@ -76,11 +76,11 @@ void SoftEncoderAdapter::Encode() {
 
     // need drop frames
     int expectedFrameCount = (int) ((getCurrentTime() - fps_change_time_) / 1000.0f * frame_rate_ + 0.5f);
-    if (expectedFrameCount < encode_frame_count_) {
-        LOGE("expectedFrameCount is %d while encoded_frame_count_ is %d", expectedFrameCount,
-             encode_frame_count_);
-        return;
-    }
+//    if (expectedFrameCount < encode_frame_count_) {
+//        LOGE("expectedFrameCount is %d while encoded_frame_count_ is %d", expectedFrameCount,
+//             encode_frame_count_);
+//        return;
+//    }
     encode_frame_count_++;
     pthread_mutex_lock(&preview_thread_lock_);
     pthread_mutex_lock(&lock_);

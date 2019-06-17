@@ -6,6 +6,8 @@
 #include "video_export.h"
 #include "soft_encoder_adapter.h"
 #include "android_xlog.h"
+#include "tools.h"
+#include <math.h>
 
 namespace trinity {
 
@@ -40,7 +42,7 @@ int VideoExport::Export(deque<MediaClip*> clips, const char *path, int width, in
     }
     export_ing = true;
     packet_thread_ = new VideoConsumerThread();
-    int ret = packet_thread_->Init(path, width, height, frame_rate, video_bit_rate, sample_rate, channel_count, audio_bit_rate, "libfdk_aac");
+    int ret = packet_thread_->Init(path, width, height, frame_rate, video_bit_rate, 0, channel_count, audio_bit_rate, "libfdk_aac");
     if (ret < 0) {
         return ret;
     }
@@ -105,28 +107,37 @@ void VideoExport::ProcessExport() {
             continue;
         }
         Frame* frame = frame_queue_peek_last(&video_state_->video_queue);
-        if (!frame->uploaded && frame->frame != nullptr) {
-            int width = MIN(frame->frame->linesize[0], frame->frame->width);
-            int height = frame->frame->height;
-            if (frame_width_ != width || frame_height_ != height) {
-                frame_width_ = width;
-                frame_height_ = height;
-                if (nullptr != yuv_render_) {
-                    delete yuv_render_;
+        if (frame->frame != nullptr) {
+            if (isnan(frame->pts)) {
+                break;
+            }
+            if (!frame->uploaded && frame->frame != nullptr) {
+                int width = MIN(frame->frame->linesize[0], frame->frame->width);
+                int height = frame->frame->height;
+                if (frame_width_ != width || frame_height_ != height) {
+                    frame_width_ = width;
+                    frame_height_ = height;
+                    if (nullptr != yuv_render_) {
+                        delete yuv_render_;
+                    }
+                    yuv_render_ = new YuvRender(frame->width, frame->height, 0);
                 }
-                yuv_render_ = new YuvRender(frame->width, frame->height, 0);
+                int texture_id = yuv_render_->DrawFrame(frame->frame);
+                uint64_t current_time = (uint64_t) (frame->frame->pts * av_q2d(video_state_->video_st->time_base) *
+                                                    1000);
+                texture_id = image_process_->Process(texture_id, current_time, frame->width, frame->height, 0, 0);
+                frame_buffer->OnDrawFrame(texture_id);
+                if (!egl_core_->SwapBuffers(egl_surface_)) {
+                    LOGE("eglSwapBuffers error: %d", eglGetError());
+                }
+                encoder_->Encode();
+                frame->uploaded = 1;
             }
-            int texture_id = yuv_render_->DrawFrame(frame->frame);
-            uint64_t current_time = (uint64_t) (frame->frame->pts * av_q2d(video_state_->video_st->time_base) * 1000);
-            texture_id = image_process_->Process(texture_id, current_time, frame->width, frame->height, 0, 0);
-            frame_buffer->OnDrawFrame(texture_id);
-            if (!egl_core_->SwapBuffers(egl_surface_)) {
-                LOGE("eglSwapBuffers error: %d", eglGetError());
-            }
-            encoder_->Encode();
-            frame->uploaded = 1;
         }
     }
+    encoder_->DestroyEncoder();
+    delete encoder_;
+    LOGE("export done");
     packet_thread_->Stop();
     PacketPool::GetInstance()->DestroyRecordingVideoPacketQueue();
     PacketPool::GetInstance()->DestroyAudioPacketQueue();
