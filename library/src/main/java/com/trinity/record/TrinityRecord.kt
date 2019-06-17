@@ -4,7 +4,7 @@ import android.graphics.SurfaceTexture
 import android.hardware.Camera
 import android.view.Surface
 import com.trinity.camera.FacingId
-import com.innotech.camera.Torch
+import com.trinity.camera.Torch
 import com.tencent.mars.xlog.Log
 import com.trinity.ErrorCode
 import com.trinity.OnRecordingListener

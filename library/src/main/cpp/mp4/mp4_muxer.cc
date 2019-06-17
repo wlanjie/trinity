@@ -57,10 +57,12 @@ int Mp4Muxer::Init(const char *path, int video_width, int video_height, int fram
         LOGE("add video stream error: %d", ret);
         return ret;
     }
-    ret = BuildAudioStream(audio_codec_name);
-    if (ret != 0) {
-        LOGE("add audio stream error: %d", ret);
-        return ret;
+    if (audio_sample_rate > 0 && audio_channels > 0 && audio_bit_rate > 0) {
+        ret = BuildAudioStream(audio_codec_name);
+        if (ret != 0) {
+            LOGE("add audio stream error: %d", ret);
+            return ret;
+        }
     }
     if (!(format_context_->oformat->flags & AVFMT_NOFILE)) {
         ret = avio_open2(&format_context_->pb, path, AVIO_FLAG_WRITE, nullptr, nullptr);
@@ -114,7 +116,6 @@ int Mp4Muxer::Encode() {
 int Mp4Muxer::Stop() {
     if (write_header_success_) {
         av_write_trailer(format_context_);
-        format_context_->duration = duration_ * AV_TIME_BASE;
     }
     if (nullptr != video_stream_) {
         CloseVideo(format_context_, video_stream_);
@@ -168,10 +169,10 @@ Mp4Muxer::AddStream(AVFormatContext *oc, AVCodec **codec, enum AVCodecID codec_i
             context->bit_rate = video_bit_rate_;
             context->width = video_width_;
             context->height = video_height_;
-            stream->avg_frame_rate.num = 30000;
-            stream->avg_frame_rate.den = (int) (30000 / video_frame_rate_);
-            context->time_base.num = 30000;
-            context->time_base.den = (int) (30000 / video_frame_rate_);
+            AVRational video_time_base = { 1, 10000 };
+            stream->avg_frame_rate = video_time_base;
+            context->time_base = video_time_base;
+            stream->time_base = video_time_base;
             context->gop_size = (int) video_frame_rate_;
             context->qmin = 10;
             context->qmax = 30;

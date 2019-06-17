@@ -9,7 +9,6 @@ import android.graphics.SurfaceTexture
 import android.hardware.Camera
 import android.view.Surface
 import android.view.WindowManager
-import com.innotech.camera.Torch
 import java.util.*
 
 /**

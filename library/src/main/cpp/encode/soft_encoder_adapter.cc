@@ -1,5 +1,6 @@
 #include "soft_encoder_adapter.h"
 #include "android_xlog.h"
+#include "tools.h"
 
 namespace trinity {
 
@@ -10,7 +11,6 @@ SoftEncoderAdapter::SoftEncoderAdapter(int strategy) :
     fbo_ = 0;
     output_texture_id_ = 0;
     egl_core_ = nullptr;
-    host_gpu_copier_ = nullptr;
     encode_render_ = nullptr;
     pixel_size_ = 0;
     encoder_ = nullptr;
@@ -35,7 +35,6 @@ void SoftEncoderAdapter::CreateEncoder(EGLCore *eglCore, int inputTexId) {
     this->load_texture_context_ = eglCore->GetContext();
     this->texture_id_ = inputTexId;
     pixel_size_ = video_width_ * video_height_ * PIXEL_BYTE_SIZE;
-    host_gpu_copier_ = new HostGPUCopier();
 
     start_time_ = 0;
     fps_change_time_ = 0;
@@ -107,9 +106,6 @@ void SoftEncoderAdapter::DestroyEncoder() {
     pthread_cond_signal(&condition_);
     pthread_mutex_unlock(&lock_);
     pthread_join(image_download_thread_, 0);
-    if (NULL != host_gpu_copier_) {
-        host_gpu_copier_->Destroy();
-    }
 }
 
 void *SoftEncoderAdapter::StartDownloadThread(void *ptr) {
@@ -158,7 +154,6 @@ void SoftEncoderAdapter::LoadTexture() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     this->SignalPreviewThread();
     uint8_t *packetBuffer = new uint8_t[pixel_size_];
-    host_gpu_copier_->CopyYUY2Image(output_texture_id_, packetBuffer, video_width_, video_height_);
     encode_render_->CopyYUV2Image(output_texture_id_, packetBuffer, video_width_, video_height_);
     VideoPacket *videoPacket = new VideoPacket();
     videoPacket->buffer = packetBuffer;

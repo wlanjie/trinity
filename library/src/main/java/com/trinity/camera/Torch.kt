@@ -1,4 +1,4 @@
-package com.innotech.camera
+package com.trinity.camera
 
 enum class Torch {
   OFF,

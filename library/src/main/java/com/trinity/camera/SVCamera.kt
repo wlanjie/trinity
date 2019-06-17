@@ -1,7 +1,6 @@
 package com.trinity.camera
 
 import android.graphics.SurfaceTexture
-import com.innotech.camera.Torch
 
 /**
  * Created by wlanjie on 2017/12/20.

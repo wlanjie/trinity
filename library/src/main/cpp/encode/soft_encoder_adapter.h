@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include "video_encoder_adapter.h"
 #include "video_x264_encoder.h"
-#include "host_gpu_copier.h"
 #include "egl_core.h"
 #include "opengl.h"
 #include "encode_render.h"
@@ -65,8 +64,6 @@ private:
     pthread_t image_download_thread_;
     int strategy_ = 0;
     EncodeRender* encode_render_;
-    // TODO delete
-    HostGPUCopier *host_gpu_copier_;
     int pixel_size_;
     VideoX264Encoder *encoder_;
     pthread_t x264_encoder_thread_;
