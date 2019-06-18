@@ -250,7 +250,8 @@ int ImageProcess::AddAction(ActionType type, void *args) {
     Action action;
     action.type = type;
     action.args = args;
-    action.action_id = current_action_id_++;
+    current_action_id_++;
+    action.action_id = current_action_id_;
     auto it = actions_.begin();
     if (it == actions_.end()) {
         actions_.push_back(action);
