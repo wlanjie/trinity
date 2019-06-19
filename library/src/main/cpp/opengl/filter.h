@@ -10,6 +10,7 @@
 namespace trinity {
 
 static const char* FILTER_FRAGMENT_SHADER =
+        "precision highp float;\n"
         "varying highp vec2 textureCoordinate;\n"
         "varying highp vec2 textureCoordinate2;\n"
         "uniform sampler2D inputImageTexture;\n"

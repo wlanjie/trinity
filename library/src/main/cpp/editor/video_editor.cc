@@ -574,7 +574,9 @@ int VideoEditor::ReadAudio(uint8_t *buffer, int buffer_size) {
 void VideoEditor::RenderVideo() {
     if (nullptr != core_ && EGL_NO_SURFACE != render_surface_) {
         Frame *vp = frame_queue_peek_last(&video_state_->video_queue);
-        core_->MakeCurrent(render_surface_);
+        if (! core_->MakeCurrent(render_surface_)) {
+            LOGE("eglSwapBuffers MakeCurrent error: %d", eglGetError());
+        }
         if (!vp->uploaded) {
             int width = MIN(vp->frame->linesize[0], vp->frame->width);
             int height = vp->frame->height;
