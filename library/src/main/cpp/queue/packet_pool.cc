@@ -4,6 +4,7 @@
 
 #include "packet_pool.h"
 #include "tools.h"
+#include "android_xlog.h"
 
 namespace trinity {
 

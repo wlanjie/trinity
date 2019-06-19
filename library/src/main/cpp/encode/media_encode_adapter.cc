@@ -107,7 +107,7 @@ void MediaEncodeAdapter::DestroyEncoder() {
     LOGI("after DestroyEncoder");
 }
 
-void MediaEncodeAdapter::Encode() {
+void MediaEncodeAdapter::Encode(int timeMills) {
     if (start_time_ == 0)
         start_time_ = getCurrentTime();
 

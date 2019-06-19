@@ -1155,6 +1155,7 @@ void VideoExport::ProcessExport() {
         if (FrameQueueNbRemaining(&video_state_->video_queue) == 0) {
             continue;
         }
+        LOGE("Peek size: %d", video_state_->video_queue.size);
         Frame* vp = FrameQueuePeek(&video_state_->video_queue);
         if (vp->serial != video_state_->videoq.serial) {
             FrameQueueNext(&video_state_->video_queue);
@@ -1184,7 +1185,7 @@ void VideoExport::ProcessExport() {
                 if (!egl_core_->SwapBuffers(egl_surface_)) {
                     LOGE("eglSwapBuffers error: %d", eglGetError());
                 }
-                encoder_->Encode();
+                encoder_->Encode(current_time);
                 frame->uploaded = 1;
             }
         }
