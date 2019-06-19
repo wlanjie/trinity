@@ -25,6 +25,7 @@ static const char* DEFAULT_OES_FRAGMENT_SHADER =
         "}\n";
 
 static const char* DEFAULT_VERTEX_SHADER =
+        "precision highp float;\n"
         "attribute vec4 position;\n"
         "attribute vec4 inputTextureCoordinate;\n"
         "varying vec2 textureCoordinate;\n"

@@ -31,6 +31,7 @@ include_directories(${PATH_TO_MEDIACORE}/egl/)
 include_directories(${PATH_TO_MEDIACORE}/opengl/)
 include_directories(${PATH_TO_MEDIACORE}/encode/)
 include_directories(${PATH_TO_MEDIACORE}/encode/color_conversion/)
+include_directories(${PATH_TO_MEDIACORE}/json/)
 include_directories(${PATH_TO_MEDIACORE}/decode/)
 include_directories(${PATH_TO_MEDIACORE}/queue/)
 include_directories(${PATH_TO_MEDIACORE}/thread/)
@@ -66,6 +67,7 @@ file(GLOB FILES_MESSAGE "${PATH_TO_MEDIACORE}/message/*.cc")
 file(GLOB FILES_EGL "${PATH_TO_MEDIACORE}/egl/*.cc")
 file(GLOB FILES_OPENGL "${PATH_TO_MEDIACORE}/opengl/*.cc")
 file(GLOB FILES_ENCODE "${PATH_TO_MEDIACORE}/encode/*.cc")
+file(GLOB FILES_JSON "${PATH_TO_MEDIACORE}/json/*.c")
 file(GLOB FILES_DECODE "${PATH_TO_MEDIACORE}/decode/*.cc")
 file(GLOB FILES_QUEUE "${PATH_TO_MEDIACORE}/queue/*.cc")
 file(GLOB FILES_THREAD "${PATH_TO_MEDIACORE}/thread/*.cc")
@@ -86,6 +88,7 @@ add_library(
         ${FILES_EGL}
         ${FILES_OPENGL}
         ${FILES_ENCODE}
+        ${FILES_JSON}
         ${FILES_DECODE}
         ${FILES_QUEUE}
         ${FILES_THREAD}
