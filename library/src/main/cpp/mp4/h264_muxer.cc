@@ -132,6 +132,7 @@ int H264Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st) {
         if (pkt.size) {
             ret = av_interleaved_write_frame(oc, &pkt);
             if (ret != 0) {
+                LOGE("write frame error: %d", ret);
             }
         } else {
             ret = 0;

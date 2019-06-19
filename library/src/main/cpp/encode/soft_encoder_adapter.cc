@@ -2,6 +2,8 @@
 #include "android_xlog.h"
 #include "tools.h"
 
+#define NO_TIME_MILLS -1000
+
 namespace trinity {
 
 SoftEncoderAdapter::SoftEncoderAdapter(int strategy) :
@@ -63,7 +65,7 @@ void SoftEncoderAdapter::HotConfig(int maxBitrate, int avgBitrate, int fps) {
     ResetFpsStartTimeIfNeed(fps);
 }
 
-void SoftEncoderAdapter::Encode() {
+void SoftEncoderAdapter::Encode(int timeMills) {
     while (msg_ == MSG_WINDOW_SET || NULL == egl_core_) {
         usleep(100 * 1000);
     }
@@ -76,11 +78,12 @@ void SoftEncoderAdapter::Encode() {
 
     // need drop frames
     int expectedFrameCount = (int) ((getCurrentTime() - fps_change_time_) / 1000.0f * frame_rate_ + 0.5f);
-    if (expectedFrameCount < encode_frame_count_) {
-        LOGE("expectedFrameCount is %d while encoded_frame_count_ is %d", expectedFrameCount,
-             encode_frame_count_);
-        return;
-    }
+//    if (expectedFrameCount < encode_frame_count_) {
+//        LOGE("expectedFrameCount is %d while encoded_frame_count_ is %d", expectedFrameCount,
+//             encode_frame_count_);
+//        return;
+//    }
+    time_mills_ = timeMills;
     encode_frame_count_++;
     pthread_mutex_lock(&preview_thread_lock_);
     pthread_mutex_lock(&lock_);
@@ -132,7 +135,7 @@ void SoftEncoderAdapter::renderLoop() {
                 break;
         }
         msg_ = MSG_NONE;
-        if (nullptr != egl_core_) {
+        if (nullptr != egl_core_ && nullptr != yuy_packet_pool_) {
             egl_core_->MakeCurrent(copy_texture_surface_);
             this->LoadTexture();
             pthread_cond_wait(&condition_, &lock_);
@@ -143,7 +146,8 @@ void SoftEncoderAdapter::renderLoop() {
 }
 
 void SoftEncoderAdapter::LoadTexture() {
-    if (0 == start_time_) {
+    if (0 == start_time_ || time_mills_ == NO_TIME_MILLS) {
+        SignalPreviewThread();
         return;
     }
     int recordingDuration = getCurrentTime() - start_time_;
@@ -158,8 +162,14 @@ void SoftEncoderAdapter::LoadTexture() {
     VideoPacket *videoPacket = new VideoPacket();
     videoPacket->buffer = packetBuffer;
     videoPacket->size = pixel_size_;
-    videoPacket->timeMills = recordingDuration;
-    yuy_packet_pool_->Put(videoPacket);
+    videoPacket->timeMills = time_mills_ == -1 ? recordingDuration : time_mills_;
+    LOGE("videoPacket->timeMills: %d time: %d", videoPacket->timeMills, time_mills_);
+    if (time_mills_ != -1) {
+        time_mills_ = NO_TIME_MILLS;
+    }
+    if (nullptr != yuy_packet_pool_) {
+        yuy_packet_pool_->Put(videoPacket);
+    }
 }
 
 void SoftEncoderAdapter::SignalPreviewThread() {

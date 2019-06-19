@@ -28,7 +28,7 @@ public:
 
     virtual void DestroyEncoder();
 
-    virtual void Encode();
+    virtual void Encode(int timeMills = -1);
 
     void DrainEncodeData();
 

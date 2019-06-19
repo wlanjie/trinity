@@ -20,7 +20,7 @@ public:
 
     void CreateEncoder(EGLCore *eglCore, int inputTexId);
 
-    void Encode();
+    void Encode(int timeMills = -1);
 
     void renderLoop();
 
@@ -68,6 +68,7 @@ private:
     VideoX264Encoder *encoder_;
     pthread_t x264_encoder_thread_;
     OpenGL *renderer_;
+    int time_mills_;
 };
 
 }

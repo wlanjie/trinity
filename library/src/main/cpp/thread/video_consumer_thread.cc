@@ -3,6 +3,7 @@
 //
 
 #include "video_consumer_thread.h"
+#include "android_xlog.h"
 
 namespace trinity {
 
