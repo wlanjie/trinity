@@ -105,7 +105,7 @@ class EditorActivity : AppCompatActivity() {
     findViewById<Button>(R.id.filter).setOnClickListener { showFilter() }
     findViewById<Button>(R.id.music).setOnClickListener { showMusic() }
     findViewById<Button>(R.id.export).setOnClickListener { export() }
-    mVideoEditor.play(true)
+//    mVideoEditor.play(true)
   }
 
   private fun export() {
