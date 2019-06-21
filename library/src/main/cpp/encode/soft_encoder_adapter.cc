@@ -163,7 +163,6 @@ void SoftEncoderAdapter::LoadTexture() {
     videoPacket->buffer = packetBuffer;
     videoPacket->size = pixel_size_;
     videoPacket->timeMills = time_mills_ == -1 ? recordingDuration : time_mills_;
-    LOGE("videoPacket->timeMills: %d time: %d", videoPacket->timeMills, time_mills_);
     if (time_mills_ != -1) {
         time_mills_ = NO_TIME_MILLS;
     }

@@ -5,6 +5,7 @@
 #include "video_editor.h"
 #include "android_xlog.h"
 #include "gl.h"
+#include "test_ffmpeg.h"
 
 namespace trinity {
 
@@ -55,6 +56,11 @@ VideoEditor::VideoEditor() {
     texture_coordinate_[5] = 0.0f;
     texture_coordinate_[6] = 1.0f;
     texture_coordinate_[7] = 0.0f;
+}
+
+void VideoEditor::testTranscode() {
+    FFmpegTest test;
+    test.Transcode();
 }
 
 VideoEditor::~VideoEditor() {

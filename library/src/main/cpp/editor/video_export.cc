@@ -56,6 +56,7 @@ int VideoExport::FrameQueueInit(FrameQueue *f, PacketQueue *pktq, int maxSize, i
 Frame* VideoExport::FrameQueuePeekWritable(FrameQueue* f) {
     pthread_mutex_lock(&f->mutex);
     while (f->size >= f->max_size && !f->packet_queue->abort_request) {
+        LOGE("FrameQueuePeekWritable wait");
         pthread_cond_wait(&f->cond, &f->mutex);
     }
     pthread_mutex_unlock(&f->mutex);
@@ -182,6 +183,7 @@ int VideoExport::PacketQueueGet(PacketQueue *q, AVPacket *pkt, int block, int *s
             ret = 0;
             break;
         } else {
+            LOGE("PacketQueueGet wait");
             pthread_cond_wait(&q->cond, &q->mutex);
         }
     }
@@ -432,8 +434,6 @@ int VideoExport::StreamCommonOpen(int stream_index) {
     AVCodecContext *avctx;
     AVCodec *codec;
     AVDictionary *opts = NULL;
-    int sample_rate, nb_channels;
-    int64_t channel_layout;
     int stream_lowres = 0;
     if (stream_index < 0 || stream_index >= ic->nb_streams) {
         return -1;
@@ -491,7 +491,6 @@ int VideoExport::StreamCommonOpen(int stream_index) {
     ic->streams[stream_index]->discard = AVDISCARD_DEFAULT;
     switch (avctx->codec_type) {
         case AVMEDIA_TYPE_AUDIO: {
-            AVFilterLink *link;
             is->audio_filter_src.freq = avctx->sample_rate;
             is->audio_filter_src.channels = avctx->channels;
             is->audio_filter_src.channel_layout = avctx->channel_layout;
@@ -501,31 +500,6 @@ int VideoExport::StreamCommonOpen(int stream_index) {
                 LOGE("configure_audio_filters failed: %d", ret);
                 return ret;
             }
-            link = is->out_audio_filter->inputs[0];
-            sample_rate = link->sample_rate;
-            channel_layout = link->channel_layout;
-            nb_channels = link->channels;
-            is->audio_hw_buf_size = ret;
-            is->audio_tgt.fmt = AV_SAMPLE_FMT_S16;
-            is->audio_tgt.freq = 44100;
-            is->audio_tgt.channel_layout = AV_CH_LAYOUT_MONO;
-            is->audio_tgt.channels = 1;
-            is->audio_tgt.frame_size = av_samples_get_buffer_size(NULL, is->audio_tgt.channels, 1, is->audio_tgt.fmt, 1);
-            is->audio_tgt.bytes_per_sec = av_samples_get_buffer_size(NULL, is->audio_tgt.channels, is->audio_tgt.freq, is->audio_tgt.fmt, 1);
-            if (is->audio_tgt.bytes_per_sec <= 0 || is->audio_tgt.frame_size <= 0) {
-                return -1;
-            }
-            is->audio_src = is->audio_tgt;
-            is->audio_buf_size = 0;
-            is->audio_buf_index = 0;
-
-            /* init averaging filter */
-            is->audio_diff_avg_coef = exp(log(0.01) / 20);
-            is->audio_diff_avg_count = 0;
-
-            /* since we do not have a precise anough audio fifo fullness,
-             we correct audio sync only if larger than this threshold */
-            is->audio_diff_threshold = (double) (is->audio_hw_buf_size) / is->audio_tgt.bytes_per_sec;
             is->audio_stream = stream_index;
             is->audio_st = ic->streams[stream_index];
 
@@ -631,15 +605,23 @@ int VideoExport::ReadFrame() {
         return NULL;
     }
     while (!is->abort_request) {
-        if ((is->audioq.size + is->videoq.size + is->subtitleq.size > MAX_QUEUE_SIZE ||
-             ((is->audioq.nb_packets > MIN_FRAMES || is->audio_stream < 0 || is->audioq.abort_request) &&
-              (is->videoq.nb_packets > MIN_FRAMES || is->video_stream < 0 || is->videoq.abort_request ||
-               (is->video_st->disposition & AV_DISPOSITION_ATTACHED_PIC)) &&
-              (is->subtitleq.nb_packets > MIN_FRAMES || is->subtitle_stream < 0 || is->subtitleq.abort_request)))) {
-            // TODO sleep
-            av_usleep(1000000);
+        if (is->videoq.size  > MAX_QUEUE_SIZE) {
+            LOGE("size > MAX_QUEUE_SIZE");
             continue;
         }
+//        if (is->videoq.nb_packets > MIN_FRAMES || is->video_stream < 0 || is->videoq.abort_request || is->video_st->disposition & AV_DISPOSITION_ATTACHED_PIC) {
+//            LOGE("video packets > MIN_FRAMS: %d", is->videoq.nb_packets);
+//            continue;
+//        }
+//        if ((is->audioq.size + is->videoq.size + is->subtitleq.size > MAX_QUEUE_SIZE ||
+//             ((is->audioq.nb_packets > MIN_FRAMES || is->audio_stream < 0 || is->audioq.abort_request) &&
+//              (is->videoq.nb_packets > MIN_FRAMES || is->video_stream < 0 || is->videoq.abort_request ||
+//               (is->video_st->disposition & AV_DISPOSITION_ATTACHED_PIC)) &&
+//              (is->subtitleq.nb_packets > MIN_FRAMES || is->subtitle_stream < 0 || is->subtitleq.abort_request)))) {
+//            // TODO sleep
+////            av_usleep(1000000);
+//            continue;
+//        }
 
         if (!is->paused &&
             (!is->audio_st || (is->audio_decode.finished == is->audioq.serial && frame_queue_nb_remaining(&is->sample_queue) == 0)) &&
@@ -680,10 +662,8 @@ int VideoExport::ReadFrame() {
             is->eof = 0;
         }
         /* check if packet is in play range specified by user, then queue, otherwise discard */
-        int64_t stream_start_time = ic->streams[pkt->stream_index]->start_time;
-        int64_t pkt_ts = pkt->pts == AV_NOPTS_VALUE ? pkt->dts : pkt->pts;
         if (pkt->stream_index == is->audio_stream) {
-            PacketQueuePut(&is->audioq, pkt);
+//            PacketQueuePut(&is->audioq, pkt);
         } else if (pkt->stream_index == is->video_stream && !(is->video_st->disposition & AV_DISPOSITION_ATTACHED_PIC)) {
             PacketQueuePut(&is->videoq, pkt);
         } else if (pkt->stream_index == is->subtitle_stream) {
@@ -1049,7 +1029,7 @@ void* VideoExport::ReadThread(void *arg) {
 
 void* VideoExport::AudioThread(void *arg) {
     VideoExport* video_export = reinterpret_cast<VideoExport*>(arg);
-    video_export->DecoderAudio();
+//    video_export->DecoderAudio();
     pthread_exit(0);
 }
 
@@ -1096,6 +1076,7 @@ int VideoExport::Export(deque<MediaClip*> clips, const char *path, int width, in
     if (clips.empty()) {
         return CLIP_EMPTY;
     }
+    LOGE("Start Export");
     export_ing = true;
     packet_thread_ = new VideoConsumerThread();
     int ret = packet_thread_->Init(path, width, height, frame_rate, video_bit_rate, 0, channel_count, audio_bit_rate, "libfdk_aac");
@@ -1155,7 +1136,6 @@ void VideoExport::ProcessExport() {
         if (FrameQueueNbRemaining(&video_state_->video_queue) == 0) {
             continue;
         }
-        LOGE("Peek size: %d", video_state_->video_queue.size);
         Frame* vp = FrameQueuePeek(&video_state_->video_queue);
         if (vp->serial != video_state_->videoq.serial) {
             FrameQueueNext(&video_state_->video_queue);

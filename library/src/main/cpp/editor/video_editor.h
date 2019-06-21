@@ -45,6 +45,8 @@ public:
     VideoEditor();
     ~VideoEditor();
 
+    void testTranscode();
+
     int Init();
 
     void OnSurfaceCreated(JNIEnv* env, jobject object, jobject surface);

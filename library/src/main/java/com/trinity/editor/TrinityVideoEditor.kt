@@ -108,4 +108,6 @@ interface TrinityVideoEditor {
   fun export(path: String, width: Int, height: Int, frameRate: Int, videoBitRate: Int, sampleRate: Int, channelCount: Int, audioBitRate: Int): Int
 
   fun destroy()
+
+  fun testTranscode()
 }

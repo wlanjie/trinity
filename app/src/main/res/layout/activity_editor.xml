@@ -54,4 +54,11 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="导出"/>
+
+    <Button
+            android:id="@+id/transcode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/export"
+            android:text="转码"/>
 </RelativeLayout>

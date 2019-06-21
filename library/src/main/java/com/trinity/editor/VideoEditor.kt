@@ -259,4 +259,10 @@ class VideoEditor : TrinityVideoEditor, SurfaceHolder.Callback {
   }
 
   private external fun release(id: Long)
+
+  override fun testTranscode() {
+    testTranscode(mId)
+  }
+
+  private external fun testTranscode(id: Long)
 }
