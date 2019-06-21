@@ -478,6 +478,14 @@ static void Android_JNI_video_editor_release(JNIEnv* env, jobject object, jlong 
     delete editor;
 }
 
+static void Android_JNI_video_editor_testTranscode(JNIEnv* env, jobject object, jlong handle) {
+    if (handle <= 0) {
+        return;
+    }
+    VideoEditor* editor = reinterpret_cast<VideoEditor*>(handle);
+    editor->testTranscode();
+}
+
 static JNINativeMethod recordMethods[] = {
         {"create",               "()J",                             (void **) Android_JNI_createRecord},
         {"prepareEGLContext",    "(JLandroid/view/Surface;III)V",   (void **) Android_JNI_prepareEGLContext},
@@ -534,6 +542,7 @@ static JNINativeMethod videoEditorMethods[] = {
         {"pause",               "(J)V",                                                  (void **) Android_JNI_video_editor_pause },
         {"resume",              "(J)V",                                                  (void **) Android_JNI_video_editor_resume },
         {"stop",                "(J)V",                                                  (void **) Android_JNI_video_editor_stop },
+        {"testTranscode",       "(J)V",                                                  (void **) Android_JNI_video_editor_testTranscode },
         {"release",             "(J)V",                                                  (void **) Android_JNI_video_editor_release }
 };
 

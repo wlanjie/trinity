@@ -27,6 +27,8 @@ import com.trinity.sample.adapter.FilterAdapter
 import com.trinity.sample.adapter.MusicAdapter
 import com.trinity.sample.entity.Filter
 import com.trinity.sample.view.SpacesItemDecoration
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
@@ -105,7 +107,14 @@ class EditorActivity : AppCompatActivity() {
     findViewById<Button>(R.id.filter).setOnClickListener { showFilter() }
     findViewById<Button>(R.id.music).setOnClickListener { showMusic() }
     findViewById<Button>(R.id.export).setOnClickListener { export() }
+    findViewById<Button>(R.id.transcode).setOnClickListener { testTranscode() }
 //    mVideoEditor.play(true)
+  }
+
+  private fun testTranscode() {
+    GlobalScope.async {
+      mVideoEditor.testTranscode()
+    }
   }
 
   private fun export() {
