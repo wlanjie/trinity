@@ -94,7 +94,7 @@ public:
 
     int AddMusic(const char* path, uint64_t start_time, uint64_t end_time);
 
-    int Export(const char* path, int width, int height, int frame_rate, int video_bit_rate,
+    int Export(const char* export_config, const char* path, int width, int height, int frame_rate, int video_bit_rate,
             int sample_rate, int channel_count, int audio_bit_rate);
 
     // 开始播放

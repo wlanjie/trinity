@@ -7,6 +7,7 @@
 
 extern "C" {
 #include "ffplay.h"
+#include "cJSON.h"
 };
 
 #include <deque>
@@ -30,6 +31,10 @@ class VideoExport {
 public:
     VideoExport();
     ~VideoExport();
+
+    int Export(const char* export_config, const char* path,
+            int width, int height, int frame_rate, int video_bit_rate,
+            int sample_rate, int channel_count, int audio_bit_rate);
 
     int Export(deque<MediaClip*> clips, const char* path, int width, int height, int frame_rate, int video_bit_rate,
                int sample_rate, int channel_count, int audio_bit_rate);

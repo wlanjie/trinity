@@ -105,7 +105,7 @@ interface TrinityVideoEditor {
    */
   fun stop()
 
-  fun export(path: String, width: Int, height: Int, frameRate: Int, videoBitRate: Int, sampleRate: Int, channelCount: Int, audioBitRate: Int): Int
+  fun export(exportConfig: String, path: String, width: Int, height: Int, frameRate: Int, videoBitRate: Int, sampleRate: Int, channelCount: Int, audioBitRate: Int): Int
 
   fun destroy()
 
