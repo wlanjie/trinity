@@ -7,6 +7,7 @@
 #include "soft_encoder_adapter.h"
 #include "android_xlog.h"
 #include "tools.h"
+#include "error_code.h"
 #include <math.h>
 
 namespace trinity {
@@ -1069,6 +1070,64 @@ int VideoExport::StreamOpen(VideoState* is, char *file_name) {
 
 void VideoExport::StreamClose(VideoState* is) {
 
+}
+
+int VideoExport::Export(const char *export_config, const char *path, int width, int height, int frame_rate,
+                        int video_bit_rate, int sample_rate, int channel_count, int audio_bit_rate) {
+    cJSON* json = cJSON_Parse(export_config);
+    if (nullptr == json) {
+        return EXPORT_CONFIG;
+    }
+    cJSON_Print(json);
+    cJSON* clips = cJSON_GetObjectItem(json, "clips");
+    if (nullptr == clips) {
+        return CLIP_EMPTY;
+    }
+    int clip_size = cJSON_GetArraySize(clips);
+    if (clip_size == 0) {
+        return CLIP_EMPTY;
+    }
+    LOGE("Start Export");
+    cJSON* item = clips->child;
+
+    export_ing = true;
+    packet_thread_ = new VideoConsumerThread();
+    int ret = packet_thread_->Init(path, width, height, frame_rate, video_bit_rate, 0, channel_count, audio_bit_rate, "libfdk_aac");
+    if (ret < 0) {
+        return ret;
+    }
+    PacketPool::GetInstance()->InitRecordingVideoPacketQueue();
+    PacketPool::GetInstance()->InitAudioPacketQueue(44100);
+    AudioPacketPool::GetInstance()->InitAudioPacketQueue();
+    packet_thread_->StartAsync();
+
+    video_width_ = width;
+    video_height_ = height;
+
+    for (int i = 0; i < clip_size; i++) {
+        cJSON* path_item = cJSON_GetObjectItem(item, "path");
+        cJSON* start_time_item = cJSON_GetObjectItem(item, "startTime");
+        cJSON* end_time_item = cJSON_GetObjectItem(item, "endTime");
+        item = item->next;
+
+        MediaClip* export_clip = new MediaClip();
+        export_clip->start_time = start_time_item->valueint;
+        export_clip->end_time  = end_time_item->valueint;
+        export_clip->file_name = path_item->valuestring;
+        clip_deque_.push_back(export_clip);
+        LOGE("path: %s start_time: %d end_time: %d", path_item->valuestring, start_time_item->valueint, end_time_item->valueint);
+    }
+
+    encoder_ = new SoftEncoderAdapter(0);
+    encoder_->Init(width, height, video_bit_rate, frame_rate);
+    MediaClip* clip = clip_deque_.at(0);
+    video_state_ = static_cast<VideoState*>(av_malloc(sizeof(VideoState)));
+
+    video_state_->start_time = 0;
+    video_state_->end_time = INT64_MAX;
+    StreamOpen(video_state_, clip->file_name);
+    pthread_create(&export_thread_, nullptr, ExportThread, this);
+    return 0;
 }
 
 int VideoExport::Export(deque<MediaClip*> clips, const char *path, int width, int height, int frame_rate, int video_bit_rate,

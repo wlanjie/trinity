@@ -30,8 +30,10 @@ import com.trinity.sample.view.SpacesItemDecoration
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import org.json.JSONObject
+import java.io.BufferedReader
 import java.io.File
 import java.io.FileOutputStream
+import java.io.InputStreamReader
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 
@@ -118,7 +120,8 @@ class EditorActivity : AppCompatActivity() {
   }
 
   private fun export() {
-    mVideoEditor.export("/sdcard/export.mp4", 540, 960, 25, 3000 * 1024, 44100, 1, 128 * 1000)
+    val config = assets.open("export_config.json").bufferedReader().use { it.readText() }
+    mVideoEditor.export(config, "/sdcard/export.mp4", 540, 960, 25, 3000 * 1024, 44100, 1, 128 * 1000)
   }
 
   private fun showMusic() {

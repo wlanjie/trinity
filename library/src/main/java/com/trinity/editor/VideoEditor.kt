@@ -239,6 +239,7 @@ class VideoEditor : TrinityVideoEditor, SurfaceHolder.Callback {
   private external fun stop(id: Long)
 
   override fun export(
+    exportConfig: String,
     path: String,
     width: Int,
     height: Int,
@@ -248,10 +249,12 @@ class VideoEditor : TrinityVideoEditor, SurfaceHolder.Callback {
     channelCount: Int,
     audioBitRate: Int
   ): Int {
-    return export(mId, path, width, height, frameRate, videoBitRate, sampleRate, channelCount, audioBitRate)
+    return export(mId, exportConfig, path, width, height, frameRate, videoBitRate, sampleRate, channelCount, audioBitRate)
   }
 
   private external fun export(id: Long, path: String, width: Int, height: Int, frameRate: Int, videoBitRate: Int, sampleRate: Int, channelCount: Int, audioBitRate: Int): Int
+
+  private external fun export(id: Long, exportConfig: String, path: String, width: Int, height: Int, frameRate: Int, videoBitRate: Int, sampleRate: Int, channelCount: Int, audioBitRate: Int): Int
 
   override fun destroy() {
     release(mId)
