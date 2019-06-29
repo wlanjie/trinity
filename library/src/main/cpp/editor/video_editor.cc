@@ -15,7 +15,7 @@ VideoEditor::VideoEditor() {
     play_index = 0;
     egl_destroy_ = false;
     egl_context_exists_ = false;
-    video_state_ = nullptr;
+    player_ = nullptr;
     destroy_ = false;
     core_ = nullptr;
     render_surface_ = EGL_NO_SURFACE;
@@ -32,9 +32,6 @@ VideoEditor::VideoEditor() {
 
     message_queue_ = new MessageQueue("Video Render Message Queue");
     handler_ = new VideoRenderHandler(this, message_queue_);
-    player_queue_ = new MessageQueue("Player Message Queue");
-    player_handler_ = new PlayerHandler(this, player_queue_);
-    audio_render_ = new AudioRender();
 
     vertex_coordinate_ = new GLfloat[8];
     texture_coordinate_ = new GLfloat[8];
@@ -77,18 +74,6 @@ VideoEditor::~VideoEditor() {
         delete handler_;
         handler_ = nullptr;
     }
-    if (nullptr != player_queue_) {
-        delete player_queue_;
-        player_queue_ = nullptr;
-    }
-    if (nullptr != player_handler_) {
-        delete player_handler_;
-        player_handler_ = nullptr;
-    }
-    if (nullptr != audio_render_) {
-        delete audio_render_;
-        audio_render_ = nullptr;
-    }
     if (nullptr != image_process_) {
         delete image_process_;
         image_process_ = nullptr;
@@ -122,12 +107,6 @@ int VideoEditor::Init() {
         LOGE("init render cond error");
         return result;
     }
-
-    result = pthread_create(&player_thread_, nullptr, PlayerThread, this);
-    if (result != 0) {
-        LOGE("Init player thread error: %d", result);
-        return false;
-    }
     return result;
 }
 
@@ -149,34 +128,6 @@ void VideoEditor::ProcessMessage() {
         }
         Message *msg = NULL;
         if (message_queue_->DequeueMessage(&msg, true) > 0) {
-            if (msg == NULL) {
-                return;
-            }
-            if (MESSAGE_QUEUE_LOOP_QUIT_FLAG == msg->Execute()) {
-                rendering = false;
-            }
-            delete msg;
-        }
-    }
-}
-
-void* VideoEditor::PlayerThread(void *context) {
-    VideoEditor* editor = (VideoEditor*) context;
-    if (editor->destroy_) {
-        return nullptr;
-    }
-    editor->ProcessPlayerMessage();
-    pthread_exit(0);
-}
-
-void VideoEditor::ProcessPlayerMessage() {
-    bool rendering = true;
-    while (rendering) {
-        if (destroy_) {
-            break;
-        }
-        Message *msg = NULL;
-        if (player_queue_->DequeueMessage(&msg, true) > 0) {
             if (msg == NULL) {
                 return;
             }
@@ -328,31 +279,37 @@ int VideoEditor::Play(bool repeat, JNIEnv* env, jobject object) {
         return -1;
     }
     repeat_ = repeat;
-    JavaVM* vm = nullptr;
-    env->GetJavaVM(&vm);
     MediaClip* clip = clip_deque_.at(0);
-    InitPlayer(clip);
-    if (nullptr != audio_render_) {
-        audio_render_->Play();
+
+    PlayerClip* p_clip = new PlayerClip();
+    p_clip->file_name = clip->file_name;
+    p_clip->start_time = clip->start_time;
+    p_clip->end_time = clip->end_time;
+
+    if (nullptr == player_) {
+        player_ = new Player();
+        player_->Init((void *)StartPlayer, (void *)RenderVideoFrame, this);
     }
+    player_->Play(repeat, p_clip);
     return 0;
 }
 
 void VideoEditor::Pause() {
-    if (nullptr != video_state_ && (video_play_state_ == kResume || video_play_state_ == kPlaying)) {
+    if (nullptr != player_->video_state_ && (video_play_state_ == kResume || video_play_state_ == kPlaying)) {
         video_play_state_ = kPause;
-        stream_toggle_pause(video_state_);
+        player_->Pause();
     }
 }
 
 void VideoEditor::Resume() {
-    if (nullptr != video_state_ && video_play_state_ == kPause) {
+    if (nullptr != player_->video_state_ && video_play_state_ == kPause) {
         video_play_state_ = kResume;
-        stream_toggle_pause(video_state_);
+        player_->Resume();
     }
 }
 
 void VideoEditor::Stop() {
+
 }
 
 void VideoEditor::Destroy() {
@@ -361,23 +318,8 @@ void VideoEditor::Destroy() {
     handler_->PostMessage(new Message(kDestroyEGLContext));
     handler_->PostMessage(new Message(MESSAGE_QUEUE_LOOP_QUIT_FLAG));
     pthread_join(render_thread_, nullptr);
-    if (nullptr != video_state_) {
-        if (nullptr != video_state_->audio_render_context) {
-            av_free(video_state_->audio_render_context);
-            video_state_->audio_render_context = nullptr;
-        }
-        if (nullptr != video_state_->video_render_context) {
-            av_free(video_state_->video_render_context);
-            video_state_->video_render_context = nullptr;
-        }
-        if (nullptr != video_state_->state_context) {
-            av_free(video_state_->state_context);
-            video_state_->state_context = nullptr;
-        }
-        av_destroy(video_state_);
-        av_freep(video_state_);
-        video_state_ = nullptr;
-    }
+
+    player_->Destroy();
 
     pthread_mutex_lock(&queue_mutex_);
     for (int i = 0; i < clip_deque_.size(); ++i) {
@@ -386,9 +328,6 @@ void VideoEditor::Destroy() {
         delete clip;
     }
     clip_deque_.clear();
-    if (nullptr != audio_render_) {
-        audio_render_->Stop();
-    }
     pthread_mutex_unlock(&queue_mutex_);
     LOGE("start queue_mutex_ destroy");
     pthread_mutex_destroy(&queue_mutex_);
@@ -396,77 +335,40 @@ void VideoEditor::Destroy() {
     LOGE("leave Destroy");
 }
 
-static int AudioCallback(uint8_t* buffer, size_t buffer_size, void* context) {
-    VideoEditor* editor = (VideoEditor*) context;
-    return editor->ReadAudio(buffer, buffer_size);
-}
+void VideoEditor::StartPlayer(PlayerActionContext* context) {
+    VideoEditor *editor = (VideoEditor *)context->context;
+    if (nullptr != editor) {
+        editor->player_->video_state_->paused = 1;
+        if (editor->repeat_) {
+            if (editor->clip_deque_.size() == 1) {
+                av_seek(editor->player_->video_state_, editor->player_->video_state_->start_time);
+            } else {
+                if (nullptr != editor->player_->audio_render_) {
+                    editor->player_->audio_render_->Stop();
+                }
+                av_destroy(editor->player_->video_state_);
+                if (nullptr != editor->player_->video_state_) {
+                    av_freep(editor->player_->video_state_);
+                    editor->player_->video_state_ = nullptr;
+                }
 
-static int OnCompleteState(StateContext *context) {
-    VideoEditor* editor = (VideoEditor*) context->context;
-    return editor->OnComplete();
-}
+                editor->play_index++;
+                if (editor->play_index >= editor->clip_deque_.size()) {
+                    editor->play_index = 0;
+                }
+                MediaClip* clip = editor->clip_deque_.at(editor->play_index);
 
-int VideoEditor::OnComplete() {
-    if (nullptr == video_state_) {
-        return 1;
-    }
-    player_handler_->PostMessage(new Message(kStartPlayer));
-    // 是否退出播放
-    return 0;
-}
-
-void VideoEditor::StartPlayer() {
-    LOGE("StartPlayer");
-    video_state_->paused = 1;
-    if (repeat_) {
-        if (clip_deque_.size() == 1) {
-            av_seek(video_state_, video_state_->start_time);
+                PlayerClip* p_clip = new PlayerClip();
+                p_clip->file_name = clip->file_name;
+                p_clip->start_time = clip->start_time;
+                p_clip->end_time = clip->end_time;
+                editor->player_->InitPlayer(p_clip);
+            }
         } else {
-            if (nullptr != audio_render_) {
-                audio_render_->Stop();
-            }
-            av_destroy(video_state_);
-            if (nullptr != video_state_) {
-                av_freep(video_state_);
-                video_state_ = nullptr;
-            }
-
-            play_index++;
-            if (play_index >= clip_deque_.size()) {
-                play_index = 0;
-            }
-            MediaClip* clip = clip_deque_.at(play_index);
-            InitPlayer(clip);
+            av_destroy(editor->player_->video_state_);
         }
-    } else {
-        av_destroy(video_state_);
+        editor->player_->video_state_->paused = 0;
     }
-    video_state_->paused = 0;
-}
-
-// Player method
-int VideoEditor::InitPlayer(MediaClip* clip) {
-    destroy_ = false;
-
-    video_state_ = (VideoState*) av_malloc(sizeof(VideoState));
-    video_state_->video_render_context = (VideoRenderContext*) av_malloc(sizeof(VideoRenderContext));
-    video_state_->video_render_context->render_video_frame = SignalFrameAvailable;
-    video_state_->video_render_context->context = this;
-
-    StateContext* state_context = (StateContext*) av_malloc(sizeof(StateContext));
-    state_context->complete = OnCompleteState;
-    state_context->context = this;
-    video_state_->state_context = state_context;
-
-    video_state_->precision_seek = 1;
-    video_state_->loop = 1;
-    video_state_->start_time = clip->start_time;
-    video_state_->end_time = clip->end_time == 0 ? INT64_MAX : clip->end_time;
-
-    av_start(video_state_, clip->file_name);
-    audio_render_->Init(1, 44100, AudioCallback, this);
-    audio_render_->Start();
-    return 0;
 }
 
 bool VideoEditor::CreateEGLContext(ANativeWindow *window) {
@@ -537,43 +439,9 @@ void VideoEditor::DestroyEGLContext() {
     LOGI("leave DestroyEGLContext");
 }
 
-int VideoEditor::ReadAudio(uint8_t *buffer, int buffer_size) {
-    if (nullptr == video_state_) {
-        return 0;
-    }
-    VideoState* is = video_state_;
-    int audio_size, len1 = 0;
-    while (buffer_size > 0) {
-        if (is->audio_buf_index >= is->audio_buf_size) {
-            audio_size = audio_decoder_frame(is);
-            if (audio_size < 0) {
-                is->audio_buf = nullptr;
-                is->audio_buf_size = SDL_AUDIO_MIN_BUFFER_SIZE / is->audio_tgt.frame_size * is->audio_tgt.frame_size;
-            } else {
-                is->audio_buf_size = audio_size;
-            }
-            is->audio_buf_index = 0;
-        }
-        len1 = is->audio_buf_size - is->audio_buf_index;
-        if (len1 > buffer_size) {
-            len1 = buffer_size;
-        }
-        if (nullptr == is->audio_buf) {
-            memset(buffer, 0, len1);
-            break;
-        } else {
-            memcpy(buffer, is->audio_buf + is->audio_buf_index, len1);
-        }
-        buffer_size -= len1;
-        buffer += len1;
-        is->audio_buf_index += len1;
-    }
-    return len1;
-}
-
 void VideoEditor::RenderVideo() {
     if (nullptr != core_ && EGL_NO_SURFACE != render_surface_) {
-        Frame *vp = frame_queue_peek_last(&video_state_->video_queue);
+        Frame *vp = frame_queue_peek_last(&player_->video_state_->video_queue);
         if (! core_->MakeCurrent(render_surface_)) {
             LOGE("eglSwapBuffers MakeCurrent error: %d", eglGetError());
         }
@@ -589,7 +457,7 @@ void VideoEditor::RenderVideo() {
                 yuv_render_ = new YuvRender(vp->width, vp->height, 0);
             }
             int texture_id = yuv_render_->DrawFrame(vp->frame);
-            uint64_t current_time = (uint64_t) (vp->frame->pts * av_q2d(video_state_->video_st->time_base) * 1000);
+            uint64_t current_time = (uint64_t) (vp->frame->pts * av_q2d(player_->video_state_->video_st->time_base) * 1000);
             texture_id = image_process_->Process(texture_id, current_time, vp->width, vp->height, 0, 0);
             render_screen_->ProcessImage(texture_id, vertex_coordinate_, texture_coordinate_);
             if (!core_->SwapBuffers(render_surface_)) {
@@ -605,7 +473,7 @@ void VideoEditor::RenderVideo() {
     }
 }
 
-void VideoEditor::SignalFrameAvailable(VideoRenderContext* context) {
+void VideoEditor::RenderVideoFrame(PlayerActionContext* context) {
     if (nullptr != context && nullptr != context->context) {
         VideoEditor* editor = (VideoEditor*) context->context;
         if (!editor->egl_context_exists_) {
