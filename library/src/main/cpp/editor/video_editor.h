@@ -15,13 +15,13 @@ extern "C" {
 #include <deque>
 #include <pthread.h>
 
+#include "player.h"
 #include "yuv_render.h"
 #include "pixel_late.h"
 #include "flash_white.h"
 #include "egl_core.h"
 #include "handler.h"
 #include "opengl.h"
-#include "audio_render.h"
 #include "image_process.h"
 #include "music_decoder_controller.h"
 #include "video_export.h"
@@ -31,21 +31,13 @@ using namespace std;
 namespace trinity {
 
 class VideoRenderHandler;
-class PlayerHandler;
 
 typedef enum {
-    kNone = 0,
     kCreateEGLContext,
     kCreateWindowSurface,
     kDestroyWindowSurface,
     kDestroyEGLContext,
-    kRenderFrame,
-    kStartPlayer,
-    // play state
-    kPlaying,
-    kResume,
-    kPause,
-    kStop
+    kRenderFrame
 } VideoRenderMessage;
 
 class VideoEditor {
@@ -119,8 +111,6 @@ public:
     void Destroy();
 
 public:
-    // player
-    int InitPlayer(MediaClip* clip);
 
     bool CreateEGLContext(ANativeWindow* window);
 
@@ -130,15 +120,13 @@ public:
 
     void DestroyEGLContext();
 
-    int ReadAudio(uint8_t* buffer, int buffer_size);
-
     void RenderVideo();
 
-    static void SignalFrameAvailable(VideoRenderContext* context);
+    static void StartPlayer(PlayerActionContext* context);
+
+    static void RenderVideoFrame(PlayerActionContext* context);
 
     int OnComplete();
-
-    void StartPlayer();
 
     bool egl_destroy_;
 
@@ -147,10 +135,6 @@ private:
 
     void ProcessMessage();
 
-    static void* PlayerThread(void* context);
-
-    void ProcessPlayerMessage();
-
 private:
     deque<MediaClip*> clip_deque_;
     pthread_mutex_t queue_mutex_;
@@ -158,6 +142,7 @@ private:
     ANativeWindow* window_;
     jobject video_editor_object_;
 
+    Player* player_;
     // 是否循环播放
     bool repeat_;
     // 当前播放的文件位置
@@ -166,13 +151,10 @@ private:
     pthread_t render_thread_;
     pthread_mutex_t render_mutex_;
     pthread_cond_t render_cond_;
-    pthread_t player_thread_;
     bool egl_context_exists_;
-    VideoState* video_state_;
     bool destroy_;
     EGLCore* core_;
     EGLSurface render_surface_;
-    AudioRender* audio_render_;
     VideoRenderHandler* handler_;
     MessageQueue* message_queue_;
     YuvRender* yuv_render_;
@@ -182,9 +164,6 @@ private:
     int frame_width_;
     int frame_height_;
     ImageProcess* image_process_;
-
-    PlayerHandler* player_handler_;
-    MessageQueue* player_queue_;
 
     GLfloat* vertex_coordinate_;
     GLfloat* texture_coordinate_;
@@ -248,30 +227,6 @@ public:
 private:
     VideoEditor* editor_;
     bool init_;
-};
-
-class PlayerHandler : public Handler {
-public:
-    PlayerHandler(VideoEditor* editor, MessageQueue* queue) : Handler(queue) {
-        editor_ = editor;
-    }
-
-    void HandleMessage(Message* msg) {
-        int what = msg->GetWhat();
-        switch (what) {
-            case kStartPlayer:
-                if (editor_->egl_destroy_) {
-                    break;
-                }
-                editor_->StartPlayer();
-                break;
-
-            default:
-                break;
-        }
-    }
-private:
-    VideoEditor* editor_;
 };
 
 }
