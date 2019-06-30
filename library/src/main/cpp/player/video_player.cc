@@ -3,6 +3,7 @@
 //
 
 #include "video_player.h"
+#include "android_xlog.h"
 
 /* no AV sync correction is done if below the minimum AV sync threshold */
 #define AV_SYNC_THRESHOLD_MIN 0.04
@@ -12,6 +13,9 @@
 #define AV_SYNC_FRAMEDUP_THRESHOLD 0.1
 /* no AV correction is done if too big error */
 #define AV_NOSYNC_THRESHOLD 10.0
+
+/* we use about AUDIO_DIFF_AVG_NB A-V differences to make the average */
+#define AUDIO_DIFF_AVG_NB   20
 
 #define EXTERNAL_CLOCK_MIN_FRAMES 2
 #define EXTERNAL_CLOCK_MAX_FRAMES 10
@@ -24,18 +28,34 @@
 /* polls for possible required screen refresh at least this often, should be less than 1/fps */
 #define REFRESH_RATE 0.01
 
+/* maximum audio speed change to get correct sync */
+#define SAMPLE_CORRECTION_PERCENT_MAX 10
+
+/* Minimum audio buffer size, in samples. */
+#define AUDIO_MIN_BUFFER_SIZE 512
+
 static double rdftspeed = 0.02;
 
 namespace trinity {
 
+static int AudioCallback(uint8_t* buffer, size_t buffer_size, void* context) {
+    VideoPlayer* player = (VideoPlayer*) context;
+    return player->ReadAudio(buffer, buffer_size);
+}
+
 VideoPlayer::VideoPlayer() {
-    video_render_context_ = nullptr;
+    video_event_ = nullptr;
     media_decode_ = nullptr;
     player_state_ = nullptr;
+    audio_render_ = new AudioRender();
+    audio_render_->Init(1, 44100, AudioCallback, this);
+    audio_render_->Start();
 }
 
 VideoPlayer::~VideoPlayer() {
-
+    audio_render_->Stop();
+    delete audio_render_;
+    audio_render_ = nullptr;
 }
 
 void SetClockAt(Clock* c, double pts, int serial, double time) {
@@ -132,9 +152,9 @@ void CheckExternalClockSpeed(MediaDecode *media_decode, PlayerState* player_stat
     }
 }
 
-void VideoDisplay(MediaDecode* media_decode, VideoRenderContext* video_render_context) {
-    if (video_render_context && media_decode->video_frame_queue.size > 0) {
-        video_render_context->render_video_frame(video_render_context);
+void VideoDisplay(MediaDecode* media_decode, VideoEvent* video_event) {
+    if (video_event && media_decode->video_frame_queue.size > 0) {
+        video_event->render_video_frame(video_event);
     }
 }
 
@@ -184,7 +204,7 @@ void UpdateVideoPts(PlayerState* player_state, double pts, int64_t pos, int seri
 
 void Retry(MediaDecode* media_decode,
         PlayerState* player_state,
-        VideoRenderContext* video_render_context,
+        VideoEvent* video_event,
         double* remaining_time, double* time) {
     if (frame_queue_nb_remaining(&media_decode->video_frame_queue) == 0) {
         // nothing to do, no picture to display in the queue
@@ -193,7 +213,7 @@ void Retry(MediaDecode* media_decode,
         Frame* frame = frame_queue_peek(&media_decode->video_frame_queue);
         if (frame->serial != media_decode->video_packet_queue.serial) {
             frame_queue_next(&media_decode->video_frame_queue);
-            Retry(media_decode, player_state, video_render_context, remaining_time, time);
+            Retry(media_decode, player_state, video_event, remaining_time, time);
             return;
         }
         if (last->serial != frame->serial) {
@@ -201,7 +221,7 @@ void Retry(MediaDecode* media_decode,
         }
         if (media_decode->paused) {
             if (player_state->force_refresh && media_decode->video_frame_queue.rindex_shown) {
-                VideoDisplay(media_decode, video_render_context);
+                VideoDisplay(media_decode, video_event);
             }
             return;
         }
@@ -211,7 +231,7 @@ void Retry(MediaDecode* media_decode,
         if (*time < player_state->frame_timer + delay) {
             *remaining_time = FFMIN(player_state->frame_timer + delay - *time, *remaining_time);
             if (player_state->force_refresh && media_decode->video_frame_queue.rindex_shown) {
-                VideoDisplay(media_decode, video_render_context);
+                VideoDisplay(media_decode, video_event);
             }
             return;
         }
@@ -225,17 +245,21 @@ void Retry(MediaDecode* media_decode,
         }
         pthread_mutex_unlock(&media_decode->video_frame_queue.mutex);
         frame_queue_next(&media_decode->video_frame_queue);
+        player_state->force_refresh = 1;
 
+        if (player_state->step && !media_decode->paused) {
+//            StreamTogglePause(media_decode, player_state);
+        }
     }
 
     if (player_state->force_refresh && media_decode->video_frame_queue.rindex_shown) {
-        VideoDisplay(media_decode, video_render_context);
+        VideoDisplay(media_decode, video_event);
     }
 }
 
 void VideoRefresh(MediaDecode* media_decode,
         PlayerState* player_state,
-        VideoRenderContext* video_render_context,
+        VideoEvent* video_event,
         double *remaining_time) {
     if (!media_decode->paused && GetMasterSyncType(media_decode, player_state) == AV_SYNC_EXTERNAL_CLOCK) {
         CheckExternalClockSpeed(media_decode, player_state);
@@ -244,23 +268,66 @@ void VideoRefresh(MediaDecode* media_decode,
     if (media_decode->audio_stream) {
         time = av_gettime_relative() / 1000000.0;
         if (player_state->force_refresh || player_state->last_vis_time + rdftspeed < time) {
-            VideoDisplay(media_decode, video_render_context);
+            VideoDisplay(media_decode, video_event);
             player_state->last_vis_time = time;
         }
         *remaining_time = FFMIN(*remaining_time, player_state->last_vis_time + rdftspeed - time);
     }
 
     if (media_decode->video_stream) {
-        Retry(media_decode, player_state, video_render_context, remaining_time, &time);
+        Retry(media_decode, player_state, video_event, remaining_time, &time);
     }
 }
 
-int VideoPlayer::Start(const char *file_name, VideoRenderContext* render_context) {
+void VideoPlayer::StreamTogglePause(MediaDecode* media_decode, PlayerState* player_state) {
+    if (media_decode->paused) {
+        player_state->frame_timer += av_gettime_relative() / 1000000.0 - player_state->video_clock.last_update;
+        if (media_decode->read_pause_return != AVERROR(ENOSYS)) {
+            player_state->video_clock.paused = 0;
+        }
+        SetClock(&player_state->video_clock, GetClock(&player_state->video_clock), player_state->video_clock.serial);
+    }
+    SetClock(&player_state->external_clock, GetClock(&player_state->external_clock), player_state->external_clock.serial);
+    pthread_mutex_lock(&sync_mutex_);
+    media_decode->paused = player_state->sample_clock.paused = player_state->video_clock.paused = player_state->external_clock.paused = !media_decode->paused;
+    pthread_cond_signal(&sync_cond_);
+    pthread_mutex_unlock(&sync_mutex_);
+}
+
+void VideoPlayer::OnSeekEvent(SeekEvent* event, int seek_flag) {
+    VideoPlayer* video_player = (VideoPlayer*) event->context;
+    if (seek_flag & AVSEEK_FLAG_BYTE) {
+        SetClock(&video_player->player_state_->external_clock, NAN, 0);
+    } else {
+        int64_t seek_target = video_player->media_decode_->seek_pos * (AV_TIME_BASE / 1000);
+        SetClock(&video_player->player_state_->external_clock, seek_target / (double) AV_TIME_BASE, 0);
+    }
+    if (video_player->media_decode_->paused) {
+        video_player->StreamTogglePause(video_player->media_decode_, video_player->player_state_);
+        video_player->player_state_->step = 1;
+    }
+}
+
+void VideoPlayer::OnAudioPrepareEvent(AudioEvent *event, int size) {
+    VideoPlayer* player = (VideoPlayer*) event->context;
+    PlayerState* player_state = player->player_state_;
+    player_state->audio_hw_buf_size = size;
+    player_state->audio_buf_size = 0;
+    player_state->audio_buf_index = 0;
+    /* init averaging filter */
+    player_state->audio_diff_avg_coef = exp(log(0.1) / AUDIO_DIFF_AVG_NB);
+    player_state->audio_diff_avg_count = 0;
+    /* since we do not have a precmedia_decodee anough audio fifo fullness,
+             we correct audio sync only if larger than thmedia_decode threshold */
+    player_state->audio_diff_threshold = (double) (size / player->media_decode_->audio_tgt.bytes_per_sec);
+}
+
+int VideoPlayer::Start(const char *file_name, VideoEvent* video_event) {
     pthread_mutex_init(&sync_mutex_, nullptr);
     pthread_cond_init(&sync_cond_, nullptr) ;
     pthread_create(&sync_thread_, nullptr, SyncThread, this);
 
-    video_render_context_ = render_context;
+    video_event_ = video_event;
 
     player_state_ = (PlayerState*) av_malloc(sizeof(PlayerState));
     player_state_->av_sync_type = AV_SYNC_AUDIO_MASTER;
@@ -270,6 +337,17 @@ int VideoPlayer::Start(const char *file_name, VideoRenderContext* render_context
     media_decode_->end_time = INT64_MAX;
     media_decode_->loop = 1;
     media_decode_->precision_seek = 1;
+
+    SeekEvent* seek_event = (SeekEvent*) av_malloc(sizeof(SeekEvent));
+    seek_event->on_seek_event = OnSeekEvent;
+    seek_event->context = this;
+    media_decode_->seek_event = seek_event;
+
+    AudioEvent* audio_event = (AudioEvent*) av_malloc(sizeof(AudioEvent));
+    audio_event->on_audio_prepare_event = OnAudioPrepareEvent;
+    audio_event->context = this;
+    media_decode_->audio_event = audio_event;
+
     int result = av_decode_start(media_decode_, file_name);
     if (result != 0) {
         return result;
@@ -299,14 +377,201 @@ void VideoPlayer::Sync() {
         }
         remaining_time = REFRESH_RATE;
         if (!media_decode_->paused || player_state_->force_refresh) {
-            VideoRefresh(media_decode_, player_state_, video_render_context_, &remaining_time);
+            VideoRefresh(media_decode_, player_state_, video_event_, &remaining_time);
         }
     }
 }
 
 void VideoPlayer::Stop() {
+
+    if (nullptr != player_state_->swr_context) {
+        swr_free(&player_state_->swr_context);
+        player_state_->swr_context = nullptr;
+    }
+    pthread_mutex_lock(&sync_mutex_);
+    media_decode_->paused = 0;
+    pthread_cond_signal(&sync_cond_);
+    pthread_mutex_unlock(&sync_mutex_);
+
+    pthread_join(sync_thread_, nullptr);
+
     pthread_mutex_destroy(&sync_mutex_);
     pthread_cond_destroy(&sync_cond_);
+
+    if (nullptr != player_state_) {
+        av_freep(player_state_);
+        player_state_ = nullptr;
+    }
+    if (nullptr != media_decode_) {
+        av_freep(media_decode_);
+        media_decode_ = nullptr;
+    }
+}
+
+void VideoPlayer::StartPlayer() {
+
+}
+
+int SynchronizeAudio(MediaDecode* media_decode, PlayerState* player_state, int nb_samples) {
+    int wanted_nb_samples = nb_samples;
+    if (GetMasterSyncType(media_decode, player_state) != AV_SYNC_AUDIO_MASTER) {
+        double diff = GetClock(&player_state->sample_clock) - GetMasterClock(media_decode, player_state);
+        if (!isnan(diff) && fabs(diff) < AV_NOSYNC_THRESHOLD) {
+            player_state->audio_diff_cum = diff + player_state->audio_diff_avg_coef * player_state->audio_diff_cum;
+            if (player_state->audio_diff_avg_count < AUDIO_DIFF_AVG_NB) {
+                player_state->audio_diff_avg_count++;
+            } else {
+                double avg_diff = player_state->audio_diff_cum * (1.0 - player_state->audio_diff_avg_coef);
+
+                if (fabs(avg_diff) >= player_state->audio_diff_threshold) {
+                    wanted_nb_samples = nb_samples + (int) (diff * media_decode->audio_src.freq);
+                    int min_nb_samples = ((nb_samples * (100 - SAMPLE_CORRECTION_PERCENT_MAX) / 100));
+                    int max_nb_samples = ((nb_samples * (100 + SAMPLE_CORRECTION_PERCENT_MAX) / 100));
+                    wanted_nb_samples = av_clip_c(wanted_nb_samples, min_nb_samples, max_nb_samples);
+                }
+                av_log(NULL, AV_LOG_TRACE, "diff=%f adiff=%f sample_diff=%d apts=%0.3f %f\n",
+                       diff, avg_diff, wanted_nb_samples - nb_samples,
+                       player_state->audio_clock, player_state->audio_diff_threshold);
+            }
+        } else {
+            player_state->audio_diff_avg_count = 0;
+            player_state->audio_diff_cum = 0;
+        }
+    }
+    return wanted_nb_samples;
+}
+
+int AudioResample(MediaDecode* media_decode, PlayerState* player_state) {
+    Frame* frame;
+    do {
+        frame = frame_queue_peek_readable(&media_decode->sample_frame_queue);
+        if (!frame) {
+            LOGE("frame_queue_peek_readable error");
+            return 0;
+        }
+    } while (frame->serial != media_decode->audio_packet_queue.serial);
+
+    int wanted_nb_sample;
+    int data_size = av_samples_get_buffer_size(NULL, av_frame_get_channels(frame->frame),
+                                               frame->frame->nb_samples, (AVSampleFormat) frame->frame->format, 1);
+    uint64_t dec_channel_layout = (frame->frame->channel_layout && av_frame_get_channels(frame->frame) == av_get_channel_layout_nb_channels(frame->frame->channel_layout)) ?
+                                  frame->frame->channel_layout : av_get_default_channel_layout(av_frame_get_channels(frame->frame));
+    wanted_nb_sample = SynchronizeAudio(media_decode, player_state, frame->frame->nb_samples);
+    if (frame->frame->format != media_decode->audio_src.fmt ||
+        dec_channel_layout != media_decode->audio_src.channel_layout ||
+        frame->frame->sample_rate != media_decode->audio_src.freq ||
+        (wanted_nb_sample != frame->frame->nb_samples && !player_state->swr_context)) {
+        swr_free(&player_state->swr_context);
+        player_state->swr_context = swr_alloc_set_opts(NULL, media_decode->audio_tgt.channel_layout, media_decode->audio_tgt.fmt, media_decode->audio_tgt.freq,
+                                                        dec_channel_layout, (AVSampleFormat) frame->frame->format, frame->frame->sample_rate, 0, NULL);
+        if (!player_state->swr_context || swr_init(player_state->swr_context) < 0) {
+            av_log(NULL, AV_LOG_ERROR,
+                   "Cannot create sample rate converter for conversion of %d Hz %s %d channels to %d Hz %s %d channels!\n",
+                   frame->frame->sample_rate, av_get_sample_fmt_name((AVSampleFormat) frame->frame->format), av_frame_get_channels(frame->frame),
+                   media_decode->audio_tgt.freq, av_get_sample_fmt_name(media_decode->audio_tgt.fmt), media_decode->audio_tgt.channels);
+            swr_free(&player_state->swr_context);
+            return -1;
+        }
+        media_decode->audio_src.channel_layout = dec_channel_layout;
+        media_decode->audio_src.channels = av_frame_get_channels(frame->frame);
+        media_decode->audio_src.freq = frame->frame->sample_rate;
+        media_decode->audio_src.fmt = (AVSampleFormat) frame->frame->format;
+    }
+
+    int resample_data_size;
+    if (player_state->swr_context) {
+        const uint8_t **in = (const uint8_t **) frame->frame->extended_data;
+        uint8_t **out = &player_state->audio_buf1;
+        int out_count = wanted_nb_sample * media_decode->audio_tgt.freq / frame->frame->sample_rate + 256;
+        int out_size = av_samples_get_buffer_size(NULL, media_decode->audio_tgt.channels, out_count, media_decode->audio_tgt.fmt, 0);
+        int len2;
+        if (out_size < 0) {
+            av_log(NULL, AV_LOG_ERROR, "av_samples_get_buffer_size() failed\n");
+            return -1;
+        }
+        if (wanted_nb_sample != frame->frame->nb_samples) {
+            if (swr_set_compensation(player_state->swr_context, (wanted_nb_sample - frame->frame->nb_samples) * media_decode->audio_tgt.freq / frame->frame->sample_rate,
+                                     wanted_nb_sample * media_decode->audio_tgt.freq / frame->frame->sample_rate) < 0) {
+                av_log(NULL, AV_LOG_ERROR, "swr_set_compensation() failed\n");
+                return -1;
+            }
+        }
+        av_fast_malloc(&player_state->audio_buf1, &player_state->audio_buf1_size, out_size);
+        if (!player_state->audio_buf1) {
+            return AVERROR(ENOMEM);
+        }
+        len2 = swr_convert(player_state->swr_context, out, out_count, in, frame->frame->nb_samples);
+        if (len2 < 0) {
+            av_log(NULL, AV_LOG_ERROR, "swr_convert() failed\n");
+            return -1;
+        }
+        if (len2 == out_count) {
+            av_log(NULL, AV_LOG_WARNING, "audio buffer is probably too samll.\n");
+            if (swr_init(player_state->swr_context) < 0) {
+                swr_free(&player_state->swr_context);
+            }
+        }
+        player_state->audio_buf = player_state->audio_buf1;
+        resample_data_size = len2 * media_decode->audio_tgt.channels * av_get_bytes_per_sample(media_decode->audio_tgt.fmt);
+    } else {
+        player_state->audio_buf = frame->frame->data[0];
+        resample_data_size = data_size;
+    }
+    double audio_clock0 = player_state->audio_clock;
+
+    /* update the audio clock with the pts */
+    if (!isnan(frame->pts)) {
+        player_state->audio_clock = frame->pts + (double) frame->frame->nb_samples / frame->frame->sample_rate;
+    } else {
+        player_state->audio_clock = NAN;
+    }
+
+#ifdef DEBUG
+    {
+//        static double last_clock;
+//        printf("audio: delay=%0.3f clock=%0.3f clock0=%0.3f\n",
+//               is->audio_clock - last_clock,
+//               is->audio_clock, audio_clock0);
+//        last_clock = is->audio_clock;
+    }
+#endif
+    return resample_data_size;
+}
+
+int VideoPlayer::ReadAudio(uint8_t* buffer, int buffer_size) {
+    if (!media_decode_) {
+        return 0;
+    }
+    if (media_decode_->paused) {
+        return 0;
+    }
+    int audio_size, len1 = 0;
+    while (buffer_size > 0) {
+        if (player_state_->audio_buf_index >= player_state_->audio_buf_size) {
+            audio_size = AudioResample(media_decode_, player_state_);
+            if (audio_size < 0) {
+                player_state_->audio_buf = nullptr;
+                player_state_->audio_buf_size = AUDIO_MIN_BUFFER_SIZE / media_decode_->audio_tgt.frame_size * media_decode_->audio_tgt.frame_size;
+            } else {
+                player_state_->audio_buf_size = audio_size;
+            }
+            player_state_->audio_buf_index = 0;
+        }
+        len1 = player_state_->audio_buf_size - player_state_->audio_buf_index;
+        if (len1 > buffer_size) {
+            len1 = buffer_size;
+        }
+        if (nullptr == player_state_->audio_buf) {
+            memset(buffer, 0, len1);
+            break;
+        } else {
+            memcpy(buffer, player_state_->audio_buf + player_state_->audio_buf_index, len1);
+        }
+        buffer_size -= len1;
+        buffer += len1;
+        player_state_->audio_buf_index += len1;
+    }
+    return len1;
 }
 
 }

@@ -6,6 +6,9 @@
 #include "android_xlog.h"
 
 #define MIN_FRAMES 25
+/* no AV correction is done if too big error */
+#define AV_NOSYNC_THRESHOLD 10.0
+#define MAX_QUEUE_SIZE (15 * 1024 * 1024)
 
 static char *wanted_stream_spec[AVMEDIA_TYPE_NB] = {0};
 static AVPacket flush_pkt;
@@ -413,111 +416,6 @@ int configure_audio_filters(MediaDecode *media_decode, const char *afilters, int
     media_decode->in_audio_filter = filt_asrc;
     media_decode->out_audio_filter = filt_asink;
     return ret;
-}
-
-int audio_decoder_frame(MediaDecode *media_decode) {
-    int data_size, resample_data_size;
-    int64_t dec_channel_layout;
-    av_unused double audio_clock0;
-    int wanted_nb_sample;
-    Frame *af;
-
-    if (media_decode->paused) {
-        LOGE("ffplay paused");
-        return -1;
-    }
-    do {
-        if (!(af = frame_queue_peek_readable(&media_decode->sample_frame_queue))) {
-            LOGE("frame_queue_peek_readable");
-            return -1;
-        }
-        frame_queue_next(&media_decode->sample_frame_queue);
-    } while (af->serial != media_decode->audio_packet_queue.serial);
-
-    data_size = av_samples_get_buffer_size(NULL, av_frame_get_channels(af->frame), af->frame->nb_samples,
-                                           af->frame->format, 1);
-
-    dec_channel_layout = (af->frame->channel_layout && av_frame_get_channels(af->frame) == av_get_channel_layout_nb_channels(af->frame->channel_layout)) ?
-                         af->frame->channel_layout : av_get_default_channel_layout(av_frame_get_channels(af->frame));
-    wanted_nb_sample = synchronize_audio(is, af->frame->nb_samples);
-
-    if (af->frame->format != media_decode->audio_src.fmt ||
-        dec_channel_layout != media_decode->audio_src.channel_layout ||
-        af->frame->sample_rate != media_decode->audio_src.freq ||
-        (wanted_nb_sample != af->frame->nb_samples && !media_decode->swr_context)) {
-        swr_free(&media_decode->swr_context);
-        media_decode->swr_context = swr_alloc_set_opts(NULL, media_decode->audio_tgt.channel_layout, media_decode->audio_tgt.fmt, media_decode->audio_tgt.freq,
-                                         dec_channel_layout, af->frame->format, af->frame->sample_rate, 0, NULL);
-        if (!media_decode->swr_context || swr_init(media_decode->swr_context) < 0) {
-            av_log(NULL, AV_LOG_ERROR,
-                   "Cannot create sample rate converter for conversion of %d Hz %s %d channels to %d Hz %s %d channels!\n",
-                   af->frame->sample_rate, av_get_sample_fmt_name(af->frame->format), av_frame_get_channels(af->frame),
-                   media_decode->audio_tgt.freq, av_get_sample_fmt_name(media_decode->audio_tgt.fmt), media_decode->audio_tgt.channels);
-            swr_free(&media_decode->swr_context);
-            return -1;
-        }
-        media_decode->audio_src.channel_layout = dec_channel_layout;
-        media_decode->audio_src.channels = av_frame_get_channels(af->frame);
-        media_decode->audio_src.freq = af->frame->sample_rate;
-        media_decode->audio_src.fmt = af->frame->format;
-    }
-    if (media_decode->swr_context) {
-        const uint8_t **in = (const uint8_t **) af->frame->extended_data;
-        uint8_t **out = &media_decode->audio_buf1;
-        int out_count = wanted_nb_sample * media_decode->audio_tgt.freq / af->frame->sample_rate + 256;
-        int out_size = av_samples_get_buffer_size(NULL, media_decode->audio_tgt.channels, out_count, media_decode->audio_tgt.fmt, 0);
-        int len2;
-        if (out_size < 0) {
-            av_log(NULL, AV_LOG_ERROR, "av_samples_get_buffer_size() failed\n");
-            return -1;
-        }
-        if (wanted_nb_sample != af->frame->nb_samples) {
-            if (swr_set_compensation(media_decode->swr_ctx, (wanted_nb_sample - af->frame->nb_samples) * media_decode->audio_tgt.freq / af->frame->sample_rate,
-                                     wanted_nb_sample * media_decode->audio_tgt.freq / af->frame->sample_rate) < 0) {
-                av_log(NULL, AV_LOG_ERROR, "swr_set_compensation() failed\n");
-                return -1;
-            }
-        }
-        av_fast_malloc(&media_decode->audio_buf1, &media_decode->audio_buf1_size, out_size);
-        if (!media_decode->audio_buf1) {
-            return AVERROR(ENOMEM);
-        }
-        len2 = swr_convert(media_decode->swr_ctx, out, out_count, in, af->frame->nb_samples);
-        if (len2 < 0) {
-            av_log(NULL, AV_LOG_ERROR, "swr_convert() failed\n");
-            return -1;
-        }
-        if (len2 == out_count) {
-            av_log(NULL, AV_LOG_WARNING, "audio buffer is probably too samll.\n");
-            if (swr_init(media_decode->swr_ctx) < 0) {
-                swr_free(&media_decode->swr_ctx);
-            }
-        }
-        media_decode->audio_buf = media_decode->audio_buf1;
-        resample_data_size = len2 * media_decode->audio_tgt.channels * av_get_bytes_per_sample(media_decode->audio_tgt.fmt);
-    } else {
-        media_decode->audio_buf = af->frame->data[0];
-        resample_data_size = data_size;
-    }
-    audio_clock0 = media_decode->audio_clock;
-
-    /* update the audio clock with the pts */
-    if (!isnan(af->pts)) {
-        media_decode->audio_clock = af->pts + (double) af->frame->nb_samples / af->frame->sample_rate;
-    } else {
-        media_decode->audio_clock = NAN;
-    }
-
-#ifdef DEBUG
-    {
-//        static double last_clock;
-//        printf("audio: delay=%0.3f clock=%0.3f clock0=%0.3f\n",
-//               is->audio_clock - last_clock,
-//               is->audio_clock, audio_clock0);
-//        last_clock = is->audio_clock;
-    }
-#endif
-    return resample_data_size;
 }
 
 int decoder_decode_frame(MediaDecode* media_decode, Decoder *d, AVFrame *frame, AVSubtitle *sub) {
@@ -1020,19 +918,6 @@ int stream_component_open(MediaDecode *media_decode, int stream_index) {
             sample_rate = link->sample_rate;
             channel_layout = link->channel_layout;
             nb_channels = link->channels;
-
-            /* prepare audio output */
-//            if (is->audio_render_context) {
-//                ret = is->audio_render_context->InitAudio(is->audio_render_context,
-//                        channel_layout, nb_channels, sample_rate, &is->audio_tgt);
-//                if (ret < 0) {
-//                    LOGE("Init audio render error: %d", ret);
-//                    avcodec_free_context(&codec_context);
-//                    return ret;
-//                }
-//            }
-//            LOGE("AVMEDIA_TYPE_AUDIO");
-            media_decode->audio_hw_buf_size = ret;
             media_decode->audio_tgt.fmt = AV_SAMPLE_FMT_S16;
             media_decode->audio_tgt.freq = 44100;
             media_decode->audio_tgt.channel_layout = AV_CH_LAYOUT_MONO;
@@ -1042,18 +927,11 @@ int stream_component_open(MediaDecode *media_decode, int stream_index) {
             if (media_decode->audio_tgt.bytes_per_sec <= 0 || media_decode->audio_tgt.frame_size <= 0) {
                 return -1;
             }
+            if (media_decode->audio_event) {
+                media_decode->audio_event->on_audio_prepare_event(media_decode->audio_event, ret);
+            }
             media_decode->audio_src = media_decode->audio_tgt;
-            media_decode->audio_buf_size = 0;
-            media_decode->audio_buf_index = 0;
-
-            /* init averaging filter */
-            media_decode->audio_diff_avg_coef = exp(log(0.01) / AUDIO_DIFF_AVG_NB);
-            media_decode->audio_diff_avg_count = 0;
-
-            /* since we do not have a precmedia_decodee anough audio fifo fullness,
-             we correct audio sync only if larger than thmedia_decode threshold */
-            media_decode->audio_diff_threshold = (double) (media_decode->audio_hw_buf_size) / media_decode->audio_tgt.bytes_per_sec;
-            media_decode->audio_stream = stream_index;
+            media_decode->audio_stream_index = stream_index;
             media_decode->audio_stream = ic->streams[stream_index];
 
             decoder_init(&media_decode->audio_decode, avctx, &media_decode->audio_packet_queue, media_decode->continue_read_thread);
@@ -1071,7 +949,7 @@ int stream_component_open(MediaDecode *media_decode, int stream_index) {
         }
             break;
         case AVMEDIA_TYPE_VIDEO:
-            media_decode->video_stream = stream_index;
+            media_decode->video_stream_index = stream_index;
             media_decode->video_stream = ic->streams[stream_index];
             decoder_init(&media_decode->video_decode, avctx, &media_decode->video_packet_queue, media_decode->continue_read_thread);
             if ((ret = decoder_start(&media_decode->video_decode, video_thread, media_decode)) < 0) {
@@ -1104,7 +982,6 @@ static void stream_component_close(MediaDecode *media_decode, int stream_index) 
             SDL_CloseAudio();
 #endif
             decoder_release(&media_decode->audio_decode);
-            swr_free(&media_decode->swr_context);
 
 #ifdef __APPLE__
         if (is->rdft) {
@@ -1149,18 +1026,11 @@ void stream_close(MediaDecode *media_decode) {
     if (!media_decode->file_name) {
         return;
     }
-    pthread_mutex_lock(&media_decode->render_mutex);
-    media_decode->paused = 0;
-    pthread_cond_signal(&media_decode->render_cond);
-    pthread_mutex_unlock(&media_decode->render_mutex);
     /* XXX: use a special url_shutdown call to abort parse cleanly */
     media_decode->abort_request = 1;
     pthread_join(media_decode->read_thread, NULL);
-    pthread_join(media_decode->render_thread, NULL);
 
     LOGE("enter stream close: %s", media_decode->file_name);
-    pthread_mutex_destroy(&media_decode->render_mutex);
-    pthread_cond_destroy(&media_decode->render_cond);
     /* close each stream */
     if (media_decode->audio_stream_index >= 0)
         stream_component_close(media_decode, media_decode->audio_stream_index);
@@ -1187,12 +1057,6 @@ void stream_close(MediaDecode *media_decode) {
     av_free(media_decode->file_name);
     media_decode->file_name = NULL;
     LOGE("leave stream close");
-}
-
-void av_destroy(MediaDecode *media_decode) {
-    if (media_decode) {
-        stream_close(media_decode);
-    }
 }
 
 void read_thread_failed(MediaDecode *media_decode, AVFormatContext *ic, pthread_mutex_t wait_mutex) {
@@ -1335,17 +1199,12 @@ void* read_thread(void *arg) {
                     packet_queue_flush(&media_decode->subtitle_packet_queue);
                     packet_queue_put(&media_decode->subtitle_packet_queue, &flush_pkt);
                 }
-                if (media_decode->seek_flags & AVSEEK_FLAG_BYTE) {
-                    set_clock(&media_decode->extclk, NAN, 0);
-                } else {
-                    set_clock(&media_decode->extclk, seek_target / (double) AV_TIME_BASE, 0);
-                }
             }
             media_decode->seek_req = 0;
             media_decode->queue_attachments_req = 1;
             media_decode->eof = 0;
-            if (media_decode->paused) {
-                step_to_next_frame(media_decode);
+            if (media_decode->seek_event) {
+                media_decode->seek_event->on_seek_event(media_decode->seek_event, media_decode->seek_flags);
             }
         }
         if (media_decode->queue_attachments_req) {
@@ -1378,22 +1237,22 @@ void* read_thread(void *arg) {
             media_decode->paused = 0;
             media_decode->audio_decode.finished = 0;
             media_decode->video_decode.finished = 0;
-            int exit = complete_state(media_decode);
-            // 是否退出
-            if (exit) {
-                LOGE("player finish exit");
-                return NULL;
-            }
+//            int exit = complete_state(media_decode);
+//            // 是否退出
+//            if (exit) {
+//                LOGE("player finish exit");
+//                return NULL;
+//            }
         }
         // 播放到指定时间
         // 如果是循环播放 seek到开始时间
         if (media_decode->finish) {
             media_decode->finish = 0;
-            int exit = complete_state(media_decode);
-            if (exit) {
-                LOGE("complete state exit");
-                return NULL;
-            }
+//            int exit = complete_state(media_decode);
+//            if (exit) {
+//                LOGE("complete state exit");
+//                return NULL;
+//            }
         }
         ret = av_read_frame(ic, pkt);
         if (ret < 0) {
@@ -1419,6 +1278,8 @@ void* read_thread(void *arg) {
         /* check if packet is in play range specified by user, then queue, otherwise discard */
         stream_start_time = ic->streams[pkt->stream_index]->start_time;
         pkt_ts = pkt->pts == AV_NOPTS_VALUE ? pkt->dts : pkt->pts;
+        // TODO
+        int64_t duration = AV_NOPTS_VALUE;
         pkt_in_play_range = duration == AV_NOPTS_VALUE || (pkt_ts - (stream_start_time != AV_NOPTS_VALUE ? stream_start_time : 0)) *
                                                           av_q2d(ic->streams[pkt->stream_index]->time_base) -
                                                           (double)(media_decode->start_time != 0 ? media_decode->start_time : 0) / 1000000 <= ((double) duration / 1000000);
@@ -1461,6 +1322,7 @@ int stream_open(MediaDecode* media_decode, const char *filename) {
         stream_close(media_decode);
         return -1;
     }
+    pthread_cond_init(&media_decode->continue_read_thread, NULL);
     int result = pthread_create(&media_decode->read_thread, NULL, read_thread, media_decode);
     if (result != 0) {
         stream_close(media_decode);
