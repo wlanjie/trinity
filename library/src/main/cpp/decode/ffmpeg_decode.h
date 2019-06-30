@@ -2,7 +2,7 @@
 // Created by wlanjie on 2019-06-29.
 //
 // ffmpeg_decode只做音频, 视频解码使用, 解码出来的数据都会放到对应的对列中.
-// 编辑和合成时都会有对就的解码操作, 但是两者又有不同之处.
+// 编辑和合成时都会有对应的解码操作, 但是两者又有不同之处.
 // 编辑时需要进行音视频同步和渲染操作. 所以这里不涉及到同步操作
 // 合成时不需要进行同步,在合成时需要当前帧的信息, 包括pts等.
 
@@ -110,6 +110,16 @@ typedef struct {
     int rindex_shown;
 } FrameQueue;
 
+typedef struct SeekEvent {
+    void (*on_seek_event)(struct SeekEvent* event, int seek_flag);
+    void* context;
+} SeekEvent;
+
+typedef struct AudioEvent {
+    void (*on_audio_prepare_event)(struct AudioEvent* event, int size);
+    void* context;
+} AudioEvent;
+
 typedef struct {
     // 资源文件, mp4, mov等
     char* file_name;
@@ -160,12 +170,14 @@ typedef struct {
     int read_pause_return;
 
     int video_filter_idx;
+    // TODO 这两个是否要定义在这里
+    double frame_last_filter_delay;
+    double frame_last_returned_time;
+
     // 帧的最大时间
     double max_frame_duration;
 
     AVFormatContext* ic;
-    // 重采样上下文
-    SwrContext* swr_context;
     // avfilter 需要的音频输入数据
     AudioParams audio_filter_src;
     //
@@ -186,10 +198,16 @@ typedef struct {
     AVFilterContext *in_audio_filter;
     AVFilterContext *out_audio_filter;
     AVFilterGraph *agraph;
+
+    struct SeekEvent* seek_event;
+    struct AudioEvent* audio_event;
+    pthread_cond_t continue_read_thread;
 } MediaDecode;
 
 /* return the number of undisplayed frames in the queue */
 int frame_queue_nb_remaining(FrameQueue* f);
+
+Frame* frame_queue_peek_readable(FrameQueue* f);
 
 Frame* frame_queue_peek_last(FrameQueue* f);
 
