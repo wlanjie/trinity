@@ -45,13 +45,13 @@ typedef struct {
     int bytes_per_sec;
 } AudioParams;
 
-typedef struct {
+typedef struct MyAVPacketList {
     AVPacket pkt;
     struct MyAVPacketList *next;
     int serial;
 } MyAVPacketList;
 
-typedef struct {
+typedef struct PacketQueue {
     pthread_mutex_t mutex;
     pthread_cond_t cond;
     int abort_request;
@@ -61,7 +61,7 @@ typedef struct {
     MyAVPacketList *first_pkt, *last_pkt;
 } PacketQueue;
 
-typedef struct {
+typedef struct Decoder {
     AVPacket pkt;
     AVPacket pkt_temp;
     PacketQueue *queue;
@@ -77,7 +77,7 @@ typedef struct {
     pthread_t decoder_tid;
 } Decoder;
 
-typedef struct {
+typedef struct Frame {
     AVFrame *frame;
     double pts;
     int64_t pos;

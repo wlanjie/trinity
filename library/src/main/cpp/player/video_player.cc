@@ -50,6 +50,38 @@ VideoPlayer::VideoPlayer() {
     audio_render_ = new AudioRender();
     audio_render_->Init(1, 44100, AudioCallback, this);
     audio_render_->Start();
+    message_queue_ = new MessageQueue("Video Render Message Queue");
+    handler_ = new VideoRenderHandler(this, message_queue_);
+    core_ = nullptr;
+    render_surface_ = EGL_NO_SURFACE;
+    yuv_render_ = nullptr;
+    render_screen_ = nullptr;
+    surface_width_ = 0;
+    surface_height_ = 0;
+    frame_width_ = 0;
+    frame_height_ = 0;
+    vertex_coordinate_ = new GLfloat[8];
+    texture_coordinate_ = new GLfloat[8];
+
+    vertex_coordinate_[0] = -1.0f;
+    vertex_coordinate_[1] = -1.0f;
+    vertex_coordinate_[2] = 1.0f;
+    vertex_coordinate_[3] = -1.0f;
+
+    vertex_coordinate_[4] = -1.0f;
+    vertex_coordinate_[5] = 1.0f;
+    vertex_coordinate_[6] = 1.0f;
+    vertex_coordinate_[7] = 1.0f;
+
+    texture_coordinate_[0] = 0.0f;
+    texture_coordinate_[1] = 1.0f;
+    texture_coordinate_[2] = 1.0f;
+    texture_coordinate_[3] = 1.0f;
+
+    texture_coordinate_[4] = 0.0f;
+    texture_coordinate_[5] = 0.0f;
+    texture_coordinate_[6] = 1.0f;
+    texture_coordinate_[7] = 0.0f;
 }
 
 VideoPlayer::~VideoPlayer() {
@@ -322,12 +354,34 @@ void VideoPlayer::OnAudioPrepareEvent(AudioEvent *event, int size) {
     player_state->audio_diff_threshold = (double) (size / player->media_decode_->audio_tgt.bytes_per_sec);
 }
 
-int VideoPlayer::Start(const char *file_name, VideoEvent* video_event) {
+int VideoPlayer::Init() {
+    int result = pthread_create(&render_thread_, nullptr, RenderThread, this);
+    if (result != 0) {
+        LOGE("Init render thread error: %d", result);
+        return false;
+    }
+
+    result = pthread_mutex_init(&render_mutex_, nullptr);
+    if (result != 0) {
+        LOGE("init render mutex error");
+        return result;
+    }
+    result = pthread_cond_init(&render_cond_, nullptr);
+    if (result != 0) {
+        LOGE("init render cond error");
+        return result;
+    }
+    return result;
+}
+
+int VideoPlayer::Start(const char *file_name) {
     pthread_mutex_init(&sync_mutex_, nullptr);
     pthread_cond_init(&sync_cond_, nullptr) ;
     pthread_create(&sync_thread_, nullptr, SyncThread, this);
 
-    video_event_ = video_event;
+    video_event_ = (VideoEvent*) av_malloc(sizeof(VideoEvent));
+    video_event_->context = this;
+    video_event_->render_video_frame = RenderVideoFrame;
 
     player_state_ = (PlayerState*) av_malloc(sizeof(PlayerState));
     player_state_->av_sync_type = AV_SYNC_AUDIO_MASTER;
@@ -406,6 +460,14 @@ void VideoPlayer::Stop() {
         av_freep(media_decode_);
         media_decode_ = nullptr;
     }
+}
+
+void VideoPlayer::Destroy() {
+    LOGI("enter Destroy");
+    destroy_ = true;
+    handler_->PostMessage(new Message(kDestroyEGLContext));
+    handler_->PostMessage(new Message(MESSAGE_QUEUE_LOOP_QUIT_FLAG));
+    pthread_join(render_thread_, nullptr);
 }
 
 void VideoPlayer::StartPlayer() {
@@ -572,6 +634,177 @@ int VideoPlayer::ReadAudio(uint8_t* buffer, int buffer_size) {
         player_state_->audio_buf_index += len1;
     }
     return len1;
+}
+
+bool VideoPlayer::CreateEGLContext(ANativeWindow *window) {
+    core_ = new EGLCore();
+    bool result = core_->InitWithSharedContext();
+    if (!result) {
+        LOGE("Create EGLContext failed");
+        return false;
+    }
+    CreateWindowSurface(window);
+    core_->DoneCurrent();
+    egl_context_exists_ = true;
+    return result;
+}
+
+void VideoPlayer::CreateWindowSurface(ANativeWindow *window) {
+    LOGI("Enter CreateWindowSurface");
+    if (core_ == nullptr || window == nullptr) {
+        LOGE("CreateWindowSurface core_ is null");
+        return;
+    }
+    render_surface_ = core_->CreateWindowSurface(window);
+    if (render_surface_ != NULL && render_surface_ != EGL_NO_SURFACE) {
+        core_->MakeCurrent(render_surface_);
+
+        render_screen_ = new OpenGL(surface_width_, surface_height_, DEFAULT_VERTEX_MATRIX_SHADER, DEFAULT_FRAGMENT_SHADER);
+//        image_process_->AddFlashWhiteAction(2000, 0, 3000);
+    }
+    LOGE("Leave CreateWindowSurface");
+}
+
+void VideoPlayer::DestroyWindowSurface() {
+    LOGE("enter DestroyWindowSurface");
+    if (EGL_NO_SURFACE != render_surface_) {
+        if (nullptr != yuv_render_) {
+            delete yuv_render_;
+            yuv_render_ = nullptr;
+        }
+        if (nullptr != render_screen_) {
+            delete render_screen_;
+            render_screen_ = nullptr;
+        }
+        if (nullptr != core_) {
+            core_->ReleaseSurface(render_surface_);
+        }
+        render_surface_ = EGL_NO_SURFACE;
+        if (nullptr != window_) {
+            ANativeWindow_release(window_);
+            window_ = nullptr;
+        }
+    }
+    LOGE("Leave DestroyWindowSurface");
+}
+
+void VideoPlayer::DestroyEGLContext() {
+    LOGI("enter DestroyEGLContext");
+    if (EGL_NO_SURFACE != render_surface_) {
+        core_->MakeCurrent(render_surface_);
+    }
+    DestroyWindowSurface();
+    if (nullptr != core_) {
+        core_->Release();
+        delete core_;
+        core_ = nullptr;
+    }
+    egl_context_exists_ = false;
+    egl_destroy_ = true;
+    LOGI("leave DestroyEGLContext");
+}
+
+void VideoPlayer::RenderVideo() {
+    if (nullptr != core_ && EGL_NO_SURFACE != render_surface_) {
+        Frame *vp = frame_queue_peek_last(&media_decode_->video_frame_queue);
+        if (! core_->MakeCurrent(render_surface_)) {
+            LOGE("eglSwapBuffers MakeCurrent error: %d", eglGetError());
+        }
+        if (!vp->uploaded) {
+            int width = MIN(vp->frame->linesize[0], vp->frame->width);
+            int height = vp->frame->height;
+            if (frame_width_ != width || frame_height_ != height) {
+                frame_width_ = width;
+                frame_height_ = height;
+                if (nullptr != yuv_render_) {
+                    delete yuv_render_;
+                }
+                yuv_render_ = new YuvRender(vp->width, vp->height, 0);
+            }
+            int texture_id = yuv_render_->DrawFrame(vp->frame);
+            uint64_t current_time = (uint64_t) (vp->frame->pts * av_q2d(media_decode_->video_stream->time_base) * 1000);
+//            texture_id = image_process_->Process(texture_id, current_time, vp->width, vp->height, 0, 0);
+            render_screen_->ProcessImage(texture_id, vertex_coordinate_, texture_coordinate_);
+            if (!core_->SwapBuffers(render_surface_)) {
+                LOGE("eglSwapBuffers error: %d", eglGetError());
+            }
+            pthread_mutex_lock(&render_mutex_);
+            if (handler_->GetQueueSize() <= 1) {
+                pthread_cond_signal(&render_cond_);
+            }
+            pthread_mutex_unlock(&render_mutex_);
+            vp->uploaded = 1;
+        }
+    }
+}
+
+void *VideoPlayer::RenderThread(void *context) {
+    VideoPlayer* video_player = (VideoPlayer*) context;
+    if (video_player->destroy_) {
+        return nullptr;
+    }
+    video_player->ProcessMessage();
+    pthread_exit(0);
+}
+
+void VideoPlayer::ProcessMessage() {
+    bool rendering = true;
+    while (rendering) {
+        if (destroy_) {
+            break;
+        }
+        Message *msg = NULL;
+        if (message_queue_->DequeueMessage(&msg, true) > 0) {
+            if (msg == NULL) {
+                return;
+            }
+            if (MESSAGE_QUEUE_LOOP_QUIT_FLAG == msg->Execute()) {
+                rendering = false;
+            }
+            delete msg;
+        }
+    }
+}
+
+void VideoPlayer::OnSurfaceCreated(ANativeWindow *window) {
+    if (nullptr != handler_) {
+        if (!egl_context_exists_) {
+            handler_->PostMessage(new Message(kCreateEGLContext, window));
+        } else {
+            handler_->PostMessage(new Message(kCreateWindowSurface, window));
+            handler_->PostMessage(new Message(kRenderFrame));
+        }
+    }
+}
+
+void VideoPlayer::OnSurfaceChanged(int width, int height) {
+    surface_width_ = width;
+    surface_height_ = height;
+}
+
+void VideoPlayer::OnSurfaceDestroyed() {
+    if (nullptr != handler_) {
+        handler_->PostMessage(new Message(kDestroyWindowSurface));
+    }
+}
+
+void VideoPlayer::RenderVideoFrame(VideoEvent* event) {
+    if (nullptr != event && nullptr != event->context) {
+        VideoPlayer* video_player = (VideoPlayer*) event->context;
+        if (!video_player->egl_context_exists_) {
+            return;
+        }
+        video_player->video_play_state_ = kPlaying;
+        VideoRenderHandler* handler = video_player->handler_;
+        if (nullptr != handler) {
+            pthread_mutex_lock(&video_player->render_mutex_);
+            if (handler->GetQueueSize() > 1) {
+                pthread_cond_wait(&video_player->render_cond_, &video_player->render_mutex_);
+            }
+            pthread_mutex_unlock(&video_player->render_mutex_);
+            handler->PostMessage(new Message(kRenderFrame));
+        }
+    }
 }
 
 }

@@ -485,7 +485,6 @@ static void Android_JNI_video_editor_testTranscode(JNIEnv* env, jobject object, 
         return;
     }
     VideoEditor* editor = reinterpret_cast<VideoEditor*>(handle);
-    editor->testTranscode();
 }
 
 static JNINativeMethod recordMethods[] = {

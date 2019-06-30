@@ -199,26 +199,6 @@ int packet_queue_get(PacketQueue *q, AVPacket *pkt, int block, int *serial) {
     return ret;
 }
 
-int packet_queue_put(PacketQueue *q, AVPacket *pkt) {
-    int ret;
-    pthread_mutex_lock(&q->mutex);
-    ret = packet_queue_put_private(q, pkt);
-    pthread_mutex_unlock(&q->mutex);
-    if (pkt != &flush_pkt && ret < 0) {
-        av_packet_unref(pkt);
-    }
-    return ret;
-}
-
-int packet_queue_put_nullpacket(PacketQueue *q, int stream_index) {
-    AVPacket pkt1, *pkt = &pkt1;
-    av_init_packet(pkt);
-    pkt->data = NULL;
-    pkt->size = 0;
-    pkt->stream_index = stream_index;
-    return packet_queue_put(q, pkt);
-}
-
 int packet_queue_put_private(PacketQueue *q, AVPacket *packet) {
     MyAVPacketList *pkt1;
     if (q->abort_request) {
@@ -244,6 +224,26 @@ int packet_queue_put_private(PacketQueue *q, AVPacket *packet) {
     q->size += pkt1->pkt.size + sizeof(*pkt1);
     pthread_cond_signal(&q->cond);
     return 0;
+}
+
+int packet_queue_put(PacketQueue *q, AVPacket *pkt) {
+    int ret;
+    pthread_mutex_lock(&q->mutex);
+    ret = packet_queue_put_private(q, pkt);
+    pthread_mutex_unlock(&q->mutex);
+    if (pkt != &flush_pkt && ret < 0) {
+        av_packet_unref(pkt);
+    }
+    return ret;
+}
+
+int packet_queue_put_nullpacket(PacketQueue *q, int stream_index) {
+    AVPacket pkt1, *pkt = &pkt1;
+    av_init_packet(pkt);
+    pkt->data = NULL;
+    pkt->size = 0;
+    pkt->stream_index = stream_index;
+    return packet_queue_put(q, pkt);
 }
 
 void packet_queue_start(PacketQueue *q) {

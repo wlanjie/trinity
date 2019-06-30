@@ -5,17 +5,13 @@
 #ifndef TRINITY_VIDEO_EDITOR_H
 #define TRINITY_VIDEO_EDITOR_H
 
-extern "C" {
-#include "ffplay.h"
-};
-
 #include <cstdint>
 #include <jni.h>
 #include <android/native_window_jni.h>
 #include <deque>
 #include <pthread.h>
 
-#include "player.h"
+#include "video_player.h"
 #include "yuv_render.h"
 #include "pixel_late.h"
 #include "flash_white.h"
@@ -30,22 +26,10 @@ using namespace std;
 
 namespace trinity {
 
-class VideoRenderHandler;
-
-typedef enum {
-    kCreateEGLContext,
-    kCreateWindowSurface,
-    kDestroyWindowSurface,
-    kDestroyEGLContext,
-    kRenderFrame
-} VideoRenderMessage;
-
 class VideoEditor {
 public:
     VideoEditor();
     ~VideoEditor();
-
-    void testTranscode();
 
     int Init();
 
@@ -114,28 +98,15 @@ public:
 
 public:
 
-    bool CreateEGLContext(ANativeWindow* window);
-
-    void CreateWindowSurface(ANativeWindow* window);
-
-    void DestroyWindowSurface();
-
-    void DestroyEGLContext();
-
     void RenderVideo();
 
-    static void StartPlayer(PlayerActionContext* context);
+//    static void StartPlayer(PlayerActionContext* context);
 
-    static void RenderVideoFrame(PlayerActionContext* context);
+//    static void RenderVideoFrame(PlayerActionContext* context);
 
     int OnComplete();
 
     bool egl_destroy_;
-
-private:
-    static void *RenderThread(void *context);
-
-    void ProcessMessage();
 
 private:
     deque<MediaClip*> clip_deque_;
@@ -144,91 +115,17 @@ private:
     ANativeWindow* window_;
     jobject video_editor_object_;
 
-    Player* player_;
+    VideoPlayer* video_player_;
     // 是否循环播放
     bool repeat_;
     // 当前播放的文件位置
     int play_index;
     int video_play_state_;
-    pthread_t render_thread_;
-    pthread_mutex_t render_mutex_;
-    pthread_cond_t render_cond_;
     bool egl_context_exists_;
     bool destroy_;
-    EGLCore* core_;
-    EGLSurface render_surface_;
-    VideoRenderHandler* handler_;
-    MessageQueue* message_queue_;
-    YuvRender* yuv_render_;
-    OpenGL* render_screen_;
-    int surface_width_;
-    int surface_height_;
-    int frame_width_;
-    int frame_height_;
     ImageProcess* image_process_;
 
-    GLfloat* vertex_coordinate_;
-    GLfloat* texture_coordinate_;
-
     MusicDecoderController* music_player_;
-};
-
-class VideoRenderHandler : public Handler {
-public:
-    VideoRenderHandler(VideoEditor* editor, MessageQueue* queue) : Handler(queue) {
-        editor_ = editor;
-        init_ = false;
-    }
-
-    void HandleMessage(Message* msg) {
-        int what = msg->GetWhat();
-        ANativeWindow* window;
-        switch (what) {
-            case kCreateEGLContext:
-                if (editor_->egl_destroy_) {
-                    break;
-                }
-                window = (ANativeWindow *) (msg->GetObj());
-                init_ = editor_->CreateEGLContext(window);
-                break;
-
-            case kRenderFrame:
-                if (editor_->egl_destroy_) {
-                    break;
-                }
-                if (init_) {
-                    editor_->RenderVideo();
-                }
-                break;
-
-            case kCreateWindowSurface:
-                if (editor_->egl_destroy_) {
-                    break;
-                }
-                if (init_) {
-                    window = (ANativeWindow *) (msg->GetObj());
-                    editor_->CreateWindowSurface(window);
-                }
-                break;
-
-            case kDestroyWindowSurface:
-                if (init_) {
-                    editor_->DestroyWindowSurface();
-                }
-                break;
-
-            case kDestroyEGLContext:
-                editor_->DestroyEGLContext();
-                break;
-
-            default:
-                break;
-        }
-    }
-
-private:
-    VideoEditor* editor_;
-    bool init_;
 };
 
 }
