@@ -6,7 +6,7 @@
 #define TRINITY_VIDEO_EXPORT_H
 
 extern "C" {
-#include "ffplay.h"
+#include "ffmpeg_decode.h"
 #include "cJSON.h"
 };
 
@@ -72,12 +72,12 @@ private:
     int DecoderStart(Decoder *d, void* (*fn) (void*), void *arg);
     int StreamCommonOpen(int stream_index);
     int ReadFrame();
-    int StreamOpen(VideoState* is, char* file_name);
-    void StreamClose(VideoState* is);
-
-    int GetVideoFrame(VideoState *is, AVFrame *frame);
-    int QueuePicture(VideoState *is, AVFrame *src_frame, double pts, double duration, int64_t pos, int serial);
-    int DecodeFrame(VideoState* is, Decoder *d, AVFrame *frame, AVSubtitle *sub);
+//    int StreamOpen(VideoState* is, char* file_name);
+//    void StreamClose(VideoState* is);
+//
+//    int GetVideoFrame(VideoState *is, AVFrame *frame);
+//    int QueuePicture(VideoState *is, AVFrame *src_frame, double pts, double duration, int64_t pos, int serial);
+//    int DecodeFrame(VideoState* is, Decoder *d, AVFrame *frame, AVSubtitle *sub);
     int DecoderAudio();
     int DecoderVideo();
     static void* ReadThread(void* arg);
@@ -91,7 +91,7 @@ private:
     bool export_ing;
     EGLCore* egl_core_;
     EGLSurface egl_surface_;
-    VideoState* video_state_;
+//    VideoState* video_state_;
     int export_index_;
     int video_width_;
     int video_height_;

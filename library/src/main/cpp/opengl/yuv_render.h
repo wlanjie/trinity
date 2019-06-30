@@ -10,7 +10,10 @@
 #include <GLES2/gl2.h>
 
 #include "egl_core.h"
-#include "ffplay.h"
+
+extern "C" {
+#include "libavcodec/avcodec.h"
+};
 
 #define VERTEX_COORDINATE_COUNT			8
 
