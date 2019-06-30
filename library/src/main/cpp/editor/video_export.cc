@@ -25,6 +25,7 @@ VideoExport::VideoExport() {
     frame_height_ = 0;
     encoder_ = nullptr;
     packet_thread_ = nullptr;
+    image_process_ = nullptr;
 }
 
 VideoExport::~VideoExport() {
@@ -548,6 +549,7 @@ int VideoExport::ReadFrame() {
     }
     int ret = avformat_open_input(&ic, is->filename, nullptr, nullptr);
     if (ret < 0) {
+        LOGE("avformat_open_input error: %s", av_err2str(ret));
         return -1;
     }
     is->ic = ic;
@@ -627,18 +629,23 @@ int VideoExport::ReadFrame() {
         if (!is->paused &&
             (!is->audio_st || (is->audio_decode.finished == is->audioq.serial && frame_queue_nb_remaining(&is->sample_queue) == 0)) &&
             (!is->video_st || (is->video_decode.finished == is->videoq.serial && frame_queue_nb_remaining(&is->video_queue) == 0))) {
+            LOGE("is paused end file");
             is->paused = 0;
             is->audio_decode.finished = 0;
             is->video_decode.finished = 0;
             // TODO next file
-            export_ing = false;
+            if (is->state_context && is->state_context->complete) {
+                is->state_context->complete(is->state_context);
+            }
         }
         // 播放到指定时间
         // 如果是循环播放 seek到开始时间
         if (is->finish) {
             is->finish = 0;
             // TODO next file
-            export_ing = false;
+            if (is->state_context && is->state_context->complete) {
+                is->state_context->complete(is->state_context);
+            }
         }
 
         ret = av_read_frame(ic, pkt);
@@ -1072,6 +1079,36 @@ void VideoExport::StreamClose(VideoState* is) {
 
 }
 
+static int OnCompleteState(StateContext *context) {
+    VideoExport* video_export = (VideoExport*) context->context;
+    return video_export->OnComplete();
+}
+
+int VideoExport::OnComplete() {
+    av_destroy(video_state_);
+    if (nullptr != video_state_) {
+        av_freep(video_state_);
+        video_state_ = nullptr;
+    }
+    export_index_++;
+    if (export_index_ >= clip_deque_.size()) {
+        export_ing = false;
+        return 1;
+    }
+    MediaClip* clip = clip_deque_.at(export_index_);
+    video_state_ = static_cast<VideoState*>(av_malloc(sizeof(VideoState)));
+
+    StateContext* state_context = (StateContext*) av_malloc(sizeof(StateContext));
+    state_context->complete = OnCompleteState;
+    state_context->context = this;
+    video_state_->state_context = state_context;
+
+    video_state_->start_time = 0;
+    video_state_->end_time = INT64_MAX;
+    StreamOpen(video_state_, clip->file_name);
+    return 0;
+}
+
 int VideoExport::Export(const char *export_config, const char *path, int width, int height, int frame_rate,
                         int video_bit_rate, int sample_rate, int channel_count, int audio_bit_rate) {
     cJSON* json = cJSON_Parse(export_config);
@@ -1118,10 +1155,34 @@ int VideoExport::Export(const char *export_config, const char *path, int width, 
         LOGE("path: %s start_time: %d end_time: %d", path_item->valuestring, start_time_item->valueint, end_time_item->valueint);
     }
 
+    cJSON* effects = cJSON_GetObjectItem(json, "effects");
+    if (nullptr != effects) {
+        int effect_size = cJSON_GetArraySize(effects);
+        if (clip_size > 0) {
+            cJSON* effects_child = effects->child;
+            image_process_ = new ImageProcess();
+            for (int i = 0; i < effect_size; ++i) {
+                cJSON* type_item = cJSON_GetObjectItem(effects_child, "type");
+                cJSON* start_time_item = cJSON_GetObjectItem(effects_child, "start_time");
+                cJSON* end_time_item = cJSON_GetObjectItem(effects_child, "end_time");
+                cJSON* split_count_item = cJSON_GetObjectItem(effects_child, "split_screen_count");
+                if (type_item->valueint == SPLIT_SCREEN) {
+                    image_process_->AddSplitScreenAction(split_count_item->valueint, start_time_item->valueint, end_time_item->valueint);
+                }
+                effects_child = effects_child->next;
+            }
+        }
+    }
+
     encoder_ = new SoftEncoderAdapter(0);
     encoder_->Init(width, height, video_bit_rate, frame_rate);
     MediaClip* clip = clip_deque_.at(0);
     video_state_ = static_cast<VideoState*>(av_malloc(sizeof(VideoState)));
+
+    StateContext* state_context = (StateContext*) av_malloc(sizeof(StateContext));
+    state_context->complete = OnCompleteState;
+    state_context->context = this;
+    video_state_->state_context = state_context;
 
     video_state_->start_time = 0;
     video_state_->end_time = INT64_MAX;
@@ -1185,7 +1246,6 @@ void VideoExport::ProcessExport() {
     }
     egl_core_->MakeCurrent(egl_surface_);
     FrameBuffer* frame_buffer = new FrameBuffer(video_width_, video_height_, DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
-    image_process_ = new ImageProcess();
     encoder_->CreateEncoder(egl_core_, frame_buffer->GetTextureId());
     while (export_ing) {
         if (video_state_->video_queue.size == 0) {
@@ -1204,7 +1264,8 @@ void VideoExport::ProcessExport() {
         Frame* frame = FrameQueuePeekLast(&video_state_->video_queue);
         if (frame->frame != nullptr) {
             if (isnan(frame->pts)) {
-                break;
+//                break;
+                LOGE("isnan");
             }
             if (!frame->uploaded && frame->frame != nullptr) {
                 int width = MIN(frame->frame->linesize[0], frame->frame->width);
@@ -1215,11 +1276,13 @@ void VideoExport::ProcessExport() {
                     if (nullptr != yuv_render_) {
                         delete yuv_render_;
                     }
-                    yuv_render_ = new YuvRender(frame->width, frame->height, 0);
+                    yuv_render_ = new YuvRender(frame->width, frame->height, 180);
                 }
                 int texture_id = yuv_render_->DrawFrame(frame->frame);
                 uint64_t current_time = (uint64_t) (frame->frame->pts * av_q2d(video_state_->video_st->time_base) * 1000);
-                texture_id = image_process_->Process(texture_id, current_time, frame->width, frame->height, 0, 0);
+                if (image_process_ != nullptr) {
+                    texture_id = image_process_->Process(texture_id, current_time, frame->width, frame->height, 0, 0);
+                }
                 frame_buffer->OnDrawFrame(texture_id);
                 if (!egl_core_->SwapBuffers(egl_surface_)) {
                     LOGE("eglSwapBuffers error: %d", eglGetError());

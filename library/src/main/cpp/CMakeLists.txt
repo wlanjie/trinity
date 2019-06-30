@@ -69,6 +69,7 @@ file(GLOB FILES_OPENGL "${PATH_TO_MEDIACORE}/opengl/*.cc")
 file(GLOB FILES_ENCODE "${PATH_TO_MEDIACORE}/encode/*.cc")
 file(GLOB FILES_JSON "${PATH_TO_MEDIACORE}/json/*.c")
 file(GLOB FILES_DECODE "${PATH_TO_MEDIACORE}/decode/*.cc")
+file(GLOB FILES_DECODE_C "${PATH_TO_MEDIACORE}/decode/*.c")
 file(GLOB FILES_QUEUE "${PATH_TO_MEDIACORE}/queue/*.cc")
 file(GLOB FILES_THREAD "${PATH_TO_MEDIACORE}/thread/*.cc")
 file(GLOB FILES_MP4 "${PATH_TO_MEDIACORE}/mp4/*.cc")
@@ -90,6 +91,7 @@ add_library(
         ${FILES_ENCODE}
         ${FILES_JSON}
         ${FILES_DECODE}
+        ${FILES_DECODE_C}
         ${FILES_QUEUE}
         ${FILES_THREAD}
         ${FILES_MP4}

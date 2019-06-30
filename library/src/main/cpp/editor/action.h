@@ -6,7 +6,7 @@
 #define TRINITY_ACTION_H
 
 enum ActionType {
-    NONE,
+    NONE = 0,
     ROTATE,
     FLASH_WHITE,
     FILTER,
