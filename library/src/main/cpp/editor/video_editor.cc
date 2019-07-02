@@ -13,16 +13,17 @@ VideoEditor::VideoEditor() {
     video_editor_object_ = nullptr;
     repeat_ = false;
     play_index = 0;
-    egl_destroy_ = false;
-    egl_context_exists_ = false;
     video_player_ = new VideoPlayer();
-    destroy_ = false;
-    video_play_state_ = kNone;
     image_process_ = new ImageProcess();
     music_player_ = nullptr;
+    state_event_ = nullptr;
 }
 
 VideoEditor::~VideoEditor() {
+    if (nullptr != video_player_) {
+        delete video_player_;
+        video_player_ = nullptr;
+    }
     if (nullptr != image_process_) {
         delete image_process_;
         image_process_ = nullptr;
@@ -176,39 +177,70 @@ int VideoEditor::Export(const char* export_config, const char *path, int width, 
     return video_export->Export(export_config, path, width, height, frame_rate, video_bit_rate, sample_rate, channel_count, audio_bit_rate);
 }
 
+int VideoEditor::OnCompleteEvent(StateEvent *event) {
+    VideoEditor *editor = (VideoEditor *)event->context;
+    if (nullptr != editor) {
+        return editor->OnComplete();
+    }
+    return 0;
+}
+
+int VideoEditor::OnComplete() {
+    if (repeat_) {
+        if (clip_deque_.size() == 1) {
+            MediaClip* clip = clip_deque_.at(0);
+            video_player_->Seek(clip->start_time);
+        } else {
+            video_player_->Stop();
+            play_index++;
+            if (play_index >= clip_deque_.size()) {
+                play_index = 0;
+            }
+            MediaClip* clip = clip_deque_.at(play_index);
+            FreeStateEvent();
+            video_player_->Start(clip->file_name, clip->start_time, clip->end_time == 0 ? INT64_MAX : clip->end_time, state_event_);
+        }
+    } else {
+        video_player_->Stop();
+    }
+    return 0;
+}
+
+void VideoEditor::FreeStateEvent() {
+    if (nullptr != state_event_) {
+        av_freep(state_event_);
+    }
+}
+
+void VideoEditor::AllocStateEvent() {
+    state_event_ = (StateEvent*) av_malloc(sizeof(StateEvent));
+    memset(state_event_, 0, sizeof(StateEvent));
+    state_event_->on_complete_event = OnCompleteEvent;
+    state_event_->context = this;
+}
+
 int VideoEditor::Play(bool repeat, JNIEnv* env, jobject object) {
     if (clip_deque_.empty()) {
         return -1;
     }
+    FreeStateEvent();
+    AllocStateEvent();
     repeat_ = repeat;
     MediaClip* clip = clip_deque_.at(0);
-    video_player_->Start(clip->file_name);
-
-//    PlayerClip* p_clip = new PlayerClip();
-//    p_clip->file_name = clip->file_name;
-//    p_clip->start_time = clip->start_time;
-//    p_clip->end_time = clip->end_time;
-//
-//    if (nullptr == player_) {
-//        player_ = new Player();
-//        player_->Init((void *)StartPlayer, (void *)RenderVideoFrame, this);
-//    }
-//    player_->Play(repeat, p_clip);
+    video_player_->Start(clip->file_name, clip->start_time, clip->end_time == 0 ? INT64_MAX : clip->end_time, state_event_);
     return 0;
 }
 
 void VideoEditor::Pause() {
-//    if (nullptr != player_->video_state_ && (video_play_state_ == kResume || video_play_state_ == kPlaying)) {
-//        video_play_state_ = kPause;
-//        player_->Pause();
-//    }
+    if (nullptr != video_player_) {
+        video_player_->Pause();
+    }
 }
 
 void VideoEditor::Resume() {
-//    if (nullptr != player_->video_state_ && video_play_state_ == kPause) {
-//        video_play_state_ = kResume;
-//        player_->Resume();
-//    }
+    if (nullptr != video_player_) {
+        video_player_->Resume();
+    }
 }
 
 void VideoEditor::Stop() {
@@ -217,12 +249,10 @@ void VideoEditor::Stop() {
 
 void VideoEditor::Destroy() {
     LOGI("enter Destroy");
-    destroy_ = true;
     if (nullptr != video_player_) {
+        video_player_->Stop();
         video_player_->Destroy();
     }
-
-//    player_->Destroy();
 
     pthread_mutex_lock(&queue_mutex_);
     for (int i = 0; i < clip_deque_.size(); ++i) {
@@ -237,94 +267,5 @@ void VideoEditor::Destroy() {
     pthread_cond_destroy(&queue_cond_);
     LOGE("leave Destroy");
 }
-
-//void VideoEditor::StartPlayer(PlayerActionContext* context) {
-//    VideoEditor *editor = (VideoEditor *)context->context;
-//    if (nullptr != editor) {
-//        editor->player_->video_state_->paused = 1;
-//        if (editor->repeat_) {
-//            if (editor->clip_deque_.size() == 1) {
-//                av_seek(editor->player_->video_state_, editor->player_->video_state_->start_time);
-//            } else {
-//                if (nullptr != editor->player_->audio_render_) {
-//                    editor->player_->audio_render_->Stop();
-//                }
-//                av_destroy(editor->player_->video_state_);
-//                if (nullptr != editor->player_->video_state_) {
-//                    av_freep(editor->player_->video_state_);
-//                    editor->player_->video_state_ = nullptr;
-//                }
-//
-//                editor->play_index++;
-//                if (editor->play_index >= editor->clip_deque_.size()) {
-//                    editor->play_index = 0;
-//                }
-//                MediaClip* clip = editor->clip_deque_.at(editor->play_index);
-//
-//                PlayerClip* p_clip = new PlayerClip();
-//                p_clip->file_name = clip->file_name;
-//                p_clip->start_time = clip->start_time;
-//                p_clip->end_time = clip->end_time;
-//                editor->player_->InitPlayer(p_clip);
-//            }
-//        } else {
-//            av_destroy(editor->player_->video_state_);
-//        }
-//        editor->player_->video_state_->paused = 0;
-//    }
-//}
-
-void VideoEditor::RenderVideo() {
-//    if (nullptr != core_ && EGL_NO_SURFACE != render_surface_) {
-//        Frame *vp = frame_queue_peek_last(&player_->video_state_->video_queue);
-//        if (! core_->MakeCurrent(render_surface_)) {
-//            LOGE("eglSwapBuffers MakeCurrent error: %d", eglGetError());
-//        }
-//        if (!vp->uploaded) {
-//            int width = MIN(vp->frame->linesize[0], vp->frame->width);
-//            int height = vp->frame->height;
-//            if (frame_width_ != width || frame_height_ != height) {
-//                frame_width_ = width;
-//                frame_height_ = height;
-//                if (nullptr != yuv_render_) {
-//                    delete yuv_render_;
-//                }
-//                yuv_render_ = new YuvRender(vp->width, vp->height, 0);
-//            }
-//            int texture_id = yuv_render_->DrawFrame(vp->frame);
-//            uint64_t current_time = (uint64_t) (vp->frame->pts * av_q2d(player_->video_state_->video_st->time_base) * 1000);
-//            texture_id = image_process_->Process(texture_id, current_time, vp->width, vp->height, 0, 0);
-//            render_screen_->ProcessImage(texture_id, vertex_coordinate_, texture_coordinate_);
-//            if (!core_->SwapBuffers(render_surface_)) {
-//                LOGE("eglSwapBuffers error: %d", eglGetError());
-//            }
-//            pthread_mutex_lock(&render_mutex_);
-//            if (handler_->GetQueueSize() <= 1) {
-//                pthread_cond_signal(&render_cond_);
-//            }
-//            pthread_mutex_unlock(&render_mutex_);
-//            vp->uploaded = 1;
-//        }
-//    }
-}
-
-//void VideoEditor::RenderVideoFrame(PlayerActionContext* context) {
-//    if (nullptr != context && nullptr != context->context) {
-//        VideoEditor* editor = (VideoEditor*) context->context;
-//        if (!editor->egl_context_exists_) {
-//            return;
-//        }
-//        editor->video_play_state_ = kPlaying;
-//        VideoRenderHandler* handler = editor->handler_;
-//        if (nullptr != handler) {
-//            pthread_mutex_lock(&editor->render_mutex_);
-//            if (handler->GetQueueSize() > 1) {
-//                pthread_cond_wait(&editor->render_cond_, &editor->render_mutex_);
-//            }
-//            pthread_mutex_unlock(&editor->render_mutex_);
-//            handler->PostMessage(new Message(kRenderFrame));
-//        }
-//    }
-//}
 
 }

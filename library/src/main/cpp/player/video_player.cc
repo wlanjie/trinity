@@ -47,19 +47,30 @@ VideoPlayer::VideoPlayer() {
     video_event_ = nullptr;
     media_decode_ = nullptr;
     player_state_ = nullptr;
-    audio_render_ = new AudioRender();
-    audio_render_->Init(1, 44100, AudioCallback, this);
-    audio_render_->Start();
-    message_queue_ = new MessageQueue("Video Render Message Queue");
-    handler_ = new VideoRenderHandler(this, message_queue_);
+    audio_render_ = nullptr;
+    player_handler_ = nullptr;
+    message_queue_ = nullptr;
+    handler_ = nullptr;
+    message_queue_ = nullptr;
+    video_play_state_ = kNone;
     core_ = nullptr;
     render_surface_ = EGL_NO_SURFACE;
-    yuv_render_ = nullptr;
     render_screen_ = nullptr;
     surface_width_ = 0;
     surface_height_ = 0;
     frame_width_ = 0;
     frame_height_ = 0;
+    yuv_render_ = nullptr;
+    window_ = nullptr;
+    egl_context_exists_ = false;
+    egl_destroy_ = false;
+    destroy_ = false;
+
+    audio_render_ = new AudioRender();
+    audio_render_->Init(1, 44100, AudioCallback, this);
+    audio_render_->Start();
+    message_queue_ = new MessageQueue("Video Render Message Queue");
+    handler_ = new VideoRenderHandler(this, message_queue_);
     vertex_coordinate_ = new GLfloat[8];
     texture_coordinate_ = new GLfloat[8];
 
@@ -287,6 +298,7 @@ void Retry(MediaDecode* media_decode,
     if (player_state->force_refresh && media_decode->video_frame_queue.rindex_shown) {
         VideoDisplay(media_decode, video_event);
     }
+    player_state->force_refresh = 0;
 }
 
 void VideoRefresh(MediaDecode* media_decode,
@@ -374,34 +386,36 @@ int VideoPlayer::Init() {
     return result;
 }
 
-int VideoPlayer::Start(const char *file_name) {
-    pthread_mutex_init(&sync_mutex_, nullptr);
-    pthread_cond_init(&sync_cond_, nullptr) ;
-    pthread_create(&sync_thread_, nullptr, SyncThread, this);
-
+int VideoPlayer::Start(const char *file_name, uint64_t start_time, uint64_t end_time, StateEvent* state_event) {
     video_event_ = (VideoEvent*) av_malloc(sizeof(VideoEvent));
+    memset(video_event_, 0, sizeof(VideoEvent));
     video_event_->context = this;
     video_event_->render_video_frame = RenderVideoFrame;
 
     player_state_ = (PlayerState*) av_malloc(sizeof(PlayerState));
+    memset(player_state_, 0, sizeof(PlayerState));
     player_state_->av_sync_type = AV_SYNC_AUDIO_MASTER;
 
     media_decode_ = (MediaDecode*) av_malloc(sizeof(MediaDecode));
-    media_decode_->start_time = 0;
-    media_decode_->end_time = INT64_MAX;
+    memset(media_decode_, 0, sizeof(MediaDecode));
+    media_decode_->start_time = start_time;
+    media_decode_->end_time = end_time;
     media_decode_->loop = 1;
     media_decode_->precision_seek = 1;
 
     SeekEvent* seek_event = (SeekEvent*) av_malloc(sizeof(SeekEvent));
+    memset(seek_event, 0, sizeof(SeekEvent));
     seek_event->on_seek_event = OnSeekEvent;
     seek_event->context = this;
     media_decode_->seek_event = seek_event;
 
     AudioEvent* audio_event = (AudioEvent*) av_malloc(sizeof(AudioEvent));
+    memset(audio_event, 0, sizeof(AudioEvent));
     audio_event->on_audio_prepare_event = OnAudioPrepareEvent;
     audio_event->context = this;
     media_decode_->audio_event = audio_event;
 
+    media_decode_->state_event = state_event;
     int result = av_decode_start(media_decode_, file_name);
     if (result != 0) {
         return result;
@@ -409,6 +423,11 @@ int VideoPlayer::Start(const char *file_name) {
     InitClock(&player_state_->video_clock, &media_decode_->video_packet_queue.serial);
     InitClock(&player_state_->sample_clock, &media_decode_->audio_packet_queue.serial);
     InitClock(&player_state_->external_clock, &player_state_->external_clock.serial);
+
+    pthread_mutex_init(&sync_mutex_, nullptr);
+    pthread_cond_init(&sync_cond_, nullptr) ;
+    pthread_create(&sync_thread_, nullptr, SyncThread, this);
+
     return 0;
 }
 
@@ -423,6 +442,7 @@ void VideoPlayer::Sync() {
     while (!media_decode_->abort_request) {
         pthread_mutex_lock(&sync_mutex_);
         if (media_decode_->paused) {
+            LOGE("Sync paused");
             pthread_cond_wait(&sync_cond_, &sync_mutex_);
         }
         pthread_mutex_unlock(&sync_mutex_);
@@ -436,6 +456,14 @@ void VideoPlayer::Sync() {
     }
 }
 
+void VideoPlayer::Resume() {
+//    StreamTogglePause(media_decode_, player_state_);
+}
+
+void VideoPlayer::Pause() {
+//    StreamTogglePause(media_decode_, player_state_);
+}
+
 void VideoPlayer::Stop() {
 
     if (nullptr != player_state_->swr_context) {
@@ -447,17 +475,18 @@ void VideoPlayer::Stop() {
     pthread_cond_signal(&sync_cond_);
     pthread_mutex_unlock(&sync_mutex_);
 
+    av_decode_destroy(media_decode_);
     pthread_join(sync_thread_, nullptr);
 
     pthread_mutex_destroy(&sync_mutex_);
     pthread_cond_destroy(&sync_cond_);
 
     if (nullptr != player_state_) {
-        av_freep(player_state_);
+        av_free(player_state_);
         player_state_ = nullptr;
     }
     if (nullptr != media_decode_) {
-        av_freep(media_decode_);
+        av_free(media_decode_);
         media_decode_ = nullptr;
     }
 }
@@ -511,6 +540,7 @@ int AudioResample(MediaDecode* media_decode, PlayerState* player_state) {
             LOGE("frame_queue_peek_readable error");
             return 0;
         }
+        frame_queue_next(&media_decode->sample_frame_queue);
     } while (frame->serial != media_decode->audio_packet_queue.serial);
 
     int wanted_nb_sample;
@@ -602,11 +632,12 @@ int AudioResample(MediaDecode* media_decode, PlayerState* player_state) {
 
 int VideoPlayer::ReadAudio(uint8_t* buffer, int buffer_size) {
     if (!media_decode_) {
-        return 0;
+        return buffer_size;
     }
     if (media_decode_->paused) {
         return 0;
     }
+    player_state_->audio_callback_time = av_gettime_relative();
     int audio_size, len1 = 0;
     while (buffer_size > 0) {
         if (player_state_->audio_buf_index >= player_state_->audio_buf_size) {
@@ -632,6 +663,13 @@ int VideoPlayer::ReadAudio(uint8_t* buffer, int buffer_size) {
         buffer_size -= len1;
         buffer += len1;
         player_state_->audio_buf_index += len1;
+    }
+    player_state_->audio_write_buf_size = player_state_->audio_buf_size - player_state_->audio_buf_index;
+    /* Let's assume the audio driver that is used by SDL has two periods. */
+    if (!isnan(player_state_->audio_clock)) {
+        SetClockAt(&player_state_->sample_clock, player_state_->audio_clock - (double) (2 * player_state_->audio_hw_buf_size + player_state_->audio_write_buf_size) / media_decode_->audio_tgt.bytes_per_sec,
+                     player_state_->audio_clock_serial, player_state_->audio_callback_time / 1000000.0);
+        SyncClockToSlave(&player_state_->external_clock, &player_state_->sample_clock);
     }
     return len1;
 }
@@ -802,9 +840,14 @@ void VideoPlayer::RenderVideoFrame(VideoEvent* event) {
                 pthread_cond_wait(&video_player->render_cond_, &video_player->render_mutex_);
             }
             pthread_mutex_unlock(&video_player->render_mutex_);
+            LOGE("RenderVideoFrame");
             handler->PostMessage(new Message(kRenderFrame));
         }
     }
+}
+
+void VideoPlayer::Seek(int start_time) {
+    av_seek(media_decode_, start_time);
 }
 
 }

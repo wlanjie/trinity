@@ -96,18 +96,11 @@ public:
 
     void Destroy();
 
-public:
-
-    void RenderVideo();
-
-//    static void StartPlayer(PlayerActionContext* context);
-
-//    static void RenderVideoFrame(PlayerActionContext* context);
-
+private:
+    static int OnCompleteEvent(StateEvent* event);
     int OnComplete();
-
-    bool egl_destroy_;
-
+    void FreeStateEvent();
+    void AllocStateEvent();
 private:
     deque<MediaClip*> clip_deque_;
     pthread_mutex_t queue_mutex_;
@@ -120,12 +113,10 @@ private:
     bool repeat_;
     // 当前播放的文件位置
     int play_index;
-    int video_play_state_;
-    bool egl_context_exists_;
-    bool destroy_;
     ImageProcess* image_process_;
 
     MusicDecoderController* music_player_;
+    StateEvent* state_event_;
 };
 
 }

@@ -1073,6 +1073,15 @@ void read_thread_failed(MediaDecode *media_decode, AVFormatContext *ic, pthread_
     pthread_mutex_destroy(&wait_mutex);
 }
 
+int complete_state(MediaDecode* media_decode) {
+    // TODO 会调用多次
+    // 后面需要想办法优化
+    if (media_decode->state_event && media_decode->state_event->on_complete_event) {
+        return media_decode->state_event->on_complete_event(media_decode->state_event);
+    }
+    return 0;
+}
+
 void* read_thread(void *arg) {
     LOGE("enter read_thread ");
     MediaDecode *media_decode = arg;
@@ -1231,28 +1240,29 @@ void* read_thread(void *arg) {
             pthread_mutex_unlock(&wait_mutex);
             continue;
         }
+//        LOGE("video_finished: %d serial: %d audio_finish: %d serial: %d", media_decode->video_decode.finished, media_decode->video_packet_queue.serial, media_decode->audio_decode.finished, media_decode->audio_packet_queue.serial);
         if (!media_decode->paused &&
             (!media_decode->audio_stream || (media_decode->audio_decode.finished == media_decode->audio_packet_queue.serial && frame_queue_nb_remaining(&media_decode->sample_frame_queue) == 0)) &&
             (!media_decode->video_stream || (media_decode->video_decode.finished == media_decode->video_packet_queue.serial && frame_queue_nb_remaining(&media_decode->video_frame_queue) == 0))) {
             media_decode->paused = 0;
             media_decode->audio_decode.finished = 0;
             media_decode->video_decode.finished = 0;
-//            int exit = complete_state(media_decode);
-//            // 是否退出
-//            if (exit) {
-//                LOGE("player finish exit");
-//                return NULL;
-//            }
+            int exit = complete_state(media_decode);
+            // 是否退出
+            if (exit) {
+                LOGE("player finish exit");
+                return NULL;
+            }
         }
         // 播放到指定时间
         // 如果是循环播放 seek到开始时间
         if (media_decode->finish) {
             media_decode->finish = 0;
-//            int exit = complete_state(media_decode);
-//            if (exit) {
-//                LOGE("complete state exit");
-//                return NULL;
-//            }
+            int exit = complete_state(media_decode);
+            if (exit) {
+                LOGE("complete state exit");
+                return NULL;
+            }
         }
         ret = av_read_frame(ic, pkt);
         if (ret < 0) {
@@ -1340,9 +1350,23 @@ int av_decode_start(MediaDecode* decode, const char* file_name) {
     return result;
 }
 
+/* seek in the stream */
+void stream_seek(MediaDecode *media_decode, int64_t pos, int64_t rel, int seek_by_bytes) {
+    if (!media_decode->seek_req) {
+        media_decode->seek_pos = pos;
+        media_decode->seek_rel = rel;
+        media_decode->seek_flags &= ~AVSEEK_FLAG_BYTE;
+        if (seek_by_bytes) {
+            media_decode->seek_flags |= AVSEEK_FLAG_BYTE;
+        }
+        media_decode->seek_req = 1;
+        pthread_cond_signal(&media_decode->continue_read_thread);
+    }
+}
+
 // seek到某个时间点, 以毫秒为准
 void av_seek(MediaDecode* decode, int64_t time) {
-
+    stream_seek(decode, time, 0, 0);
 }
 
 // 释放解码资源
