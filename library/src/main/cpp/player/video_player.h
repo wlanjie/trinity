@@ -65,6 +65,9 @@ typedef struct PlayerState {
     unsigned int audio_buf_index;
     unsigned int audio_buf_size;
     unsigned int audio_buf1_size;
+    int audio_write_buf_size;
+    int audio_clock_serial;
+    int64_t audio_callback_time;
     uint8_t *audio_buf;
     uint8_t *audio_buf1;
 
@@ -91,9 +94,12 @@ public:
     VideoPlayer();
     virtual ~VideoPlayer();
     int Init();
-    int Start(const char* file_name);
+    int Start(const char* file_name, uint64_t start_time, uint64_t end_time, StateEvent* state_event);
+    void Resume();
+    void Pause();
     void Stop();
     void Destroy();
+    void Seek(int start_time);
 
     void OnSurfaceCreated(ANativeWindow* window);
     void OnSurfaceChanged(int width, int height);

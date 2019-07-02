@@ -120,6 +120,11 @@ typedef struct AudioEvent {
     void* context;
 } AudioEvent;
 
+typedef struct StateEvent {
+    int (*on_complete_event)(struct StateEvent* event);
+    void* context;
+} StateContext;
+
 typedef struct {
     // 资源文件, mp4, mov等
     char* file_name;
@@ -201,6 +206,7 @@ typedef struct {
 
     struct SeekEvent* seek_event;
     struct AudioEvent* audio_event;
+    struct StateEvent* state_event;
     pthread_cond_t continue_read_thread;
 } MediaDecode;
 

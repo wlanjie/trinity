@@ -51,10 +51,10 @@ class EditorActivity : AppCompatActivity() {
     setContentView(R.layout.activity_editor)
 
     openLog()
-    val editorFile = externalCacheDir?.absolutePath + "/editor2.mp4"
+    val editorFile = externalCacheDir?.absolutePath + "/editor.mp4"
     val file = File(editorFile)
     if (!file.exists()) {
-      val stream = assets.open("editor2.mp4")
+      val stream = assets.open("editor.mp4")
       val outputStream = FileOutputStream(file)
       val buffer = ByteArray(2048)
       while (true) {

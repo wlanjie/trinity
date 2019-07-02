@@ -36,62 +36,20 @@ public:
             int width, int height, int frame_rate, int video_bit_rate,
             int sample_rate, int channel_count, int audio_bit_rate);
 
-    int Export(deque<MediaClip*> clips, const char* path, int width, int height, int frame_rate, int video_bit_rate,
-               int sample_rate, int channel_count, int audio_bit_rate);
-
-    int OnComplete();
 private:
     static void* ExportThread(void* context);
     void ProcessExport();
+    static int OnCompleteState(StateEvent* event);
+    int OnComplete();
 
 private:
-    int FrameQueueInit(FrameQueue *f, PacketQueue *pktq, int maxSize, int keepLast);
-    Frame* FrameQueuePeekWritable(FrameQueue* f);
-    Frame* FrameQueuePeekReadable(FrameQueue* f);
-    void FrameQueuePush(FrameQueue* f);
-    Frame* FrameQueuePeek(FrameQueue* f);
-    int FrameQueueNbRemaining(FrameQueue* f);
-    Frame* FrameQueuePeekLast(FrameQueue* f);
-    Frame* FrameQueuePeekNext(FrameQueue* f);
-    void FrameQueueUnrefItem(Frame* vp);
-    void FrameQueueNext(FrameQueue* f);
-    void FrameQueueSignal(FrameQueue* f);
-    void FrameQueueDestroy(FrameQueue* f);
-    int PacketQueueInit(PacketQueue* q);
-    int PacketQueueGet(PacketQueue* q, AVPacket* pkt, int block, int* serial);
-    int PacketQueuePut(PacketQueue* q, AVPacket* pkt);
-    int PacketQueuePutPrivate(PacketQueue* q, AVPacket* packet);
-    int PacketQueuePutNullPacket(PacketQueue* q, int streamIndex);
-    void PacketQueueStart(PacketQueue* q);
-    void PacketQueueAbort(PacketQueue* q);
-    void PacketQueueFlush(PacketQueue* q);
-    void PacketQueueDestroy(PacketQueue* q);
-
-
-    void DecoderInit(Decoder *d, AVCodecContext *avctx, PacketQueue *queue, pthread_cond_t empty_queue_cond);
-    int DecoderStart(Decoder *d, void* (*fn) (void*), void *arg);
-    int StreamCommonOpen(int stream_index);
-    int ReadFrame();
-//    int StreamOpen(VideoState* is, char* file_name);
-//    void StreamClose(VideoState* is);
-//
-//    int GetVideoFrame(VideoState *is, AVFrame *frame);
-//    int QueuePicture(VideoState *is, AVFrame *src_frame, double pts, double duration, int64_t pos, int serial);
-//    int DecodeFrame(VideoState* is, Decoder *d, AVFrame *frame, AVSubtitle *sub);
-    int DecoderAudio();
-    int DecoderVideo();
-    static void* ReadThread(void* arg);
-    static void* AudioThread(void* arg);
-    static void* VideoThread(void* arg);
-private:
-    AVPacket flush_packet_;
-
     pthread_t export_thread_;
     deque<MediaClip*> clip_deque_;
     bool export_ing;
     EGLCore* egl_core_;
     EGLSurface egl_surface_;
-//    VideoState* video_state_;
+    MediaDecode* media_decode_;
+    StateEvent* state_event_;
     int export_index_;
     int video_width_;
     int video_height_;
