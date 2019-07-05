@@ -14,6 +14,7 @@ static char *wanted_stream_spec[AVMEDIA_TYPE_NB] = {0};
 static AVPacket flush_pkt;
 
 int frame_queue_init( FrameQueue *f, PacketQueue *pktq, int max_size, int keep_last) {
+    LOGE("enter frame_queue_init max_size: %d", max_size);
     memset(f, 0, sizeof(FrameQueue));
     int result = pthread_mutex_init(&f->mutex, NULL);
     if (result != 0) {
@@ -33,6 +34,7 @@ int frame_queue_init( FrameQueue *f, PacketQueue *pktq, int max_size, int keep_l
             return AVERROR(ENOMEM);
         }
     }
+    LOGE("exit frame_queue_init");
     return 0;
 }
 
@@ -51,12 +53,10 @@ Frame *frame_queue_peek_writable(FrameQueue *f) {
 Frame *frame_queue_peek_readable(FrameQueue *f) {
     pthread_mutex_lock(&f->mutex);
     while (f->size - f->rindex_shown <= 0 && !f->packet_queue->abort_request) {
-        LOGE("pthread_cond_wait(&f->cond, &f->mutex);");
         pthread_cond_wait(&f->cond, &f->mutex);
     }
     pthread_mutex_unlock(&f->mutex);
     if (f->packet_queue->abort_request) {
-        LOGE("f->packet_queue->abort_request");
         return NULL;
     }
     return &f->queue[(f->rindex + f->rindex_shown) % f->max_size];
@@ -1056,6 +1056,7 @@ void stream_close(MediaDecode *media_decode) {
 #endif
     av_free(media_decode->file_name);
     media_decode->file_name = NULL;
+    memset(media_decode, 0, sizeof(MediaDecode));
     LOGE("leave stream close");
 }
 
@@ -1242,7 +1243,7 @@ void* read_thread(void *arg) {
         }
 //        LOGE("video_finished: %d serial: %d audio_finish: %d serial: %d", media_decode->video_decode.finished, media_decode->video_packet_queue.serial, media_decode->audio_decode.finished, media_decode->audio_packet_queue.serial);
         if (!media_decode->paused &&
-            (!media_decode->audio_stream || (media_decode->audio_decode.finished == media_decode->audio_packet_queue.serial && frame_queue_nb_remaining(&media_decode->sample_frame_queue) == 0)) &&
+
             (!media_decode->video_stream || (media_decode->video_decode.finished == media_decode->video_packet_queue.serial && frame_queue_nb_remaining(&media_decode->video_frame_queue) == 0))) {
             media_decode->paused = 0;
             media_decode->audio_decode.finished = 0;

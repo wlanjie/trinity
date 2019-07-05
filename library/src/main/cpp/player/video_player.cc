@@ -465,7 +465,7 @@ void VideoPlayer::Pause() {
 }
 
 void VideoPlayer::Stop() {
-
+    // TODO nullpoint
     if (nullptr != player_state_->swr_context) {
         swr_free(&player_state_->swr_context);
         player_state_->swr_context = nullptr;
@@ -588,6 +588,7 @@ int AudioResample(MediaDecode* media_decode, PlayerState* player_state) {
                 return -1;
             }
         }
+        LOGE("audio_buf1: %d audio_buf1_size: %d out_size: %d", player_state->audio_buf1, player_state->audio_buf1_size, out_size);
         av_fast_malloc(&player_state->audio_buf1, &player_state->audio_buf1_size, out_size);
         if (!player_state->audio_buf1) {
             return AVERROR(ENOMEM);
@@ -634,7 +635,7 @@ int VideoPlayer::ReadAudio(uint8_t* buffer, int buffer_size) {
     if (!media_decode_) {
         return buffer_size;
     }
-    if (media_decode_->paused) {
+    if (media_decode_->paused || media_decode_->abort_request) {
         return 0;
     }
     player_state_->audio_callback_time = av_gettime_relative();
@@ -840,7 +841,6 @@ void VideoPlayer::RenderVideoFrame(VideoEvent* event) {
                 pthread_cond_wait(&video_player->render_cond_, &video_player->render_mutex_);
             }
             pthread_mutex_unlock(&video_player->render_mutex_);
-            LOGE("RenderVideoFrame");
             handler->PostMessage(new Message(kRenderFrame));
         }
     }

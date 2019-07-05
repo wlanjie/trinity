@@ -123,7 +123,7 @@ typedef struct AudioEvent {
 typedef struct StateEvent {
     int (*on_complete_event)(struct StateEvent* event);
     void* context;
-} StateContext;
+} StateEvent;
 
 typedef struct {
     // 资源文件, mp4, mov等
