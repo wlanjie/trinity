@@ -27,4 +27,12 @@
                 android:layout_height="wrap_content"
                 android:text="结束录制"/>
     </LinearLayout>
+
+    <com.trinity.sample.view.RecordButton
+            android:id="@+id/record_button"
+            android:layout_width="128dp"
+            android:layout_height="128dp"
+            android:layout_marginBottom="16dp"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"/>
 </RelativeLayout>
