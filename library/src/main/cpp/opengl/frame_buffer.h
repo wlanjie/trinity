@@ -16,6 +16,8 @@ namespace trinity {
 class FrameBuffer : public OpenGL {
 public:
     FrameBuffer(int width, int height, const char* vertex, const char* fragment);
+    FrameBuffer(int width, int height, int view_width, int view_height, const char* vertex, const char* fragment);
+    void CompileFrameBuffer(int width, int height, const char* vertex, const char* fragment);
     ~FrameBuffer();
 
 //    void Init(const char* vertex, const char* fragment);
