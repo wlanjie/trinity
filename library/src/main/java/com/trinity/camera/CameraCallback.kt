@@ -1,6 +1,8 @@
 package com.trinity.camera
 
+import java.util.*
+
 interface CameraCallback {
 
-  fun onPreviewSizeSelected(sizes: List<Size>): Size
+  fun onPreviewSizeSelected(sizes: SortedSet<Size>): Size?
 }
