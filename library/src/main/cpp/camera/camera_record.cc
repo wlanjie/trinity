@@ -353,7 +353,7 @@ bool CameraRecord::Initialize() {
     glBindTexture(GL_TEXTURE_EXTERNAL_OES, 0);
 
     ConfigCamera();
-    frame_buffer_ = new FrameBuffer(MIN(camera_width_, camera_height_), MAX(camera_width_, camera_height_), DEFAULT_VERTEX_MATRIX_SHADER, DEFAULT_OES_FRAGMENT_SHADER);
+    frame_buffer_ = new FrameBuffer(MIN(camera_width_, camera_height_), MAX(camera_width_, camera_height_), screen_width_, screen_height_, DEFAULT_VERTEX_MATRIX_SHADER, DEFAULT_OES_FRAGMENT_SHADER);
     render_screen_ = new OpenGL(DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
     StartCameraPreview();
     switch_camera_ = false;

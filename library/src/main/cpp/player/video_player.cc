@@ -758,7 +758,7 @@ void VideoPlayer::RenderVideo() {
                 if (nullptr != yuv_render_) {
                     delete yuv_render_;
                 }
-                yuv_render_ = new YuvRender(vp->width, vp->height, 0);
+                yuv_render_ = new YuvRender(vp->width, vp->height, surface_width_, surface_height_, 0);
             }
             int texture_id = yuv_render_->DrawFrame(vp->frame);
             uint64_t current_time = (uint64_t) (vp->frame->pts * av_q2d(media_decode_->video_stream->time_base) * 1000);

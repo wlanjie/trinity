@@ -9,6 +9,43 @@
 namespace trinity {
 
 FrameBuffer::FrameBuffer(int width, int height, const char *vertex, const char *fragment) : OpenGL(width, height, vertex, fragment) {
+    CompileFrameBuffer(width, height, vertex, fragment);
+}
+
+FrameBuffer::FrameBuffer(int width, int height, int view_width, int view_height, const char* vertex, const char* fragment) : OpenGL(width, height, vertex, fragment) {
+    CompileFrameBuffer(width, height, vertex, fragment);
+
+    if (view_width > 0 && view_height > 0) {
+        float w;
+        float h;
+        float src_scale = width *1.0f / height;
+        float screen_scale = view_width *1.0f / view_height;
+
+        if (src_scale == screen_scale) return;
+
+        if (src_scale > screen_scale) {
+            w = 1.0f;
+            h = screen_scale * 1.0f / src_scale;
+        } else {
+            w = src_scale * 1.0f / screen_scale;
+            h = 1.0f;
+        }
+
+        vertex_coordinate_[0] = -w;
+        vertex_coordinate_[1] = -h;
+
+        vertex_coordinate_[2] =  w;
+        vertex_coordinate_[3] = -h;
+
+        vertex_coordinate_[4] = -w;
+        vertex_coordinate_[5] =  h;
+
+        vertex_coordinate_[6] =  w;
+        vertex_coordinate_[7] =  h;
+    }
+}
+
+void FrameBuffer::CompileFrameBuffer(int width, int height, const char *vertex, const char *fragment) {
     glGenTextures(1, &texture_id_);
     glGenFramebuffers(1, &frameBuffer_id_);
     glBindTexture(GL_TEXTURE_2D, texture_id_);
@@ -47,6 +84,7 @@ FrameBuffer::FrameBuffer(int width, int height, const char *vertex, const char *
     texture_coordinate_[6] = 1.0f;
     texture_coordinate_[7] = 1.0f;
 }
+
 
 FrameBuffer::~FrameBuffer() {
     glDeleteTextures(1, &texture_id_);
