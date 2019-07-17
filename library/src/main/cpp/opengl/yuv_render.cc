@@ -61,12 +61,46 @@ static GLfloat TEXTURE_COORDINATE_ROTATED_270[8] = {
         0.0f, 1.0f
 };
 
-YuvRender::YuvRender(int width, int height, int degree) {
+void YuvRender::ConvertVertexCoordinate(int width, int height, int view_width, int view_height) {
+
+    float w;
+    float h;
+    float src_scale = width *1.0f / height;
+    float screen_scale = view_width *1.0f / view_height;
+
+    if (src_scale == screen_scale) return;
+
+    if (src_scale > screen_scale) {
+        w = 1.0f;
+        h = screen_scale * 1.0f / src_scale;
+    } else {
+        w = src_scale * 1.0f / screen_scale;
+        h = 1.0f;
+    }
+
+    VERTEX_COORDINATE[0] = -w;
+    VERTEX_COORDINATE[1] = -h;
+
+    VERTEX_COORDINATE[2] =  w;
+    VERTEX_COORDINATE[3] = -h;
+
+    VERTEX_COORDINATE[4] = -w;
+    VERTEX_COORDINATE[5] =  h;
+
+    VERTEX_COORDINATE[6] =  w;
+    VERTEX_COORDINATE[7] =  h;
+}
+
+YuvRender::YuvRender(int width, int height, int view_width, int view_height, int degree) {
     program_ = 0;
     texture_id_ = 0;
     frame_buffer_id_ = 0;
     vertex_coordinate_ = new GLfloat[VERTEX_COORDINATE_COUNT];
     texture_coordinate_ = new GLfloat[VERTEX_COORDINATE_COUNT];
+
+    if (view_width > 0 && view_height > 0) {
+        ConvertVertexCoordinate(width, height, view_width, view_height);
+    }
 
     memcpy(vertex_coordinate_, VERTEX_COORDINATE, sizeof(GLfloat) * VERTEX_COORDINATE_COUNT);
     switch (degree) {

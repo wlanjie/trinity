@@ -16,9 +16,7 @@ CameraRecord::CameraRecord() {
     screen_height_ = 0;
     screen_width_ = 0;
     switch_camera_ = false;
-    start_time_ = 0;
     facing_id_ = CAMERA_FACING_FRONT;
-    degress_ = 0;
     camera_width_ = 0;
     camera_height_ = 0;
     handler_ = nullptr;
@@ -133,24 +131,14 @@ void CameraRecord::ConfigCamera() {
     }
     jclass clazz = env->GetObjectClass(obj_);
     if (NULL != clazz) {
-        jmethodID configCameraCallback = env->GetMethodID(clazz, "configCameraFromNative", "(I)Lcom/trinity/camera/CameraConfigInfo;");
-        if (NULL != configCameraCallback) {
-            jobject cameraConfigInfo = env->CallObjectMethod(obj_, configCameraCallback, facing_id_);
-            jclass cls_CameraConfigInfo = env->GetObjectClass(cameraConfigInfo);
-            jmethodID cameraConfigInfo_getDegress = env->GetMethodID(cls_CameraConfigInfo, "getDegress", "()I");
-            degress_ = env->CallIntMethod(cameraConfigInfo, cameraConfigInfo_getDegress);
-            jmethodID cameraConfigInfo_getCameraFacingId = env->GetMethodID(cls_CameraConfigInfo, "getCameraFacingId", "()I");
-            facing_id_ = env->CallIntMethod(cameraConfigInfo, cameraConfigInfo_getCameraFacingId);
-            jmethodID cameraConfigInfo_getTextureWidth = env->GetMethodID(cls_CameraConfigInfo, "getTextureWidth", "()I");
-            int previewWidth = env->CallIntMethod(cameraConfigInfo, cameraConfigInfo_getTextureWidth);
-            jmethodID cameraConfigInfo_getTextureHeight = env->GetMethodID(cls_CameraConfigInfo, "getTextureHeight", "()I");
-            int previewHeight = env->CallIntMethod(cameraConfigInfo, cameraConfigInfo_getTextureHeight);
+        jmethodID preview_width = env->GetMethodID(clazz, "getCameraWidth", "()I");
+        if (nullptr != preview_width) {
+            this->camera_width_ = env->CallIntMethod(obj_, preview_width);
+        }
 
-            this->camera_width_ = previewWidth;
-            this->camera_height_ = previewHeight;
-
-            texture_width_ = 360;
-            texture_height_ = 640;
+        jmethodID preview_height = env->GetMethodID(clazz, "getCameraHeight", "()I");
+        if (nullptr != preview_height) {
+            this->camera_height_ = env->CallIntMethod(obj_, preview_height);
         }
     }
     if (vm_->DetachCurrentThread() != JNI_OK) {
@@ -352,10 +340,10 @@ bool CameraRecord::Initialize() {
     glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glBindTexture(GL_TEXTURE_EXTERNAL_OES, 0);
 
-    ConfigCamera();
-    frame_buffer_ = new FrameBuffer(MIN(camera_width_, camera_height_), MAX(camera_width_, camera_height_), DEFAULT_VERTEX_MATRIX_SHADER, DEFAULT_OES_FRAGMENT_SHADER);
-    render_screen_ = new OpenGL(DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
     StartCameraPreview();
+    ConfigCamera();
+    frame_buffer_ = new FrameBuffer(MIN(camera_width_, camera_height_), MAX(camera_width_, camera_height_), screen_width_, screen_height_, DEFAULT_VERTEX_MATRIX_SHADER, DEFAULT_OES_FRAGMENT_SHADER);
+    render_screen_ = new OpenGL(DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
     switch_camera_ = false;
     return true;
 }

@@ -256,7 +256,7 @@ void VideoExport::ProcessVideoExport() {
                     if (nullptr != yuv_render_) {
                         delete yuv_render_;
                     }
-                    yuv_render_ = new YuvRender(frame->width, frame->height, 0);
+                    yuv_render_ = new YuvRender(frame->width, frame->height, 0, 0, 0);
                 }
                 int texture_id = yuv_render_->DrawFrame(frame->frame);
                 current_time_ = (uint64_t) (frame->frame->pts * av_q2d(media_decode_->video_stream->time_base) * 1000);

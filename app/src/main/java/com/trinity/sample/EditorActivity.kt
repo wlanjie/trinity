@@ -110,7 +110,7 @@ class EditorActivity : AppCompatActivity() {
     findViewById<Button>(R.id.music).setOnClickListener { showMusic() }
     findViewById<Button>(R.id.export).setOnClickListener { export() }
     findViewById<Button>(R.id.transcode).setOnClickListener { testTranscode() }
-//    mVideoEditor.play(true)
+    mVideoEditor.play(true)
   }
 
   private fun testTranscode() {

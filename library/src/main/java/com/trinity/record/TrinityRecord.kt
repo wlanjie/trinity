@@ -3,7 +3,7 @@ package com.trinity.record
 import android.graphics.SurfaceTexture
 import android.hardware.Camera
 import android.view.Surface
-import com.trinity.camera.FacingId
+import com.trinity.camera.Facing
 import com.trinity.camera.Torch
 import com.tencent.mars.xlog.Log
 import com.trinity.ErrorCode
@@ -19,6 +19,7 @@ import com.trinity.record.service.RecorderService
 import com.trinity.record.service.impl.AudioRecordRecorderServiceImpl
 import com.trinity.util.Timer
 import java.io.File
+import java.util.*
 
 /**
  * Create by wlanjie on 2019/3/14-下午8:45
@@ -34,6 +35,10 @@ class TrinityRecord(
   private var mCameraFacingId = Camera.CameraInfo.CAMERA_FACING_FRONT
   // 相机对象
   private var mCamera = Camera1(preview.context, this)
+  // 预览宽
+  private var mCameraWidth = 0
+  // 预览高
+  private var mCameraHeight = 0
   // surface texture
   private var mSurfaceTexture: SurfaceTexture ?= null
   // texture矩阵
@@ -172,15 +177,16 @@ class TrinityRecord(
   /**
    * 获取当前摄像头id
    */
-  fun getCameraFacing(): FacingId {
-    return mCamera.getFacing()
+  fun getCameraFacing(): Facing {
+//    return mCamera.getFacing()
+    return Facing.BACK
   }
 
   /**
    * 设置开启和关闭闪光灯
    */
   fun torch(torch: Torch) {
-    mCamera.setTorch(torch)
+//    mCamera.setTorch(torch)
   }
 
   /**
@@ -188,15 +194,15 @@ class TrinityRecord(
    * 1.0 为最大缩放
    */
   fun zoom(zoom: Float) {
-    if (zoom > 1.0f) {
-      return
-    }
-    val value: Float = if (zoom == 1f) {
-      mCamera.getMaxZoom()
-    } else {
-      zoom * (mCamera.getMaxZoom())
-    }
-    mCamera.setZoom(value.toInt())
+//    if (zoom > 1.0f) {
+//      return
+//    }
+//    val value: Float = if (zoom == 1f) {
+//      mCamera.getMaxZoom()
+//    } else {
+//      zoom * (mCamera.getMaxZoom())
+//    }
+//    mCamera.setZoom(value.toInt())
   }
 
   /**
@@ -204,22 +210,22 @@ class TrinityRecord(
    * 1.0 为最大
    */
   fun iso(iso: Float) {
-    if (iso > 1.0f) {
-      return
-    }
-    val value: Float = when (iso) {
-      1f -> mCamera.getMaxIso().toFloat()
-      0f -> mCamera.getMinIso().toFloat()
-      else -> iso * (mCamera.getMaxIso())
-    }
-    mCamera.setIso(value.toInt())
+//    if (iso > 1.0f) {
+//      return
+//    }
+//    val value: Float = when (iso) {
+//      1f -> mCamera.getMaxIso().toFloat()
+//      0f -> mCamera.getMinIso().toFloat()
+//      else -> iso * (mCamera.getMaxIso())
+//    }
+//    mCamera.setIso(value.toInt())
   }
 
   /**
    * 设置聚焦区域
    */
   fun focus(x: Float, y: Float) {
-    mCamera.focus(x, y)
+//    mCamera.focus(x, y)
   }
 
   override fun update(timer: Timer, elapsedTime: Int) {
@@ -233,27 +239,30 @@ class TrinityRecord(
     stopEncode()
   }
 
-  override fun onPreviewSizeSelected(sizes: List<Size>): Size {
-    var result = Size(0, 0)
-    val displayWidth = videoConfiguration.previewWidth
-    val displayHeight = videoConfiguration.previewHeight
-    var minHeightDiff = java.lang.Double.MAX_VALUE
-    var minWidthDiff = java.lang.Double.MAX_VALUE
-    //找到宽度差距最小的
-    for (size in sizes) {
-      if (Math.abs(size.width - displayWidth) < minWidthDiff) {
-        minWidthDiff = Math.abs(size.width - displayWidth).toDouble()
-      }
+  private fun isLandscape(displayOrientation: Int): Boolean {
+    return false
+  }
+
+  override fun onPreviewSizeSelected(sizes: SortedSet<Size>): Size? {
+    val width = 1280
+    val height = 720
+    var desiredWidth = width
+    var desiredHeight = height
+    if (isLandscape(0)) {
+      desiredWidth = height
+      desiredHeight = width
     }
-    //在宽度差距最小的里面，找到高度差距最小的
+    var result: Size ?= null
     for (size in sizes) {
-      if (Math.abs(size.width - displayWidth) == minWidthDiff.toInt()) {
-        if (Math.abs(size.height - displayHeight) < minHeightDiff) {
-          result = size
-          minHeightDiff = Math.abs(size.height - displayHeight).toDouble()
-        }
+      if (desiredWidth <= size.width && desiredHeight == size.height) {
+        result = size
+        break
       }
+      result = size
+      break
     }
+    mCameraWidth = result?.width ?: 0
+    mCameraHeight = result?.height ?: 0
     return result
   }
 
@@ -323,15 +332,16 @@ class TrinityRecord(
   }
 
   /**
-   * 由c++回调回来
-   * 方法名和签名不能更改,否则会报找不到方法的错误
+   * 获取预览宽，由c++调用，创建framebuffer
    */
   @Suppress("unused")
-  private fun configCameraFromNative(cameraFacingId: Int): CameraConfigInfo {
-    mCameraFacingId = cameraFacingId
-    val facingId = if (cameraFacingId == 0) FacingId.CAMERA_FACING_BACK else FacingId.CAMERA_FACING_FRONT
-    return mCamera.configCamera(facingId)
-  }
+  private fun getCameraWidth() = mCamera.getWidth()
+
+  /**
+   * 获取预览宽，由c++调用，创建framebuffer
+   */
+  @Suppress("unused")
+  private fun getCameraHeight() = mCamera.getHeight()
 
   /**
    * 由c++回调回来
@@ -580,6 +590,6 @@ class TrinityRecord(
   private external fun release(handle: Long)
 
   fun setTorch(torch: Torch) {
-    mCamera.setTorch(torch)
+//    mCamera.setTorch(torch)
   }
 }
