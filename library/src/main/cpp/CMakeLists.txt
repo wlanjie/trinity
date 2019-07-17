@@ -149,8 +149,8 @@ target_link_libraries(trinity
         swresample
         avformat
         avcodec
-        avutil
         avfilter
+        avutil
         fdk-aac
         x264
         xlog)

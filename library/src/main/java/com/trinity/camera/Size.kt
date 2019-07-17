@@ -5,6 +5,10 @@ package com.trinity.camera
  */
 class Size(val width: Int, val height: Int) : Comparable<Size> {
 
+  fun flip(): Size {
+    return Size(height, width)
+  }
+
   override fun equals(o: Any?): Boolean {
     if (o == null) {
       return false

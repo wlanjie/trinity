@@ -9,7 +9,7 @@ import android.graphics.SurfaceTexture
 interface SVCamera {
 
   @Throws(IllegalArgumentException::class)
-  fun configCamera(facing: FacingId): CameraConfigInfo
+  fun configCamera(facing: Facing): CameraConfigInfo
 
   /**
    * 开房预览
@@ -23,16 +23,16 @@ interface SVCamera {
   fun stop()
 
   /**
-   * 切换摄像头 CAMERA_FACING_FRONT 前置摄像头 CAMERA_FACING_BACK 后置摄像头
+   * 切换摄像头 FRONT 前置摄像头 BACK 后置摄像头
    * @param facing 摄像头id
    */
-  fun setFacing(facing: FacingId)
+  fun setFacing(facing: Facing)
 
   /**
    * 获取当前摄像头id
    * @return 摄像头id
    */
-  fun getFacing(): FacingId
+  fun getFacing(): Facing
 
   /**
    * 摄像头是否打开j

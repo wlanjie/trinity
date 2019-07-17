@@ -3,7 +3,7 @@ package com.trinity.record
 import android.graphics.SurfaceTexture
 import android.hardware.Camera
 import android.view.Surface
-import com.trinity.camera.FacingId
+import com.trinity.camera.Facing
 import com.trinity.camera.Torch
 import com.tencent.mars.xlog.Log
 import com.trinity.ErrorCode
@@ -177,9 +177,9 @@ class TrinityRecord(
   /**
    * 获取当前摄像头id
    */
-  fun getCameraFacing(): FacingId {
+  fun getCameraFacing(): Facing {
 //    return mCamera.getFacing()
-    return FacingId.CAMERA_FACING_BACK
+    return Facing.BACK
   }
 
   /**
@@ -335,13 +335,13 @@ class TrinityRecord(
    * 获取预览宽，由c++调用，创建framebuffer
    */
   @Suppress("unused")
-  private fun getCameraWidth() = mCameraWidth
+  private fun getCameraWidth() = mCamera.getWidth()
 
   /**
    * 获取预览宽，由c++调用，创建framebuffer
    */
   @Suppress("unused")
-  private fun getCameraHeight() = mCameraHeight
+  private fun getCameraHeight() = mCamera.getHeight()
 
   /**
    * 由c++回调回来
