@@ -117,11 +117,7 @@ private:
     int screen_width_;
     int screen_height_;
     bool switch_camera_;
-    int64_t start_time_;
     int facing_id_;
-    int degress_;
-    int texture_width_;
-    int texture_height_;
     int camera_width_;
     int camera_height_;
 

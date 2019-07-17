@@ -1,4 +1,4 @@
-prefix=/Users/wlanjie/innotech/android.third.party/build/ffmpeg/armeabi-v7a/
+prefix=/Users/wlanjie/project/android.third.party/build/ffmpeg/armeabi-v7a/
 exec_prefix=${prefix}
 libdir=${prefix}/lib
 includedir=${prefix}/include
@@ -9,6 +9,6 @@ Version: 57.89.100
 Requires: libavutil >= 55.58.100
 Requires.private: 
 Conflicts:
-Libs: -L${libdir}  -lavcodec -lx264 -lfdk-aac -lm -lz -pthread
+Libs: -L${libdir}  -lavcodec -lm -lz -pthread
 Libs.private: 
 Cflags: -I${includedir}
