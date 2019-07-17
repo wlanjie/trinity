@@ -23,4 +23,8 @@ interface Camera {
   fun getFlash(): Flash
 
   fun setDisplayOrientation(displayOrientation: Int)
+
+  fun getWidth(): Int
+
+  fun getHeight(): Int
 }

@@ -10,8 +10,12 @@ import android.graphics.SurfaceTexture
 class Camera1(
   private val mContext: Context,
   private val mCameraCallback: CameraCallback
-) : Camera {
+) : Camera, android.hardware.Camera.ErrorCallback {
+  override fun onError(error: Int, camera: android.hardware.Camera?) {
+    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+  }
 
+  private val mAngles = Angles()
   private var mCameraId = -1
   private var mCamera: android.hardware.Camera ?= null
   private var mCameraParameters: android.hardware.Camera.Parameters ?= null
@@ -20,12 +24,15 @@ class Camera1(
   private var mAspectRatio: AspectRatio ?= AspectRatio.of(16, 9)
   private var mShowingPreview = false
   private var mAutoFocus = true
-  private var mFacing = 0
+  private var mFacing = Facing.BACK
   private var mFlash = Flash.AUTO
+  private var mWhiteBalance = WhiteBalance.AUTO
   private var mDisplayOrientation = 0
+  private var mPreviewStreamSize: Size ?= null
 
   companion object {
     private val FLASH_MODES = mutableMapOf<Flash, String>()
+    private val WHITE_BALANCE_MODES = mutableMapOf<WhiteBalance, String>()
 
     init {
       FLASH_MODES[Flash.OFF] = android.hardware.Camera.Parameters.FLASH_MODE_OFF
@@ -33,13 +40,20 @@ class Camera1(
       FLASH_MODES[Flash.TORCH] = android.hardware.Camera.Parameters.FLASH_MODE_TORCH
       FLASH_MODES[Flash.AUTO] = android.hardware.Camera.Parameters.FLASH_MODE_AUTO
       FLASH_MODES[Flash.RED_EYE] = android.hardware.Camera.Parameters.FLASH_MODE_RED_EYE
+
+      WHITE_BALANCE_MODES[WhiteBalance.AUTO] = android.hardware.Camera.Parameters.WHITE_BALANCE_AUTO
+      WHITE_BALANCE_MODES[WhiteBalance.CLOUDY] = android.hardware.Camera.Parameters.WHITE_BALANCE_CLOUDY_DAYLIGHT
+      WHITE_BALANCE_MODES[WhiteBalance.DAYLIGHT] = android.hardware.Camera.Parameters.WHITE_BALANCE_DAYLIGHT
+      WHITE_BALANCE_MODES[WhiteBalance.FLUORESCENT] = android.hardware.Camera.Parameters.WHITE_BALANCE_FLUORESCENT
+      WHITE_BALANCE_MODES[WhiteBalance.INCANDESCENT] = android.hardware.Camera.Parameters.WHITE_BALANCE_INCANDESCENT
     }
   }
 
   private fun chooseCamera() {
     for (index in 0 until android.hardware.Camera.getNumberOfCameras()) {
       android.hardware.Camera.getCameraInfo(index, mCameraInfo)
-      if (mCameraInfo.facing == mFacing) {
+      if (mCameraInfo.facing == mFacing.ordinal) {
+        setSensorOffset(mFacing, mCameraInfo.orientation)
         mCameraId = index
         break
       }
@@ -109,20 +123,144 @@ class Camera1(
     }
   }
 
+  private fun applyFocusMode(params: android.hardware.Camera.Parameters) {
+    val modes = params.supportedFocusModes
+    if (modes.contains(android.hardware.Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
+      params.focusMode = android.hardware.Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO
+      return
+    }
+    if (modes.contains(android.hardware.Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
+      params.focusMode = android.hardware.Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE
+      return
+    }
+    if (modes.contains(android.hardware.Camera.Parameters.FOCUS_MODE_INFINITY)) {
+      params.focusMode = android.hardware.Camera.Parameters.FOCUS_MODE_INFINITY
+      return
+    }
+    if (modes.contains(android.hardware.Camera.Parameters.FOCUS_MODE_FIXED)) {
+      params.focusMode = android.hardware.Camera.Parameters.FOCUS_MODE_FIXED
+      return
+    }
+  }
+
+  private fun applyFlash(params: android.hardware.Camera.Parameters) {
+    val modes = params.supportedFlashModes
+    val mode = FLASH_MODES[mFlash]
+    if (modes.contains(mode)) {
+      params.flashMode = mode
+    }
+  }
+
+  private fun applyWhiteBalance(params: android.hardware.Camera.Parameters) {
+    val modes = params.supportedWhiteBalance
+    val mode = WHITE_BALANCE_MODES[mWhiteBalance]
+    if (modes.contains(mode)) {
+      params.whiteBalance = mode
+    }
+  }
+
+  private fun applyZoom(params: android.hardware.Camera.Parameters, zoom: Float) {
+    if (params.isZoomSupported) {
+      val max = params.maxZoom
+      params.zoom = (zoom * max).toInt()
+    }
+  }
+
+  private fun applyExposureCorrection(params: android.hardware.Camera.Parameters, exposureCorrection: Int) {
+    if (params.isAutoExposureLockSupported) {
+      val max = params.maxExposureCompensation
+      val min = params.minExposureCompensation
+      val value = if (exposureCorrection < min) {
+        min
+      } else {
+        if (exposureCorrection > max) {
+          max
+        } else {
+          exposureCorrection
+        }
+      }
+      params.exposureCompensation = value.toInt()
+    }
+  }
+
+  private fun getPreviewSurfaceSize(reference: Reference): Size {
+    return Size(720, 1280)
+  }
+
+  private fun computePreviewStreamSize(): Size {
+    val previewSizes = mPreviewSize.sizes(mAspectRatio)
+    val flip = mAngles.flip(Reference.SENSOR, Reference.VIEW)
+    val sizes = ArrayList<Size>(previewSizes.size)
+    previewSizes.forEach {
+      sizes.add(if (flip) it.flip() else it)
+    }
+    val targetMinSize = getPreviewSurfaceSize(Reference.VIEW)
+    if (flip) {
+      mAspectRatio = mAspectRatio?.flip()
+    }
+    val matchRatio = SizeSelectors.and(
+      SizeSelectors.aspectRatio(mAspectRatio, 0f),
+      SizeSelectors.biggest()
+    )
+    val matchSize = SizeSelectors.and(
+      SizeSelectors.minHeight(targetMinSize.height),
+      SizeSelectors.minWidth(targetMinSize.width),
+      SizeSelectors.smallest()
+    )
+    val matchAll = SizeSelectors.or(
+      SizeSelectors.and(matchRatio, matchSize),
+      matchSize,
+      matchRatio,
+      SizeSelectors.biggest()
+    )
+    val selector = matchAll
+    var result = selector.select(sizes)[0]
+    if (!sizes.contains(result)) {
+      throw RuntimeException("SizeSelectors must not return Sizes other than those in the input list.")
+    }
+    if (flip) {
+      result = result.flip()
+    }
+    return result
+  }
+
   private fun openCamera(): Int {
     mCamera?.release()
     if (mCameraId == -1) {
       return -1
     }
     mCamera = android.hardware.Camera.open(mCameraId)
-    mCameraParameters = mCamera?.parameters
+    mCamera?.setErrorCallback(this)
+    val params = mCamera?.parameters
     mPreviewSize.clear()
-    mCameraParameters?.supportedPreviewSizes?.forEach {
+    params?.supportedPreviewSizes?.forEach {
       mPreviewSize.add(Size(it.width, it.height))
     }
-    adjustCameraParameters()
-    mCamera?.setDisplayOrientation(mDisplayOrientation)
+    params?.let {
+      applyFocusMode(it)
+      applyFlash(it)
+      applyWhiteBalance(it)
+      applyZoom(it, 0f)
+      applyExposureCorrection(it, 0)
+    }
+    val size = computePreviewStreamSize()
+    params?.setPreviewSize(size.width, size.height)
+    mCamera?.parameters = params
+    mCameraParameters = params
+    mCamera?.setDisplayOrientation(mAngles.offset(Reference.SENSOR, Reference.VIEW, Axis.ABSOLUTE))
     return 0
+  }
+
+  private fun setSensorOffset(facing: Facing, sensorOffset: Int) {
+    mAngles.setSensorOffset(facing, sensorOffset)
+  }
+
+  private fun setDisplayOffset(displayOffset: Int) {
+    mAngles.setDisplayOffset(displayOffset)
+  }
+
+  private fun setDeviceOrientation(deviceOrientation: Int) {
+    mAngles.setDeviceOrientation(deviceOrientation)
   }
 
   override fun start(surfaceTexture: SurfaceTexture): Boolean {
@@ -146,18 +284,18 @@ class Camera1(
   }
 
   override fun setFacing(facing: Int) {
-    if (mFacing == facing) {
-      return
-    }
-    mFacing = facing
-    if (isCameraOpened()) {
-      stop()
-//      start()
-    }
+//    if (mFacing == facing) {
+//      return
+//    }
+//    mFacing = facing
+//    if (isCameraOpened()) {
+//      stop()
+////      start()
+//    }
   }
 
   override fun getFacing(): Int {
-    return mFacing
+    return mFacing.ordinal
   }
 
   override fun getSupportAspectRatios(): Set<AspectRatio> {
@@ -199,5 +337,13 @@ class Camera1(
 
   override fun setDisplayOrientation(displayOrientation: Int) {
     mDisplayOrientation = displayOrientation
+  }
+
+  override fun getWidth(): Int {
+    return mCamera?.parameters?.previewSize?.width ?: 0
+  }
+
+  override fun getHeight(): Int {
+    return mCamera?.parameters?.previewSize?.height ?: 0
   }
 }

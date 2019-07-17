@@ -34,6 +34,10 @@ class AspectRatio private constructor(val x: Int, val y: Int) : Comparable<Aspec
     return x.toFloat() / y
   }
 
+  fun flip(): AspectRatio {
+    return AspectRatio(y, x)
+  }
+
   override fun hashCode(): Int {
     // assuming most sizes are <2^16, doing a rotate will give us perfect hashing
     return y xor (x shl Integer.SIZE / 2 or x.ushr(Integer.SIZE / 2))
@@ -66,7 +70,11 @@ class AspectRatio private constructor(val x: Int, val y: Int) : Comparable<Aspec
 
   companion object {
 
-    private val sCache = mutableMapOf<Int, HashMap<Int, AspectRatio>>()
+    private val sCache = mutableMapOf<String, AspectRatio>()
+
+    fun of(size: Size): AspectRatio {
+      return of(size.width, size.height)
+    }
 
     /**
      * Returns an instance of [AspectRatio] specified by `x` and `y` values.
@@ -82,21 +90,13 @@ class AspectRatio private constructor(val x: Int, val y: Int) : Comparable<Aspec
       val gcd = gcd(x, y)
       x /= gcd
       y /= gcd
-      var arrayX = sCache[x]
-      return if (arrayX == null) {
-        val ratio = AspectRatio(x, y)
-        arrayX = HashMap<Int, AspectRatio>()
-        arrayX[y] = ratio
-        sCache[x] = arrayX
-        ratio
-      } else {
-        var ratio = arrayX[y]
-        if (ratio == null) {
-          ratio = AspectRatio(x, y)
-          arrayX[y] = ratio
-        }
-        ratio
+      val key = "$x:$y"
+      var cached = sCache[key]
+      if (cached == null) {
+        cached = AspectRatio(x, y)
+        sCache[key] = cached
       }
+      return cached
     }
 
     /**
