@@ -1,0 +1,22 @@
+{
+  "clips": [
+    {
+      "path": "/sdcard/Android/data/com.trinity.sample/cache/editor.mp4",
+      "startTime": 0,
+      "endTime": 100000
+    },
+    {
+      "path": "/sdcard/Android/data/com.trinity.sample/cache/xialu.mp4",
+      "startTime": 0,
+      "endTime": 1000000
+    }
+  ],
+  "effects": [
+    {
+      "type": 4,
+      "start_time": 0,
+      "end_time": 100000,
+      "split_screen_count": 6
+    }
+  ]
+}

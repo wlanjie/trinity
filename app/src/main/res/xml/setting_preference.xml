@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.preference.PreferenceScreen
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:key="preference_screen_settings"
+        android:title="settings">
+
+    <androidx.preference.PreferenceCategory
+            android:title="录制">
+
+        <androidx.preference.SwitchPreferenceCompat
+                android:defaultValue="false"
+                android:key="soft_encode"
+                android:title="软编" />
+
+        <androidx.preference.ListPreference
+                android:defaultValue="true"
+                android:key="preview_render_type"
+                android:title="显示方式"
+                android:summary="FIX_XY"
+                android:entries="@array/preview_render_preference"
+                android:entryValues="@array/preview_render_value_preference" />
+    </androidx.preference.PreferenceCategory>
+
+    <androidx.preference.PreferenceCategory
+        android:title="编辑">
+
+        <androidx.preference.SwitchPreferenceCompat
+                android:defaultValue="true"
+                android:key="soft_encode"
+                android:title="软编" />
+    </androidx.preference.PreferenceCategory>
+</androidx.preference.PreferenceScreen>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#2196F3</color>
+    <color name="colorPrimaryDark">#1976D2</color>
+    <color name="colorAccent">#FF9800</color>
+
+    <color name="video_gray">#aadddddd</color>
+    <color name="bg_rate_bar">#CC1C1F21</color>
+    <color name="bg_rate_selected">#F8F8F8</color>
+    <color name="text_333">#333</color>
+</resources>

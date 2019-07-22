@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.yarolegovich.mp.MaterialPreferenceScreen
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#FFFEFF">
+
+    <ImageView
+            android:id="@+id/close"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginTop="16dp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:background="@mipmap/ic_close"/>
+
+    <com.yarolegovich.mp.MaterialPreferenceCategory
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:mpc_title="录制">
+
+        <com.yarolegovich.mp.MaterialSwitchPreference
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:mp_key="soft_encode"
+                app:mp_title="软编"/>
+
+        <com.yarolegovich.mp.MaterialChoicePreference
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:mp_key="preview_render_type"
+                app:mp_entry_values="@array/preview_render_preference"
+                app:mp_default_value="CROP"
+                app:mp_show_value="onRight"
+                app:mp_title="预览类型"/>
+
+        <com.yarolegovich.mp.MaterialChoicePreference
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:mp_key="preview_resolution"
+                app:mp_entry_values="@array/preview_resolution"
+                app:mp_default_value="720P"
+                app:mp_show_value="onRight"
+                app:mp_title="预览分辨率"/>
+
+        <com.yarolegovich.mp.MaterialChoicePreference
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:mp_key="record_resolution"
+                app:mp_entry_values="@array/record_resolution"
+                app:mp_default_value="720P"
+                app:mp_show_value="onRight"
+                app:mp_title="录制分辨率"/>
+
+        <com.yarolegovich.mp.MaterialChoicePreference
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:mp_key="frame_rate"
+                app:mp_entry_values="@array/frame_rate"
+                app:mp_default_value="25"
+                app:mp_show_value="onRight"
+                app:mp_title="帧率"/>
+
+        <com.yarolegovich.mp.MaterialEditTextPreference
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:mp_default_value="18432000"
+                app:mp_key="video_bit_rate"
+                app:mp_show_value="onRight"
+                app:mp_title="视频码率" />
+
+        <com.yarolegovich.mp.MaterialChoicePreference
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:mp_key="channels"
+                app:mp_entry_values="@array/channels"
+                app:mp_default_value="1"
+                app:mp_show_value="onRight"
+                app:mp_title="声道"/>
+
+        <com.yarolegovich.mp.MaterialChoicePreference
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:mp_key="sample_rate"
+                app:mp_entry_values="@array/sample_rate"
+                app:mp_default_value="44100"
+                app:mp_show_value="onRight"
+                app:mp_title="采样率"/>
+
+        <com.yarolegovich.mp.MaterialEditTextPreference
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:mp_default_value="128000"
+                app:mp_key="audio_bit_rate"
+                app:mp_show_value="onRight"
+                app:mp_title="音频码率" />
+
+        <com.yarolegovich.mp.MaterialEditTextPreference
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:mp_default_value="60"
+                app:mp_key="record_duration"
+                app:mp_show_value="onRight"
+                app:mp_title="最大录制时长" />
+    </com.yarolegovich.mp.MaterialPreferenceCategory>
+</com.yarolegovich.mp.MaterialPreferenceScreen>
