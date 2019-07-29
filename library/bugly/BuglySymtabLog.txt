@@ -1,0 +1,4 @@
+symbolFile=/Users/wlanjie/project/trinity/library/bugly/buglySymbol_libtrinity_armeabi-v7a-6b162.zip
+file=/Users/wlanjie/project/trinity/library/build/intermediates/cmake/debug/obj/armeabi-v7a/libtrinity.so
+uuid=6b1628828d2b59a063dc5125a9cdae68
+

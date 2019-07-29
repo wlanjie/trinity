@@ -1,6 +1,13 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
+apply plugin: 'bugly'
+
+bugly {
+    appId = 'c998b23a2d'
+    appKey = '6b89010f-1e5c-47ee-9def-182998f860b7'
+    debug = true
+}
 
 android {
     compileSdkVersion 28

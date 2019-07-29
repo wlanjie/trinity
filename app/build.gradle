@@ -1,9 +1,6 @@
 apply plugin: 'com.android.application'
-
 apply plugin: 'kotlin-android'
-
 apply plugin: 'kotlin-android-extensions'
-
 apply plugin: 'kotlin-kapt'
 
 android {
@@ -15,6 +12,10 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        ndk {
+            abiFilters 'armeabi-v7a'
+        }
     }
     buildTypes {
         release {
@@ -49,6 +50,10 @@ dependencies {
     implementation 'androidx.fragment:fragment-ktx:1.0.0'
     implementation 'com.yarolegovich:mp:1.0.9'
     implementation 'de.hdodenhof:circleimageview:3.0.0'
+
+    implementation 'com.tencent.bugly:crashreport:3.0.0'
+    implementation 'com.tencent.bugly:nativecrashreport:3.7.1'
+
     kapt 'com.github.bumptech.glide:compiler:4.9.0'
     implementation project(':library')
 }

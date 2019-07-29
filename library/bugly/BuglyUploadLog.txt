@@ -1,0 +1,4 @@
+file=/Users/wlanjie/project/trinity/library/bugly/buglySymbol_libtrinity_armeabi-v7a-6b162.zip
+sha1=86a125e0ebbdef61db81d01354652ef9a2a76a99
+appId=c998b23a2d
+

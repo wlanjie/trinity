@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.transaction
 import androidx.preference.PreferenceManager
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.tencent.bugly.crashreport.CrashReport
 import com.tencent.mars.xlog.Log
 import com.tencent.mars.xlog.Xlog
 import com.trinity.OnRecordingListener
