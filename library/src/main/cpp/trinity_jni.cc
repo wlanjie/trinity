@@ -322,6 +322,14 @@ static jlong Android_JNI_video_editor_getVideoDuration(JNIEnv* env, jobject obje
     return editor->GetVideoDuration();
 }
 
+static jlong Android_JNI_video_editor_getCurrentPosition(JNIEnv* env, jobject object, jlong handle) {
+    if (handle <= 0) {
+        return 0;
+    }
+    VideoEditor* editor = reinterpret_cast<VideoEditor*>(handle);
+    return editor->GetCurrentPosition();
+}
+
 static int Android_JNI_video_editor_getClipsCount(JNIEnv* env, jobject object, jlong handle) {
     if (handle <= 0) {
         return 0;
@@ -444,6 +452,14 @@ static jint Android_JNI_video_editor_addMusic(JNIEnv* env, jobject object, jlong
     return result;
 }
 
+static void Android_JNI_video_editor_addAction(JNIEnv* env, jobject object, jlong handle, jint effect_type, jlong start_time, jlong end_time) {
+    if (handle <= 0) {
+        return;
+    }
+    VideoEditor* editor = reinterpret_cast<VideoEditor*>(handle);
+    editor->AddAction(effect_type, start_time, end_time);
+}
+
 static jint Android_JNI_video_editor_export(JNIEnv* env, jobject object, jlong handle, jstring export_config,
         jstring export_path, jint width, jint height, jint frame_rate, jint video_bit_rate,
         jint sample_rate, jint channel_count, jint audio_bit_rate) {
@@ -547,6 +563,7 @@ static JNINativeMethod videoEditorMethods[] = {
         {"onSurfaceDestroyed",  "(JLandroid/view/Surface;)V",                            (void **) Android_JNI_video_editor_surfaceDestroyed},
         {"onSurfaceChanged",    "(JII)V",                                                (void **) Android_JNI_video_editor_surfaceChanged },
         {"getVideoDuration",    "(J)J",                                                  (void **) Android_JNI_video_editor_getVideoDuration },
+        {"getCurrentPosition",  "(J)J",                                                  (void **) Android_JNI_video_editor_getCurrentPosition },
         {"getClipsCount",       "(J)I",                                                  (void **) Android_JNI_video_editor_getClipsCount },
         {"getClip",             "(JI)Lcom/trinity/editor/MediaClip;",                    (void **) Android_JNI_video_editor_getClip },
         {"insertClip",          "(JLcom/trinity/editor/MediaClip;)I",                    (void **) Android_JNI_video_editor_insertClip },
@@ -560,6 +577,7 @@ static JNINativeMethod videoEditorMethods[] = {
         {"getClipIndex",        "(JJ)I",                                                 (void **) Android_JNI_video_editor_getClipIndex },
         {"addFilter",           "(J[BJJI)I",                                             (void **) Android_JNI_video_editor_addFilter },
         {"addMusic",            "(JLjava/lang/String;JJ)I",                              (void **) Android_JNI_video_editor_addMusic },
+        {"addAction",           "(JIJJ)V",                                               (void **) Android_JNI_video_editor_addAction },
         {"export",              "(JLjava/lang/String;Ljava/lang/String;IIIIIII)I",       (void **) Android_JNI_video_editor_export },
         {"play",                "(JZ)I",                                                 (void **) Android_JNI_video_editor_play },
         {"pause",               "(J)V",                                                  (void **) Android_JNI_video_editor_pause },

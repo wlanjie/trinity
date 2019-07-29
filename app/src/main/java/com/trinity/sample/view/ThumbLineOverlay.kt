@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2010-2017 Alibaba Group Holding Limited.
- */
-
 package com.trinity.sample.view
 
 import android.content.Context
@@ -11,33 +7,24 @@ import android.view.ViewGroup
 import com.trinity.sample.R
 import com.trinity.sample.editor.EditorPage
 
-/**
- * 此类主要功能为控制
- */
-class ThumbLineOverlay
-/**
- * 提供给动图、字幕等能够调整缩略图覆盖时长的场景使用
- */
-    (
+class ThumbLineOverlay(
     private val mOverlayThumbLineBar: OverlayThumbLineBar,
-    var startTime: Long,
-    var mDuration: Long     //时长
-    ,
+    val startTime: Long,
+    var mDuration: Long,
     val thumbLineOverlayView: ThumbLineOverlayView,
     maxDuration: Long,
     minDuration: Long,
-    private val mIsInvert: Boolean  //是否反向
-    ,
+    private val mIsInvert: Boolean,
     private var mSelectedDurationChange: OnSelectedDurationChangeListener?
 ) {
     private var mState: Byte = 0
-    private val mMinDuration: Long = 2000000   //最小时长，到达最小时长内再无法缩减, 默认2s
-    private val mMaxDuration: Long = 0
-    private var mDistance: Int = 0      //距离（TailView和HeadView的距离）（与时长对应）
+    private var mMinDuration: Long = 2000000
+    private var mMaxDuration: Long = 0
+    private var mDistance: Int = 0
 
     private var mTailView: ThumbLineOverlayHandleView? = null
     private var mHeadView: ThumbLineOverlayHandleView? = null
-    private var mSelectedMiddleView: View? = null   //Tail和Head中间的View，编辑态和非编辑态呈现不同颜色
+    private var mSelectedMiddleView: View? = null
     private var mContext: Context? = null
     private var mOverlayContainer: ViewGroup? = null
     var uiEditorPage: EditorPage? = null
@@ -54,26 +41,26 @@ class ThumbLineOverlay
         invalidate()
     }
 
-    private fun initView(startTime: Long) {
-        var startTime = startTime
+    private fun initView(time: Long) {
+        var startTime = time
         mSelectedMiddleView = thumbLineOverlayView.middleView
         if (!mIsInvert) {
-            if (mDuration < mMinDuration) {//不满足最小时长，则默认设置为最小时长
-                mDuration = mMinDuration
-            } else if (startTime == mMaxDuration) {
-                //如果startTime比最大时长大，则要向前移动，保证不超出范围。
-                startTime = mMaxDuration - 100000
-                mDuration = mMaxDuration - startTime
-            } else if (mDuration + startTime > mMaxDuration) {
-                //如果动图时长+startTime比最大时长大，则要向前移动，保证不超出范围。
-                mDuration = mMaxDuration - startTime
+            when {
+                mDuration < mMinDuration ->
+                    mDuration = mMinDuration
+                startTime == mMaxDuration -> {
+                    startTime = mMaxDuration - 100000
+                    mDuration = mMaxDuration - startTime
+                }
+                mDuration + startTime > mMaxDuration -> //如果动图时长+startTime比最大时长大，则要向前移动，保证不超出范围。
+                    mDuration = mMaxDuration - startTime
             }
         } else {
             //目前只有特效有invert处理，而且时间特效和转场特效存在互斥关系，目前没有时长超出的问题
         }
 
+        mSelectedDurationChange?.onDurationChange(startTime, startTime + mDuration, mDuration)
         if (mSelectedDurationChange != null) {
-            mSelectedDurationChange!!.onDurationChange(startTime, startTime + mDuration, mDuration)
         }
         Log.d(
             TAG,
@@ -82,11 +69,11 @@ class ThumbLineOverlay
         mTailView = ThumbLineOverlayHandleView(thumbLineOverlayView.tailView, startTime)
         mHeadView = ThumbLineOverlayHandleView(thumbLineOverlayView.headView, mDuration + startTime)
         mOverlayContainer = thumbLineOverlayView.container
-        mOverlayContainer!!.tag = this
+        mOverlayContainer?.tag = this
         setVisibility(false)
         mOverlayThumbLineBar.addOverlayView(mOverlayContainer, mTailView, this, mIsInvert)
         this.mContext = mSelectedMiddleView!!.context
-        mHeadView!!.setPositionChangeListener(object : ThumbLineOverlayHandleView.OnPositionChangeListener {
+        mHeadView?.setPositionChangeListener(object : ThumbLineOverlayHandleView.OnPositionChangeListener {
             override fun onPositionChanged(distance: Float) {
                 if (mState == STATE_FIX) {
                     return
@@ -124,7 +111,7 @@ class ThumbLineOverlay
             }
         })
 
-        mTailView!!.setPositionChangeListener(object : ThumbLineOverlayHandleView.OnPositionChangeListener {
+        mTailView?.setPositionChangeListener(object : ThumbLineOverlayHandleView.OnPositionChangeListener {
             override fun onPositionChanged(distance: Float) {
                 if (mState == STATE_FIX) {
                     return
@@ -141,24 +128,23 @@ class ThumbLineOverlay
                 mDuration -= duration
                 mTailView!!.changeDuration(duration)
                 if (mTailView!!.view != null) {
-                    var layoutParams = mTailView!!.view.layoutParams as ViewGroup.MarginLayoutParams
-                    var dx = 0
-                    if (mIsInvert) {
-                        dx = layoutParams.rightMargin
+                    var layoutParams = mTailView?.view?.layoutParams as ViewGroup.MarginLayoutParams
+                    var dx = if (mIsInvert) {
+                        layoutParams.rightMargin
                     } else {
-                        dx = layoutParams.leftMargin
+                        layoutParams.leftMargin
                     }
                     requestLayout()
-                    if (mIsInvert) {
-                        dx = layoutParams.rightMargin - dx
+                    dx = if (mIsInvert) {
+                        layoutParams.rightMargin - dx
                     } else {
-                        dx = layoutParams.leftMargin - dx
+                        layoutParams.leftMargin - dx
                     }
 
-                    mTailView!!.view.layoutParams = layoutParams
-                    layoutParams = mSelectedMiddleView!!.layoutParams as ViewGroup.MarginLayoutParams
+                    mTailView?.view?.layoutParams = layoutParams
+                    layoutParams = mSelectedMiddleView?.layoutParams as ViewGroup.MarginLayoutParams
                     layoutParams.width -= dx // mOverlayThumbLineBar.duration2Distance(mDuration);
-                    mSelectedMiddleView!!.layoutParams = layoutParams
+                    mSelectedMiddleView?.layoutParams = layoutParams
                 }
                 if (mSelectedDurationChange != null) {
                     mSelectedDurationChange!!.onDurationChange(
@@ -270,20 +256,20 @@ class ThumbLineOverlay
         }
     }
 
-    internal fun setVisibility(isVisible: Boolean) {
+    fun setVisibility(isVisible: Boolean) {
         if (isVisible) {
-            mTailView!!.view.alpha = 1f
-            mHeadView!!.view.alpha = 1f
-            mSelectedMiddleView!!.alpha = 1f
+            mTailView?.view?.alpha = 1f
+            mHeadView?.view?.alpha = 1f
+            mSelectedMiddleView?.alpha = 1f
         } else {
-            mTailView!!.view.alpha = 0f
-            mHeadView!!.view.alpha = 0f
-            mSelectedMiddleView!!.alpha = 0f
+            mTailView?.view?.alpha = 0f
+            mHeadView?.view?.alpha = 0f
+            mSelectedMiddleView?.alpha = 0f
         }
     }
 
     fun requestLayout() {
-        val layoutParams = mTailView!!.view.layoutParams as ViewGroup.MarginLayoutParams
+        val layoutParams = mTailView?.view?.layoutParams as ViewGroup.MarginLayoutParams
         val margin: Int
         if (mIsInvert) {
             layoutParams.rightMargin = mOverlayThumbLineBar.calculateTailViewInvertPosition(mTailView)
@@ -292,17 +278,15 @@ class ThumbLineOverlay
             layoutParams.leftMargin = mOverlayThumbLineBar.calculateTailViewPosition(mTailView)
             margin = layoutParams.leftMargin
         }
-        mTailView!!.view.layoutParams = layoutParams
+        mTailView?.view?.layoutParams = layoutParams
 
         Log.d(TAG, "TailView Margin = " + margin + "timeline over" + this)
     }
 
     private fun setLeftMargin(view: View, leftMargin: Int) {
         val layoutParams = view.layoutParams as ViewGroup.MarginLayoutParams
-        if (layoutParams != null) {
-            layoutParams.leftMargin = leftMargin
-            view.requestLayout()
-        }
+        layoutParams.leftMargin = leftMargin
+        view.requestLayout()
     }
 
     interface ThumbLineOverlayView {
@@ -332,8 +316,8 @@ class ThumbLineOverlay
     companion object {
 
         private val TAG = ThumbLineOverlay::class.java.name
-        val STATE_ACTIVE: Byte = 1 //激活态（编辑态）
-        val STATE_FIX: Byte = 2    //固定态(非编辑态)
+        private const val STATE_ACTIVE: Byte = 1 //激活态（编辑态）
+        private const val STATE_FIX: Byte = 2    //固定态(非编辑态)
     }
 
 }

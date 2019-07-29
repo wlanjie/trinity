@@ -512,7 +512,6 @@ void CameraRecord::RenderFrame() {
         if (start_time_ == 0) {
             start_time_ = getCurrentTime();
         }
-        LOGI("RenderFrame");
 //        float position = ((float) (getCurrentTime() - start_time_)) / 1000.0f;
 //        ProcessVideoFrame(position);
         if (EGL_NO_SURFACE != preview_surface_) {

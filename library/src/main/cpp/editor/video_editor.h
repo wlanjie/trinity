@@ -42,6 +42,8 @@ public:
     // 获取所有clip的时长总和
     int64_t GetVideoDuration() const;
 
+    int64_t GetCurrentPosition() const;
+
     // 获取所有clip的数量
     int GetClipsCount();
 
@@ -78,6 +80,8 @@ public:
 
     int AddMusic(const char* path, uint64_t start_time, uint64_t end_time);
 
+    int AddAction(int effect_type, uint64_t start_time, uint64_t end_time);
+
     int Export(const char* export_config, const char* path, int width, int height, int frame_rate, int video_bit_rate,
             int sample_rate, int channel_count, int audio_bit_rate);
 
@@ -98,9 +102,12 @@ public:
 
 private:
     static int OnCompleteEvent(StateEvent* event);
+    static int OnVideoRender(OnVideoRenderEvent* event, int texture_id, int width, int height, uint64_t current_time);
     int OnComplete();
     void FreeStateEvent();
     void AllocStateEvent();
+    void FreeVideoRenderEvent();
+    void AllocVideoRenderEvent();
 private:
     deque<MediaClip*> clip_deque_;
     pthread_mutex_t queue_mutex_;
@@ -117,6 +124,7 @@ private:
 
     MusicDecoderController* music_player_;
     StateEvent* state_event_;
+    OnVideoRenderEvent* on_video_render_event_;
 };
 
 }

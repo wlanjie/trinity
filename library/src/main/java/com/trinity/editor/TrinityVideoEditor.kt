@@ -14,6 +14,8 @@ interface TrinityVideoEditor {
    */
   fun getVideoDuration(): Long
 
+  fun getCurrentPosition(): Long
+
   /**
    * 获取视频片段数量
    */
@@ -82,6 +84,8 @@ interface TrinityVideoEditor {
   fun addFilter(lut: ByteArray, startTime: Long, endTime: Long): Int
 
   fun addMusic(path: String, startTime: Long, endTime: Long): Int
+
+  fun addAction(type: EffectType, startTime: Long, endTime: Long)
 
   /**
    * 开始播放

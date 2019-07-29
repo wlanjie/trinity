@@ -21,7 +21,7 @@ class FilterAdapter(context: Context, val callback: (filter: Filter)->Unit) : Re
 
   private val mFilter: List<Filter>
 
-  inline fun <reified T> genericType() = object: TypeToken<T>() {}.type
+  private inline fun <reified T> genericType() = object: TypeToken<T>() {}.type
 
   init {
     val stream = context.assets.open("filter/filter.json")

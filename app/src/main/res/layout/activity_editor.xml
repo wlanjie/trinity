@@ -1,64 +1,80 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:orientation="vertical"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/root_view"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/action_bar_bg">
 
-    <SurfaceView
+    <FrameLayout
+        android:id="@+id/surface_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <SurfaceView
             android:id="@+id/surface_view"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+            android:layout_height="match_parent"
+            android:layout_gravity="center_horizontal"/>
 
-    <Button
-            android:id="@+id/play"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:text="播放"/>
+        <FrameLayout
+            android:id="@+id/paster_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
-    <Button
-            android:id="@+id/pause"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_toRightOf="@id/play"
-            android:text="暂停"/>
+    </FrameLayout>
 
-    <Button
-            android:id="@+id/release"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_toRightOf="@id/pause"
-            android:visibility="gone"
-            android:text="释放"/>
+    <ImageView
+        android:id="@+id/play"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:visibility="gone"
+        android:background="@mipmap/ic_play"/>
 
-    <Button
-            android:id="@+id/filter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_toRightOf="@id/pause"
-            android:layout_alignParentBottom="true"
-            android:text="滤镜"/>
+    <ImageView
+        android:id="@+id/pause"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:visibility="gone"
+        android:background="@mipmap/ic_pause"/>
 
-    <Button
-            android:id="@+id/music"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_toRightOf="@id/filter"
-            android:layout_alignParentBottom="true"
-            android:text="音乐"/>
+    <include android:id="@+id/editor_bottom_tab"
+        layout="@layout/editor_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:visibility="gone"/>
 
-    <Button
-            android:id="@+id/export"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="导出"/>
+    <com.trinity.sample.view.TabLayout
+        android:id="@+id/tab_layout"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        app:trinityTabMode="scrollable"
+        app:tabRippleColor="@android:color/transparent"
+        app:tabTextColor="@android:color/white"
+        app:tabSelectedTextColor="@android:color/white"
+        app:tabBackground="@android:color/transparent"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="16dp"/>
 
-    <Button
-            android:id="@+id/transcode"
-            android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <include
+            android:id="@+id/action_bar"
+            layout="@layout/action_bar"
+            android:layout_width="match_parent"
+            android:layout_height="64dp" />
+
+        <com.trinity.sample.view.OverlayThumbLineBar
+            android:id="@+id/thumb_line_bar"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_toRightOf="@id/export"
-            android:text="转码"/>
+            android:visibility="gone"/>
+    </LinearLayout>
 </RelativeLayout>

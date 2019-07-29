@@ -48,4 +48,16 @@
         <item>44100</item>
         <item>22050</item>
     </string-array>
+
+    <string name="filter">滤镜</string>
+    <string name="music">音乐</string>
+    <string name="gif">动图</string>
+    <string name="subtitle">字幕</string>
+    <string name="mv">MV</string>
+    <string name="sound">音效</string>
+    <string name="effect">特效</string>
+    <string name="speed_time">变速</string>
+    <string name="transition">转场</string>
+    <string name="paint">涂鸦</string>
+    <string name="cover">封面</string>
 </resources>

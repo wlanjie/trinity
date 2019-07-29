@@ -3,7 +3,8 @@ package com.trinity.sample.editor
 /**
  * Created by wlanjie on 2019-07-24
  */
-enum class EidtorPage {
+enum class EditorPage {
+    NONE,
     /**
      * 滤镜
      */

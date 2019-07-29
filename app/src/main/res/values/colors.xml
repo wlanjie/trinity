@@ -8,4 +8,16 @@
     <color name="bg_rate_bar">#CC1C1F21</color>
     <color name="bg_rate_selected">#F8F8F8</color>
     <color name="text_333">#333</color>
+    <color name="chooser_pager_bg">#B3000000</color>
+    <color name="line_gray_light">#C3C5C6</color>
+    <color name="tab_bg_color">#1B2133</color>
+    <color name="action_bar_bg">#232A42</color>
+    <color name="bg_next">#FC4448 </color>
+    <color name="timeline_bar_active_overlay">#66EF4B81</color>
+
+    <color name="effect_color1">#E6FBDE38</color>
+    <color name="effect_color2">#E662B6FE</color>
+    <color name="effect_color3">#E6FEA933</color>
+    <color name="effect_color4">#E6F35C4B</color>
+    <color name="effect_color5">#E6798ECD</color>
 </resources>

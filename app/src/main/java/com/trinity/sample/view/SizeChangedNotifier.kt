@@ -9,5 +9,4 @@ interface SizeChangedNotifier {
   }
 
   fun setOnSizeChangedListener(listener: Listener)
-
 }

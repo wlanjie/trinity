@@ -1,78 +1,48 @@
 package com.trinity.sample.view
 
+import android.R.attr.textColor
 import android.content.Context
-import android.content.res.TypedArray
 import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.ColorFilter
 import android.graphics.Paint
-import android.graphics.PixelFormat
-import android.graphics.RectF
-import android.graphics.drawable.Drawable
-import android.os.Build
+import android.graphics.Rect
 import android.util.AttributeSet
 import android.widget.TextView
-
 import com.trinity.sample.R
 
-class CircleTextView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) : TextView(context, attrs, defStyleAttr) {
-  private val backgroundColor: Int
+class CircleTextView  : TextView {
+  private var mPaint: Paint? = null
+  private var defaultColor: Int = 0
 
-  init {
-    val typedArray = context.obtainStyledAttributes(attrs, R.styleable.CircleTextView, defStyleAttr, 0)
-    backgroundColor = typedArray.getColor(R.styleable.CircleTextView_backgroundColor, Color.TRANSPARENT)
+  constructor(context: Context) : super(context) {
+    init(context, null, 0)
+  }
+
+  constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
+    init(context, attrs, 0)
+  }
+
+  constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
+    init(context, attrs, defStyleAttr)
+  }
+
+  private fun init(context: Context, attrs: AttributeSet?, defStyleAttr: Int) {
+    val typedArray = context.obtainStyledAttributes(attrs, R.styleable.CircleTextView)
+    defaultColor = typedArray.getInt(R.styleable.CircleTextView_backgroundColor, -1)
     typedArray.recycle()
+
+    mPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    mPaint?.color = defaultColor
+    mPaint?.style = Paint.Style.FILL
   }
 
-  override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-      background = SemiCircleRectDrawable()
-    } else {
-      setBackgroundDrawable(SemiCircleRectDrawable())
-    }
+  fun setColor(color: Int) {
+    mPaint?.color = color
+    invalidate()
   }
 
-  internal inner class SemiCircleRectDrawable : Drawable() {
-    private val mPaint: Paint
-    private var rectF: RectF? = null
-
-    init {
-      mPaint = Paint()
-      mPaint.isAntiAlias = true
-      mPaint.color = backgroundColor
-    }
-
-    override fun setBounds(left: Int, top: Int, right: Int, bottom: Int) {
-      super.setBounds(left, top, right, bottom)
-      if (rectF == null) {
-        rectF = RectF(left.toFloat(), top.toFloat(), right.toFloat(), bottom.toFloat())
-      } else {
-        rectF!!.set(left.toFloat(), top.toFloat(), right.toFloat(), bottom.toFloat())
-      }
-    }
-
-    override fun draw(canvas: Canvas) {
-      var R = rectF!!.bottom / 2
-      if (rectF!!.right < rectF!!.bottom) {
-        R = rectF!!.right / 2
-      }
-      canvas.drawRoundRect(rectF!!, R, R, mPaint)
-    }
-
-    override fun setAlpha(alpha: Int) {
-      mPaint.alpha = alpha
-    }
-
-    override fun setColorFilter(colorFilter: ColorFilter?) {
-      mPaint.colorFilter = colorFilter
-    }
-
-    override fun getOpacity(): Int {
-      return PixelFormat.OPAQUE
-    }
+  override fun onDraw(canvas: Canvas) {
+    canvas.drawCircle((measuredWidth / 2).toFloat(), (measuredHeight / 2).toFloat(), (measuredWidth / 2).toFloat(), mPaint)
+    super.onDraw(canvas)
   }
 
-  companion object {
-    private val TAG = "SemiCircleRectView"
-  }
 }

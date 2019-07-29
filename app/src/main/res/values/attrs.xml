@@ -20,7 +20,7 @@
   <!-- Style to use for TabLayout in the theme. -->
   <attr name="tabStyle" format="reference"/>
 
-  <declare-styleable name="TabLayout">
+  <declare-styleable name="TrinityTabLayout">
     <!-- Color of the indicator used to show the currently selected tab. -->
     <attr name="tabIndicatorColor" format="color"/>
     <!-- {@deprecated Instead, set the intrinsic size of the custom drawable provided to the
@@ -35,7 +35,7 @@
          specified, indicator defaults to a line along the bottom of the tab. -->
     <attr name="tabIndicator" format="reference"/>
     <!-- Gravity constant for tab selection indicator. -->
-    <attr name="tabIndicatorGravity">
+    <attr name="trinityTabIndicatorGravity">
       <!-- Align indicator to the bottom of this tab layout. -->
       <enum name="bottom" value="0"/>
       <!-- Align indicator along the center of this tab layout. -->
@@ -53,13 +53,13 @@
          present, it will be set to the width of the icon or to a minimum width of 24dp. -->
     <attr name="tabIndicatorFullWidth" format="boolean"/>
     <!-- The behavior mode for the Tabs in this layout -->
-    <attr name="tabMode">
+    <attr name="trinityTabMode">
       <enum name="scrollable" value="0"/>
       <enum name="fixed" value="1"/>
       <enum name="auto" value="2"/>
     </attr>
     <!-- Gravity constant for tabs. -->
-    <attr name="tabGravity">
+    <attr name="trinityTabGravity">
       <enum name="fill" value="0"/>
       <enum name="center" value="1"/>
     </attr>
@@ -89,7 +89,7 @@
     <!-- Tint to apply to tab icons, if present. This can be a color state list or a color. -->
     <attr name="tabIconTint" format="color"/>
     <!-- Blending mode to apply to tab icons. -->
-    <attr name="tabIconTintMode">
+    <attr name="trinityTabIconTintMode">
       <enum name="src_over" value="3"/>
       <enum name="src_in" value="5"/>
       <enum name="src_atop" value="9"/>
@@ -105,7 +105,7 @@
     <attr name="tabUnboundedRipple" format="boolean"/>
   </declare-styleable>
 
-  <declare-styleable name="TabItem">
+  <declare-styleable name="TrinityTabItem">
     <!-- Text to display in the tab. -->
     <attr name="android:text"/>
     <!-- Icon to display in the tab. -->
@@ -114,4 +114,11 @@
     <attr name="android:layout"/>
   </declare-styleable>
 
+  <declare-styleable name="CircularImageView">
+    <attr name="android:src" />
+  </declare-styleable>
+
+  <declare-styleable name="CircleTextView">
+    <attr name="backgroundColor" format="color" />
+  </declare-styleable>
 </resources>

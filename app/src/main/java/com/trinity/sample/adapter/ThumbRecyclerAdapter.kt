@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2010-2017 Alibaba Group Holding Limited.
- */
-
 package com.trinity.sample.adapter
 
 import android.graphics.Bitmap
@@ -66,7 +62,7 @@ class ThumbRecyclerAdapter(private var mCount: Int, duration: Int, private var m
   override fun onBindViewHolder(holder: ThumbnailViewHolder, position: Int) {
     if (position != 0 && position != mCount + 1) {
       if (mInterval == 0L) {
-        mInterval = mFetcher!!.getTotalDuration() / mCount
+        mInterval = (mFetcher?.getTotalDuration() ?: 0 / mCount.toLong())
       }
       requestFetchThumbnail(holder, position)
     }

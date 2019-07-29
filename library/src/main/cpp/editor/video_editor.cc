@@ -17,6 +17,7 @@ VideoEditor::VideoEditor() {
     image_process_ = new ImageProcess();
     music_player_ = nullptr;
     state_event_ = nullptr;
+    on_video_render_event_ = nullptr;
 }
 
 VideoEditor::~VideoEditor() {
@@ -87,6 +88,13 @@ int64_t VideoEditor::GetVideoDuration() const {
         duration += clip->end_time - clip->start_time;
     }
     return duration;
+}
+
+int64_t VideoEditor::GetCurrentPosition() const {
+    if (nullptr != video_player_) {
+        return video_player_->GetCurrentPosition();
+    }
+    return 0;
 }
 
 int VideoEditor::GetClipsCount() {
@@ -171,6 +179,16 @@ int VideoEditor::AddMusic(const char *path, uint64_t start_time, uint64_t end_ti
     return 0;
 }
 
+int VideoEditor::AddAction(int effect_type, uint64_t start_time, uint64_t end_time) {
+    if (nullptr == image_process_) {
+        return -1;
+    }
+    if (effect_type == 0) {
+        return image_process_->AddFlashWhiteAction(10, start_time, end_time);
+    }
+    return 0;
+}
+
 int VideoEditor::Export(const char* export_config, const char *path, int width, int height, int frame_rate, int video_bit_rate, int sample_rate,
                         int channel_count, int audio_bit_rate) {
     VideoExport* video_export = new VideoExport();
@@ -181,6 +199,14 @@ int VideoEditor::OnCompleteEvent(StateEvent *event) {
     VideoEditor *editor = (VideoEditor *)event->context;
     if (nullptr != editor) {
         return editor->OnComplete();
+    }
+    return 0;
+}
+
+int VideoEditor::OnVideoRender(OnVideoRenderEvent *event, int texture_id, int width, int height, uint64_t current_time) {
+    VideoEditor* editor = (VideoEditor*) event->context;
+    if (nullptr != editor) {
+        return editor->image_process_->Process(texture_id, current_time, width, height, 0, 0);
     }
     return 0;
 }
@@ -198,7 +224,8 @@ int VideoEditor::OnComplete() {
             }
             MediaClip* clip = clip_deque_.at(play_index);
             FreeStateEvent();
-            video_player_->Start(clip->file_name, clip->start_time, clip->end_time == 0 ? INT64_MAX : clip->end_time, state_event_);
+            video_player_->Start(clip->file_name, clip->start_time,
+                    clip->end_time == 0 ? INT64_MAX : clip->end_time, state_event_, on_video_render_event_);
         }
     } else {
         video_player_->Stop();
@@ -208,7 +235,8 @@ int VideoEditor::OnComplete() {
 
 void VideoEditor::FreeStateEvent() {
     if (nullptr != state_event_) {
-        av_freep(state_event_);
+        av_free(state_event_);
+        state_event_ = nullptr;
     }
 }
 
@@ -219,15 +247,33 @@ void VideoEditor::AllocStateEvent() {
     state_event_->context = this;
 }
 
+void VideoEditor::FreeVideoRenderEvent() {
+    if (nullptr != on_video_render_event_) {
+        av_free(on_video_render_event_);
+        on_video_render_event_ = nullptr;
+    }
+}
+
+void VideoEditor::AllocVideoRenderEvent() {
+    on_video_render_event_ = (OnVideoRenderEvent*) av_malloc(sizeof(OnVideoRenderEvent));
+    memset(on_video_render_event_, 0, sizeof(OnVideoRenderEvent));
+    on_video_render_event_->on_render_video = OnVideoRender;
+    on_video_render_event_->context = this;
+}
+
 int VideoEditor::Play(bool repeat, JNIEnv* env, jobject object) {
     if (clip_deque_.empty()) {
         return -1;
     }
     FreeStateEvent();
     AllocStateEvent();
+    FreeVideoRenderEvent();
+    AllocVideoRenderEvent();
     repeat_ = repeat;
     MediaClip* clip = clip_deque_.at(0);
-    video_player_->Start(clip->file_name, clip->start_time, clip->end_time == 0 ? INT64_MAX : clip->end_time, state_event_);
+    video_player_->Start(clip->file_name,
+            clip->start_time, clip->end_time == 0 ? INT64_MAX : clip->end_time,
+            state_event_, on_video_render_event_);
     return 0;
 }
 
@@ -265,6 +311,8 @@ void VideoEditor::Destroy() {
     LOGE("start queue_mutex_ destroy");
     pthread_mutex_destroy(&queue_mutex_);
     pthread_cond_destroy(&queue_cond_);
+    FreeStateEvent();
+    FreeVideoRenderEvent();
     LOGE("leave Destroy");
 }
 

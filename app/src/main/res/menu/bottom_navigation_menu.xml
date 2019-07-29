@@ -1,4 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <item
+        android:id="@+id/filter"
+        android:icon="@mipmap/ic_filter"
+        android:title="@string/filter" />
+
+    <item android:id="@+id/effect"
+        android:icon="@mipmap/ic_effect"
+        android:title="@string/effect" />
+
+    <item android:id="@+id/music"
+        android:icon="@mipmap/ic_music"
+        android:title="@string/music" />
+
+    <item android:id="@+id/gif"
+        android:icon="@mipmap/ic_gif"
+        android:title="@string/gif" />
+
+    <item android:id="@+id/subtitle"
+        android:icon="@mipmap/ic_subtitle"
+        android:title="@string/subtitle" />
+
+    <item android:id="@+id/mv"
+        android:icon="@mipmap/ic_mv"
+        android:title="@string/mv" />
+
+    <item android:id="@+id/sound"
+        android:icon="@mipmap/ic_sound"
+        android:title="@string/sound" />
+
+    <item android:id="@+id/speed_time"
+        android:icon="@mipmap/ic_speed_time"
+        android:title="@string/speed_time" />
+
+    <item android:id="@+id/transition"
+        android:icon="@mipmap/ic_transition"
+        android:title="@string/transition" />
+
+    <item android:id="@+id/paint"
+        android:icon="@mipmap/ic_paint"
+        android:title="@string/paint" />
+
+    <item android:id="@+id/cover"
+        android:icon="@mipmap/ic_cover"
+        android:title="@string/cover" />
 </menu>

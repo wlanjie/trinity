@@ -54,8 +54,13 @@ class VideoEditor : TrinityVideoEditor, SurfaceHolder.Callback {
     return getVideoDuration(mId)
   }
 
-
   private external fun getVideoDuration(id: Long): Long
+
+  override fun getCurrentPosition(): Long {
+    return getCurrentPosition(mId)
+  }
+
+  private external fun getCurrentPosition(handle: Long): Long
 
   /**
    * 获取视频片段数量
@@ -199,6 +204,12 @@ class VideoEditor : TrinityVideoEditor, SurfaceHolder.Callback {
   }
 
   private external fun addMusic(id: Long, path: String, startTime: Long, endTime: Long): Int
+
+  override fun addAction(type: EffectType, startTime: Long, endTime: Long) {
+    addAction(mId, type.ordinal, startTime, endTime)
+  }
+
+  private external fun addAction(handle: Long, type: Int, startTime: Long, endTime: Long)
 
   /**
    * 开始播放

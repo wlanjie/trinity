@@ -45,6 +45,7 @@ static int AudioCallback(uint8_t* buffer, size_t buffer_size, void* context) {
 
 VideoPlayer::VideoPlayer() {
     video_event_ = nullptr;
+    video_render_event_ = nullptr;
     media_decode_ = nullptr;
     player_state_ = nullptr;
     audio_render_ = nullptr;
@@ -52,6 +53,7 @@ VideoPlayer::VideoPlayer() {
     message_queue_ = nullptr;
     handler_ = nullptr;
     message_queue_ = nullptr;
+    current_position_ = 0;
     video_play_state_ = kNone;
     core_ = nullptr;
     render_surface_ = EGL_NO_SURFACE;
@@ -386,7 +388,11 @@ int VideoPlayer::Init() {
     return result;
 }
 
-int VideoPlayer::Start(const char *file_name, uint64_t start_time, uint64_t end_time, StateEvent* state_event) {
+int VideoPlayer::Start(const char *file_name,
+        uint64_t start_time, uint64_t end_time,
+        StateEvent* state_event, OnVideoRenderEvent* render_event) {
+
+    video_render_event_ = render_event;
     video_event_ = (VideoEvent*) av_malloc(sizeof(VideoEvent));
     memset(video_event_, 0, sizeof(VideoEvent));
     video_event_->context = this;
@@ -457,11 +463,17 @@ void VideoPlayer::Sync() {
 }
 
 void VideoPlayer::Resume() {
-//    StreamTogglePause(media_decode_, player_state_);
+    if (video_play_state_ == kPause) {
+        video_play_state_ = kResume;
+        StreamTogglePause(media_decode_, player_state_);
+    }
 }
 
 void VideoPlayer::Pause() {
-//    StreamTogglePause(media_decode_, player_state_);
+    if (video_play_state_ == kPlaying || video_play_state_ == kResume) {
+        video_play_state_ = kPause;
+        StreamTogglePause(media_decode_, player_state_);
+    }
 }
 
 void VideoPlayer::Stop() {
@@ -761,7 +773,13 @@ void VideoPlayer::RenderVideo() {
             }
             int texture_id = yuv_render_->DrawFrame(vp->frame);
             uint64_t current_time = (uint64_t) (vp->frame->pts * av_q2d(media_decode_->video_stream->time_base) * 1000);
-//            texture_id = image_process_->Process(texture_id, current_time, vp->width, vp->height, 0, 0);
+            if (nullptr != video_render_event_) {
+                int progressTextureId = video_render_event_->on_render_video(video_render_event_, texture_id, vp->width, vp->height, current_time);
+                if (progressTextureId != 0) {
+                    texture_id = progressTextureId;
+                }
+            }
+            current_position_ = current_time;
             render_screen_->ProcessImage(texture_id, vertex_coordinate_, texture_coordinate_);
             if (!core_->SwapBuffers(render_surface_)) {
                 LOGE("eglSwapBuffers error: %d", eglGetError());
@@ -818,6 +836,9 @@ void VideoPlayer::OnSurfaceCreated(ANativeWindow *window) {
 void VideoPlayer::OnSurfaceChanged(int width, int height) {
     surface_width_ = width;
     surface_height_ = height;
+    if (nullptr != render_screen_) {
+        render_screen_->SetOutput(width, height);
+    }
 }
 
 void VideoPlayer::OnSurfaceDestroyed() {
@@ -847,6 +868,10 @@ void VideoPlayer::RenderVideoFrame(VideoEvent* event) {
 
 void VideoPlayer::Seek(int start_time) {
     av_seek(media_decode_, start_time);
+}
+
+int64_t VideoPlayer::GetCurrentPosition() {
+    return current_position_;
 }
 
 }

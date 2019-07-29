@@ -42,6 +42,11 @@ typedef enum {
     kRenderFrame
 } VideoRenderMessage;
 
+typedef struct OnVideoRenderEvent {
+    int (*on_render_video)(struct OnVideoRenderEvent* event, int texture_id, int width, int height, uint64_t current_time);
+    void* context;
+} OnVideoRenderEvent;
+
 typedef struct VideoEvent {
     void (*render_video_frame)(struct VideoEvent* event);
     void* context;
@@ -94,12 +99,15 @@ public:
     VideoPlayer();
     virtual ~VideoPlayer();
     int Init();
-    int Start(const char* file_name, uint64_t start_time, uint64_t end_time, StateEvent* state_event);
+    int Start(const char* file_name,
+            uint64_t start_time, uint64_t end_time,
+            StateEvent* state_event, OnVideoRenderEvent* render_event);
     void Resume();
     void Pause();
     void Stop();
     void Destroy();
     void Seek(int start_time);
+    int64_t GetCurrentPosition();
 
     void OnSurfaceCreated(ANativeWindow* window);
     void OnSurfaceChanged(int width, int height);
@@ -124,6 +132,7 @@ private:
     pthread_cond_t sync_cond_;
 
     VideoEvent* video_event_;
+    OnVideoRenderEvent* video_render_event_;
     MediaDecode* media_decode_;
     PlayerState* player_state_;
 
@@ -138,6 +147,7 @@ private:
     pthread_mutex_t render_mutex_;
     pthread_cond_t render_cond_;
 
+    int64_t current_position_;
     int video_play_state_;
     EGLCore* core_;
     EGLSurface render_surface_;
