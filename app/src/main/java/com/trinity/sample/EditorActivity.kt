@@ -126,7 +126,7 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
         }
 
         override fun requestThumbnailImage(times: LongArray, l: ThumbnailFetcher.OnThumbnailCompletionListener) {
-          val bitmap = BitmapFactory.decodeFile("/sdcard/DCIM/Camera/t0146661654bb6af4d3.jpg")
+          val bitmap = BitmapFactory.decodeResource(resources, R.drawable.ic_launcher)
           l.onThumbnail(bitmap, 0)
         }
 
