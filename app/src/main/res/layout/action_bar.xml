@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/alivc_svideo_title_height"
+    android:background="@color/action_bar_bg"
+    android:minHeight="@dimen/alivc_svideo_title_height" >
+
+    <ImageView
+        android:id="@+id/iv_left"
+        style="?android:attr/actionButtonStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true"
+        android:paddingLeft="@dimen/right_margin_profile_toolbar"
+        android:visibility="gone" />
+    <TextView
+        android:id="@+id/tv_left"
+        style="?android:attr/actionButtonStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true"
+        android:textSize="@dimen/font_size_28px"
+        android:paddingLeft="@dimen/right_margin_profile_toolbar"
+        android:textColor="@color/white"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/tv_center"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_centerInParent="true"
+        android:drawablePadding="@dimen/action_bar_profile_title_drawablePadding"
+        android:gravity="center"
+        android:textColor="@color/white"
+        android:textSize="@dimen/font_size_28px"
+        android:visibility="gone" />
+
+    <ImageView
+        android:id="@+id/iv_right"
+        style="?android:attr/actionButtonStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:paddingEnd="@dimen/right_margin_profile_toolbar"
+        android:paddingRight="@dimen/right_margin_profile_toolbar"
+        android:visibility="gone" />
+    <TextView
+        android:id="@+id/tv_right"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:layout_marginEnd="@dimen/right_margin_profile_toolbar"
+        android:layout_marginRight="@dimen/right_margin_profile_toolbar"
+        android:visibility="gone"
+        style="@style/NextBtnStyle"/>
+
+</RelativeLayout>
