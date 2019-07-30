@@ -1,5 +1,5 @@
 # trinity
-![icon~](https://cdn.dribbble.com/users/1096600/screenshots/4030608/trinity_logo-01.jpg)
+![icon~](https://raw.githubusercontent.com/wlanjie/trinity/feature/add_README.md/trinity.png?token=AEJVZ2CB2EZKRZGAOCW7LL25H74CK)
 
 [![Build Status](https://travis-ci.org/LaiFengiOS/LFLiveKit.svg)](https://travis-ci.org/LaiFengiOS/LFLiveKit)&nbsp;
 ![Version](https://img.shields.io/badge/version-v1.0-blue.svg)&nbsp;
