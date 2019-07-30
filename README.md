@@ -1,5 +1,5 @@
 # trinity
-![icon~](https://github.com/wlanjie/trinity/raw/feature/add_README.md/trinity.png)
+![icon~](https://github.com/wlanjie/trinity/raw/feature/add_README.md/trinity@2x.png)
 
 [![Build Status](https://travis-ci.org/LaiFengiOS/LFLiveKit.svg)](https://travis-ci.org/LaiFengiOS/LFLiveKit)&nbsp;
 ![Version](https://img.shields.io/badge/version-v1.0-blue.svg)&nbsp;
