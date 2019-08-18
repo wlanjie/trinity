@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item>
+        <shape android:shape="oval">
+            <size
+                android:width="40dp"
+                android:height="40dp" />
+            <solid android:color="@color/colorAccent" />
+        </shape>
+    </item>
+    <item
+        android:bottom="12dp"
+        android:drawable="@mipmap/ic_done"
+        android:left="12dp"
+        android:right="12dp"
+        android:top="12dp" />
+
+</layer-list>

@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+        <com.trinity.camera.TrinityPreviewView
+                android:id="@+id/preview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"/>
+
+        <com.trinity.sample.view.foucs.MarkerLayout
+            android:id="@+id/mark_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <com.trinity.sample.view.RecordButton
+                android:id="@+id/record_button"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:layout_alignParentBottom="true"
+                android:layout_centerHorizontal="true"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                android:layout_marginBottom="16dp"/>
+
+        <com.trinity.sample.view.LineProgressView
+                android:id="@+id/line_view"
+                android:layout_width="match_parent"
+                android:layout_height="12dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginLeft="8dp"
+                android:layout_marginRight="8dp"
+                app:layout_constraintTop_toTopOf="parent"/>
+
+        <ImageView
+                android:id="@+id/setting"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_alignParentRight="true"
+                android:layout_marginTop="16dp"
+                android:layout_marginRight="16dp"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                android:background="@mipmap/ic_setting"/>
+
+        <ImageView
+                android:id="@+id/switch_camera"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_alignParentRight="true"
+                android:layout_marginRight="16dp"
+                android:layout_marginTop="8dp"
+                android:layout_below="@id/setting"
+                app:layout_constraintRight_toRightOf="parent"
+                android:background="@mipmap/ic_camera_switch"
+                app:layout_constraintTop_toBottomOf="@id/setting"/>
+
+        <ImageView
+                android:id="@+id/flash"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginRight="16dp"
+                android:layout_alignParentRight="true"
+                android:layout_below="@id/switch_camera"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/switch_camera"
+                android:src="@mipmap/ic_flash_off"/>
+
+        <ImageView
+                android:id="@+id/done"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@drawable/bg_record_done"
+                android:layout_marginRight="16dp"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="@id/record_button"
+                app:layout_constraintBottom_toBottomOf="@id/record_button"/>
+
+        <ImageView
+                android:id="@+id/delete"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@mipmap/ic_delete"
+                android:layout_marginRight="24dp"
+                app:layout_constraintRight_toLeftOf="@id/done"
+                app:layout_constraintTop_toTopOf="@id/record_button"
+                app:layout_constraintBottom_toBottomOf="@id/record_button"/>
+
+        <ImageView
+                android:id="@+id/photo"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="@mipmap/ic_photo"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toTopOf="@id/record_button"
+                app:layout_constraintBottom_toBottomOf="@id/record_button"
+                app:layout_constraintEnd_toStartOf="@+id/record_button"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginEnd="8dp"
+                android:layout_marginRight="8dp"
+                android:layout_marginLeft="8dp"
+                android:layout_marginStart="8dp"/>
+
+        <TextView
+                android:id="@+id/music"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="选择音乐"
+                android:textSize="14sp"
+                android:textColor="@android:color/white"
+                android:layout_centerHorizontal="true"
+                android:drawableLeft="@mipmap/ic_music"
+                android:gravity="center"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                android:drawablePadding="8dp"
+                android:layout_marginTop="16dp"/>
+
+        <RadioGroup
+                android:id="@+id/rate_bar"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:layout_marginLeft="50dp"
+                android:background="@drawable/bg_rate_bar"
+                android:layout_marginRight="50dp"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                android:layout_marginBottom="8dp"
+                app:layout_constraintBottom_toTopOf="@+id/record_button">
+
+            <RadioButton
+                    android:id="@+id/rate_quarter"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.98"
+                    android:background="@drawable/record_rate_bg"
+                    android:gravity="center"
+                    android:text="@string/rate_very_slow"
+                    android:textColor="@color/rate_text"
+                    android:button="@null"
+                    android:textSize="15sp"/>
+
+            <RadioButton
+                    android:id="@+id/rate_half"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/record_rate_bg"
+                    android:gravity="center"
+                    android:text="@string/rate_slow"
+                    android:textColor="@color/rate_text"
+                    android:button="@null"
+                    android:textSize="15sp"/>
+
+            <RadioButton
+                    android:id="@+id/rate_origin"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/record_rate_bg"
+                    android:gravity="center"
+                    android:text="@string/rate_standard"
+                    android:textColor="@color/rate_text"
+                    android:checked="true"
+                    android:button="@null"
+                    android:textSize="15sp"/>
+
+            <RadioButton
+                    android:id="@+id/rate_double"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/record_rate_bg"
+                    android:gravity="center"
+                    android:text="@string/rate_fast"
+                    android:textColor="@color/rate_text"
+                    android:button="@null"
+                    android:textSize="15sp"/>
+
+            <RadioButton
+                    android:id="@+id/rate_double_power2"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.98"
+                    android:background="@drawable/record_rate_bg"
+                    android:gravity="center"
+                    android:text="@string/rate_very_fast"
+                    android:textColor="@color/rate_text"
+                    android:button="@null"
+                    android:textSize="15sp"/>
+        </RadioGroup>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <FrameLayout
+            android:id="@+id/frame_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:behavior_hideable="true"
+            app:behavior_peekHeight="0dp"
+            app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
+            android:visibility="visible"/>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

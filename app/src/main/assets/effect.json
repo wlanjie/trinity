@@ -1,0 +1,26 @@
+[
+  {
+    "name": "闪白",
+    "color": "#23bdb1"
+  },
+  {
+    "name": "两屏",
+    "color": "#e77e86"
+  },
+  {
+    "name": "三屏",
+    "color": "#dc424e"
+  },
+  {
+    "name": "四屏",
+    "color": "#c12430"
+  },
+  {
+    "name": "六屏",
+    "color": "#ef2f3e"
+  },
+  {
+    "name": "九屏",
+    "color": "#dc143c"
+  }
+]

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<HorizontalScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingBottom="20dp"
+        android:paddingTop="6dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tab_filter"
+            style="@style/editor_bottom_tab"
+            android:drawableTop="@mipmap/ic_filter"
+            android:text="@string/filter"/>
+
+        <TextView
+            android:id="@+id/tab_effect_audio_mix"
+            style="@style/editor_bottom_tab"
+            android:drawableTop="@mipmap/ic_music"
+            android:text="@string/music"/>
+        <TextView
+            android:id="@+id/tab_effect_overlay"
+            style="@style/editor_bottom_tab"
+            android:drawableTop="@mipmap/ic_gif"
+            android:text="@string/gif"/>
+
+        <TextView
+            android:id="@+id/tab_effect_caption"
+            style="@style/editor_bottom_tab"
+            android:drawableTop="@mipmap/ic_subtitle"
+            android:text="@string/subtitle"/>
+        <TextView
+            android:id="@+id/tab_effect_mv"
+            style="@style/editor_bottom_tab"
+            android:drawableTop="@mipmap/ic_mv"
+            android:text="@string/mv"/>
+        <TextView
+            android:id="@+id/tab_effect_sound"
+            style="@style/editor_bottom_tab"
+            android:drawableTop="@mipmap/ic_sound"
+            android:text="@string/sound"/>
+        <TextView
+            android:id="@+id/tab_effect_filter"
+            style="@style/editor_bottom_tab"
+            android:drawableTop="@mipmap/ic_effect"
+            android:text="@string/effect"/>
+        <TextView
+            android:id="@+id/tab_effect_time"
+            style="@style/editor_bottom_tab"
+            android:drawableTop="@mipmap/ic_speed_time"
+            android:text="@string/speed_time"/>
+
+        <TextView
+            android:id="@+id/tab_effect_transition"
+            style="@style/editor_bottom_tab"
+            android:drawableTop="@mipmap/ic_transition"
+            android:text="@string/transition"/>
+
+        <TextView
+            android:id="@+id/tab_paint"
+            style="@style/editor_bottom_tab"
+            android:drawableTop="@mipmap/ic_paint"
+            android:text="@string/paint"/>
+        <TextView
+            android:id="@+id/tab_cover"
+            style="@style/editor_bottom_tab"
+            android:drawableTop="@mipmap/ic_cover"
+            android:text="@string/cover"/>
+
+    </LinearLayout>
+</HorizontalScrollView>

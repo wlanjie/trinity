@@ -1,0 +1,63 @@
+<resources>
+    <string name="app_name">trinity</string>
+
+    <string name="rate_very_slow">极慢</string>
+    <string name="rate_slow">慢</string>
+    <string name="rate_standard">标准</string>
+    <string name="rate_fast">快</string>
+    <string name="rate_very_fast">极快</string>
+
+    <string-array name="preview_render_preference">
+        <item>FIX_XY</item>
+        <item>CROP</item>
+    </string-array>
+
+    <string-array name="preview_render_value_preference">
+        <item>"FIX_XY"</item>
+        <item>"CROP"</item>
+    </string-array>
+
+    <string-array name="preview_resolution">
+        <item>1080P</item>
+        <item>720P</item>
+    </string-array>
+
+    <string-array name="record_resolution">
+        <item>1080P</item>
+        <item>720P</item>
+        <item>540P</item>
+        <item>480P</item>
+        <item>360P</item>
+    </string-array>
+
+    <string-array name="frame_rate">
+        <item>30</item>
+        <item>25</item>
+        <item>24</item>
+        <item>20</item>
+        <item>15</item>
+    </string-array>
+
+    <string-array name="channels">
+        <item>2</item>
+        <item>1</item>
+    </string-array>
+
+    <string-array name="sample_rate">
+        <item>48000</item>
+        <item>44100</item>
+        <item>22050</item>
+    </string-array>
+
+    <string name="filter">滤镜</string>
+    <string name="music">音乐</string>
+    <string name="gif">动图</string>
+    <string name="subtitle">字幕</string>
+    <string name="mv">MV</string>
+    <string name="sound">音效</string>
+    <string name="effect">特效</string>
+    <string name="speed_time">变速</string>
+    <string name="transition">转场</string>
+    <string name="paint">涂鸦</string>
+    <string name="cover">封面</string>
+</resources>

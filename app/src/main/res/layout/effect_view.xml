@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="215dp"
+    android:orientation="vertical"
+    android:background="@color/chooser_pager_bg">
+
+    <FrameLayout
+        android:id="@+id/thumbnail_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="30dp"
+        android:text="长按可添加效果"
+        android:textColor="@android:color/white"
+        android:gravity="center_vertical"
+        android:layout_marginLeft="10dp"
+        android:textSize="12sp"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/effect_recycler_view"
+        android:layout_width="wrap_content"
+        android:layout_height="100dp"
+        android:overScrollMode="never" />
+</LinearLayout>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.trinity.sample.view.SquareFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <ImageView
+        android:id="@+id/media_image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/colorAccent"/>
+
+    <TextView
+        android:id="@+id/select_count"
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:layout_gravity="right"
+        android:layout_marginRight="4dp"
+        android:layout_marginTop="4dp"
+        android:textColor="@android:color/black"
+        android:textSize="14sp"
+        tools:text="12"
+        android:gravity="center"
+        android:background="@drawable/media_select_normal"/>
+</com.trinity.sample.view.SquareFrameLayout>

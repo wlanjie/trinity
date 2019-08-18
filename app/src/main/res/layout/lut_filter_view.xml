@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/chooser_pager_bg"
+    android:orientation="vertical">
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/effect_list_filter"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:overScrollMode="never" />
+
+    <RelativeLayout
+        android:id="@+id/effect_list_dismiss"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:background="@color/tab_bg_color"
+        android:gravity="center_vertical"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:visibility="gone" />
+</LinearLayout>
