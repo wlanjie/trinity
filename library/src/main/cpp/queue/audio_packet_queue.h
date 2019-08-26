@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 //
 // Created by wlanjie on 2019/4/17.
 //
@@ -23,6 +41,7 @@ typedef struct AudioPacket {
         data = nullptr;
         size = 0;
         position = -1;
+        frameNum = 0;
     }
     ~AudioPacket() {
         if (nullptr != buffer) {
@@ -39,11 +58,12 @@ typedef struct AudioPacket {
 typedef struct AudioPacketList {
     AudioPacket *pkt;
     struct AudioPacketList *next;
-    AudioPacketList(){
+    AudioPacketList() {
         pkt = nullptr;
         next = nullptr;
     }
 } AudioPacketList;
+
 inline void buildPacketFromBuffer(AudioPacket * audioPacket, short* samples, int sampleSize) {
     short* packetBuffer = new short[sampleSize];
     if (nullptr != packetBuffer) {
@@ -54,10 +74,11 @@ inline void buildPacketFromBuffer(AudioPacket * audioPacket, short* samples, int
         audioPacket->size = -1;
     }
 }
+
 class AudioPacketQueue {
-public:
+ public:
     AudioPacketQueue();
-    AudioPacketQueue(const char* queueNameParam);
+    explicit AudioPacketQueue(const char* queueNameParam);
     ~AudioPacketQueue();
 
     void Init();
@@ -69,7 +90,7 @@ public:
     int Size();
     void Abort();
 
-private:
+ private:
     AudioPacketList* first_;
     AudioPacketList* last_;
     int packet_size_;
@@ -79,6 +100,6 @@ private:
     const char* queue_name_;
 };
 
-}
+}  // namespace trinity
 
-#endif //TRINITY_AUDIO_PACKET_QUEUE_H
+#endif  // TRINITY_AUDIO_PACKET_QUEUE_H

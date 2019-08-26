@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 //
 // Created by wlanjie on 2019/4/20.
 //
@@ -10,7 +26,28 @@
 
 namespace trinity {
 
-MusicDecoder::MusicDecoder() {
+MusicDecoder::MusicDecoder() : seek_req_(false),
+                               seek_resp_(false),
+                               seek_seconds_(0),
+                               actual_seek_position_(0),
+                               format_context_(nullptr),
+                               codec_context_(nullptr),
+                               stream_index_(-1),
+                               time_base_(0),
+                               audio_frame_(nullptr),
+                               path_(nullptr),
+                               seek_success_read_frame_success_(false),
+                               packet_buffer_size_(0),
+                               audio_buffer_(nullptr),
+                               position_(0),
+                               audio_buffer_cursor_(0),
+                               audio_buffer_size_(0),
+                               duration_(0),
+                               need_first_frame_correct_flag_(false),
+                               first_frame_correction_in_secs_(0),
+                               swr_context_(nullptr),
+                               swr_buffer_(nullptr),
+                               swr_buffer_size_(0) {
     path_ = nullptr;
     format_context_ = nullptr;
     codec_context_ = nullptr;
@@ -21,12 +58,7 @@ MusicDecoder::MusicDecoder() {
     seek_resp_ = false;
 }
 
-MusicDecoder::~MusicDecoder() {
-    if (nullptr != path_) {
-        delete[] path_;
-        path_ = nullptr;
-    }
-}
+MusicDecoder::~MusicDecoder() {}
 
 int MusicDecoder::Init(const char *path, int packet_buffer_size) {
     int ret = Init(path);
@@ -52,7 +84,7 @@ int MusicDecoder::Init(const char *path) {
         memset(path_, 0, length + 1);
         memcpy(path_, path, length + 1);
     }
-    int ret= avformat_open_input(&format_context_, path, nullptr, nullptr);
+    int ret = avformat_open_input(&format_context_, path, nullptr, nullptr);
     if (ret != 0) {
         LOGE("open file error: %s", av_err2str(ret));
         Destroy();
@@ -99,8 +131,6 @@ int MusicDecoder::Init(const char *path) {
         }
     }
     audio_frame_ = av_frame_alloc();
-
-    output_stream_.open("/sdcard/music.pcm", std::ios_base::binary | std::ios_base::out);
     return 0;
 }
 
@@ -126,17 +156,17 @@ void MusicDecoder::SeekFrame() {
     float targetPosition = seek_seconds_;
     float currentPosition = position_;
     float frameDuration = duration_;
-    if(targetPosition < currentPosition){
+    if (targetPosition < currentPosition) {
         Destroy();
         Init(path_);
-        //TODO:这里GT的测试样本会差距25ms 不会累加
+        // TODO:这里GT的测试样本会差距25ms 不会累加
         currentPosition = 0.0;
     }
-    int readFrameCode = -1;
+    int read_frame_code = -1;
     while (true) {
         av_init_packet(&packet_);
-        readFrameCode = av_read_frame(format_context_, &packet_);
-        if (readFrameCode >= 0) {
+        read_frame_code = av_read_frame(format_context_, &packet_);
+        if (read_frame_code >= 0) {
             currentPosition += frameDuration;
             if (currentPosition >= targetPosition) {
                 break;
@@ -150,6 +180,10 @@ void MusicDecoder::SeekFrame() {
 }
 
 void MusicDecoder::Destroy() {
+    if (nullptr != path_) {
+        delete[] path_;
+        path_ = nullptr;
+    }
     if (nullptr != swr_buffer_) {
         free(swr_buffer_);
         swr_buffer_ = NULL;
@@ -160,7 +194,7 @@ void MusicDecoder::Destroy() {
         swr_context_ = NULL;
     }
     if (nullptr != audio_frame_) {
-        av_free (audio_frame_);
+        av_free(audio_frame_);
         audio_frame_ = NULL;
     }
     if (nullptr != codec_context_) {
@@ -172,12 +206,11 @@ void MusicDecoder::Destroy() {
         avformat_close_input(&format_context_);
         format_context_ = NULL;
     }
-    output_stream_.close();
 }
 
 int MusicDecoder::GetSampleRate() {
     int sampleRate = -1;
-    if(nullptr != codec_context_){
+    if (nullptr != codec_context_) {
         sampleRate = codec_context_->sample_rate;
     }
     return sampleRate;
@@ -214,48 +247,47 @@ float MusicDecoder::GetActualSeekPosition() {
 }
 
 int MusicDecoder::ReadSamples(short *samples, int size) {
-    if(seek_req_){
+    if (seek_req_) {
         audio_buffer_cursor_ = audio_buffer_size_;
     }
     int sampleSize = size;
-    while(size > 0){
-        if(audio_buffer_cursor_ < audio_buffer_size_){
+    while (size > 0) {
+        if (audio_buffer_cursor_ < audio_buffer_size_) {
             int audioBufferDataSize = audio_buffer_size_ - audio_buffer_cursor_;
             int copySize = MIN(size, audioBufferDataSize);
             memcpy(samples + (sampleSize - size), audio_buffer_ + audio_buffer_cursor_, copySize * 2);
             size -= copySize;
             audio_buffer_cursor_ += copySize;
-        } else{
-            if(ReadFrame() < 0){
+        } else {
+            if (ReadFrame() < 0) {
                 break;
             }
         }
     }
     int fillSize = sampleSize - size;
-    if(fillSize == 0){
+    if (fillSize == 0) {
         return -1;
     }
     return fillSize;
 }
 
 int MusicDecoder::ReadFrame() {
-    if(seek_req_){
+    if (seek_req_) {
         this->SeekFrame();
     }
-    int ret = 1;
     av_init_packet(&packet_);
-    int gotframe = 0;
-    int readFrameCode = -1;
+    int got_frame = 0;
+    int ret = 0;
     while (true) {
-        readFrameCode = av_read_frame(format_context_, &packet_);
-        if (readFrameCode >= 0) {
+        int read_frame_code = av_read_frame(format_context_, &packet_);
+        if (read_frame_code >= 0) {
             if (packet_.stream_index == stream_index_) {
                 int len = avcodec_decode_audio4(codec_context_, audio_frame_,
-                                                &gotframe, &packet_);
+                                                &got_frame, &packet_);
                 if (len < 0) {
                     LOGI("Decode audio error, skip packet_");
                 }
-                if (gotframe) {
+                if (got_frame) {
                     int numChannels = OUT_PUT_CHANNELS;
                     int numFrames = 0;
                     void * audioData;
@@ -266,6 +298,7 @@ int MusicDecoder::ReadFrame() {
                                                                        AV_SAMPLE_FMT_S16, 1);
                         if (!swr_buffer_ || swr_buffer_size_ < bufSize) {
                             swr_buffer_size_ = bufSize;
+                            // TODO error
                             swr_buffer_ = realloc(swr_buffer_, swr_buffer_size_);
                         }
                         uint8_t *outbuf[2] = { (uint8_t*) swr_buffer_, NULL };
@@ -288,7 +321,7 @@ int MusicDecoder::ReadFrame() {
                         audioData = audio_frame_->data[0];
                         numFrames = audio_frame_->nb_samples;
                     }
-                    if(need_first_frame_correct_flag_ && position_ >= 0){
+                    if (need_first_frame_correct_flag_ && position_ >= 0) {
                         float expectedPosition = position_ + duration_;
                         float actualPosition = av_frame_get_best_effort_timestamp(audio_frame_) * time_base_;
                         first_frame_correction_in_secs_ = actualPosition - expectedPosition;
@@ -304,7 +337,6 @@ int MusicDecoder::ReadFrame() {
                     audio_buffer_size_ = numFrames * numChannels;
                     audio_buffer_ = (short*) audioData;
                     audio_buffer_cursor_ = 0;
-                    output_stream_.write(static_cast<const char *>(audioData), audio_buffer_size_ * 2 );
                     break;
                 }
             }
@@ -314,11 +346,11 @@ int MusicDecoder::ReadFrame() {
         }
     }
     av_free_packet(&packet_);
-    return 0;
+    return ret;
 }
 
 bool MusicDecoder::AudioCodecIsSupported() {
     return codec_context_->sample_fmt == AV_SAMPLE_FMT_S16;
 }
 
-}
+}  // namespace trinity

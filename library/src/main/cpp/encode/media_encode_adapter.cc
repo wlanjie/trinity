@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 //
 // Created by wlanjie on 2019/4/16.
 //
@@ -17,8 +34,6 @@ namespace {
 const int MAX_ENCODER_Q_SIZE = 3;
 }
 
-using namespace std;
-
 MediaEncodeAdapter::MediaEncodeAdapter(JavaVM *vm, jobject object) {
     vm_ = vm;
     object_ = object;
@@ -34,9 +49,7 @@ MediaEncodeAdapter::MediaEncodeAdapter(JavaVM *vm, jobject object) {
     start_encode_time_ = 0;
 }
 
-MediaEncodeAdapter::~MediaEncodeAdapter() {
-
-}
+MediaEncodeAdapter::~MediaEncodeAdapter() {}
 
 void MediaEncodeAdapter::CreateEncoder(EGLCore *core, int texture_id) {
     core_ = core;
@@ -64,6 +77,7 @@ void MediaEncodeAdapter::CreateEncoder(EGLCore *core, int texture_id) {
     }
     pthread_create(&encoder_thread_, nullptr, EncoderThreadCallback, this);
     start_time_ = 0;
+    fps_change_time_ = -1;
     encoding_ = true;
     sps_write_flag_ = true;
 }
@@ -123,13 +137,13 @@ void MediaEncodeAdapter::Encode(int timeMills) {
     // need drop frames
     int expectedFrameCount = (int) ((getCurrentTime() - fps_change_time_) / 1000.0f * frame_rate_ + 0.5f);
     if (expectedFrameCount < encode_frame_count_) {
+        LOGE("drop frame encode_count: %d frame_count: %d", encode_frame_count_, expectedFrameCount);
         return;
     }
     encode_frame_count_++;
     if (EGL_NO_SURFACE != encoder_surface_) {
         core_->MakeCurrent(encoder_surface_);
         render_->ProcessImage(texture_id_);
-//        renderer_->RenderToView(texture_id_, video_width_, video_height_);
         core_->SetPresentationTime(encoder_surface_, ((khronos_stime_nanoseconds_t) curTime) * 1000000);
         handler_->PostMessage(new Message(FRAME_AVAILABLE));
         if (!core_->SwapBuffers(encoder_surface_)) {
@@ -304,4 +318,4 @@ void MediaEncodeAdapter::DestroyMediaEncoder(JNIEnv *env) {
     }
 }
 
-}
+}  // namespace trinity

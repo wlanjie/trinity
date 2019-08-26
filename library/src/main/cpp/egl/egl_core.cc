@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 //
 // Created by wlanjie on 2019/4/13.
 //
@@ -18,7 +35,7 @@ EGLCore::~EGLCore() {
 }
 
 void EGLCore::Release() {
-    if(EGL_NO_DISPLAY != display_ && EGL_NO_CONTEXT != context_){
+    if (EGL_NO_DISPLAY != display_ && EGL_NO_CONTEXT != context_) {
         eglMakeCurrent(display_, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
         LOGI("after eglMakeCurrent...");
         eglDestroyContext(display_, context_);
@@ -33,16 +50,16 @@ void EGLCore::ReleaseSurface(EGLSurface eglSurface) {
     eglSurface = EGL_NO_SURFACE;
 }
 
-EGLContext EGLCore::GetContext(){
+EGLContext EGLCore::GetContext() {
     LOGI("return EGLCore GetContext...");
     return context_;
 }
 
-EGLDisplay EGLCore::GetDisplay(){
+EGLDisplay EGLCore::GetDisplay() {
     return display_;
 }
 
-EGLConfig EGLCore::GetConfig(){
+EGLConfig EGLCore::GetConfig() {
     return config_;
 }
 
@@ -50,7 +67,7 @@ EGLSurface EGLCore::CreateWindowSurface(ANativeWindow *_window) {
     EGLSurface surface = NULL;
     EGLint format;
 
-    if (_window == NULL){
+    if (_window == NULL) {
         LOGE("EGLCore::CreateWindowSurface  window_ is NULL");
         return NULL;
     }
@@ -103,10 +120,10 @@ bool EGLCore::Init() {
     return this->Init(NULL);
 }
 
-bool EGLCore::InitWithSharedContext(){
+bool EGLCore::InitWithSharedContext() {
     EGLContext context = EGLShareContext::getSharedContext();
 
-    if (context == EGL_NO_CONTEXT){
+    if (context == EGL_NO_CONTEXT) {
         return false;
     }
 
@@ -151,5 +168,4 @@ bool EGLCore::Init(EGLContext sharedContext) {
     return true;
 }
 
-
-}
+}  // namespace trinity

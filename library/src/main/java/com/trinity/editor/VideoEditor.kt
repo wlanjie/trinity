@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package com.trinity.editor
 
 import android.content.Context
@@ -184,16 +202,18 @@ class VideoEditor(
    * @param endTime 到哪里结束
    * @return 滤镜对应的id, 删除或者更新滤镜时需要用到
    */
-  override fun addFilter(lut: String, startTime: Long, endTime: Long): Int {
-    val lutFile = File(lut)
-    if (!lutFile.exists()) {
-      return -1
-    }
-    mFilterActionId = addFilter(mId, lut, startTime, endTime, mFilterActionId)
+  override fun addFilter(config: String): Int {
+    mFilterActionId = addFilter(mId, config)
     return mFilterActionId
   }
 
-  private external fun addFilter(id: Long, lut: String, startTime: Long, endTime: Long, actionId: Int): Int
+  private external fun addFilter(id: Long, config: String): Int
+
+  override fun updateFilter(config: String, actionId: Int) {
+    updateFilter(mId, config, actionId)
+  }
+
+  private external fun updateFilter(id: Long, config: String, actionId: Int)
 
   /**
    * 添加背景音乐
@@ -213,11 +233,23 @@ class VideoEditor(
 
   private external fun addMusic(id: Long, path: String, startTime: Long, endTime: Long): Int
 
-  override fun addAction(type: EffectType, startTime: Long, endTime: Long, actionId: Int): Int {
-    return addAction(mId, type.ordinal, startTime, endTime, actionId)
+  override fun addAction(config: String): Int {
+    if (mId <= 0) {
+      return -1
+    }
+    return addAction(mId, config)
   }
 
-  private external fun addAction(handle: Long, type: Int, startTime: Long, endTime: Long, actionId: Int): Int
+  private external fun addAction(handle: Long, config: String): Int
+
+  override fun updateAction(config: String, actionId: Int) {
+    if (mId <= 0) {
+      return
+    }
+    updateAction(mId, config, actionId)
+  }
+
+  private external fun updateAction(handle: Long, config: String, actionId: Int)
 
   /**
    * 开始播放

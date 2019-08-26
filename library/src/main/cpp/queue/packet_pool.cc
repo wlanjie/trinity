@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 //
 // Created by wlanjie on 2019/4/17.
 //
@@ -8,14 +26,23 @@
 
 namespace trinity {
 
-PacketPool::PacketPool() {
-    audio_packet_queue_ = nullptr;
-    video_packet_queue_ = nullptr;
-    decoder_packet_queue_ = nullptr;
-    accompany_packet_queue_ = nullptr;
-    accompany_buffer_size_ = 0;
-    accompany_buffer_ = nullptr;
-    buffer_ = nullptr;
+PacketPool::PacketPool()
+    : total_discard_video_packet_duration_(0),
+      buffer_size_(0),
+      buffer_(nullptr),
+      buffer_cursor_(0),
+      temp_video_packet_(nullptr),
+      temp_video_packet_ref_count_(0),
+      accompany_buffer_size_(0),
+      accompany_buffer_(nullptr),
+      accompany_buffer_cursor_(0),
+      total_discard_video_packet_duration_copy_(0),
+      audio_sample_rate_(0),
+      channels_(0),
+      audio_packet_queue_(nullptr),
+      video_packet_queue_(nullptr),
+      decoder_packet_queue_(nullptr),
+      accompany_packet_queue_(nullptr) {
     pthread_rwlock_init(&rw_lock_, nullptr);
     pthread_rwlock_init(&accompany_drop_frame_lock_, nullptr);
 }
@@ -42,17 +69,17 @@ void PacketPool::InitAudioPacketQueue(int audioSampleRate) {
 }
 
 void PacketPool::AbortAudioPacketQueue() {
-    if(nullptr != audio_packet_queue_){
+    if (nullptr != audio_packet_queue_) {
         audio_packet_queue_->Abort();
     }
 }
 
 void PacketPool::DestroyAudioPacketQueue() {
-    if(nullptr != audio_packet_queue_){
+    if (nullptr != audio_packet_queue_) {
         delete audio_packet_queue_;
         audio_packet_queue_ = nullptr;
     }
-    if(nullptr != buffer_){
+    if (nullptr != buffer_) {
         delete[] buffer_;
         buffer_ = nullptr;
     }
@@ -60,7 +87,7 @@ void PacketPool::DestroyAudioPacketQueue() {
 
 int PacketPool::GetAudioPacket(AudioPacket **audioPacket, bool block) {
     int result = -1;
-    if(nullptr != audio_packet_queue_){
+    if (nullptr != audio_packet_queue_) {
         result = audio_packet_queue_->Get(audioPacket, block);
     }
     return result;
@@ -94,16 +121,16 @@ bool PacketPool::DetectDiscardAudioPacket() {
 }
 
 void PacketPool::PushAudioPacketToQueue(AudioPacket *audioPacket) {
-    if(nullptr != audio_packet_queue_){
+    if (nullptr != audio_packet_queue_) {
         int audioPacketBufferCursor = 0;
-        while(audioPacket->size > 0){
+        while (audioPacket->size > 0) {
             int audioBufferLength = buffer_size_ - buffer_cursor_;
             int length = MIN(audioBufferLength, audioPacket->size);
             memcpy(buffer_ + buffer_cursor_, audioPacket->buffer + audioPacketBufferCursor, length * sizeof(short));
             audioPacket->size -= length;
             buffer_cursor_ += length;
             audioPacketBufferCursor += length;
-            if(buffer_cursor_ == buffer_size_){
+            if (buffer_cursor_ == buffer_size_) {
                 AudioPacket* targetAudioPacket = new AudioPacket();
                 targetAudioPacket->size = buffer_size_;
                 short * audioBuffer = new short[buffer_size_];
@@ -245,7 +272,7 @@ bool PacketPool::DetectDiscardAccompanyPacket() {
 }
 
 void PacketPool::InitRecordingVideoPacketQueue() {
-    if(nullptr == video_packet_queue_){
+    if (nullptr == video_packet_queue_) {
         const char* name = "recording video yuv frame_ packet_ queue_";
         video_packet_queue_ = new VideoPacketQueue(name);
         total_discard_video_packet_duration_ = 0;
@@ -264,7 +291,7 @@ void PacketPool::DestroyRecordingVideoPacketQueue() {
     if (nullptr != video_packet_queue_) {
         delete video_packet_queue_;
         video_packet_queue_ = nullptr;
-        if(temp_video_packet_ref_count_ > 0){
+        if (temp_video_packet_ref_count_ > 0) {
             delete temp_video_packet_;
             temp_video_packet_ = nullptr;
         }
@@ -280,7 +307,7 @@ int PacketPool::GetRecordingVideoPacket(VideoPacket **videoPacket,
     return result;
 }
 
-bool PacketPool::DetectDiscardVideoPacket(){
+bool PacketPool::DetectDiscardVideoPacket() {
     return video_packet_queue_->Size() > VIDEO_PACKET_QUEUE_THRRESHOLD;
 }
 
@@ -291,13 +318,13 @@ bool PacketPool::PushRecordingVideoPacketToQueue(VideoPacket *videoPacket) {
             dropFrame = true;
             int discardVideoFrameCnt = 0;
             int discardVideoFrameDuration = video_packet_queue_->DiscardGOP(&discardVideoFrameCnt);
-            if(discardVideoFrameDuration < 0){
+            if (discardVideoFrameDuration < 0) {
                 break;
             }
             RecordDropVideoFrame(discardVideoFrameDuration);
         }
-        //为了计算当前帧的Duration, 所以延迟一帧放入Queue中
-        if(nullptr != temp_video_packet_){
+        // 为了计算当前帧的Duration, 所以延迟一帧放入Queue中
+        if (nullptr != temp_video_packet_) {
             int packetDuration = videoPacket->timeMills - temp_video_packet_->timeMills;
             temp_video_packet_->duration = packetDuration;
             video_packet_queue_->Put(temp_video_packet_);
@@ -309,7 +336,7 @@ bool PacketPool::PushRecordingVideoPacketToQueue(VideoPacket *videoPacket) {
     return dropFrame;
 }
 
-void PacketPool::RecordDropVideoFrame(int discardVideoPacketDuration){
+void PacketPool::RecordDropVideoFrame(int discardVideoPacketDuration) {
     pthread_rwlock_wrlock(&rw_lock_);
     total_discard_video_packet_duration_+=discardVideoPacketDuration;
     pthread_rwlock_unlock(&rw_lock_);
@@ -332,4 +359,4 @@ void PacketPool::ClearRecordingVideoPacketToQueue() {
     }
 }
 
-}
+}  // namespace trinity

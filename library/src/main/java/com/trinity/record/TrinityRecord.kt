@@ -1,34 +1,51 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package com.trinity.record
 
 import android.graphics.PointF
 import android.graphics.SurfaceTexture
 import android.hardware.Camera
 import android.view.Surface
-import com.trinity.camera.Facing
 import com.tencent.mars.xlog.Log
 import com.trinity.Constants
 import com.trinity.ErrorCode
 import com.trinity.OnRecordingListener
 import com.trinity.camera.*
+import com.trinity.core.Frame
 import com.trinity.core.MusicInfo
 import com.trinity.core.RenderType
 import com.trinity.encoder.MediaCodecSurfaceEncoder
 import com.trinity.listener.OnRenderListener
 import com.trinity.player.AudioPlayer
+import com.trinity.record.exception.AudioConfigurationException
 import com.trinity.record.exception.InitRecorderFailException
 import com.trinity.record.service.PlayerService
 import com.trinity.record.service.RecorderService
 import com.trinity.record.service.impl.AudioRecordRecorderServiceImpl
 import com.trinity.util.Timer
 import java.io.File
-import java.util.*
 
 /**
  * Create by wlanjie on 2019/3/14-下午8:45
  */
 class TrinityRecord(
-  preview: TrinityPreviewView,
-  private val videoConfiguration: VideoConfiguration
+  preview: TrinityPreviewView
 ) : TrinityPreviewView.PreviewViewCallback, Timer.OnTimerListener, CameraCallback {
 
   // c++对象指针地址
@@ -43,6 +60,7 @@ class TrinityRecord(
   private var mCameraHeight = 0
   private var mViewWidth = 0
   private var mViewHeight = 0
+  private var mFrame = Frame.CROP
   private var mCameraCallback: CameraCallback ?= null
   // 渲染类型
   private var mRenderType = RenderType.CROP
@@ -134,6 +152,7 @@ class TrinityRecord(
       // 初始化OpenGL上下文,并开启线程
       prepareEGLContext(mHandle, surface, width, height)
       setRenderType(mRenderType)
+      setFrame(mFrame)
       Log.d("tag", "startPreview")
       mFirst = false
     } else {
@@ -176,7 +195,8 @@ class TrinityRecord(
    * 设置画幅
    * 目前画幅有: 垂直 横向 1:1方形
    */
-  fun setFrame(frame: VideoConfiguration.Frame) {
+  fun setFrame(frame: Frame) {
+    mFrame = frame
     setFrame(mHandle, frame.ordinal)
   }
 
@@ -320,7 +340,12 @@ class TrinityRecord(
     mTimer.start((duration / mSpeed.value).toInt())
     // TODO mAudioRecordService.sampleRate
     resetStopState()
-    mAudioRecordService.init()
+    try {
+      mAudioRecordService.init()
+    } catch (e: AudioConfigurationException) {
+      e.printStackTrace()
+      return -1
+    }
 
     mMusicInfo?.let {
       if (mMusicPlaying) {

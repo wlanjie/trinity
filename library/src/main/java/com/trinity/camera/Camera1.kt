@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package com.trinity.camera
 
 import android.content.Context
@@ -5,6 +23,7 @@ import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.SurfaceTexture
 import android.os.Handler
+import com.tencent.mars.xlog.Log
 import com.trinity.record.PreviewResolution
 import kotlin.math.max
 import kotlin.math.min
@@ -189,8 +208,17 @@ class Camera1(
       matchRatio,
       SizeSelectors.biggest()
     )
-    val selector = matchAll
-    var result = selector.select(sizes)[0]
+    val matchSizes = matchAll.select(sizes)
+    matchSizes.forEach {
+      var result = it
+      if (flip) {
+        result = it.flip()
+      }
+      if (result.width == resolution.width && result.height == resolution.height) {
+        return result
+      }
+    }
+    var result = matchAll.select(sizes)[0]
     if (!sizes.contains(result)) {
       throw RuntimeException("SizeSelectors must not return Sizes other than those in the input list.")
     }
@@ -205,7 +233,13 @@ class Camera1(
     if (mCameraId == -1) {
       return -1
     }
-    mCamera = android.hardware.Camera.open(mCameraId)
+    Log.i("trinity", "request preview width: ${resolution.width} height: ${resolution.height}")
+    try {
+      mCamera = android.hardware.Camera.open(mCameraId)
+    } catch (e: RuntimeException) {
+      e.printStackTrace()
+      return -1
+    }
     mCamera?.setErrorCallback(this)
     val params = mCamera?.parameters
     mPreviewSize.clear()
@@ -220,6 +254,7 @@ class Camera1(
       applyExposureCorrection(it, 0)
     }
     val size = computePreviewStreamSize(resolution)
+    Log.i("trinity", "setPreviewSize width: ${size.width} height: ${size.height}")
     params?.setPreviewSize(size.width, size.height)
     mCamera?.parameters = params
     mCameraParameters = params

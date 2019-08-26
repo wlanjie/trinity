@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 //
 // Created by wlanjie on 2019/4/10.
 //
@@ -11,7 +29,7 @@
 
 namespace trinity {
 
-const static char *YUV_FRAME_FRAGMENT_SHADER =
+const char *YUV_FRAME_FRAGMENT_SHADER =
         "varying highp vec2 textureCoordinate;\n"
         "uniform sampler2D texture_y;\n"
         "uniform sampler2D texture_u;\n"
@@ -62,33 +80,32 @@ static GLfloat TEXTURE_COORDINATE_ROTATED_270[8] = {
 };
 
 void YuvRender::ConvertVertexCoordinate(int width, int height, int view_width, int view_height) {
-
-    float w;
-    float h;
-    float src_scale = width *1.0f / height;
-    float screen_scale = view_width *1.0f / view_height;
-
-    if (src_scale == screen_scale) return;
-
-    if (src_scale > screen_scale) {
-        w = 1.0f;
-        h = screen_scale * 1.0f / src_scale;
-    } else {
-        w = src_scale * 1.0f / screen_scale;
-        h = 1.0f;
-    }
-
-    VERTEX_COORDINATE[0] = -w;
-    VERTEX_COORDINATE[1] = -h;
-
-    VERTEX_COORDINATE[2] =  w;
-    VERTEX_COORDINATE[3] = -h;
-
-    VERTEX_COORDINATE[4] = -w;
-    VERTEX_COORDINATE[5] =  h;
-
-    VERTEX_COORDINATE[6] =  w;
-    VERTEX_COORDINATE[7] =  h;
+//    float w;
+//    float h;
+//    float src_scale = width *1.0f / height;
+//    float screen_scale = view_width *1.0f / view_height;
+//
+//    if (src_scale == screen_scale) return;
+//
+//    if (src_scale > screen_scale) {
+//        w = 1.0f;
+//        h = screen_scale * 1.0f / src_scale;
+//    } else {
+//        w = src_scale * 1.0f / screen_scale;
+//        h = 1.0f;
+//    }
+//
+//    VERTEX_COORDINATE[0] = -w;
+//    VERTEX_COORDINATE[1] = -h;
+//
+//    VERTEX_COORDINATE[2] =  w;
+//    VERTEX_COORDINATE[3] = -h;
+//
+//    VERTEX_COORDINATE[4] = -w;
+//    VERTEX_COORDINATE[5] =  h;
+//
+//    VERTEX_COORDINATE[6] =  w;
+//    VERTEX_COORDINATE[7] =  h;
 }
 
 YuvRender::YuvRender(int width, int height, int view_width, int view_height, int degree) {
@@ -233,7 +250,7 @@ void YuvRender::CompileShader(const char *shader_string, GLuint shader) {
         GLint infoLen;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
         if (infoLen) {
-            auto *buf = (char *) malloc((size_t) infoLen);
+            auto *buf = reinterpret_cast<char*>(malloc((size_t) infoLen));
             if (buf) {
                 glGetShaderInfoLog(shader, infoLen, nullptr, buf);
                 LOGE("Could not compile %d:\n%s\n", shader, buf);
@@ -252,7 +269,7 @@ void YuvRender::Link() {
         GLint infoLen;
         glGetProgramiv(program_, GL_INFO_LOG_LENGTH, &infoLen);
         if (infoLen) {
-            auto *buf = (char *) malloc((size_t) infoLen);
+            auto *buf = reinterpret_cast<char*>(malloc((size_t) infoLen));
             if (buf) {
                 glGetProgramInfoLog(program_, infoLen, nullptr, buf);
                 printf("%s", buf);
@@ -359,4 +376,4 @@ void YuvRender::CopyFrame(uint8_t *dst, uint8_t *src, int width, int height, int
     }
 }
 
-}
+}  // namespace trinity

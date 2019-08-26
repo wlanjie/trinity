@@ -1,34 +1,32 @@
 package com.trinity.sample
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.PointF
 import android.os.Bundle
-import android.os.Environment
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.RadioGroup
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.transaction
 import androidx.preference.PreferenceManager
+import com.github.florent37.runtimepermission.kotlin.askPermission
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.tencent.bugly.crashreport.CrashReport
-import com.tencent.mars.xlog.Log
-import com.tencent.mars.xlog.Xlog
 import com.trinity.OnRecordingListener
 import com.trinity.camera.CameraCallback
 import com.trinity.camera.Flash
 import com.trinity.camera.TrinityPreviewView
+import com.trinity.core.Frame
 import com.trinity.core.MusicInfo
-import com.trinity.core.RenderType
 import com.trinity.listener.OnRenderListener
 import com.trinity.record.PreviewResolution
 import com.trinity.record.Speed
 import com.trinity.record.TrinityRecord
-import com.trinity.record.VideoConfiguration
 import com.trinity.sample.entity.MediaItem
 import com.trinity.sample.fragment.MediaFragment
 import com.trinity.sample.fragment.MusicFragment
@@ -67,7 +65,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
   private val mRecordDurations = mutableListOf<Int>()
   private var mCurrentRecordDuration = 0
   private var mHardwareEncode = false
-  private var mRenderType = RenderType.CROP
+  private var mFrame = Frame.FIT
   private var mRecordResolution = "720P"
   private var mFrameRate = 25
   private var mChannels = 1
@@ -76,6 +74,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
   private var mAudioBitRate = 12800
   private var mRecordDuration = 60 * 1000
   private var mAutoFocusMarker = DefaultAutoFocusMarker()
+  private var mPermissionDenied = false
 
   @SuppressLint("ClickableViewAccessibility")
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -87,10 +86,9 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     mMarkerLayout = findViewById(R.id.mark_layout)
     mMarkerLayout.onMarker(MarkerLayout.TYPE_AUTOFOCUS, mAutoFocusMarker)
     val preview = findViewById<TrinityPreviewView>(R.id.preview)
-    val videoConfiguration = VideoConfiguration()
     mLineView = findViewById(R.id.line_view)
 
-    mRecord = TrinityRecord(preview, videoConfiguration)
+    mRecord = TrinityRecord(preview)
     mRecord.setOnRenderListener(this)
     mRecord.setOnRecordingListener(this)
     mRecord.setCameraCallback(this)
@@ -115,7 +113,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
         mInsideBottomSheet.visibility = View.VISIBLE
         showSetting()
       }
-    setRenderType()
+    setFrame()
 
     findViewById<View>(R.id.done)
       .setOnClickListener {
@@ -148,8 +146,8 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     }
   }
 
-  private fun setRenderType() {
-    mRecord.setRenderType(mRenderType)
+  private fun setFrame() {
+    mRecord.setFrame(mFrame)
   }
 
   fun onMediaResult(medias: MutableList<MediaItem>) {
@@ -351,12 +349,12 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     preferences.registerOnSharedPreferenceChangeListener(this)
     mHardwareEncode = !preferences.getBoolean("soft_encode", false)
     val renderType = preferences.getString("preview_render_type", "CROP")
-    mRenderType = if (renderType == "FIX_XY") {
-      RenderType.FIX_XY
+    mFrame = if (renderType == "FIT") {
+      Frame.FIT
     } else {
-      RenderType.CROP
+      Frame.CROP
     }
-    setRenderType()
+    setFrame()
 
     mRecordResolution = preferences.getString("record_resolution", "720P") ?: "720P"
     try {
@@ -375,6 +373,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
 
   override fun onPause() {
     super.onPause()
+    mPermissionDenied = false
     mRecord.stopPreview()
     PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(this)
   }
@@ -399,12 +398,12 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
       "soft_encode" -> mHardwareEncode = !sharedPreferences.getBoolean(key, false)
       "preview_render_type" -> {
         val type = sharedPreferences.getString(key, "CROP")
-        mRenderType = if (type == "FIX_XY") {
-          RenderType.FIX_XY
+        mFrame = if (type == "FIT") {
+          Frame.FIT
         } else {
-          RenderType.CROP
+          Frame.CROP
         }
-        setRenderType()
+        setFrame()
       }
       "preview_resolution" -> {
         val resolution = sharedPreferences.getString("preview_resolution", "720P")
@@ -441,6 +440,9 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
   }
 
   private fun setPreviewResolution(resolution: String?) {
+    if (mPermissionDenied) {
+      return
+    }
     mRecord.stopPreview()
     var previewResolution = PreviewResolution.RESOLUTION_1280x720
     if (resolution == "1080P") {
@@ -448,7 +450,28 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     } else if (resolution == "720P") {
       previewResolution = PreviewResolution.RESOLUTION_1280x720
     }
-    mRecord.startPreview(previewResolution)
+
+    askPermission(Manifest.permission.CAMERA,
+      Manifest.permission.RECORD_AUDIO,
+      Manifest.permission.WRITE_EXTERNAL_STORAGE,
+      Manifest.permission.READ_EXTERNAL_STORAGE) {
+      mRecord.startPreview(previewResolution)
+    }.onDeclined {
+      if (it.hasDenied()) {
+        mPermissionDenied = true
+        AlertDialog.Builder(this)
+          .setMessage("请允许请求的所有权限")
+          .setPositiveButton("请求") { _, _->
+            it.askAgain()
+          }.setNegativeButton("拒绝") { dialog, _->
+            dialog.dismiss()
+            finish()
+          }.show()
+      }
+      if (it.hasForeverDenied()) {
+        it.goToSettings()
+      }
+    }
   }
 
   override fun onBackPressed() {

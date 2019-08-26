@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 //
 // Created by wlanjie on 2019/4/20.
 //
@@ -5,8 +21,6 @@
 #ifndef TRINITY_MUSIC_DECODER_H
 #define TRINITY_MUSIC_DECODER_H
 
-#include <fstream>
-#include <iostream>
 #include "packet_pool.h"
 
 extern "C" {
@@ -18,7 +32,7 @@ extern "C" {
 namespace trinity {
 
 class MusicDecoder {
-public:
+ public:
     MusicDecoder();
     ~MusicDecoder();
 
@@ -36,11 +50,12 @@ public:
     void SetPosition(float seconds);
     float GetActualSeekPosition();
 
-private:
+ private:
     int ReadSamples(short* samples, int size);
     int ReadFrame();
     bool AudioCodecIsSupported();
-private:
+
+ private:
     bool seek_req_;
     bool seek_resp_;
     float seek_seconds_;
@@ -66,10 +81,8 @@ private:
     SwrContext* swr_context_;
     void* swr_buffer_;
     int swr_buffer_size_;
-
-    std::ofstream output_stream_;
 };
 
-}
+}  // namespace trinity
 
-#endif //TRINITY_MUSIC_DECODER_H
+#endif  // TRINITY_MUSIC_DECODER_H

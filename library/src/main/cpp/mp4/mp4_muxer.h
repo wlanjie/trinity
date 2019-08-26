@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 //
 // Created by wlanjie on 2019/4/18.
 //
@@ -20,7 +38,7 @@ extern "C" {
 namespace trinity {
 
 class Mp4Muxer {
-public:
+ public:
     Mp4Muxer();
     virtual ~Mp4Muxer();
     virtual int Init(const char* path, int video_width, int video_height, int frame_rate, int video_bit_rate,
@@ -35,7 +53,8 @@ public:
 
     typedef int (*AudioPacketCallback) (AudioPacket**, void* context);
     typedef int (*VideoPacketCallback) (VideoPacket**, void* context);
-protected:
+
+ protected:
     virtual AVStream* AddStream(AVFormatContext* oc, AVCodec** codec, enum AVCodecID codec_id, char* codec_name);
 
     virtual int WriteVideoFrame(AVFormatContext* oc, AVStream* st) = 0;
@@ -56,7 +75,7 @@ protected:
 
     int BuildAudioStream(char *audio_codec_name);
 
-protected:
+ protected:
     // sps and pps data
     uint8_t *header_data_;
     int header_size_;
@@ -80,6 +99,6 @@ protected:
     bool write_header_success_;
 };
 
-}
+}  // namespace trinity
 
-#endif //TRINITY_MP4_MUXER_H
+#endif  // TRINITY_MP4_MUXER_H

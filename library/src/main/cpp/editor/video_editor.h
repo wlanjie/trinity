@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 //
 // Created by wlanjie on 2019-05-14.
 //
@@ -5,11 +22,12 @@
 #ifndef TRINITY_VIDEO_EDITOR_H
 #define TRINITY_VIDEO_EDITOR_H
 
-#include <cstdint>
 #include <jni.h>
 #include <android/native_window_jni.h>
-#include <deque>
 #include <pthread.h>
+
+#include <cstdint>
+#include <deque>
 
 #include "video_player.h"
 #include "yuv_render.h"
@@ -20,16 +38,14 @@
 #include "opengl.h"
 #include "image_process.h"
 #include "music_decoder_controller.h"
-#include "edtior_resource.h"
+#include "editor_resource.h"
 #include "trinity.h"
-
-using namespace std;
 
 namespace trinity {
 
 class VideoEditor : public GLObserver {
-public:
-    VideoEditor(const char* resource_path);
+ public:
+    explicit VideoEditor(const char* resource_path);
     ~VideoEditor();
 
     int Init();
@@ -77,11 +93,15 @@ public:
     int GetClipIndex(int64_t time);
 
     // 添加滤镜
-    int AddFilter(const char* lut, uint64_t start_time, uint64_t end_time, int action_id);
+    int AddFilter(const char* filter_config);
+
+    void UpdateFilter(const char* filter_config, int action_id);
 
     int AddMusic(const char* path, uint64_t start_time, uint64_t end_time);
 
-    int AddAction(int effect_type, uint64_t start_time, uint64_t end_time, int action_id = -1);
+    int AddAction(const char* effect_config);
+
+    void UpdateAction(const char* effect_config, int action_id);
 
     // 开始播放
     // 是否循环播放
@@ -105,10 +125,12 @@ public:
     virtual void OnGLMessage(Message* msg);
 
     virtual void OnGLDestroy();
-private:
-    void OnFilter(FilterAction* action);
-    void OnFlashWhite(FlashWhiteAction* action);
-private:
+
+ private:
+    void OnAddAction(char* config, int action_id);
+    void OnUpdateAction(char* config, int action_id);
+
+ private:
     static int OnCompleteEvent(StateEvent* event);
     static int OnVideoRender(OnVideoRenderEvent* event, int texture_id, int width, int height, uint64_t current_time);
     void FreeStateEvent();
@@ -117,9 +139,10 @@ private:
     void AllocVideoRenderEvent();
     static void* CompleteThread(void* context);
     void ProcessMessage();
-private:
+
+ private:
     EditorResource* editor_resource_;
-    deque<MediaClip*> clip_deque_;
+    std::deque<MediaClip*> clip_deque_;
     pthread_mutex_t queue_mutex_;
     pthread_cond_t queue_cond_;
     ANativeWindow* window_;
@@ -144,7 +167,7 @@ private:
 };
 
 class PlayerHandler : public Handler {
-public:
+ public:
     PlayerHandler(VideoEditor* editor, MessageQueue* queue) : Handler(queue) {
         editor_ = editor;
     }
@@ -160,10 +183,11 @@ public:
                 break;
         }
     }
-private:
+
+ private:
     VideoEditor* editor_;
 };
 
-}
+}  // namespace trinity
 
-#endif //TRINITY_VIDEO_EDITOR_H
+#endif  // TRINITY_VIDEO_EDITOR_H

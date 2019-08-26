@@ -8,12 +8,12 @@
     <string name="rate_very_fast">极快</string>
 
     <string-array name="preview_render_preference">
-        <item>FIX_XY</item>
+        <item>FIT</item>
         <item>CROP</item>
     </string-array>
 
     <string-array name="preview_render_value_preference">
-        <item>"FIX_XY"</item>
+        <item>"FIT"</item>
         <item>"CROP"</item>
     </string-array>
 

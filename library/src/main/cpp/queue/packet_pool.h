@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 //
 // Created by wlanjie on 2019/4/17.
 //
@@ -8,17 +26,15 @@
 #include "audio_packet_queue.h"
 #include "video_packet_queue.h"
 
-#define AUDIO_PACKET_QUEUE_THRRESHOLD                                        15
-#define VIDEO_PACKET_QUEUE_THRRESHOLD                                        60
-
-#define INPUT_CHANNEL_4_ANDROID                                              1
-
-#define AUDIO_PACKET_DURATION_IN_SECS                                        0.04f
+#define AUDIO_PACKET_QUEUE_THRRESHOLD 15
+#define VIDEO_PACKET_QUEUE_THRRESHOLD 60
+#define INPUT_CHANNEL_4_ANDROID 1
+#define AUDIO_PACKET_DURATION_IN_SECS 0.04f
 
 namespace trinity {
 
 class PacketPool {
-protected:
+ protected:
     PacketPool();
     static PacketPool* instance_;
     AudioPacketQueue* audio_packet_queue_;
@@ -27,7 +43,8 @@ protected:
     VideoPacketQueue* video_packet_queue_;
     AudioPacketQueue* decoder_packet_queue_;
     AudioPacketQueue* accompany_packet_queue_;
-private:
+
+ private:
     /** 为了丢帧策略所做的实例变量 **/
     int total_discard_video_packet_duration_;
     pthread_rwlock_t rw_lock_;
@@ -44,10 +61,10 @@ private:
     int total_discard_video_packet_duration_copy_;
     pthread_rwlock_t accompany_drop_frame_lock_;
 
-private:
+ private:
     virtual void RecordDropVideoFrame(int discardVideoPacketSize);
 
-public:
+ public:
     static PacketPool* GetInstance();
     virtual ~PacketPool();
 
@@ -86,6 +103,6 @@ public:
     void ClearRecordingVideoPacketToQueue();
 };
 
-}
+}  // namespace trinity
 
-#endif //TRINITY_PACKET_POOL_H
+#endif  // TRINITY_PACKET_POOL_H

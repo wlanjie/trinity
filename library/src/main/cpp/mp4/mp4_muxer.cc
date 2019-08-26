@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 //
 // Created by wlanjie on 2019/4/18.
 //
@@ -8,28 +26,30 @@
 
 namespace trinity {
 
-Mp4Muxer::Mp4Muxer() {
-    header_data_ = nullptr;
-    header_size_ = 0;
-    format_context_ = nullptr;
-    video_stream_ = nullptr;
-    audio_stream_ = nullptr;
-    bit_stream_filter_context_ = nullptr;
-    duration_ = 0;
-    last_audio_packet_presentation_time_mills_ = 0;
-    video_width_ = 0;
-    video_height_ = 0;
-    video_frame_rate_ = 0;
-    video_bit_rate_ = 0;
-    audio_sample_rate_ = 0;
-    audio_channels_ = 0;
-    audio_bit_rate_ = 0;
-    write_header_success_ = false;
+Mp4Muxer::Mp4Muxer()
+    : header_data_(nullptr),
+      header_size_(0),
+      format_context_(nullptr),
+      video_stream_(nullptr),
+      audio_stream_(nullptr),
+      bit_stream_filter_context_(nullptr),
+      duration_(0),
+      last_audio_packet_presentation_time_mills_(0),
+      video_width_(0),
+      video_height_(0),
+      video_frame_rate_(0),
+      video_bit_rate_(0),
+      audio_sample_rate_(0),
+      audio_channels_(0),
+      audio_bit_rate_(0),
+      audio_packet_callback_(nullptr),
+      audio_packet_context_(nullptr),
+      video_packet_callback_(nullptr),
+      video_packet_context_(nullptr),
+      write_header_success_(false) {
 }
 
-Mp4Muxer::~Mp4Muxer() {
-
-}
+Mp4Muxer::~Mp4Muxer() {}
 
 int Mp4Muxer::Init(const char *path, int video_width, int video_height, int frame_rate, int video_bit_rate,
                             int audio_sample_rate, int audio_channels, int audio_bit_rate, char *audio_codec_name) {
@@ -173,7 +193,7 @@ Mp4Muxer::AddStream(AVFormatContext *oc, AVCodec **codec, enum AVCodecID codec_i
             stream->avg_frame_rate = video_time_base;
             context->time_base = video_time_base;
             stream->time_base = video_time_base;
-            context->gop_size = (int) video_frame_rate_;
+            context->gop_size = static_cast<int>(video_frame_rate_);
             context->qmin = 10;
             context->qmax = 30;
             context->pix_fmt = AV_PIX_FMT_YUV420P;
@@ -292,9 +312,10 @@ int Mp4Muxer::BuildAudioStream(char *audio_codec_name) {
     audio_stream_ = AddStream(format_context_, &codec, AV_CODEC_ID_NONE, audio_codec_name);
     if (nullptr != audio_stream_ && nullptr != codec) {
         AVCodecContext* context = audio_stream_->codec;
-        context->extradata = (uint8_t*) av_malloc(2);
+        context->extradata = reinterpret_cast<uint8_t*>(av_malloc(2));
         context->extradata_size = 2;
-        unsigned int object_type = 2; // AAC LC by default
+        // AAC LC by default
+        unsigned int object_type = 2;
         char dsi[2];
         dsi[0] = (object_type << 3) | (GetSampleRateIndex(context->sample_rate) >> 1);
         dsi[1] = ((GetSampleRateIndex(context->sample_rate) & 1) << 7) | (context->channels << 3);
@@ -304,4 +325,4 @@ int Mp4Muxer::BuildAudioStream(char *audio_codec_name) {
     return 0;
 }
 
-}
+}  // namespace trinity

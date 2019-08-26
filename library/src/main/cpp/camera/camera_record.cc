@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 //
 // Created by wlanjie on 2019/4/13.
 //
@@ -19,6 +35,7 @@ CameraRecord::CameraRecord(JNIEnv* env) {
     screen_width_ = 0;
     camera_width_ = 0;
     camera_height_ = 0;
+    camera_size_change_ = false;
     handler_ = nullptr;
     queue_ = nullptr;
     egl_core_ = nullptr;
@@ -34,7 +51,16 @@ CameraRecord::CameraRecord(JNIEnv* env) {
     start_time_ = 0;
     speed_ = 1.0f;
     render_type_ = CROP;
+    vertex_coordinate_ = nullptr;
+    texture_coordinate_ = nullptr;
+}
 
+CameraRecord::~CameraRecord() {}
+
+void CameraRecord::PrepareEGLContext(
+        jobject object, jobject surface,
+        int screen_width, int screen_height) {
+    LOGI("enter PrepareEGLContext");
     // 因为encoder_render时不能改变顶点和纹理坐标
     // 而glReadPixels读取的图像又是上下颠倒的
     // 所以这里显示的把纹理坐标做180度旋转
@@ -60,21 +86,6 @@ CameraRecord::CameraRecord(JNIEnv* env) {
     texture_coordinate_[5] = 0.0f;
     texture_coordinate_[6] = 1.0f;
     texture_coordinate_[7] = 0.0f;
-}
-
-CameraRecord::~CameraRecord() {
-    LOGI("enter ~CameraRecord");
-    delete[] vertex_coordinate_;
-    vertex_coordinate_ = nullptr;
-    delete[] texture_coordinate_;
-    texture_coordinate_ = nullptr;
-    LOGI("leave ~CameraRecord");
-}
-
-void CameraRecord::PrepareEGLContext(
-        jobject object, jobject surface,
-        int screen_width, int screen_height) {
-    LOGI("enter PrepareEGLContext");
     this->obj_ = env_->NewGlobalRef(object);
     this->window_ = ANativeWindow_fromSurface(env_, surface);
     this->screen_width_ = screen_width;
@@ -94,18 +105,20 @@ void CameraRecord::NotifyFrameAvailable() {
 }
 
 void CameraRecord::SetSpeed(float speed) {
+    LOGI("SetSpeed: %f", speed);
     speed_ = speed;
 }
 
 void CameraRecord::SetRenderType(int type) {
     LOGI("SetRenderType: %d", type);
     if (nullptr != frame_buffer_) {
-        frame_buffer_->SetRenderType(type);
+//        frame_buffer_->SetRenderType(type);
     }
     render_type_ = type;
 }
 
 void CameraRecord::SetFrame(int frame) {
+    LOGI("SetFrame: %d", frame);
     if (nullptr != handler_) {
         handler_->PostMessage(new Message(MSG_SET_FRAME, frame, 0));
     }
@@ -118,6 +131,7 @@ void CameraRecord::SwitchCameraFacing() {
 }
 
 void CameraRecord::ResetRenderSize(int screen_width, int screen_height) {
+    LOGI("%s screen_width: %d screen_height: %d", __FUNCTION__, screen_width, screen_height);
     screen_width_ = screen_width;
     screen_height_ = screen_height;
 }
@@ -146,6 +160,14 @@ void CameraRecord::DestroyEGLContext() {
         env_->DeleteGlobalRef(obj_);
         obj_ = nullptr;
     }
+    if (nullptr != vertex_coordinate_) {
+        delete[] vertex_coordinate_;
+        vertex_coordinate_ = nullptr;
+    }
+    if (nullptr != texture_coordinate_) {
+        delete[] texture_coordinate_;
+        texture_coordinate_ = nullptr;
+    }
     LOGI("%s leave", __FUNCTION__);
 }
 
@@ -153,9 +175,25 @@ void CameraRecord::Draw() {
     egl_core_->MakeCurrent(preview_surface_);
     UpdateTexImage();
     GetTextureMatrix();
+    if (camera_width_ == 0 || camera_height_ == 0) {
+        ConfigCamera();
+    }
+    if (camera_size_change_) {
+        if (nullptr != frame_buffer_) {
+            delete frame_buffer_;
+            frame_buffer_ = nullptr;
+        }
+    }
+    if (frame_buffer_ == nullptr) {
+        frame_buffer_ = new FrameBuffer(MIN(camera_width_, camera_height_),
+                                        MAX(camera_width_, camera_height_),
+                                        DEFAULT_VERTEX_MATRIX_SHADER, DEFAULT_OES_FRAGMENT_SHADER);
+    }
     render_screen_->SetOutput(screen_width_, screen_height_);
-    frame_buffer_->SetOutput(MIN(camera_width_, camera_height_), MAX(camera_width_, camera_height_));
-    int texture_id = OnDrawFrame(oes_texture_id_, camera_width_, camera_height_);
+    frame_buffer_->SetOutput(MIN(camera_width_, camera_height_),
+            MAX(camera_width_, camera_height_));
+    int texture_id = OnDrawFrame(oes_texture_id_,
+            camera_width_, camera_height_);
     frame_buffer_->SetTextureType(texture_id > 0 ? TEXTURE_2D : TEXTURE_OES);
     texture_id = frame_buffer_->OnDrawFrame(texture_id > 0 ? texture_id : oes_texture_id_, texture_matrix_);
     render_screen_->ProcessImage(texture_id);
@@ -179,12 +217,20 @@ void CameraRecord::ConfigCamera() {
     if (NULL != clazz) {
         jmethodID preview_width = env->GetMethodID(clazz, "getCameraWidth", "()I");
         if (nullptr != preview_width) {
-            this->camera_width_ = env->CallIntMethod(obj_, preview_width);
+            int width = env->CallIntMethod(obj_, preview_width);
+            if (width != camera_width_) {
+                camera_size_change_ = true;
+            }
+            this->camera_width_ = width;
         }
 
         jmethodID preview_height = env->GetMethodID(clazz, "getCameraHeight", "()I");
         if (nullptr != preview_height) {
-            this->camera_height_ = env->CallIntMethod(obj_, preview_height);
+            int height = env->CallIntMethod(obj_, preview_height);
+            if (height != camera_height_) {
+                camera_size_change_ = true;
+            }
+            this->camera_height_ = height;
         }
     }
     if (vm_->DetachCurrentThread() != JNI_OK) {
@@ -363,7 +409,7 @@ void CameraRecord::ReleaseCamera() {
 }
 
 void *CameraRecord::ThreadStartCallback(void *myself) {
-    CameraRecord *record = (CameraRecord *) myself;
+    CameraRecord *record = reinterpret_cast<CameraRecord*>(myself);
     record->ProcessMessage();
     pthread_exit(0);
 }
@@ -402,8 +448,6 @@ bool CameraRecord::Initialize() {
 
     StartCameraPreview();
     ConfigCamera();
-    frame_buffer_ = new FrameBuffer(render_type_, MIN(camera_width_, camera_height_), MAX(camera_width_, camera_height_),
-            screen_width_, screen_height_, DEFAULT_VERTEX_MATRIX_SHADER, DEFAULT_OES_FRAGMENT_SHADER);
     render_screen_ = new OpenGL(DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
     LOGI("leave %s", __FUNCTION__);
     return true;
@@ -426,7 +470,6 @@ void CameraRecord::Destroy() {
 
     DestroyPreviewSurface();
     if (nullptr != render_screen_) {
-        // TODO
         delete render_screen_;
         render_screen_ = nullptr;
     }
@@ -518,7 +561,6 @@ void CameraRecord::StartEncoding(const char* path,
     if (use_hard_encode) {
         encoder_ = new MediaEncodeAdapter(vm_, obj_);
     } else {
-        //
         encoder_ = new SoftEncoderAdapter(vertex_coordinate_, texture_coordinate_);
     }
     encoder_->Init(width, height, video_bit_rate, frame_rate);
@@ -528,6 +570,7 @@ void CameraRecord::StartEncoding(const char* path,
 }
 
 void CameraRecord::StartRecording() {
+    LOGI("StartRecording");
     start_time_ = 0;
     if (nullptr != encoder_) {
         encoder_->CreateEncoder(egl_core_, frame_buffer_->GetTextureId());
@@ -571,13 +614,22 @@ void CameraRecord::RenderFrame() {
 
         int64_t duration = getCurrentTime() - start_time_;
         if (encoding_ && nullptr != encoder_) {
-            encoder_->Encode((int) (duration * speed_));
+            encoder_->Encode(static_cast<int>(duration * speed_));
         }
     }
 }
 
 void CameraRecord::SetFrameType(int frame) {
-    frame_buffer_->SetFrame(frame, screen_width_, screen_height_);
+    enum RenderFrame frame_type = FIT;
+    if (frame == 0) {
+        frame_type = SQUARE;
+    } else if (frame == 1) {
+        frame_type = FIT;
+    } else if (frame == 2) {
+        frame_type = CROP;
+    }
+    render_screen_->SetFrame(screen_width_, screen_height_,
+            MIN(camera_width_, camera_height_), MAX(camera_width_, camera_height_), frame_type);
 }
 
-}
+}  // namespace trinity

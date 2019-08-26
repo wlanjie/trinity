@@ -17,7 +17,7 @@
                 android:defaultValue="true"
                 android:key="preview_render_type"
                 android:title="显示方式"
-                android:summary="FIX_XY"
+                android:summary="FIT"
                 android:entries="@array/preview_render_preference"
                 android:entryValues="@array/preview_render_value_preference" />
     </androidx.preference.PreferenceCategory>

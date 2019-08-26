@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 //
 // Created by wlanjie on 2019/4/21.
 //
@@ -15,7 +33,7 @@ namespace trinity {
 typedef int(*AudioPlayerCallback)(uint8_t* , size_t, void* ctx);
 
 class AudioRender {
-public:
+ public:
     AudioRender();
     virtual ~AudioRender();
 
@@ -28,36 +46,36 @@ public:
     long GetCurrentTimeMills();
     void DestroyContext();
 
-private:
-    //初始化OpenSL要播放的buffer
+ private:
+    // 初始化OpenSL要播放的buffer
     void InitPlayerBuffer();
-    //释放OpenSL播放的buffer
+    // 释放OpenSL播放的buffer
     void FreePlayerBuffer();
-    //实例化一个对象
+    // 实例化一个对象
     SLresult RealizeObject(SLObjectItf object);
-    //销毁这个对象以及这个对象下面的接口
+    // 销毁这个对象以及这个对象下面的接口
     void DestroyObject(SLObjectItf& object);
-    //创建输出对象
+    // 创建输出对象
     SLresult CreateOutputMix();
-    //创建OpenSL的AudioPlayer对象
+    // 创建OpenSL的AudioPlayer对象
     SLresult CreateAudioPlayer(int channels, int accompanySampleRate);
-    //获得AudioPlayer对象的bufferQueue的接口
+    // 获得AudioPlayer对象的bufferQueue的接口
     SLresult GetAudioPlayerBufferQueueInterface();
-    //获得AudioPlayer对象的play的接口
+    // 获得AudioPlayer对象的play的接口
     SLresult GetAudioPlayerPlayInterface();
-    //设置播放器的状态为播放状态
+    // 设置播放器的状态为播放状态
     SLresult SetAudioPlayerStatePlaying();
-    //设置播放器的状态为暂停状态
+    // 设置播放器的状态为暂停状态
     SLresult SetAudioPlayerStatePaused();
-    //以下三个是进行注册回调函数的
-    //当OpenSL播放完毕给他的buffer数据之后，就会回调playerCallback
+    // 以下三个是进行注册回调函数的
+    // 当OpenSL播放完毕给他的buffer数据之后，就会回调playerCallback
     SLresult RegisterPlayerCallback();
-    //playerCallback中其实会调用我们的实例方法producePacket
+    // playerCallback中其实会调用我们的实例方法producePacket
     static void PlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context);
-    //这里面会调用在初始化的时候注册过来的回调函数，回调它，由这个回调函数填充数据（这个回调函数还负责音画同步）
+    // 这里面会调用在初始化的时候注册过来的回调函数，回调它，由这个回调函数填充数据（这个回调函数还负责音画同步）
     void ProducePacket();
 
-private:
+ private:
     SLEngineItf engine_;
     SLObjectItf output_mix_object_;
     SLObjectItf audio_player_object_;
@@ -71,6 +89,6 @@ private:
     void* context_;
 };
 
-}
+}  // namespace trinity
 
-#endif //TRINITY_AUDIO_RENDER_H
+#endif  // TRINITY_AUDIO_RENDER_H

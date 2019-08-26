@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 //
 // Created by wlanjie on 2019/4/18.
 //
@@ -15,9 +33,7 @@ H264Muxer::H264Muxer() {
     last_presentation_time_ms_ = 0;
 }
 
-H264Muxer::~H264Muxer() {
-
-}
+H264Muxer::~H264Muxer() {}
 
 int H264Muxer::Stop() {
     int ret = Mp4Muxer::Stop();
@@ -39,7 +55,7 @@ int H264Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st) {
         return VIDEO_QUEUE_ABORT_ERR_CODE;
     }
     int bufferSize = (h264Packet)->size;
-    uint8_t* outputData = (uint8_t *) ((h264Packet)->buffer);
+    uint8_t* outputData = h264Packet->buffer;
     last_presentation_time_ms_ = h264Packet->timeMills;
     AVPacket pkt = { 0 };
     av_init_packet(&pkt);
@@ -49,7 +65,7 @@ int H264Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st) {
     int64_t dts = h264Packet->dts == DTS_PARAM_UN_SETTIED_FLAG ? pts : h264Packet->dts == DTS_PARAM_NOT_A_NUM_FLAG ? AV_NOPTS_VALUE : h264Packet->dts;
     int nalu_type = (outputData[4] & 0x1F);
     if (nalu_type == H264_NALU_TYPE_SEQUENCE_PARAMETER_SET) {
-        //我们这里要求sps和pps一块拼接起来构造成AVPacket传过来
+        // 我们这里要求sps和pps一块拼接起来构造成AVPacket传过来
         header_size_ = bufferSize;
         header_data_ = new uint8_t[header_size_];
         memcpy(header_data_, outputData, bufferSize);
@@ -65,7 +81,7 @@ int H264Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st) {
 
         // Extradata contains PPS & SPS for AVCC format
         int extradata_len = 8 + spsFrameLen - 4 + 1 + 2 + ppsFrameLen - 4;
-        c->extradata = (uint8_t*) av_mallocz(extradata_len);
+        c->extradata = reinterpret_cast<uint8_t*>(av_mallocz(extradata_len));
         c->extradata_size = extradata_len;
         c->extradata[0] = 0x01;
         c->extradata[1] = spsFrame[4 + 1];
@@ -89,7 +105,7 @@ int H264Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st) {
         ret = avformat_write_header(oc, nullptr);
         if (ret < 0) {
             LOGE("Error occurred when opening output file: %s\n", av_err2str(ret));
-        } else{
+        } else {
             write_header_success_ = true;
         }
     } else {
@@ -97,8 +113,8 @@ int H264Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st) {
             pkt.size = bufferSize;
             pkt.data = outputData;
 
-            if(pkt.data[0] == 0x00 && pkt.data[1] == 0x00 &&
-               pkt.data[2] == 0x00 && pkt.data[3] == 0x01){
+            if (pkt.data[0] == 0x00 && pkt.data[1] == 0x00 &&
+               pkt.data[2] == 0x00 && pkt.data[3] == 0x01) {
                 bufferSize -= 4;
                 pkt.data[0] = ((bufferSize) >> 24) & 0x00ff;
                 pkt.data[1] = ((bufferSize) >> 16) & 0x00ff;
@@ -110,18 +126,17 @@ int H264Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st) {
             pkt.dts = dts;
             pkt.flags = AV_PKT_FLAG_KEY;
             c->frame_number++;
-        }
-        else {
+        } else {
             pkt.size = bufferSize;
             pkt.data = outputData;
 
-            if(pkt.data[0] == 0x00 && pkt.data[1] == 0x00 &&
-               pkt.data[2] == 0x00 && pkt.data[3] == 0x01){
+            if (pkt.data[0] == 0x00 && pkt.data[1] == 0x00 &&
+               pkt.data[2] == 0x00 && pkt.data[3] == 0x01) {
                 bufferSize -= 4;
-                pkt.data[0] = ((bufferSize ) >> 24) & 0x00ff;
-                pkt.data[1] = ((bufferSize ) >> 16) & 0x00ff;
-                pkt.data[2] = ((bufferSize ) >> 8) & 0x00ff;
-                pkt.data[3] = ((bufferSize )) & 0x00ff;
+                pkt.data[0] = ((bufferSize) >> 24) & 0x00ff;
+                pkt.data[1] = ((bufferSize) >> 16) & 0x00ff;
+                pkt.data[2] = ((bufferSize) >> 8) & 0x00ff;
+                pkt.data[3] = ((bufferSize)) & 0x00ff;
             }
 
             pkt.pts = pts;
@@ -188,15 +203,17 @@ H264Muxer::ParseH264SequenceHeader(uint8_t *in_buffer, uint32_t in_ui32_size, ui
 
         uint8_t val = (*pBuffer & 0x1f);
 
-        if (val == 5)
+        if (val == 5) {
             idr = pps + ui32ProcessedBytes - 4;
+        }
 
-        if (val == 7)
+        if (val == 7) {
             sps = ui32ProcessedBytes;
+        }
 
-        if (val == 8)
+        if (val == 8) {
             pps = sps + ui32ProcessedBytes;
-
+        }
     } while (ui32BufferSize > 0);
 
     *in_sps_buffer = in_buffer + sps - 4;
@@ -206,4 +223,4 @@ H264Muxer::ParseH264SequenceHeader(uint8_t *in_buffer, uint32_t in_ui32_size, ui
     in_pps_size = idr - pps + 4;
 }
 
-}
+}  // namespace trinity

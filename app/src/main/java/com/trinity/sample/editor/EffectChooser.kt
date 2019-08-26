@@ -59,16 +59,12 @@ class EffectChooser : Chooser, EffectAdapter.OnItemTouchListener {
     if (event == MotionEvent.ACTION_UP) {
       if (mThumbLineBar?.isTouching == false) {
         isClickable = true
-        val info = EffectInfo()
-        info.path = "朦胧"
-        mOnEffectTouchListener?.onEffectTouchEvent(event, info)
+        mOnEffectTouchListener?.onEffectTouchEvent(event, effect)
       }
     } else {
       if (mThumbLineBar?.isTouching == false) {
         isClickable = false
-        val info = EffectInfo()
-        info.path = "闪白"
-        mOnEffectTouchListener?.onEffectTouchEvent(event, info)
+        mOnEffectTouchListener?.onEffectTouchEvent(event, effect)
       }
     }
   }

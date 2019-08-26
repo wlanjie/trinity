@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 //
 // Created by wlanjie on 2019/4/17.
 //
@@ -7,7 +25,7 @@
 
 namespace trinity {
 
-AudioPacketQueue::AudioPacketQueue() {
+AudioPacketQueue::AudioPacketQueue() : queue_name_("queue") {
     Init();
 }
 
@@ -42,27 +60,21 @@ int AudioPacketQueue::Size() {
 void AudioPacketQueue::Flush() {
     LOGI("%s Flush .... and this time the queue_ Size is %d", queue_name_, Size());
     AudioPacketList *pkt, *pkt1;
-
-    AudioPacket *audioPacket;
+    AudioPacket *audioPacket = nullptr;
     pthread_mutex_lock(&lock_);
 
-    for (pkt = first_; pkt != NULL; pkt = pkt1) {
+    for (pkt = first_; pkt != nullptr; pkt = pkt1) {
         pkt1 = pkt->next;
         audioPacket = pkt->pkt;
-        if(NULL != audioPacket){
-//			LOGI("pkt_->pkt_ is not null will delete....");
+        if (nullptr != audioPacket) {
             delete audioPacket;
-//			LOGI("delete success....");
         }
-//		LOGI("delete pkt_ ....");
         delete pkt;
         pkt = NULL;
-//		LOGI("delete success....");
     }
     last_ = NULL;
     first_ = NULL;
     packet_size_ = 0;
-
     pthread_mutex_unlock(&lock_);
 }
 
@@ -71,10 +83,7 @@ int AudioPacketQueue::Put(AudioPacket *pkt) {
         delete pkt;
         return -1;
     }
-//	LOGI("%s Put data ....", queue_name_);
     AudioPacketList *pkt1 = new AudioPacketList();
-    if (!pkt1)
-        return -1;
     pkt1->pkt = pkt;
     pkt1->next = NULL;
 
@@ -90,7 +99,6 @@ int AudioPacketQueue::Put(AudioPacket *pkt) {
     pthread_cond_signal(&condition_);
     pthread_mutex_unlock(&lock_);
     return 0;
-
 }
 
 /* return < 0 if aborted, 0 if no packet_ and > 0 if packet_.  */
@@ -100,7 +108,6 @@ int AudioPacketQueue::Get(AudioPacket **pkt, bool block) {
     pthread_mutex_lock(&lock_);
     for (;;) {
         if (abort_request_) {
-//			LOGI("abort_request_ ....");
             ret = -1;
             break;
         }
@@ -135,4 +142,4 @@ void AudioPacketQueue::Abort() {
     pthread_mutex_unlock(&lock_);
 }
 
-}
+}  // namespace trinity

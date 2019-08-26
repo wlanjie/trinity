@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 //
 // Created by wlanjie on 2019/4/20.
 //
@@ -7,22 +24,21 @@
 
 namespace trinity {
 
-AudioEncoder::AudioEncoder() {
-    pcm_frame_callback_ = nullptr;
-    pcm_frame_context_ = nullptr;
-    codec_context_ = nullptr;
-    encode_frame_ = nullptr;
-    audio_next_pts_ = 0;
-    audio_nb_frames_ = 0;
-    audio_samples_size_ = 0;
-    bit_rate_ = 0;
-    channels_ = 0;
-    sample_rate_ = 0;
+AudioEncoder::AudioEncoder()
+    : codec_context_(nullptr),
+      encode_frame_(nullptr),
+      audio_next_pts_(0),
+      audio_samples_data_(nullptr),
+      audio_nb_frames_(0),
+      audio_samples_size_(0),
+      bit_rate_(0),
+      channels_(0),
+      sample_rate_(0),
+      pcm_frame_callback_(nullptr),
+      pcm_frame_context_(nullptr) {
 }
 
-AudioEncoder::~AudioEncoder() {
-
-}
+AudioEncoder::~AudioEncoder() {}
 
 int AudioEncoder::Init(int bit_rate, int channels, int sample_rate, const char *codec_name,
                        int (*PCMFrameCallback)(int16_t *, int, int, double *, void *context), void *context) {
@@ -139,4 +155,5 @@ int AudioEncoder::AllocAudioStream(const char *codec_name) {
     }
     return 0;
 }
-}
+
+}  // namespace trinity

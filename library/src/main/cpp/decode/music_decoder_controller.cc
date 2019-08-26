@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 //
 // Created by wlanjie on 2019/4/20.
 //
@@ -9,20 +26,30 @@
 
 namespace trinity {
 
-MusicDecoderController::MusicDecoderController() {
-    // TODO 初始化
-    decoder_ = nullptr;
-    resample_ = nullptr;
-    silent_samples_ = nullptr;
-    audio_render_ = nullptr;
+MusicDecoderController::MusicDecoderController()
+        : running_(false),
+          accompany_type_(-1),
+          suspend_flag_(false),
+          packet_pool_(nullptr),
+          decoder_(nullptr),
+          resample_(nullptr),
+          need_resample_(false),
+          audio_render_(nullptr),
+          accompany_sample_rate_(0),
+          silent_samples_(nullptr),
+          accompany_packet_buffer_size_(0),
+          vocal_sample_rate_(0),
+          volume_(1.0f),
+          volume_max_(1.0f),
+          buffer_queue_size_(0),
+          buffer_queue_cursor_(0),
+          buffer_queue_(nullptr) {
 }
 
-MusicDecoderController::~MusicDecoderController() {
-
-}
+MusicDecoderController::~MusicDecoderController() {}
 
 static int audioCallback(uint8_t* buffer, size_t buffer_size, void* context) {
-    MusicDecoderController* controller = (MusicDecoderController*) context;
+    MusicDecoderController* controller = reinterpret_cast<MusicDecoderController*>(context);
     return controller->ReadSamples(buffer, 2048) * 2;
 }
 
@@ -31,10 +58,10 @@ void MusicDecoderController::Init(float packet_buffer_time_percent, int vocal_sa
     volume_ = 1.0f;
     volume_max_ = 1.0f;
     vocal_sample_rate_ = vocal_sample_rate;
-    int count_per_sec = vocal_sample_rate * CHANNEL_PER_FRAME * BITS_PER_CHANNEL / BITS_PER_BYTE;
     accompany_packet_buffer_size_ = 2048;
     buffer_queue_cursor_ = 0;
-    buffer_queue_size_ = MAX(accompany_packet_buffer_size_ * 4, vocal_sample_rate * CHANNEL_PER_FRAME * 1.0f);
+    buffer_queue_size_ = static_cast<int>(MAX(accompany_packet_buffer_size_ * 4,
+            vocal_sample_rate * CHANNEL_PER_FRAME * 1.0f));
     buffer_queue_ = new short[buffer_queue_size_];
     silent_samples_ = new short[accompany_packet_buffer_size_];
     memset(silent_samples_, 0, accompany_packet_buffer_size_ * 2);
@@ -47,7 +74,7 @@ void MusicDecoderController::Init(float packet_buffer_time_percent, int vocal_sa
 int MusicDecoderController::ReadSamplesAndProducePacket(short *samples, int size, int *slient_size,
                                                         int *extra_accompany_type) {
     int result = -1;
-    if(accompany_type_ == ACCOMPANY_TYPE_SILENT_SAMPLE){
+    if (accompany_type_ == ACCOMPANY_TYPE_SILENT_SAMPLE) {
         extra_accompany_type[0] = ACCOMPANY_TYPE_SILENT_SAMPLE;
         slient_size[0] = 0;
         result = this->BuildSamples(samples);
@@ -58,15 +85,15 @@ int MusicDecoderController::ReadSamplesAndProducePacket(short *samples, int size
         if (nullptr != accompanyPacket) {
             int samplePacketSize = accompanyPacket->size;
             if (samplePacketSize != -1 && samplePacketSize <= size) {
-                //copy the raw data to samples
+                // copy the raw data to samples
                 adjustSamplesVolume(accompanyPacket->buffer, samplePacketSize, volume_ / volume_max_);
                 memcpy(samples, accompanyPacket->buffer, samplePacketSize * 2);
-                //push accompany packet_ to accompany queue_
+                // push accompany packet_ to accompany queue_
                 PushPacketToQueue(accompanyPacket);
                 result = samplePacketSize;
-            } else if(-1 == samplePacketSize){
+            } else if (-1 == samplePacketSize) {
                 LOGI("decode eof");
-                //解码到最后了
+                // 解码到最后了
                 accompany_type_ = ACCOMPANY_TYPE_SILENT_SAMPLE;
                 extra_accompany_type[0] = ACCOMPANY_TYPE_SILENT_SAMPLE;
                 slient_size[0] = 0;
@@ -94,15 +121,15 @@ int MusicDecoderController::ReadSamples(uint8_t* samples, int size) {
     if (nullptr != accompanyPacket) {
         int samplePacketSize = accompanyPacket->size;
         if (samplePacketSize != -1 && samplePacketSize <= size) {
-            //copy the raw data to samples
+            // copy the raw data to samples
             adjustSamplesVolume(accompanyPacket->buffer, samplePacketSize, volume_ / volume_max_);
             memcpy(samples, accompanyPacket->buffer, samplePacketSize * 2);
-            //push accompany packet_ to accompany queue_
+            // push accompany packet_ to accompany queue_
             PushPacketToQueue(accompanyPacket);
             ret = samplePacketSize;
-        } else if(-1 == samplePacketSize){
+        } else if (-1 == samplePacketSize) {
             LOGI("decode eof");
-            //解码到最后了
+            // 解码到最后了
         }
     } else {
         ret = -2;
@@ -189,13 +216,13 @@ int MusicDecoderController::InitDecoder(const char *path) {
     decoder_ = new MusicDecoder();
     int actualAccompanyPacketBufferSize = accompany_packet_buffer_size_;
     int ret = decoder_->Init(path, accompany_packet_buffer_size_);
-    if(ret >= 0){
-        //初始化伴奏的采样率
+    if (ret >= 0) {
+        // 初始化伴奏的采样率
         accompany_sample_rate_ = decoder_->GetSampleRate();
         if (vocal_sample_rate_ != accompany_sample_rate_) {
             need_resample_ = true;
             resample_ = new Resample();
-            float ratio = (float)accompany_sample_rate_ / (float)vocal_sample_rate_;
+            float ratio = accompany_sample_rate_ * 1.0f / vocal_sample_rate_;
             actualAccompanyPacketBufferSize = ratio * accompany_packet_buffer_size_;
             ret = resample_->Init(accompany_sample_rate_, vocal_sample_rate_, actualAccompanyPacketBufferSize / 2, 2, 2);
             if (ret < 0) {
@@ -219,7 +246,7 @@ int MusicDecoderController::InitRender() {
 }
 
 void *MusicDecoderController::StartDecoderThread(void *context) {
-    MusicDecoderController* decoderController = (MusicDecoderController *) context;
+    MusicDecoderController* decoderController = reinterpret_cast<MusicDecoderController*>(context);
     pthread_mutex_lock(&decoderController->lock_);
     while (decoderController->running_) {
         if (decoderController->suspend_flag_) {
@@ -252,7 +279,7 @@ void MusicDecoderController::InitDecoderThread() {
 
 void MusicDecoderController::DecodePacket() {
     AudioPacket* accompanyPacket = decoder_->DecodePacket();
-    //是否需要重采样
+    // 是否需要重采样
     if (need_resample_ && NULL != resample_) {
         short* stereoSamples = accompanyPacket->buffer;
         int stereoSampleSize = accompanyPacket->size;
@@ -265,8 +292,8 @@ void MusicDecoderController::DecodePacket() {
                 samples[0][i] = stereoSamples[2 * i];
                 samples[1][i] = stereoSamples[2 * i + 1];
             }
-            float transfer_ratio = (float) accompany_sample_rate_ / (float) vocal_sample_rate_;
-            int accompanySampleSize = (int) ((float) (monoSampleSize) / transfer_ratio);
+            float transfer_ratio = accompany_sample_rate_ / static_cast<float>(vocal_sample_rate_);
+            int accompanySampleSize = static_cast<int>(monoSampleSize * 1.0f / transfer_ratio);
             uint8_t out_data[accompanySampleSize * 2 * 2];
             int out_nb_bytes = 0;
             resample_->Process(samples, out_data, monoSampleSize, &out_nb_bytes);
@@ -299,8 +326,8 @@ void MusicDecoderController::ResumeDecodeThread() {
     LOGI("enter resume");
     suspend_flag_ = false;
     pthread_mutex_lock(&lock_);
-    pthread_cond_signal (&condition_);
-    pthread_mutex_unlock (&lock_);
+    pthread_cond_signal(&condition_);
+    pthread_mutex_unlock(&lock_);
     LOGI("leave resume");
 }
 
@@ -309,8 +336,8 @@ void MusicDecoderController::DestroyDecoderThread() {
     suspend_flag_ = false;
     void* status;
     pthread_mutex_lock(&lock_);
-    pthread_cond_signal (&condition_);
-    pthread_mutex_unlock (&lock_);
+    pthread_cond_signal(&condition_);
+    pthread_mutex_unlock(&lock_);
     pthread_join(decoder_thread_, &status);
     pthread_mutex_destroy(&lock_);
     pthread_cond_destroy(&condition_);
@@ -352,7 +379,7 @@ void MusicDecoderController::PushPacketToQueue(AudioPacket *packet) {
     buffer_queue_cursor_ += packet->size;
     float position = packet->position;
     delete packet;
-    while(buffer_queue_cursor_ >= accompany_packet_buffer_size_){
+    while (buffer_queue_cursor_ >= accompany_packet_buffer_size_) {
         short* buffer = new short[accompany_packet_buffer_size_];
         memcpy(buffer, buffer_queue_, accompany_packet_buffer_size_ * sizeof(short));
         int protectedSampleSize = buffer_queue_cursor_ - accompany_packet_buffer_size_;
@@ -362,9 +389,9 @@ void MusicDecoderController::PushPacketToQueue(AudioPacket *packet) {
         actualPacket->size = accompany_packet_buffer_size_;
         actualPacket->buffer = buffer;
         actualPacket->position = position;
-        if(position != -1){
-            actualPacket->frameNum = position * this->vocal_sample_rate_;
-        } else{
+        if (position != -1) {
+            actualPacket->frameNum = static_cast<long>(position * this->vocal_sample_rate_);
+        } else {
             actualPacket->frameNum = -1;
         }
         packet_pool_->PushAccompanyPacketToQueue(actualPacket);
@@ -384,4 +411,4 @@ int MusicDecoderController::BuildSamples(short *samples) {
     return samplePacketSize;
 }
 
-}
+}  // namespace trinity

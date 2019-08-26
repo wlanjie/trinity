@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 //
 // Created by wlanjie on 2019/4/20.
 //
@@ -23,7 +39,7 @@
 namespace trinity {
 
 class MusicDecoderController {
-public:
+ public:
     MusicDecoderController();
     virtual ~MusicDecoderController();
     virtual void Init(float packet_buffer_time_percent, int vocal_sample_rate);
@@ -36,7 +52,7 @@ public:
     void Stop();
     void Destroy();
 
-private:
+ private:
     virtual int InitDecoder(const char* path);
     virtual int InitRender();
     static void* StartDecoderThread(void* context);
@@ -51,7 +67,7 @@ private:
     void PushPacketToQueue(AudioPacket* packet);
     int BuildSamples(short* samples);
 
-public:
+ public:
     bool running_;
     pthread_mutex_t lock_;
     pthread_cond_t condition_;
@@ -60,7 +76,7 @@ public:
     pthread_mutex_t suspend_lock_;
     pthread_cond_t suspend_condition_;
 
-private:
+ private:
     PacketPool* packet_pool_;
     MusicDecoder* decoder_;
     Resample* resample_;
@@ -71,7 +87,6 @@ private:
     short *silent_samples_;
     int accompany_packet_buffer_size_;
     int vocal_sample_rate_;
-    long frame_num_;
     float volume_;
     float volume_max_;
     pthread_t decoder_thread_;
@@ -80,6 +95,6 @@ private:
     short* buffer_queue_;
 };
 
-}
+}  // namespace trinity
 
-#endif //TRINITY_MUSIC_DECODER_CONTROLLER_H
+#endif  // TRINITY_MUSIC_DECODER_CONTROLLER_H

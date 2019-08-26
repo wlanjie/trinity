@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 //
 // Created by wlanjie on 2019/4/17.
 //
@@ -35,6 +53,8 @@ typedef struct VideoPacket {
         size = 0;
         pts = PTS_PARAM_UN_SETTIED_FLAG;
         dts = DTS_PARAM_UN_SETTIED_FLAG;
+        duration = 0;
+        timeMills = 0;
     }
     ~VideoPacket() {
         if (nullptr != buffer) {
@@ -44,19 +64,19 @@ typedef struct VideoPacket {
     }
     int getNALUType() {
         int nalu_type = H264_NALU_TYPE_NON_IDR_PICTURE;
-        if(nullptr != buffer){
+        if (nullptr != buffer) {
             nalu_type = (buffer[4] & 0x1F);
         }
         return nalu_type;
     }
-    bool isIDRFrame(){
+    bool isIDRFrame() {
         bool ret = false;
-        if(getNALUType() == H264_NALU_TYPE_IDR_PICTURE){
+        if (getNALUType() == H264_NALU_TYPE_IDR_PICTURE) {
             ret = true;
         }
         return ret;
     }
-    VideoPacket* clone(){
+    VideoPacket* clone() {
         VideoPacket* result = new VideoPacket();
         result->buffer = new uint8_t[size];
         memcpy(result->buffer, buffer, size);
@@ -64,22 +84,21 @@ typedef struct VideoPacket {
         result->timeMills = timeMills;
         return result;
     }
-
 } VideoPacket;
 
 typedef struct VideoPacketList {
     VideoPacket *pkt;
     struct VideoPacketList *next;
-    VideoPacketList(){
+    VideoPacketList() {
         pkt = nullptr;
         next = nullptr;
     }
 } VideoPacketList;
 
 class VideoPacketQueue {
-public:
+ public:
     VideoPacketQueue();
-    VideoPacketQueue(const char* queueNameParam);
+    explicit VideoPacketQueue(const char* queueNameParam);
     ~VideoPacketQueue();
 
     void Init();
@@ -91,7 +110,7 @@ public:
     int Size();
     void Abort();
 
-private:
+ private:
     VideoPacketList* first_;
     VideoPacketList* last_;
     int packet_size_;
@@ -102,6 +121,6 @@ private:
     float current_time_mills_;
 };
 
-}
+}  // namespace trinity
 
-#endif //TRINITY_VIDEO_PACKET_QUEUE_H
+#endif  // TRINITY_VIDEO_PACKET_QUEUE_H

@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 //
 // Created by wlanjie on 2019/4/16.
 //
@@ -20,7 +37,7 @@ typedef enum {
 class MediaEncodeHandler;
 
 class MediaEncodeAdapter : public VideoEncoderAdapter {
-public:
+ public:
     MediaEncodeAdapter(JavaVM* vm, jobject object);
     virtual ~MediaEncodeAdapter();
 
@@ -32,7 +49,7 @@ public:
 
     void DrainEncodeData();
 
-private:
+ private:
     bool encoding_;
     bool sps_write_flag_;
     JavaVM* vm_;
@@ -46,7 +63,8 @@ private:
     jbyteArray output_buffer_;
     int start_encode_time_;
     OpenGL* render_;
-private:
+
+ private:
     static void* EncoderThreadCallback(void* context);
     void EncodeLoop();
     void CreateMediaEncoder(JNIEnv* env);
@@ -54,8 +72,7 @@ private:
 };
 
 class MediaEncodeHandler : public Handler {
-
-public:
+ public:
     MediaEncodeHandler(MediaEncodeAdapter* adapter, MessageQueue* queue) : Handler(queue) {
         adapter_ = adapter;
     }
@@ -71,10 +88,10 @@ public:
         }
     }
 
-private:
+ private:
     MediaEncodeAdapter* adapter_;
 };
 
-}
+}  // namespace trinity
 
-#endif //TRINITY_MEDIA_ENCODE_ADAPTER_H
+#endif  // TRINITY_MEDIA_ENCODE_ADAPTER_H

@@ -279,8 +279,6 @@ class ThumbLineOverlay(
             margin = layoutParams.leftMargin
         }
         mTailView?.view?.layoutParams = layoutParams
-
-        Log.d(TAG, "TailView Margin = " + margin + "timeline over" + this)
     }
 
     private fun setLeftMargin(view: View, leftMargin: Int) {

@@ -1,21 +1,38 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 //
 // Created by wlanjie on 2019-06-05.
 //
 
 #include "image_process.h"
-#include <algorithm>
+#include <utility>
+#include "android_xlog.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
+#define FILTER "Filter"
+#define FLASH_WHITE "FlashWhite"
+#define SPLIT_SCREEN "SplitScreen"
 
 namespace trinity {
 
 ImageProcess::ImageProcess() {
-    current_action_id_ = 0;
-    flash_white_ = nullptr;
-    filter_ = nullptr;
-    screen_two_ = nullptr;
-    screen_three_ = nullptr;
-    screen_four_ = nullptr;
-    screen_six_ = nullptr;
-    screen_nine_ = nullptr;
 }
 
 ImageProcess::~ImageProcess() {
@@ -34,163 +51,109 @@ int ImageProcess::OnProcess(int texture_id, uint64_t current_time, int width, in
     int texture = texture_id;
     for (auto& effect : effects_) {
         FrameBuffer* frame_buffer = effect.second;
-        texture = frame_buffer->OnDrawFrame(texture_id, current_time) ;
+        int process_texture = frame_buffer->OnDrawFrame(texture, current_time);
+        texture = process_texture;
     }
-
-//    for (auto it = actions_.begin(); it != actions_.end(); ++it) {
-//        if (it->type == ROTATE) {
-//        } else if (it->type == FLASH_WHITE) {
-//            if (nullptr == flash_white_) {
-//                flash_white_ = new FlashWhite(width, height);
-//            }
-//            auto *action = reinterpret_cast<FlashWhiteAction*>(it->args);
-//            if (current_time >= action->start_time && current_time <= action->end_time) {
-//                texture = flash_white_->OnDrawFrame(texture_id);
-//            }
-//        } else if (it->type == FILTER) {
-//            auto* action = reinterpret_cast<FilterAction*>(it->args);
-//            if (nullptr == filter_) {
-//                filter_ = new Filter(action->lut, width, height);
-//            }
-//            if (action->update_lut == 1) {
-//                filter_->UpdateLut(action->lut, width, height);
-//            }
-//            if (current_time >= action->start_time && current_time <= action->end_time) {
-//                texture = filter_->OnDrawFrame(texture_id);
-//            }
-//        } else if (it->type == SPLIT_SCREEN) {
-//            auto* action = reinterpret_cast<SplitScreenAction*>(it->args);
-//            if (action->split_screen_count == 2) {
-//                if (nullptr == screen_two_) {
-//                    screen_two_ = new FrameBuffer(width, height, DEFAULT_VERTEX_SHADER, SCREEN_TWO_FRAGMENT_SHADER);
-//                }
-//                if (current_time >= action->start_time && current_time <= action->end_time) {
-//                    texture = screen_two_->OnDrawFrame(texture_id);
-//                }
-//            } else if (action->split_screen_count == 3) {
-//                if (nullptr == screen_three_) {
-//                    screen_three_ = new FrameBuffer(width, height, DEFAULT_VERTEX_SHADER, SCREEN_THREE_FRAGMENT_SHADER);
-//                }
-//                if (current_time >= action->start_time && current_time <= action->end_time) {
-//                    texture = screen_three_->OnDrawFrame(texture_id);
-//                }
-//            } else if (action->split_screen_count == 4) {
-//                if (nullptr == screen_four_) {
-//                    screen_four_ = new FrameBuffer(width, height, DEFAULT_VERTEX_SHADER, SCREEN_FOUR_FRAGMENT_SHADER);
-//                }
-//                if (current_time >= action->start_time && current_time <= action->end_time) {
-//                    texture = screen_four_->OnDrawFrame(texture_id);
-//                }
-//            } else if (action->split_screen_count == 6) {
-//                if (nullptr == screen_six_) {
-//                    screen_six_ = new FrameBuffer(width, height, DEFAULT_VERTEX_SHADER, SCREEN_SIX_FRAGMENT_SHADER);
-//                }
-//                if (current_time >= action->start_time && current_time <= action->end_time) {
-//                    texture = screen_six_->OnDrawFrame(texture_id);
-//                }
-//            } else if (action->split_screen_count == 9) {
-//                if (nullptr == screen_nine_) {
-//                    screen_nine_ = new FrameBuffer(width, height, DEFAULT_VERTEX_SHADER, SCREEN_NINE_FRAGMENT_SHADER);
-//                }
-//                if (current_time >= action->start_time && current_time <= action->end_time) {
-//                    texture = screen_nine_->OnDrawFrame(texture_id);
-//                }
-//            }
-//        }
-//    }
     return texture;
 }
 
-void ImageProcess::RemoveAction(int action_id) {
-
+void ImageProcess::OnAction(char* config, int action_id) {
+    ParseConfig(config, action_id);
 }
 
-void ImageProcess::ClearAction() {
-    for (auto it = actions_.begin(); it != actions_.end(); ++it) {
-        if (it->type == ROTATE) {
-            delete reinterpret_cast<RotateAction*>(it->args);
-        } else if (it->type == FLASH_WHITE) {
-            delete reinterpret_cast<FlashWhiteAction*>(it->args);
-        } else if (it->type == FILTER) {
-            FilterAction* action = reinterpret_cast<FilterAction*>(it->args);
-            delete[] action->lut;
-            delete action;
-            if (nullptr != filter_) {
-                delete filter_;
-                filter_ = nullptr;
-            }
-        } else if (it->type == SPLIT_SCREEN) {
-            SplitScreenAction* action = reinterpret_cast<SplitScreenAction*>(it->args);
-            delete action;
-            if (nullptr != screen_two_) {
-                delete screen_two_;
-                screen_two_ = nullptr;
-            }
-            if (nullptr != screen_three_) {
-                delete screen_three_;
-                screen_three_ = nullptr;
-            }
-            if (nullptr != screen_four_) {
-                delete screen_four_;
-                screen_four_ = nullptr;
-            }
-            if (nullptr != screen_six_) {
-                delete screen_six_;
-                screen_six_ = nullptr;
-            }
-            if (nullptr != screen_nine_) {
-                delete screen_nine_;
-                screen_nine_ = nullptr;
+void ImageProcess::ParseConfig(char *config, int action_id) {
+    cJSON* json = cJSON_Parse(config);
+    if (nullptr != json) {
+        cJSON* start_time_json = cJSON_GetObjectItem(json, "startTime");
+        cJSON* end_time_json = cJSON_GetObjectItem(json, "endTime");
+        int start_time = 0;
+        if (nullptr != start_time_json) {
+            start_time = start_time_json->valueint;
+        }
+        int end_time = INT_MAX;
+        if (nullptr != end_time_json) {
+            end_time = end_time_json->valueint;
+        }
+        cJSON* effect_type_json = cJSON_GetObjectItem(json, "effectType");
+        if (nullptr != effect_type_json) {
+            char* effect_type = effect_type_json->valuestring;
+            if (strcmp(effect_type, FILTER) == 0) {
+                OnFilter(start_time, end_time, json, action_id);
+            } else if (strcmp(effect_type, FLASH_WHITE) == 0) {
+                OnFlashWhite(10, start_time, end_time, action_id);
+            } else if (strcmp(effect_type, SPLIT_SCREEN) == 0) {
+                int split_count = 0;
+                cJSON* split_count_json = cJSON_GetObjectItem(json, "splitScreenCount");
+                if (nullptr != split_count_json) {
+                    split_count = split_count_json->valueint;
+                }
+                OnSplitScreen(split_count, start_time, end_time, action_id);
             }
         }
+        cJSON_Delete(json);
     }
 }
 
-int ImageProcess::AddRotateAction(float rotate, int action_id) {
-   int actId = action_id;
-   if (action_id == NO_ACTION) {
-       auto* r = new RotateAction();
-       r->rotate = rotate;
-       actId = AddAction(ROTATE, r);
-   } else {
-       auto it = std::find_if(actions_.begin(), actions_.end(), [action_id](const Action& action) -> bool {
-           return action.action_id == action_id;
-       });
-       if (it == actions_.end()) {
-           return NO_ACTION;
-       }
-       if ((*it).type == ROTATE) {
-           auto *rotateInfo = static_cast<RotateAction *>((*it).args);
-           rotateInfo->rotate = rotate;
-       }
-   }
-   return actId;
+void ImageProcess::RemoveAction(int action_id) {
+    auto result = effects_.find(action_id);
+    if (result != effects_.end()) {
+        FrameBuffer* frame_buffer = effects_[action_id];
+        delete frame_buffer;
+        effects_.erase(action_id);
+    }
 }
 
-int ImageProcess::AddFlashWhiteAction(int time, uint64_t start_time, uint64_t end_time, int action_id) {
-//    int actId = action_id;
-//    if (action_id == NO_ACTION) {
-//        auto* action = new FlashWhiteAction();
-//        action->flash_time = time;
-//        action->start_time = start_time;
-//        action->end_time = end_time;
-//        actId = AddAction(FLASH_WHITE, action);
-//    } else {
-//        auto it = std::find_if(actions_.begin(), actions_.end(), [action_id](const Action& action) -> bool {
-//            return action.action_id == action_id;
-//        });
-//        if (it == actions_.end()) {
-//            return NO_ACTION;
-//        }
-//        if ((*it).type == FLASH_WHITE) {
-//            auto *flashWhiteInfo = static_cast<FlashWhiteAction *>((*it).args);
-//            flashWhiteInfo->flash_time = time;
-//            flashWhiteInfo->start_time = start_time;
-//            flashWhiteInfo->end_time = end_time;
-//        }
-//    }
-//    return actId;
+void ImageProcess::ClearAction() {
+    for (auto& effect : effects_) {
+        FrameBuffer* buffer = effect.second;
+        delete buffer;
+    }
+    effects_.clear();
+}
 
+void ImageProcess::OnFilter(int start_time, int end_time, cJSON* json, int action_id) {
+    cJSON* intensity_json = cJSON_GetObjectItem(json, "intensity");
+    float intensity = 1.0f;
+    if (nullptr != intensity_json) {
+        intensity = static_cast<float>(intensity_json->valuedouble);
+    }
+    cJSON* lut_json = cJSON_GetObjectItem(json, "lut");
+    if (nullptr != lut_json) {
+        char* lut_path = lut_json->valuestring;
+        int lut_width = 0;
+        int lut_height = 0;
+        int channels = 0;
+        unsigned char* lut_buffer = stbi_load(lut_path, &lut_width, &lut_height, &channels, STBI_rgb_alpha);
+        if (nullptr == lut_buffer) {
+            return;
+        }
+        if ((lut_width == 512 && lut_height == 512) || (lut_width == 64 && lut_height == 64)) {
+            auto result = effects_.find(action_id);
+            if (result == effects_.end()) {
+                Filter *filter = new Filter(lut_buffer, 720, 1280);
+                filter->SetStartTime(start_time);
+                filter->SetEndTime(end_time);
+                filter->SetIntensity(intensity);
+                effects_.insert(std::pair<int, FrameBuffer *>(action_id, filter));
+            } else {
+                FrameBuffer *frame_buffer = effects_[action_id];
+                frame_buffer->SetStartTime(start_time);
+                frame_buffer->SetEndTime(end_time);
+                Filter *filter = dynamic_cast<Filter *>(frame_buffer);
+                if (nullptr != filter) {
+                    filter->SetIntensity(intensity);
+                    filter->UpdateLut(lut_buffer, 720, 1280);
+                }
+            }
+        }
+        stbi_image_free(lut_buffer);
+    }
+}
+
+void ImageProcess::OnRotate(float rotate, int action_id) {
+}
+
+void ImageProcess::OnFlashWhite(int time, uint64_t start_time, uint64_t end_time, int action_id) {
     auto result = effects_.find(action_id);
     if (result == effects_.end()) {
         FlashWhite* flash_write = new FlashWhite(720, 1280);
@@ -201,71 +164,39 @@ int ImageProcess::AddFlashWhiteAction(int time, uint64_t start_time, uint64_t en
         FrameBuffer* frame_buffer = effects_[action_id];
         frame_buffer->SetStartTime(start_time);
         frame_buffer->SetEndTime(end_time);
-        FlashWhite* flash_white = dynamic_cast<FlashWhite*>(frame_buffer);
-        if (nullptr != flash_white) {
-
-        }
+//        FlashWhite* flash_white = dynamic_cast<FlashWhite*>(frame_buffer);
+//        if (nullptr != flash_white) {
+//
+//        }
     }
-    return 0;
 }
 
-int ImageProcess::AddFilterAction(uint8_t *lut, uint64_t start_time, uint64_t end_time, int action_id) {
+void ImageProcess::OnSplitScreen(int screen_count, uint64_t start_time, uint64_t end_time, int action_id) {
     auto result = effects_.find(action_id);
     if (result == effects_.end()) {
-        Filter* filter = new Filter(lut, 720, 1280);
-        filter->SetStartTime(start_time);
-        filter->SetEndTime(end_time);
-        effects_.insert(std::pair<int, FrameBuffer*>(action_id, filter));
+        FrameBuffer* frame_buffer = nullptr;
+        if (screen_count == 2) {
+            frame_buffer = new FrameBuffer(720, 1280, DEFAULT_VERTEX_SHADER, SCREEN_TWO_FRAGMENT_SHADER);
+        } else if (screen_count == 3) {
+            frame_buffer = new FrameBuffer(720, 1280, DEFAULT_VERTEX_SHADER, SCREEN_THREE_FRAGMENT_SHADER);
+        } else if (screen_count == 4) {
+            frame_buffer = new FrameBuffer(720, 1280, DEFAULT_VERTEX_SHADER, SCREEN_FOUR_FRAGMENT_SHADER);
+        } else if (screen_count == 6) {
+            frame_buffer = new FrameBuffer(720, 1280, DEFAULT_VERTEX_SHADER, SCREEN_SIX_FRAGMENT_SHADER);
+        } else if (screen_count == 9) {
+            frame_buffer = new FrameBuffer(720, 1280, DEFAULT_VERTEX_SHADER, SCREEN_NINE_FRAGMENT_SHADER);
+        }
+        if (frame_buffer == nullptr) {
+            return;
+        }
+        frame_buffer->SetStartTime(start_time);
+        frame_buffer->SetEndTime(end_time);
+        effects_.insert(std::pair<int, FrameBuffer*>(action_id, frame_buffer));
     } else {
         FrameBuffer* frame_buffer = effects_[action_id];
         frame_buffer->SetStartTime(start_time);
         frame_buffer->SetEndTime(end_time);
-        Filter* filter = dynamic_cast<Filter*>(frame_buffer);
-        if (nullptr != filter) {
-            filter->UpdateLut(lut, 720, 1280);
-        }
     }
-    return action_id;
 }
 
-int ImageProcess::AddSplitScreenAction(int screen_count, uint64_t start_time, uint64_t end_time, int action_id) {
-    int actId = action_id;
-    if (action_id == NO_ACTION) {
-        auto* action = new SplitScreenAction();
-        action->start_time = start_time;
-        action->end_time = end_time;
-        action->split_screen_count = screen_count;
-        actId = AddAction(SPLIT_SCREEN, action);
-    } else {
-        auto it = std::find_if(actions_.begin(), actions_.end(), [action_id](const Action& action) -> bool {
-            return action.action_id == action_id;
-        });
-        if (it == actions_.end()) {
-            return NO_ACTION;
-        }
-        if ((*it).type == SPLIT_SCREEN) {
-            auto *action = static_cast<SplitScreenAction *>((*it).args);
-            action->start_time = start_time;
-            action->end_time = end_time;
-            action->split_screen_count = screen_count;
-        }
-    }
-    return actId;
-}
-
-int ImageProcess::AddAction(ActionType type, void *args) {
-    Action action;
-    action.type = type;
-    action.args = args;
-    current_action_id_++;
-    action.action_id = current_action_id_;
-    auto it = actions_.begin();
-    if (it == actions_.end()) {
-        actions_.push_back(action);
-    } else {
-        actions_.insert(it, action);
-    }
-    return action.action_id;
-}
-
-}
+}  // namespace trinity

@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 //
 // Created by wlanjie on 2019-06-29.
 //
@@ -14,7 +30,6 @@ static char *wanted_stream_spec[AVMEDIA_TYPE_NB] = {0};
 static AVPacket flush_pkt;
 
 int frame_queue_init( FrameQueue *f, PacketQueue *pktq, int max_size, int keep_last) {
-    LOGE("enter frame_queue_init max_size: %d", max_size);
     memset(f, 0, sizeof(FrameQueue));
     int result = pthread_mutex_init(&f->mutex, NULL);
     if (result != 0) {
@@ -34,7 +49,6 @@ int frame_queue_init( FrameQueue *f, PacketQueue *pktq, int max_size, int keep_l
             return AVERROR(ENOMEM);
         }
     }
-    LOGE("exit frame_queue_init");
     return 0;
 }
 
@@ -1023,6 +1037,7 @@ static void stream_component_close(MediaDecode *media_decode, int stream_index) 
 }
 
 void stream_close(MediaDecode *media_decode) {
+    LOGI("enter stream close: %s", media_decode->file_name);
     if (!media_decode->file_name) {
         return;
     }
@@ -1033,7 +1048,6 @@ void stream_close(MediaDecode *media_decode) {
     media_decode->abort_request = 1;
     pthread_join(media_decode->read_thread, NULL);
 
-    LOGE("enter stream close: %s", media_decode->file_name);
     /* close each stream */
     // TODO 考虑没有音频的情况,是否会崩溃
     if (media_decode->audio_stream_index >= 0)
@@ -1060,7 +1074,7 @@ void stream_close(MediaDecode *media_decode) {
 #endif
     av_free(media_decode->file_name);
     media_decode->file_name = NULL;
-    LOGE("leave stream close");
+    LOGI("leave stream close");
 }
 
 void read_thread_failed(MediaDecode *media_decode, AVFormatContext *ic, pthread_mutex_t wait_mutex) {
@@ -1087,7 +1101,7 @@ int complete_state(MediaDecode* media_decode) {
 }
 
 void* read_thread(void *arg) {
-    LOGE("enter read_thread ");
+    LOGI("enter read_thread ");
     MediaDecode *media_decode = arg;
     AVFormatContext *ic = NULL;
     int ret;
@@ -1380,4 +1394,3 @@ void av_decode_destroy(MediaDecode* decode) {
         stream_close(decode);
     }
 }
-

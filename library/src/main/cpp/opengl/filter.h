@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 //
 // Created by wlanjie on 2019-06-11.
 //
@@ -57,8 +75,9 @@ static const char* FILTER_VERTEX_SHADER =
 
 
 class Filter : public FrameBuffer {
-public:
+ public:
     Filter(uint8_t* filter_buffer, int width, int height) : FrameBuffer(width, height, DEFAULT_VERTEX_SHADER, FILTER_FRAGMENT_SHADER) {
+        intensity_ = 1.0f;
         filter_texture_id_ = 0;
         glGenTextures(1, &filter_texture_id_);
         glBindTexture(GL_TEXTURE_2D, filter_texture_id_);
@@ -76,6 +95,10 @@ public:
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
+    void SetIntensity(float intensity = 1.0f) {
+        intensity_ = intensity;
+    }
+
     ~Filter() {
         if (filter_texture_id_ != 0) {
             glDeleteTextures(1, &filter_texture_id_);
@@ -83,18 +106,19 @@ public:
         }
     }
 
-private:
+ private:
     GLuint filter_texture_id_;
+    float intensity_;
 
-protected:
+ protected:
     virtual void RunOnDrawTasks() {
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, filter_texture_id_);
         SetInt("inputImageTextureLookup", 1);
-        SetFloat("intensity", 1.0f);
+        SetFloat("intensity", intensity_);
     }
 };
 
-}
+}  // namespace trinity
 
-#endif //TRINITY_FILTER_H
+#endif  // TRINITY_FILTER_H

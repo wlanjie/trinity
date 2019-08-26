@@ -1,17 +1,31 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 //
 // Created by wlanjie on 2019-06-15.
 //
 
+#include <math.h>
 #include "error_code.h"
 #include "video_export.h"
 #include "soft_encoder_adapter.h"
+#include "media_encode_adapter.h"
 #include "android_xlog.h"
 #include "tools.h"
-#include "error_code.h"
-#include <math.h>
-
-//#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
 
 namespace trinity {
 
@@ -42,6 +56,33 @@ VideoExport::VideoExport(JNIEnv* env, jobject object) {
     audio_buf = nullptr;
     audio_buf1 = nullptr;
     audio_samples_ = new short[8192];
+    export_config_json_ = nullptr;
+
+    // 因为encoder_render时不能改变顶点和纹理坐标
+    // 而glReadPixels读取的图像又是上下颠倒的
+    // 所以这里显示的把纹理坐标做180度旋转
+    // 从而保证从glReadPixels读取的数据不是上下颠倒的,而是正确的
+    vertex_coordinate_ = new GLfloat[8];
+    texture_coordinate_ = new GLfloat[8];
+    vertex_coordinate_[0] = -1.0f;
+    vertex_coordinate_[1] = -1.0f;
+    vertex_coordinate_[2] = 1.0f;
+    vertex_coordinate_[3] = -1.0f;
+
+    vertex_coordinate_[4] = -1.0f;
+    vertex_coordinate_[5] = 1.0f;
+    vertex_coordinate_[6] = 1.0f;
+    vertex_coordinate_[7] = 1.0f;
+
+    texture_coordinate_[0] = 0.0f;
+    texture_coordinate_[1] = 0.0f;
+    texture_coordinate_[2] = 1.0f;
+    texture_coordinate_[3] = 0.0f;
+
+    texture_coordinate_[4] = 0.0f;
+    texture_coordinate_[5] = 1.0f;
+    texture_coordinate_[6] = 1.0f;
+    texture_coordinate_[7] = 1.0f;
 
     packet_pool_ = PacketPool::GetInstance();
     video_export_message_queue_ = new MessageQueue("Video Export Message Queue");
@@ -61,10 +102,12 @@ VideoExport::~VideoExport() {
             object_ = nullptr;
         }
     }
+    delete vertex_coordinate_;
+    delete texture_coordinate_;
 }
 
 void* VideoExport::ExportMessageThread(void *context) {
-    VideoExport* video_export = (VideoExport*) context;
+    VideoExport* video_export = reinterpret_cast<VideoExport*>(context);
     video_export->ProcessMessage();
     pthread_exit(0);
 }
@@ -86,8 +129,7 @@ void VideoExport::ProcessMessage() {
 }
 
 int VideoExport::OnCompleteState(StateEvent *event) {
-    VideoExport* video_export = (VideoExport*) event->context;
-//    return video_export->OnComplete();
+    VideoExport* video_export = reinterpret_cast<VideoExport*>(event->context);
     video_export->video_export_handler_->PostMessage(new Message(kStartNextExport));
     return 0;
 }
@@ -124,13 +166,38 @@ void VideoExport::FreeResource() {
     }
 }
 
+void VideoExport::OnEffect() {
+    if (nullptr != export_config_json_) {
+        cJSON* effects = cJSON_GetObjectItem(export_config_json_, "effects");
+        if (nullptr != effects) {
+            int effect_size = cJSON_GetArraySize(effects);
+            if (effect_size > 0) {
+                image_process_ = new ImageProcess();
+                for (int i = 0; i < effect_size; ++i) {
+                    cJSON* effects_child = cJSON_GetArrayItem(effects, i);
+                    cJSON* config_json = cJSON_GetObjectItem(effects_child, "config");
+                    cJSON* action_id_json = cJSON_GetObjectItem(effects_child, "actionId");
+                    int action_id = 0;
+                    if (nullptr != action_id_json) {
+                        action_id = action_id_json->valueint;
+                    }
+                    if (nullptr != config_json) {
+                        char* config = config_json->valuestring;
+                        image_process_->OnAction(config, action_id);
+                    }
+                }
+            }
+        }
+    }
+}
+
 void VideoExport::StartDecode(MediaClip *clip) {
-    media_decode_ = (MediaDecode*) av_malloc(sizeof(MediaDecode));
+    media_decode_ = reinterpret_cast<MediaDecode*>(av_malloc(sizeof(MediaDecode)));
     memset(media_decode_, 0, sizeof(MediaDecode));
     media_decode_->start_time = clip->start_time;
     media_decode_->end_time = clip->end_time == 0 ? INT64_MAX : clip->end_time;
 
-    state_event_ = (StateEvent*) av_malloc(sizeof(StateEvent));
+    state_event_ = reinterpret_cast<StateEvent*>(av_malloc(sizeof(StateEvent)));
     memset(state_event_, 0, sizeof(StateEvent));
     state_event_->context = this;
     state_event_->on_complete_event = OnCompleteState;
@@ -149,7 +216,7 @@ int VideoExport::Export(const char *export_config, const char *path, int width, 
     fseek(file, 0, SEEK_END);
     long file_size = ftell(file);
     rewind(file);
-    char* buffer = (char*) malloc(sizeof(char) * file_size);
+    char* buffer = reinterpret_cast<char*>(malloc(sizeof(char) * file_size));
     if (nullptr == buffer) {
         return -1;
     }
@@ -161,13 +228,12 @@ int VideoExport::Export(const char *export_config, const char *path, int width, 
 
     LOGE("buffer: %s", buffer);
 
-    cJSON* json = cJSON_Parse(buffer);
-    if (nullptr == json) {
+    export_config_json_ = cJSON_Parse(buffer);
+    if (nullptr == export_config_json_) {
         LOGE("nullptr == json");
         return EXPORT_CONFIG;
     }
-    cJSON_Print(json);
-    cJSON* clips = cJSON_GetObjectItem(json, "clips");
+    cJSON* clips = cJSON_GetObjectItem(export_config_json_, "clips");
     if (nullptr == clips) {
         LOGE("nullptr == clips");
         return CLIP_EMPTY;
@@ -209,47 +275,9 @@ int VideoExport::Export(const char *export_config, const char *path, int width, 
         video_duration_ += export_clip->end_time - export_clip->start_time;
     }
 
-    cJSON* effects = cJSON_GetObjectItem(json, "effects");
-    if (nullptr != effects) {
-        int effect_size = cJSON_GetArraySize(effects);
-        if (clip_size > 0) {
-//            cJSON* effects_child = effects->child;
-            image_process_ = new ImageProcess();
-            for (int i = 0; i < effect_size; ++i) {
-                cJSON* effects_child = cJSON_GetArrayItem(effects, i);
-                cJSON* type_item = cJSON_GetObjectItem(effects_child, "type");
-                cJSON* start_time_item = cJSON_GetObjectItem(effects_child, "start_time");
-                int start_time = start_time_item->valueint;
-                cJSON* end_time_item = cJSON_GetObjectItem(effects_child, "end_time");
-                int end_time = end_time_item->valueint;
-                if (type_item->type == cJSON_String) {
-                    char* type = type_item->valuestring;
-                    if (strcpy(type, "lut_filter")) {
-                        cJSON* lut_path_item = cJSON_GetObjectItem(effects_child, "lut_path");
-                        char* lut_path = cJSON_GetStringValue(lut_path_item);
-                        int lut_width = 0;
-                        int lut_height = 0;
-                        int channels = 0;
-                        unsigned char* lut_buffer = stbi_load(lut_path, &lut_width, &lut_height, &channels, STBI_rgb_alpha);
-                        if (lut_width != 512 || lut_height != 512) {
-                            stbi_image_free(lut_buffer);
-                            return -1;
-                        }
-                        image_process_->AddFilterAction(lut_buffer, start_time, end_time, -1);
-                        stbi_image_free(lut_buffer);
-                    }
-                    cJSON* split_count_item = cJSON_GetObjectItem(effects_child, "split_screen_count");
-                    if (type_item->valueint == SPLIT_SCREEN) {
-                        image_process_->AddSplitScreenAction(split_count_item->valueint, start_time, end_time);
-                    }
-                }
-//                effects_child = effects_child->next;
-            }
-        }
-    }
 
     free(buffer);
-    encoder_ = new SoftEncoderAdapter(0);
+    encoder_ = new SoftEncoderAdapter(vertex_coordinate_, texture_coordinate_);
     encoder_->Init(width, height, video_bit_rate, frame_rate);
     audio_encoder_adapter_ = new AudioEncoderAdapter();
     audio_encoder_adapter_->Init(packet_pool_, 44100, 1, 128 * 1024, "libfdk_aac");
@@ -264,7 +292,7 @@ int VideoExport::Export(const char *export_config, const char *path, int width, 
 }
 
 void* VideoExport::ExportVideoThread(void* context) {
-    VideoExport* video_export = (VideoExport*) (context);
+    VideoExport* video_export = reinterpret_cast<VideoExport*>(context);
     video_export->ProcessVideoExport();
     pthread_exit(0);
 }
@@ -277,6 +305,10 @@ void VideoExport::ProcessVideoExport() {
         return;
     }
     egl_core_->MakeCurrent(egl_surface_);
+
+    // 添加config解析出来的特效
+    OnEffect();
+
     FrameBuffer* frame_buffer = new FrameBuffer(video_width_, video_height_, DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
     encoder_->CreateEncoder(egl_core_, frame_buffer->GetTextureId());
     while (true) {
@@ -319,7 +351,7 @@ void VideoExport::ProcessVideoExport() {
                     if (nullptr != yuv_render_) {
                         delete yuv_render_;
                     }
-                    yuv_render_ = new YuvRender(frame->width, frame->height, 0, 0, 0);
+                    yuv_render_ = new YuvRender(frame->width, frame->height, video_width_, video_height_, 0);
                 }
                 int texture_id = yuv_render_->DrawFrame(frame->frame);
                 current_time_ = (uint64_t) (frame->frame->pts * av_q2d(media_decode_->video_stream->time_base) * 1000);
@@ -350,6 +382,16 @@ void VideoExport::ProcessVideoExport() {
     AudioPacketPool::GetInstance()->DestroyAudioPacketQueue();
     delete packet_thread_;
 
+    if (nullptr != image_process_) {
+        delete image_process_;
+        image_process_ = nullptr;
+    }
+
+    if (nullptr != export_config_json_) {
+        cJSON_Delete(export_config_json_);
+        export_config_json_ = nullptr;
+    }
+
     egl_core_->ReleaseSurface(egl_surface_);
     egl_core_->Release();
     egl_surface_ = EGL_NO_SURFACE;
@@ -378,7 +420,7 @@ void VideoExport::OnExportProgress(uint64_t current_time) {
     if (nullptr != clazz) {
         jmethodID  export_progress_id = env->GetMethodID(clazz, "onExportProgress", "(F)V");
         if (nullptr != export_progress_id) {
-            env->CallVoidMethod(object_, export_progress_id, ((float) current_time) / video_duration_);
+            env->CallVoidMethod(object_, export_progress_id, current_time * 1.0f / video_duration_);
         }
     }
     if (vm_->DetachCurrentThread() != JNI_OK) {
@@ -410,7 +452,7 @@ void VideoExport::OnExportComplete() {
 }
 
 void* VideoExport::ExportAudioThread(void *context) {
-    VideoExport* video_export = (VideoExport*) context;
+    VideoExport* video_export = reinterpret_cast<VideoExport*>(context);
     video_export->ProcessAudioExport();
     pthread_exit(0);
 }
@@ -513,4 +555,4 @@ int VideoExport::Resample() {
     return resample_data_size;
 }
 
-}
+}  // namespace trinity

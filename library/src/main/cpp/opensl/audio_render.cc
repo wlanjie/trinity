@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 //
 // Created by wlanjie on 2019/4/21.
 //
@@ -8,30 +26,36 @@
 
 namespace trinity {
 
-AudioRender::AudioRender() {
-    buffer_ = nullptr;
-    buffer_size_ = 0;
-    context_ = nullptr;
+AudioRender::AudioRender()
+    : engine_(nullptr),
+      output_mix_object_(nullptr),
+      audio_player_object_(nullptr),
+      audio_player_buffer_queue_(nullptr),
+      audio_player_play_(nullptr),
+      buffer_(nullptr),
+      buffer_size_(0),
+      playing_state_(-1),
+      audio_player_callback_(nullptr),
+      context_(nullptr) {
 }
 
-AudioRender::~AudioRender() {
-}
+AudioRender::~AudioRender() {}
 
 SLresult AudioRender::RegisterPlayerCallback() {
     // Register the player callback
-    return (*audio_player_buffer_queue_)->RegisterCallback(audio_player_buffer_queue_, PlayerCallback, this); // player context
+    return (*audio_player_buffer_queue_)->RegisterCallback(audio_player_buffer_queue_, PlayerCallback, this);
 }
 
 void AudioRender::PlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context) {
-    AudioRender* audioRender = (AudioRender*) context;
+    AudioRender* audioRender = reinterpret_cast<AudioRender*>(context);
     audioRender->ProducePacket();
 }
 void AudioRender::ProducePacket() {
-    //回调playerController中的方法来获得buffer
+    // 回调playerController中的方法来获得buffer
     if (playing_state_ == PLAYING_STATE_PLAYING) {
         int actualSize = audio_player_callback_(buffer_, buffer_size_, context_);
         if (actualSize > 0 && playing_state_ == PLAYING_STATE_PLAYING) {
-            //将提供的数据加入到播放的buffer中去
+            // 将提供的数据加入到播放的buffer中去
             (*audio_player_buffer_queue_)->Enqueue(audio_player_buffer_queue_, buffer_, actualSize);
         }
     }
@@ -54,7 +78,6 @@ SLresult AudioRender::Stop() {
 }
 
 SLresult AudioRender::Play() {
-//	LOGI("Set the audio player state playing");
     // Set the audio player state playing
     SLresult result = SetAudioPlayerStatePlaying();
     if (SL_RESULT_SUCCESS != result) {
@@ -65,7 +88,6 @@ SLresult AudioRender::Play() {
 }
 
 SLresult AudioRender::Start() {
-//	LOGI("Set the audio player state Start");
     // Set the audio player state playing
     SLresult result = SetAudioPlayerStatePlaying();
     if (SL_RESULT_SUCCESS != result) {
@@ -99,8 +121,7 @@ SLresult AudioRender::Init(int channels, int accompanySampleRate, AudioPlayerCal
         return result;
     }
 
-    //Calculate the buffer size default 50ms length
-//    buffer_size_ = channels * accompanySampleRate * 2 * DEFAULT_AUDIO_BUFFER_DURATION_IN_SECS;
+    // Calculate the buffer size default 50ms length
     buffer_size_ = 2048;
     // Initialize buffer
     InitPlayerBuffer();
@@ -162,7 +183,7 @@ bool AudioRender::IsPlaying() {
     bool result = false;
     SLuint32 pState = SL_PLAYSTATE_PLAYING;
     if (0 != audio_player_object_ && nullptr != (*audio_player_play_)) {
-        SLresult result = (*audio_player_play_)->GetPlayState(audio_player_play_, &pState);
+        (*audio_player_play_)->GetPlayState(audio_player_play_, &pState);
     } else {
         result = false;
     }
@@ -202,7 +223,7 @@ SLresult AudioRender::CreateOutputMix() {
 }
 
 void AudioRender::InitPlayerBuffer() {
-    //Initialize buffer
+    // Initialize buffer
     buffer_ = new uint8_t[2048];
 }
 
@@ -214,8 +235,8 @@ void AudioRender::FreePlayerBuffer() {
 }
 
 SLresult AudioRender::CreateAudioPlayer(int channels, int accompanySampleRate) {
-    SLDataLocator_AndroidSimpleBufferQueue dataSourceLocator = { SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE, // locator type
-                                                                 1 // buffer count
+    SLDataLocator_AndroidSimpleBufferQueue dataSourceLocator = { SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE,
+                                                                 1
     };
     int samplesPerSec = OpenSLSampleRate(accompanySampleRate);
     int channelMask = GetChannelMask(channels);
@@ -275,4 +296,4 @@ SLresult AudioRender::SetAudioPlayerStatePaused() {
     return result;
 }
 
-}
+}  // namespace trinity

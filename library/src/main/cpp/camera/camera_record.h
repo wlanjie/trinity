@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 //
 // Created by wlanjie on 2019/4/13.
 //
@@ -7,11 +24,9 @@
 
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
-#include <opengl/render_screen.h>
 #include "egl_core.h"
 #include "handler.h"
 #include "frame_buffer.h"
-#include "render_screen.h"
 #include "video_encoder_adapter.h"
 #include "video_consumer_thread.h"
 #include "soft_encoder_adapter.h"
@@ -33,11 +48,12 @@ enum RenderThreadMessage {
 class CameraRecordHandler;
 
 class CameraRecord {
-public:
-    CameraRecord(JNIEnv* env);
+ public:
+    explicit CameraRecord(JNIEnv* env);
     virtual ~CameraRecord();
 
-    void PrepareEGLContext(jobject object, jobject surface, int screen_width, int screen_height);
+    void PrepareEGLContext(jobject object, jobject surface,
+            int screen_width, int screen_height);
 
     void NotifyFrameAvailable();
 
@@ -90,8 +106,8 @@ public:
     void RenderFrame();
 
     void SetFrameType(int frame);
-private:
 
+ private:
     void Draw();
 
     void ConfigCamera();
@@ -114,7 +130,7 @@ private:
 
     void ProcessMessage();
 
-private:
+ private:
     ANativeWindow *window_;
     JNIEnv* env_;
     JavaVM *vm_;
@@ -123,6 +139,7 @@ private:
     int screen_height_;
     int camera_width_;
     int camera_height_;
+    bool camera_size_change_;
 
     GLfloat* vertex_coordinate_;
     GLfloat* texture_coordinate_;
@@ -144,8 +161,9 @@ private:
 };
 
 class CameraRecordHandler : public Handler {
-public:
-    CameraRecordHandler(CameraRecord* record, MessageQueue* queue) : Handler(queue) {
+ public:
+    CameraRecordHandler(CameraRecord* record,
+            MessageQueue* queue) : Handler(queue) {
         record_ = record;
     }
 
@@ -184,10 +202,10 @@ public:
         }
     }
 
-private:
+ private:
     CameraRecord* record_;
 };
 
-}
+}  // namespace trinity
 
-#endif //TRINITY_CAMERA_RECORD_H
+#endif  // TRINITY_CAMERA_RECORD_H

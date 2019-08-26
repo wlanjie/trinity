@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 //
 // Created by wlanjie on 2019/4/10.
 //
@@ -15,19 +33,19 @@ extern "C" {
 #include "libavcodec/avcodec.h"
 };
 
-#define VERTEX_COORDINATE_COUNT			8
+#define VERTEX_COORDINATE_COUNT	8
 
 namespace trinity {
 
 class YuvRender {
-public:
+ public:
     YuvRender(int width, int height, int view_width, int view_height, int degree);
 
     ~YuvRender();
 
     virtual int DrawFrame(AVFrame *frame);
 
-private:
+ private:
     static void ConvertVertexCoordinate(int width, int height, int view_width, int view_height);
 
     int Initialize(int width, int height);
@@ -37,7 +55,7 @@ private:
     void CompileShader(const char* shader_string, GLuint shader);
     void Link();
 
-private:
+ private:
     GLuint frame_buffer_id_;
     GLuint texture_id_;
     GLfloat *vertex_coordinate_;
@@ -56,5 +74,6 @@ private:
     int v_size_;
 };
 
-}
-#endif //TRINITY_YUV_RENDER_H
+}  // namespace trinity
+
+#endif  // TRINITY_YUV_RENDER_H

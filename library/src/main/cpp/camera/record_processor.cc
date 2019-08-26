@@ -1,12 +1,29 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 //
 // Created by wlanjie on 2019/4/19.
 //
 
 #include "record_processor.h"
 #include "tools.h"
+#include "android_xlog.h"
 
-#define MIN_DIFF_TIME_MILLS		50
-#define MAX_DIFF_TIME_MILLS		150
+#define MIN_DIFF_TIME_MILLS 50
+#define MAX_DIFF_TIME_MILLS 150
 
 namespace trinity {
 
@@ -24,24 +41,23 @@ RecordProcessor::RecordProcessor() {
     audio_encoder_ = nullptr;
 }
 
-RecordProcessor::~RecordProcessor() {
-
-}
+RecordProcessor::~RecordProcessor() {}
 
 void RecordProcessor::InitAudioBufferSize(int sample_rate, int audio_buffer_size) {
+    LOGI("%s sample_rate: %d audio_buffer_size: %d", __FUNCTION__, sample_rate, audio_buffer_size);
     audio_sample_cursor_ = 0;
     audio_buffer_size_ = audio_buffer_size;
     audio_sample_rate_ = sample_rate;
     audio_samples_ = new short[audio_buffer_size];
     packet_pool_ = PacketPool::GetInstance();
-    audio_buffer_time_mills_ = (int) (audio_buffer_size * 1000.0f / (float) audio_sample_rate_);
+    audio_buffer_time_mills_ = static_cast<int>(audio_buffer_size * 1000.0f / audio_sample_rate_);
 }
 
 int RecordProcessor::PushAudioBufferToQueue(short *samples, int size) {
     if (size <= 0) {
         return size;
     }
-    if(!recording_flag_){
+    if (!recording_flag_) {
         recording_flag_ = true;
         start_time_mills_ = currentTimeMills();
     }
@@ -67,7 +83,7 @@ int RecordProcessor::PushAudioBufferToQueue(short *samples, int size) {
 
 void RecordProcessor::FlushAudioBufferToQueue() {
     if (audio_sample_cursor_ > 0) {
-        if(NULL == audio_encoder_){
+        if (NULL == audio_encoder_) {
             audio_encoder_ = new AudioEncoderAdapter();
             int audioChannels = 1;
             int audioBitRate = 128 * 1024;
@@ -86,14 +102,15 @@ void RecordProcessor::FlushAudioBufferToQueue() {
         audio_sample_cursor_ = 0;
         data_accumulate_time_mills_+=audio_buffer_time_mills_;
         int correctDurationInTimeMills = 0;
-        if(DetectNeedCorrect(data_accumulate_time_mills_, audio_sample_time_mills_, &correctDurationInTimeMills)){
-            //检测到有问题了, 需要进行修复
+        if (DetectNeedCorrect(data_accumulate_time_mills_, audio_sample_time_mills_, &correctDurationInTimeMills)) {
+            // 检测到有问题了, 需要进行修复
             this->CorrectRecordBuffer(correctDurationInTimeMills);
         }
     }
 }
 
 void RecordProcessor::Destroy() {
+    LOGI("enter %s", __FUNCTION__);
     if (nullptr != audio_samples_) {
         delete[] audio_samples_;
         audio_samples_ = nullptr;
@@ -103,12 +120,13 @@ void RecordProcessor::Destroy() {
         delete audio_encoder_;
         audio_encoder_ = nullptr;
     }
+    LOGI("leave %s", __FUNCTION__);
 }
 
 bool RecordProcessor::DetectNeedCorrect(int64_t data_present_time_mills, int64_t recording_time_mills, int *correct_time_mills) {
     bool ret = false;
     (*correct_time_mills) = 0;
-    if(data_present_time_mills <= (recording_time_mills - MAX_DIFF_TIME_MILLS)){
+    if (data_present_time_mills <= (recording_time_mills - MAX_DIFF_TIME_MILLS)) {
         ret = true;
         (*correct_time_mills) = MAX_DIFF_TIME_MILLS - MIN_DIFF_TIME_MILLS;
     }
@@ -116,14 +134,14 @@ bool RecordProcessor::DetectNeedCorrect(int64_t data_present_time_mills, int64_t
 }
 
 void RecordProcessor::CopyToAudioSamples(short *buffer, int length) {
-    if(0 == audio_sample_cursor_){
+    if (0 == audio_sample_cursor_) {
         audio_sample_time_mills_ = currentTimeMills() - start_time_mills_;
     }
     memcpy(audio_samples_ + audio_sample_cursor_, buffer, length * sizeof(short));
 }
 
 int RecordProcessor::CorrectRecordBuffer(int correct_time_mills) {
-    int correctBufferSize = ((float)correct_time_mills / 1000.0f) * audio_sample_rate_;
+    int correctBufferSize = static_cast<int>((correct_time_mills / 1000.0f) * audio_sample_rate_);
     AudioPacket * audioPacket = GetSilentDataPacket(correctBufferSize);
     packet_pool_->PushAudioPacketToQueue(audioPacket);
     // TODO 混音
@@ -141,4 +159,4 @@ AudioPacket* RecordProcessor::GetSilentDataPacket(int audioBufferSize) {
     return audioPacket;
 }
 
-}
+}  // namespace trinity

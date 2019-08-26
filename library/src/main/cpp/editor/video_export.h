@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 //
 // Created by wlanjie on 2019-06-15.
 //
@@ -5,15 +22,11 @@
 #ifndef TRINITY_VIDEO_EXPORT_H
 #define TRINITY_VIDEO_EXPORT_H
 
-extern "C" {
-#include "ffmpeg_decode.h"
-#include "cJSON.h"
-};
+#include <jni.h>
 
 #include <deque>
 #include <fstream>
 #include <iostream>
-#include <jni.h>
 
 #include "video_encoder_adapter.h"
 #include "audio_encoder_adapter.h"
@@ -23,9 +36,12 @@ extern "C" {
 #include "handler.h"
 #include "trinity.h"
 
-namespace trinity {
+extern "C" {
+#include "ffmpeg_decode.h"
+#include "cJSON.h"
+};
 
-using namespace std;
+namespace trinity {
 
 enum {
     kStartNextExport
@@ -34,7 +50,7 @@ enum {
 class VideoExportHandler;
 
 class VideoExport {
-public:
+ public:
     VideoExport(JNIEnv* env, jobject object);
     ~VideoExport();
 
@@ -43,13 +59,15 @@ public:
             int sample_rate, int channel_count, int audio_bit_rate);
 
     int OnComplete();
-private:
+
+ private:
     static void* ExportVideoThread(void* context);
     static int OnCompleteState(StateEvent* event);
     static void* ExportAudioThread(void* context);
     static void* ExportMessageThread(void* context);
     void StartDecode(MediaClip* clip);
     void FreeResource();
+    void OnEffect();
     void ProcessVideoExport();
     void ProcessAudioExport();
     void OnExportProgress(uint64_t current_time);
@@ -57,13 +75,13 @@ private:
     int Resample();
     void ProcessMessage();
 
-private:
+ private:
     JavaVM* vm_;
     jobject object_;
     int64_t video_duration_;
     pthread_t export_video_thread_;
     pthread_t export_audio_thread_;
-    deque<MediaClip*> clip_deque_;
+    std::deque<MediaClip*> clip_deque_;
     bool export_ing;
     EGLCore* egl_core_;
     EGLSurface egl_surface_;
@@ -92,10 +110,14 @@ private:
     int time_diff_;
     pthread_mutex_t media_mutex_;
     pthread_cond_t media_cond_;
+
+    cJSON* export_config_json_;
+    GLfloat* vertex_coordinate_;
+    GLfloat* texture_coordinate_;
 };
 
 class VideoExportHandler : public Handler {
-public:
+ public:
     VideoExportHandler(VideoExport* video_export, MessageQueue* queue) : Handler(queue) {
         video_export_ = video_export;
     }
@@ -111,10 +133,11 @@ public:
                 break;
         }
     }
-private:
+
+ private:
     VideoExport* video_export_;
 };
 
-}
+}  // namespace trinity
 
-#endif //TRINITY_VIDEO_EXPORT_H
+#endif  // TRINITY_VIDEO_EXPORT_H

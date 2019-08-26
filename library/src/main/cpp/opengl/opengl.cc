@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 //
 // Created by wlanjie on 2019/4/13.
 //
@@ -7,6 +25,7 @@
 #include "android_xlog.h"
 #include "matrix.h"
 #include "gl.h"
+#include "size.h"
 
 namespace trinity {
 
@@ -29,6 +48,9 @@ OpenGL::OpenGL() {
     width_ = 0;
     height_ = 0;
     program_ = 0;
+    default_vertex_coordinates_ = new GLfloat[8];
+    default_texture_coordinates_ = new GLfloat[8];
+    InitCoordinates();
     CreateProgram(DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
 }
 
@@ -37,6 +59,9 @@ OpenGL::OpenGL(int width, int height) {
     width_ = width;
     height_ = height;
     program_ = 0;
+    default_vertex_coordinates_ = new GLfloat[8];
+    default_texture_coordinates_ = new GLfloat[8];
+    InitCoordinates();
     CreateProgram(DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
 }
 
@@ -45,6 +70,9 @@ OpenGL::OpenGL(const char *vertex, const char *fragment) {
     width_ = 0;
     height_ = 0;
     program_ = 0;
+    default_vertex_coordinates_ = new GLfloat[8];
+    default_texture_coordinates_ = new GLfloat[8];
+    InitCoordinates();
     CreateProgram(vertex, fragment);
 }
 
@@ -53,6 +81,9 @@ OpenGL::OpenGL(int width, int height, const char *vertex, const char *fragment) 
     this->width_ = width;
     this->height_ = height;
     program_ = 0;
+    default_vertex_coordinates_ = new GLfloat[8];
+    default_texture_coordinates_ = new GLfloat[8];
+    InitCoordinates();
     CreateProgram(vertex, fragment);
 }
 
@@ -61,6 +92,34 @@ OpenGL::~OpenGL() {
         glDeleteProgram(program_);
         program_ = 0;
     }
+    if (nullptr != default_vertex_coordinates_) {
+        delete[] default_vertex_coordinates_;
+        default_vertex_coordinates_ = nullptr;
+    }
+    if (nullptr != default_texture_coordinates_) {
+        delete[] default_texture_coordinates_;
+        default_texture_coordinates_ = nullptr;
+    }
+}
+
+void OpenGL::InitCoordinates() {
+    default_vertex_coordinates_[0] = -1.0f;
+    default_vertex_coordinates_[1] = -1.0f;
+    default_vertex_coordinates_[2] = 1.0f;
+    default_vertex_coordinates_[3] = -1.0f;
+    default_vertex_coordinates_[4] = -1.0f;
+    default_vertex_coordinates_[5] = 1.0f;
+    default_vertex_coordinates_[6] = 1.0f;
+    default_vertex_coordinates_[7] = 1.0f;
+
+    default_texture_coordinates_[0] = 0.0f;
+    default_texture_coordinates_[1] = 0.0f;
+    default_texture_coordinates_[2] = 1.0f;
+    default_texture_coordinates_[3] = 0.0f;
+    default_texture_coordinates_[4] = 0.0f;
+    default_texture_coordinates_[5] = 1.0f;
+    default_texture_coordinates_[6] = 1.0f;
+    default_texture_coordinates_[7] = 1.0f;
 }
 
 void OpenGL::SetTextureType(trinity::TextureType type) {
@@ -69,6 +128,30 @@ void OpenGL::SetTextureType(trinity::TextureType type) {
 
 void OpenGL::Init(const char* vertex, const char* fragment) {
     CreateProgram(vertex, fragment);
+}
+
+void OpenGL::SetFrame(int source_width, int source_height, int target_width, int target_height, RenderFrame frame_type) {
+    LOGI("SetFrame source_width: %d source_height: %d target_width: %d target_height: %d", source_width, source_height, target_width, target_height);
+    Size ratio = Size(target_width == 0 ? source_width : target_width,
+                      target_height == 0 ? source_height : target_height);
+    Rect bounds = Rect(0, 0, source_width, source_height);
+    Rect* rect = bounds.GetRectWithAspectRatio(ratio);
+    float width_scale = rect->GetWidth() / bounds.GetWidth();
+    float height_scale = rect->GetHeight() / bounds.GetHeight();
+    LOGI("width_scale: %f height_scale: %f", width_scale, height_scale);
+    InitCoordinates();
+    if (frame_type == FIT) {
+        for (int i = 0; i < 4; i++) {
+            default_vertex_coordinates_[i * 2] = defaultVertexCoordinates[i * 2] * width_scale;
+            default_vertex_coordinates_[i * 2 + 1] = defaultVertexCoordinates[i * 2 + 1] * height_scale;
+        }
+    } else if (frame_type == CROP) {
+        for (int i = 0; i < 4; i++) {
+            float x = default_texture_coordinates_[i * 2];
+            default_texture_coordinates_[i * 2] = (x == 0.0f ? (1.0f - height_scale) : height_scale);
+        }
+    }
+    delete rect;
 }
 
 void OpenGL::SetOutput(int width, int height) {
@@ -112,11 +195,11 @@ void OpenGL::SetUniformMatrix4f(const char *name, int size, const GLfloat *matri
 }
 
 void OpenGL::ProcessImage(GLuint texture_id) {
-    ProcessImage(texture_id, defaultVertexCoordinates, defaultTextureCoordinate);
+    ProcessImage(texture_id, default_vertex_coordinates_, default_texture_coordinates_);
 }
 
 void OpenGL::ProcessImage(GLuint texture_id, GLfloat *texture_matrix) {
-    ProcessImage(texture_id, defaultVertexCoordinates, defaultTextureCoordinate, texture_matrix);
+    ProcessImage(texture_id, default_vertex_coordinates_, default_texture_coordinates_, texture_matrix);
 }
 
 void OpenGL::ProcessImage(GLuint texture_id, const GLfloat *vertex_coordinate, const GLfloat *texture_coordinate) {
@@ -156,13 +239,9 @@ void OpenGL::ProcessImage(GLuint texture_id, const GLfloat *vertex_coordinate, c
 //    glBindTexture(type_ == TEXTURE_OES ? GL_TEXTURE_EXTERNAL_OES : GL_TEXTURE_2D, 0);
 }
 
-void OpenGL::RunOnDrawTasks() {
+void OpenGL::RunOnDrawTasks() {}
 
-}
-
-void OpenGL::OnDrawArrays() {
-
-}
+void OpenGL::OnDrawArrays() {}
 
 void OpenGL::CreateProgram(const char *vertex, const char *fragment) {
     program_ = glCreateProgram();
@@ -186,7 +265,7 @@ void OpenGL::CompileShader(const char *shader_string, GLuint shader) {
         GLint infoLen;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
         if (infoLen) {
-            auto *buf = (char *) malloc((size_t) infoLen);
+            auto *buf = reinterpret_cast<char*>(malloc((size_t) infoLen));
             if (buf) {
                 LOGE("shader_string: %s", shader_string);
                 glGetShaderInfoLog(shader, infoLen, nullptr, buf);
@@ -206,7 +285,7 @@ void OpenGL::Link() {
         GLint infoLen;
         glGetProgramiv(program_, GL_INFO_LOG_LENGTH, &infoLen);
         if (infoLen) {
-            auto *buf = (char *) malloc((size_t) infoLen);
+            auto *buf = reinterpret_cast<char*>(malloc((size_t) infoLen));
             if (buf) {
                 glGetProgramInfoLog(program_, infoLen, nullptr, buf);
                 printf("%s", buf);
@@ -218,5 +297,4 @@ void OpenGL::Link() {
     }
 }
 
-
-}
+}  // namespace trinity

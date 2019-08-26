@@ -33,13 +33,14 @@ class EffectAdapter(context: Context, effects: List<Effect>) : RecyclerView.Adap
         holder.image.visibility = View.GONE
         holder.select.visibility = View.VISIBLE
         holder.image.isSelected = true
+        val effect = mEffects[position]
 //        mSelectedPos = position
 //        mSelectedHolder = holder
 //        val effectInfo = EffectInfo()
 //        effectInfo.type = UIEditorPage.FILTER_EFFECT
 //        effectInfo.setPath(mFilterList.get(position))
 //        effectInfo.id = position
-        mTouchListener?.onTouchEvent(MotionEvent.ACTION_DOWN, position, "")
+        mTouchListener?.onTouchEvent(MotionEvent.ACTION_DOWN, position, effect.name)
         mAdding = true
       }
     }
@@ -83,7 +84,8 @@ class EffectAdapter(context: Context, effects: List<Effect>) : RecyclerView.Adap
         }
         val holder = v?.tag as ViewHolder
         val position = holder.adapterPosition
-        mTouchListener?.onTouchEvent(MotionEvent.ACTION_UP, position, "")
+        val effect = mEffects[position]
+        mTouchListener?.onTouchEvent(MotionEvent.ACTION_UP, position, effect.name)
         holder.image.visibility = View.VISIBLE
         holder.select.visibility = View.GONE
         mAdding = false

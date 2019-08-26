@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 //
 // Created by wlanjie on 2018/11/2.
 //
@@ -436,15 +454,25 @@ static jint Android_JNI_video_editor_getClipIndex(JNIEnv* env, jobject object, j
     return editor->GetClipIndex(time);
 }
 
-static jint Android_JNI_video_editor_addFilter(JNIEnv* env, jobject object, jlong handle, jstring lut, jlong start_time, jlong end_time, jint action_id) {
+static jint Android_JNI_video_editor_addFilter(JNIEnv* env, jobject object, jlong handle, jstring config) {
     if (handle <= 0) {
         return 0;
     }
     VideoEditor* editor = reinterpret_cast<VideoEditor*>(handle);
-    const char* lut_path = env->GetStringUTFChars(lut, JNI_FALSE);
-    int id = editor->AddFilter(lut_path, start_time, end_time, action_id);
-    env->ReleaseStringUTFChars(lut, lut_path);
+    const char* config_buffer = env->GetStringUTFChars(config, JNI_FALSE);
+    int id = editor->AddFilter(config_buffer);
+    env->ReleaseStringUTFChars(config, config_buffer);
     return id;
+}
+
+static void Android_JNI_video_editor_updateFilter(JNIEnv* env, jobject object, jlong handle, jstring config, jint action_id) {
+    if (handle <= 0) {
+        return;
+    }
+    VideoEditor* editor = reinterpret_cast<VideoEditor*>(handle);
+    const char* config_buffer = env->GetStringUTFChars(config, JNI_FALSE);
+    editor->UpdateFilter(config_buffer, action_id);
+    env->ReleaseStringUTFChars(config, config_buffer);
 }
 
 static jint Android_JNI_video_editor_addMusic(JNIEnv* env, jobject object, jlong handle, jstring music_path, jlong start_time, jlong end_time) {
@@ -458,12 +486,25 @@ static jint Android_JNI_video_editor_addMusic(JNIEnv* env, jobject object, jlong
     return result;
 }
 
-static int Android_JNI_video_editor_addAction(JNIEnv* env, jobject object, jlong handle, jint effect_type, jlong start_time, jlong end_time, jint action_id) {
+static int Android_JNI_video_editor_addAction(JNIEnv* env, jobject object, jlong handle, jstring config) {
     if (handle <= 0) {
         return -1;
     }
+    const char* config_buffer = env->GetStringUTFChars(config, JNI_FALSE);
     VideoEditor* editor = reinterpret_cast<VideoEditor*>(handle);
-    return editor->AddAction(effect_type, start_time, end_time, action_id);
+    int actionId = editor->AddAction(config_buffer);
+    env->ReleaseStringUTFChars(config, config_buffer);
+    return actionId;
+}
+
+static void Android_JNI_video_editor_updateAction(JNIEnv* env, jobject object, jlong handle, jstring config, jint action_id) {
+    if (handle <= 0) {
+        return;
+    }
+    const char* config_buffer = env->GetStringUTFChars(config, JNI_FALSE);
+    VideoEditor* editor = reinterpret_cast<VideoEditor*>(handle);
+    editor->UpdateAction(config_buffer, action_id);
+    env->ReleaseStringUTFChars(config, config_buffer);
 }
 
 static int Android_JNI_video_editor_play(JNIEnv* env, jobject object, jlong handle, jboolean repeat) {
@@ -595,9 +636,11 @@ static JNINativeMethod videoEditorMethods[] = {
         {"getVideoTime",        "(JIJ)J",                                                (void **) Android_JNI_video_editor_getVideoTime },
         {"getClipTime",         "(JIJ)J",                                                (void **) Android_JNI_video_editor_getClipTime },
         {"getClipIndex",        "(JJ)I",                                                 (void **) Android_JNI_video_editor_getClipIndex },
-        {"addFilter",           "(JLjava/lang/String;JJI)I",                             (void **) Android_JNI_video_editor_addFilter },
+        {"addFilter",           "(JLjava/lang/String;)I",                                (void **) Android_JNI_video_editor_addFilter },
+        {"updateFilter",        "(JLjava/lang/String;I)V",                               (void **) Android_JNI_video_editor_updateFilter },
         {"addMusic",            "(JLjava/lang/String;JJ)I",                              (void **) Android_JNI_video_editor_addMusic },
-        {"addAction",           "(JIJJI)I",                                              (void **) Android_JNI_video_editor_addAction },
+        {"addAction",           "(JLjava/lang/String;)I",                                (void **) Android_JNI_video_editor_addAction },
+        {"updateAction",        "(JLjava/lang/String;I)V",                               (void **) Android_JNI_video_editor_updateAction },
         {"play",                "(JZ)I",                                                 (void **) Android_JNI_video_editor_play },
         {"pause",               "(J)V",                                                  (void **) Android_JNI_video_editor_pause },
         {"resume",              "(J)V",                                                  (void **) Android_JNI_video_editor_resume },

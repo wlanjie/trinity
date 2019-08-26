@@ -1,9 +1,28 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 //
 // Created by wlanjie on 2019-06-29.
 //
 
 #include "video_player.h"
 #include "android_xlog.h"
+#include "size.h"
 
 /* no AV sync correction is done if below the minimum AV sync threshold */
 #define AV_SYNC_THRESHOLD_MIN 0.04
@@ -39,7 +58,7 @@ static double rdftspeed = 0.02;
 namespace trinity {
 
 static int AudioCallback(uint8_t* buffer, size_t buffer_size, void* context) {
-    VideoPlayer* player = (VideoPlayer*) context;
+    VideoPlayer* player = reinterpret_cast<VideoPlayer*>(context);
     return player->ReadAudio(buffer, buffer_size);
 }
 
@@ -74,6 +93,26 @@ VideoPlayer::VideoPlayer() {
     vertex_coordinate_ = new GLfloat[8];
     texture_coordinate_ = new GLfloat[8];
 
+    InitCoordinates();
+}
+
+VideoPlayer::~VideoPlayer() {
+    if (nullptr != audio_render_) {
+        delete audio_render_;
+        audio_render_ = nullptr;
+    }
+    if (nullptr != message_queue_) {
+        message_queue_->Abort();
+        delete message_queue_;
+        message_queue_ = nullptr;
+    }
+    if (nullptr != handler_) {
+        delete handler_;
+        handler_ = nullptr;
+    }
+}
+
+void VideoPlayer::InitCoordinates() {
     vertex_coordinate_[0] = -1.0f;
     vertex_coordinate_[1] = -1.0f;
     vertex_coordinate_[2] = 1.0f;
@@ -95,20 +134,20 @@ VideoPlayer::VideoPlayer() {
     texture_coordinate_[7] = 0.0f;
 }
 
-VideoPlayer::~VideoPlayer() {
-    if (nullptr != audio_render_) {
-        delete audio_render_;
-        audio_render_ = nullptr;
+void VideoPlayer::SetFrame(int source_width, int source_height, int target_width, int target_height) {
+    LOGI("source_width: %d source_height: %d target_width: %d target_height; %d", source_width, source_height, target_width, target_height);
+    Size ratio = Size(target_width == 0 ? source_width : target_width,
+                      target_height == 0 ? source_height : target_height);
+    Rect bounds = Rect(0, 0, source_width, source_height);
+    Rect* rect = bounds.GetRectWithAspectRatio(ratio);
+    float width_scale = rect->GetWidth() / bounds.GetWidth();
+    float height_scale = rect->GetHeight() / bounds.GetHeight();
+    InitCoordinates();
+    for (int i = 0; i < 4; i++) {
+        vertex_coordinate_[i * 2] = vertex_coordinate_[i * 2] * width_scale;
+        vertex_coordinate_[i * 2 + 1] = vertex_coordinate_[i * 2 + 1] * height_scale;
     }
-    if (nullptr != message_queue_) {
-        message_queue_->Abort();
-        delete message_queue_;
-        message_queue_ = nullptr;
-    }
-    if (nullptr != handler_) {
-        delete handler_;
-        handler_ = nullptr;
-    }
+    delete rect;
 }
 
 void SetClockAt(Clock* c, double pts, int serial, double time) {
@@ -349,12 +388,12 @@ void VideoPlayer::StreamTogglePause(MediaDecode* media_decode, PlayerState* play
 }
 
 void VideoPlayer::OnSeekEvent(SeekEvent* event, int seek_flag) {
-    VideoPlayer* video_player = (VideoPlayer*) event->context;
+    VideoPlayer* video_player = reinterpret_cast<VideoPlayer*>(event->context);
     if (seek_flag & AVSEEK_FLAG_BYTE) {
         SetClock(&video_player->player_state_->external_clock, NAN, 0);
     } else {
         int64_t seek_target = video_player->media_decode_->seek_pos * (AV_TIME_BASE / 1000);
-        SetClock(&video_player->player_state_->external_clock, seek_target / (double) AV_TIME_BASE, 0);
+        SetClock(&video_player->player_state_->external_clock, seek_target * 1.0 / AV_TIME_BASE, 0);
     }
     if (video_player->media_decode_->paused) {
         video_player->StreamTogglePause(video_player->media_decode_, video_player->player_state_);
@@ -363,7 +402,7 @@ void VideoPlayer::OnSeekEvent(SeekEvent* event, int seek_flag) {
 }
 
 void VideoPlayer::OnAudioPrepareEvent(AudioEvent *event, int size) {
-    VideoPlayer* player = (VideoPlayer*) event->context;
+    VideoPlayer* player = reinterpret_cast<VideoPlayer*>(event->context);
     PlayerState* player_state = player->player_state_;
     player_state->audio_hw_buf_size = size;
     player_state->audio_buf_size = 0;
@@ -373,7 +412,7 @@ void VideoPlayer::OnAudioPrepareEvent(AudioEvent *event, int size) {
     player_state->audio_diff_avg_count = 0;
     /* since we do not have a precmedia_decodee anough audio fifo fullness,
              we correct audio sync only if larger than thmedia_decode threshold */
-    player_state->audio_diff_threshold = (double) (size / player->media_decode_->audio_tgt.bytes_per_sec);
+    player_state->audio_diff_threshold = size * 1.0 / player->media_decode_->audio_tgt.bytes_per_sec;
 }
 
 int VideoPlayer::Init() {
@@ -401,31 +440,30 @@ int VideoPlayer::Init() {
 int VideoPlayer::Start(const char *file_name,
         uint64_t start_time, uint64_t end_time,
         StateEvent* state_event, OnVideoRenderEvent* render_event) {
-
     video_render_event_ = render_event;
-    video_event_ = (VideoEvent*) av_malloc(sizeof(VideoEvent));
+    video_event_ = reinterpret_cast<VideoEvent*>(av_malloc(sizeof(VideoEvent)));
     memset(video_event_, 0, sizeof(VideoEvent));
     video_event_->context = this;
     video_event_->render_video_frame = RenderVideoFrame;
 
-    player_state_ = (PlayerState*) av_malloc(sizeof(PlayerState));
+    player_state_ = reinterpret_cast<PlayerState*>(av_malloc(sizeof(PlayerState)));
     memset(player_state_, 0, sizeof(PlayerState));
     player_state_->av_sync_type = AV_SYNC_AUDIO_MASTER;
 
-    media_decode_ = (MediaDecode*) av_malloc(sizeof(MediaDecode));
+    media_decode_ = reinterpret_cast<MediaDecode*>(av_malloc(sizeof(MediaDecode)));
     memset(media_decode_, 0, sizeof(MediaDecode));
     media_decode_->start_time = start_time;
     media_decode_->end_time = end_time;
     media_decode_->loop = 1;
     media_decode_->precision_seek = 1;
 
-    SeekEvent* seek_event = (SeekEvent*) av_malloc(sizeof(SeekEvent));
+    SeekEvent* seek_event = reinterpret_cast<SeekEvent*>(av_malloc(sizeof(SeekEvent)));
     memset(seek_event, 0, sizeof(SeekEvent));
     seek_event->on_seek_event = OnSeekEvent;
     seek_event->context = this;
     media_decode_->seek_event = seek_event;
 
-    AudioEvent* audio_event = (AudioEvent*) av_malloc(sizeof(AudioEvent));
+    AudioEvent* audio_event = reinterpret_cast<AudioEvent*>(av_malloc(sizeof(AudioEvent)));
     memset(audio_event, 0, sizeof(AudioEvent));
     audio_event->on_audio_prepare_event = OnAudioPrepareEvent;
     audio_event->context = this;
@@ -441,7 +479,7 @@ int VideoPlayer::Start(const char *file_name,
     InitClock(&player_state_->external_clock, &player_state_->external_clock.serial);
 
     pthread_mutex_init(&sync_mutex_, nullptr);
-    pthread_cond_init(&sync_cond_, nullptr) ;
+    pthread_cond_init(&sync_cond_, nullptr);
     pthread_create(&sync_thread_, nullptr, SyncThread, this);
 
     audio_render_->Play();
@@ -449,7 +487,7 @@ int VideoPlayer::Start(const char *file_name,
 }
 
 void *VideoPlayer::SyncThread(void* arg) {
-    VideoPlayer* video_player = (VideoPlayer*) arg;
+    VideoPlayer* video_player = reinterpret_cast<VideoPlayer*>(arg);
     video_player->Sync();
     pthread_exit(0);
 }
@@ -790,7 +828,7 @@ void VideoPlayer::DestroyEGLContext() {
 void VideoPlayer::RenderVideo() {
     if (nullptr != core_ && EGL_NO_SURFACE != render_surface_) {
         Frame *vp = frame_queue_peek_last(&media_decode_->video_frame_queue);
-        if (! core_->MakeCurrent(render_surface_)) {
+        if (!core_->MakeCurrent(render_surface_)) {
             LOGE("eglSwapBuffers MakeCurrent error: %d", eglGetError());
         }
         if (!vp->uploaded) {
@@ -802,6 +840,7 @@ void VideoPlayer::RenderVideo() {
                 if (nullptr != yuv_render_) {
                     delete yuv_render_;
                 }
+                SetFrame(surface_width_, surface_height_, frame_width_, frame_height_);
                 yuv_render_ = new YuvRender(vp->width, vp->height, surface_width_, surface_height_, 0);
             }
             int texture_id = yuv_render_->DrawFrame(vp->frame);
@@ -826,7 +865,7 @@ void VideoPlayer::RenderVideo() {
 }
 
 void *VideoPlayer::RenderThread(void *context) {
-    VideoPlayer* video_player = (VideoPlayer*) context;
+    VideoPlayer* video_player = reinterpret_cast<VideoPlayer*>(context);
     if (video_player->destroy_) {
         return nullptr;
     }
@@ -890,7 +929,7 @@ void VideoPlayer::OnSurfaceDestroyed() {
 
 void VideoPlayer::RenderVideoFrame(VideoEvent* event) {
     if (nullptr != event && nullptr != event->context) {
-        VideoPlayer* video_player = (VideoPlayer*) event->context;
+        VideoPlayer* video_player = reinterpret_cast<VideoPlayer*>(event->context);
         if (!video_player->egl_context_exists_) {
             return;
         }
@@ -915,4 +954,4 @@ int64_t VideoPlayer::GetCurrentPosition() {
     return current_position_;
 }
 
-}
+}  // namespace trinity

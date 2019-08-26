@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 //
 // Created by wlanjie on 2019-05-14.
 //
@@ -5,9 +22,6 @@
 #include "video_editor.h"
 #include "android_xlog.h"
 #include "gl.h"
-
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
 
 namespace trinity {
 
@@ -187,23 +201,29 @@ int VideoEditor::GetClipIndex(int64_t time) {
     return 0;
 }
 
-int VideoEditor::AddFilter(const char* lut, uint64_t start_time, uint64_t end_time, int action_id) {
-    int actId = action_id;
-    if (action_id == NO_ACTION) {
-        actId = current_action_id_++;
-    }
+int VideoEditor::AddFilter(const char* filter_config) {
+    LOGI("add filter config: %s", filter_config);
     if (nullptr != video_player_) {
-        char* lut_path = new char[strlen(lut) + 1];
-        sprintf(lut_path, "%s%c", lut, 0);
-        FilterAction* action = new FilterAction();
-        action->start_time = start_time;
-        action->end_time = end_time;
-        action->action_id = actId;
-        action->lut_path = lut_path;
-        Message* message = new Message(kFilter, action);
+        int actId = current_action_id_++;
+        char* config = new char[strlen(filter_config) + 1];
+        // TODO snprintf
+        sprintf(config, "%s%c", filter_config, 0);
+        Message* message = new Message(kFilter, actId, 0, config);
+        video_player_->SendGLMessage(message);
+        return actId;
+    }
+    return -1;
+}
+
+void VideoEditor::UpdateFilter(const char *filter_config, int action_id) {
+    LOGI("update filter action_id: %d config: %s", action_id, filter_config);
+    if (nullptr != video_player_) {
+        char* config = new char[strlen(filter_config) + 1];
+        // TODO snprintf
+        sprintf(config, "%s%c", filter_config, 0);
+        Message* message = new Message(kFilter, action_id, 0, config);
         video_player_->SendGLMessage(message);
     }
-    return actId;
 }
 
 int VideoEditor::AddMusic(const char *path, uint64_t start_time, uint64_t end_time) {
@@ -215,36 +235,43 @@ int VideoEditor::AddMusic(const char *path, uint64_t start_time, uint64_t end_ti
     return 0;
 }
 
-int VideoEditor::AddAction(int effect_type, uint64_t start_time, uint64_t end_time, int action_id) {
-    int actId = action_id;
-    if (action_id == NO_ACTION) {
-        actId = current_action_id_++;
-    }
+int VideoEditor::AddAction(const char *effect_config) {
     if (nullptr != video_player_) {
-        if (effect_type == 0) {
-            FlashWhiteAction *action = new FlashWhiteAction();
-            action->start_time = start_time;
-            action->end_time = end_time;
-            action->flash_time = 10;
-            action->action_id = actId;
-            Message *msg = new Message(kFlashWhite, action);
-            video_player_->SendGLMessage(msg);
+        int actId = current_action_id_++;
+        char *config = new char[strlen(effect_config) + 1];
+        sprintf(config, "%s%c", effect_config, 0);
+        Message *message = new Message(kEffect, actId, 0, config);
+        video_player_->SendGLMessage(message);
+
+        if (nullptr != editor_resource_) {
+            editor_resource_->AddAction(effect_config, actId);
         }
+        return actId;
     }
-    return actId;
+    return -1;
+}
+
+void VideoEditor::UpdateAction(const char *effect_config, int action_id) {
+    char* config = new char[strlen(effect_config) + 1];
+    sprintf(config, "%s%c", effect_config, 0);
+    Message* message = new Message(kEffectUpdate, action_id, 0, config);
+    video_player_->SendGLMessage(message);
+
+    if (nullptr != editor_resource_) {
+        editor_resource_->UpdateAction(effect_config, action_id);
+    }
 }
 
 int VideoEditor::OnCompleteEvent(StateEvent *event) {
-    VideoEditor *editor = (VideoEditor *)event->context;
+    VideoEditor *editor = reinterpret_cast<VideoEditor*>(event->context);
     if (nullptr != editor) {
         editor->handler_->PostMessage(new Message(kStartPlayer));
-//        return editor->OnComplete();
     }
     return 0;
 }
 
 int VideoEditor::OnVideoRender(OnVideoRenderEvent *event, int texture_id, int width, int height, uint64_t current_time) {
-    VideoEditor* editor = (VideoEditor*) event->context;
+    VideoEditor *editor = reinterpret_cast<VideoEditor*>(event->context);
     if (nullptr != editor) {
         return editor->image_process_->Process(texture_id, current_time, width, height, 0, 0);
     }
@@ -282,7 +309,7 @@ void VideoEditor::FreeStateEvent() {
 }
 
 void VideoEditor::AllocStateEvent() {
-    state_event_ = (StateEvent*) av_malloc(sizeof(StateEvent));
+    state_event_ = reinterpret_cast<StateEvent*>(av_malloc(sizeof(StateEvent)));
     memset(state_event_, 0, sizeof(StateEvent));
     state_event_->on_complete_event = OnCompleteEvent;
     state_event_->context = this;
@@ -296,7 +323,7 @@ void VideoEditor::FreeVideoRenderEvent() {
 }
 
 void VideoEditor::AllocVideoRenderEvent() {
-    on_video_render_event_ = (OnVideoRenderEvent*) av_malloc(sizeof(OnVideoRenderEvent));
+    on_video_render_event_ = reinterpret_cast<OnVideoRenderEvent*>(av_malloc(sizeof(OnVideoRenderEvent)));
     memset(on_video_render_event_, 0, sizeof(OnVideoRenderEvent));
     on_video_render_event_->on_render_video = OnVideoRender;
     on_video_render_event_->context = this;
@@ -330,9 +357,7 @@ void VideoEditor::Resume() {
     }
 }
 
-void VideoEditor::Stop() {
-
-}
+void VideoEditor::Stop() {}
 
 void VideoEditor::Destroy() {
     LOGI("enter Destroy");
@@ -387,12 +412,19 @@ void VideoEditor::OnGLCreate() {
 
 void VideoEditor::OnGLMessage(trinity::Message *msg) {
     switch (msg->GetWhat()) {
-        case kFilter:
-            OnFilter(static_cast<FilterAction *>(msg->GetObj()));
+//        case kFilter:
+//            if (nullptr != image_process_) {
+//                char* config = static_cast<char *>(msg->GetObj());
+//                image_process_->OnFilter(config, msg->GetArg1());
+//                delete[] config;
+//            }
+//            break;
+        case kEffect:
+            OnAddAction(static_cast<char *>(msg->GetObj()), msg->GetArg1());
             break;
 
-        case kFlashWhite:
-            OnFlashWhite(static_cast<FlashWhiteAction *>(msg->GetObj()));
+        case kEffectUpdate:
+            OnUpdateAction(static_cast<char *>(msg->GetObj()), msg->GetArg1());
             break;
         default:
             break;
@@ -404,32 +436,22 @@ void VideoEditor::OnGLDestroy() {
     image_process_ = nullptr;
 }
 
-void VideoEditor::OnFilter(FilterAction *action) {
-    if (nullptr != image_process_) {
-        int lut_width = 0;
-        int lut_height = 0;
-        int channels = 0;
-        unsigned char* lut_buffer = stbi_load(action->lut_path, &lut_width, &lut_height, &channels, STBI_rgb_alpha);
-        if (lut_width != 512 || lut_height != 512) {
-            stbi_image_free(lut_buffer);
-            return;
-        }
-        int actionId = image_process_->AddFilterAction(lut_buffer, action->start_time, action->end_time, action->action_id);
-        stbi_image_free(lut_buffer);
-
-        if (nullptr != editor_resource_) {
-            editor_resource_->AddFilter(action->lut_path, action->start_time, action->end_time, actionId);
-        }
-        delete[] action->lut_path;
-        delete action;
+void VideoEditor::OnAddAction(char *config, int action_id) {
+    if (nullptr == image_process_) {
+        return;
     }
+    LOGI("add action id: %d config: %s", action_id, config);
+    image_process_->OnAction(config, action_id);
+    delete[] config;
 }
 
-void VideoEditor::OnFlashWhite(FlashWhiteAction *action) {
-    if (nullptr != image_process_) {
-        image_process_->AddFlashWhiteAction(action->flash_time, action->start_time, action->end_time, action->action_id);
-        delete[] action;
+void VideoEditor::OnUpdateAction(char *config, int action_id) {
+    if (nullptr == image_process_) {
+        return;
     }
+    LOGI("update action id: %d config: %s", action_id, config);
+    image_process_->OnAction(config, action_id);
+    delete[] config;
 }
 
-}
+}  // namespace trinity

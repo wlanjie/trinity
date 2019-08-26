@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 //
 // Created by wlanjie on 2019/4/23.
 //
@@ -8,7 +26,7 @@
 namespace trinity {
 
 class Size {
-public:
+ public:
     Size(float width, float height) {
         width_ = width;
         height_ = height;
@@ -17,13 +35,13 @@ public:
     float GetWidth() { return width_; }
     float GetHeight() { return height_; }
 
-private:
+ private:
     float width_;
     float height_;
 };
 
 class Rect {
-public:
+ public:
     Rect(float min_x, float min_y, float width, float height) {
         min_x_ = min_x;
         min_y_ = min_y;
@@ -55,13 +73,13 @@ public:
     float GetWidth() { return width_; }
     float GetHeight() { return height_; }
 
-private:
+ private:
     float min_x_;
     float min_y_;
     float width_;
     float height_;
 };
 
-}
+}  // namespace trinity
 
-#endif //TRINITY_SIZE_H
+#endif  // TRINITY_SIZE_H

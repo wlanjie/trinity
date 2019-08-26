@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 //
 // Created by wlanjie on 2019-06-29.
 //
@@ -45,7 +63,9 @@ typedef enum {
 
 typedef enum {
     kFilter = 5,
-    kFlashWhite = 6
+    kFlashWhite = 6,
+    kEffect = 7,
+    kEffectUpdate = 8
 } EffectMessage;
 
 typedef struct OnVideoRenderEvent {
@@ -100,8 +120,7 @@ class PlayerHandler;
 class VideoRenderHandler;
 
 class VideoPlayer {
-
-public:
+ public:
     VideoPlayer();
     virtual ~VideoPlayer();
     int Init();
@@ -121,10 +140,11 @@ public:
     void OnSurfaceCreated(ANativeWindow* window);
     void OnSurfaceChanged(int width, int height);
     void OnSurfaceDestroyed();
-public:
+
+ public:
     int ReadAudio(uint8_t* buffer, int buffer_size);
 
-private:
+ private:
     static void* SyncThread(void* arg);
     void Sync();
     static void OnSeekEvent(SeekEvent* event, int seek_flag);
@@ -134,7 +154,10 @@ private:
     static void RenderVideoFrame(VideoEvent* event);
     static void *RenderThread(void *context);
     void ProcessMessage();
-private:
+    void InitCoordinates();
+    void SetFrame(int source_width, int source_height, int target_width, int target_height);
+
+ private:
     pthread_t sync_thread_;
     pthread_mutex_t sync_mutex_;
     pthread_cond_t sync_cond_;
@@ -165,7 +188,8 @@ private:
     GLfloat* vertex_coordinate_;
     GLfloat* texture_coordinate_;
     bool destroy_;
-public:
+
+ public:
     GLObserver* gl_observer_;
     bool egl_destroy_;
 
@@ -180,9 +204,8 @@ public:
     void RenderVideo();
 };
 
-
 class VideoRenderHandler : public Handler {
-public:
+ public:
     VideoRenderHandler(VideoPlayer* player, MessageQueue* queue) : Handler(queue) {
         player_ = player;
         init_ = false;
@@ -196,7 +219,7 @@ public:
                 if (player_->egl_destroy_) {
                     break;
                 }
-                window = (ANativeWindow *) (msg->GetObj());
+                window = reinterpret_cast<ANativeWindow*>(msg->GetObj());
                 init_ = player_->CreateEGLContext(window);
 
                 if (nullptr != player_->gl_observer_) {
@@ -218,7 +241,7 @@ public:
                     break;
                 }
                 if (init_) {
-                    window = (ANativeWindow *) (msg->GetObj());
+                    window = reinterpret_cast<ANativeWindow*>(msg->GetObj());
                     player_->CreateWindowSurface(window);
                 }
                 break;
@@ -245,11 +268,11 @@ public:
         }
     }
 
-private:
+ private:
     VideoPlayer* player_;
     bool init_;
 };
 
-}
+}  // namespace trinity
 
-#endif //TRINITY_VIDEO_PLAYER_H
+#endif  // TRINITY_VIDEO_PLAYER_H

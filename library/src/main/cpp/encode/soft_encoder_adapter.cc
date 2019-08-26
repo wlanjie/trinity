@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include "soft_encoder_adapter.h"
 #include "android_xlog.h"
 #include "tools.h"
@@ -6,18 +23,21 @@
 
 namespace trinity {
 
-SoftEncoderAdapter::SoftEncoderAdapter(GLfloat* vertex_coordinate, GLfloat* texture_coordinate) :
-        msg_(MSG_NONE), copy_texture_surface_(EGL_NO_SURFACE) {
-    yuy_packet_pool_ = nullptr;
-    load_texture_context_ = EGL_NO_CONTEXT;
-    fbo_ = 0;
-    output_texture_id_ = 0;
-    egl_core_ = nullptr;
-    encode_render_ = nullptr;
-    pixel_size_ = 0;
-    encoder_ = nullptr;
-    renderer_ = nullptr;
-
+SoftEncoderAdapter::SoftEncoderAdapter(GLfloat* vertex_coordinate, GLfloat* texture_coordinate)
+    : yuy_packet_pool_(nullptr),
+      load_texture_context_(EGL_NO_CONTEXT),
+      vertex_coordinate_(nullptr),
+      texture_coordinate_(nullptr),
+      fbo_(0),
+      output_texture_id_(0),
+      egl_core_(nullptr),
+      encode_render_(nullptr),
+      pixel_size_(0),
+      encoder_(nullptr),
+      renderer_(nullptr),
+      time_mills_(0),
+      msg_(MSG_NONE),
+      copy_texture_surface_(EGL_NO_SURFACE) {
     pthread_mutex_init(&lock_, NULL);
     pthread_cond_init(&condition_, NULL);
     pthread_mutex_init(&preview_thread_lock_, NULL);
@@ -61,8 +81,6 @@ void SoftEncoderAdapter::CreateEncoder(EGLCore *eglCore, int inputTexId) {
     start_time_ = 0;
     fps_change_time_ = 0;
 
-    output_stream_.open("/sdcard/trinity.yuv", std::ios_base::binary | std::ios_base::out);
-
     encoder_ = new VideoX264Encoder(0);
     encoder_->Init(video_width_, video_height_, video_bit_rate_, frame_rate_, packet_pool_);
     yuy_packet_pool_ = new VideoPacketQueue();
@@ -94,7 +112,7 @@ void SoftEncoderAdapter::Encode(int timeMills) {
     if (start_time_ == 0)
         start_time_ = getCurrentTime();
 
-    if (fps_change_time_ == 0){
+    if (fps_change_time_ == 0) {
         fps_change_time_ = getCurrentTime();
     }
 
@@ -187,11 +205,8 @@ void SoftEncoderAdapter::LoadTexture() {
     uint8_t *packetBuffer = new uint8_t[pixel_size_];
     encode_render_->CopyYUV420Image(output_texture_id_, packetBuffer, video_width_, video_height_);
     VideoPacket *videoPacket = new VideoPacket();
-
-    output_stream_.write(reinterpret_cast<const char *>(packetBuffer), pixel_size_);
     videoPacket->buffer = packetBuffer;
     videoPacket->size = pixel_size_;
-    LOGE("time_mills_: %d", time_mills_);
     videoPacket->timeMills = time_mills_;
     if (time_mills_ != -1) {
         time_mills_ = NO_TIME_MILLS;
@@ -228,13 +243,16 @@ bool SoftEncoderAdapter::Initialize() {
 }
 
 void SoftEncoderAdapter::Destroy() {
-    output_stream_.close();
     if (nullptr != egl_core_) {
         egl_core_->MakeCurrent(copy_texture_surface_);
         if (nullptr != encode_render_) {
             encode_render_->Destroy();
             delete encode_render_;
             encode_render_ = nullptr;
+        }
+        if (output_texture_id_ != 0) {
+            glDeleteTextures(1, &output_texture_id_);
+            output_texture_id_ = 0;
         }
         // TODO delete texture
         if (fbo_ != 0) {
@@ -254,7 +272,7 @@ void SoftEncoderAdapter::Destroy() {
 }
 
 void *SoftEncoderAdapter::StartEncodeThread(void *ptr) {
-    SoftEncoderAdapter *softEncoderAdapter = (SoftEncoderAdapter *) ptr;
+    SoftEncoderAdapter *softEncoderAdapter = reinterpret_cast<SoftEncoderAdapter *>(ptr);
     softEncoderAdapter->startEncode();
     pthread_exit(0);
 }
@@ -274,4 +292,4 @@ void SoftEncoderAdapter::startEncode() {
     }
 }
 
-}
+}  // namespace trinity

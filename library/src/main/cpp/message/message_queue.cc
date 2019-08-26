@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 //
 // Created by wlanjie on 2019/4/13.
 //
@@ -131,7 +149,7 @@ Message::Message() {
     obj = nullptr;
 }
 
-Message::Message(int what){
+Message::Message(int what) {
     handler_ = NULL;
     this->what = what;
     arg1 = -1;
@@ -164,7 +182,7 @@ Message::Message(int what, int arg1, int arg2, void* obj) {
 Message::~Message() {
 }
 
-int Message::Execute(){
+int Message::Execute() {
     if (MESSAGE_QUEUE_LOOP_QUIT_FLAG == what) {
         return MESSAGE_QUEUE_LOOP_QUIT_FLAG;
     } else if (handler_) {
@@ -172,6 +190,6 @@ int Message::Execute(){
         return 1;
     }
     return 0;
-};
-
 }
+
+}  // namespace trinity

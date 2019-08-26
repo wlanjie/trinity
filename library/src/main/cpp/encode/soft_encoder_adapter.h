@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #ifndef TRINITY_SOFT_ENCODER_ADAPTER_H
 #define TRINITY_SOFT_ENCODER_ADAPTER_H
 
@@ -8,14 +25,11 @@
 #include "opengl.h"
 #include "encode_render.h"
 
-#include <fstream>
-#include <iostream>
-
 namespace trinity {
 
 class SoftEncoderAdapter : public VideoEncoderAdapter {
-public:
-    SoftEncoderAdapter(GLfloat* vertex_coordinate = nullptr, GLfloat* texture_coordinate = nullptr);
+ public:
+    explicit SoftEncoderAdapter(GLfloat* vertex_coordinate = nullptr, GLfloat* texture_coordinate = nullptr);
 
     virtual ~SoftEncoderAdapter();
 
@@ -33,7 +47,7 @@ public:
 
     void HotConfig(int maxBitrate, int avgBitrate, int fps);
 
-private:
+ private:
     static void *StartEncodeThread(void *ptr);
 
     static void *StartDownloadThread(void *ptr);
@@ -46,9 +60,7 @@ private:
 
     void Destroy();
 
-private:
-    std::ofstream output_stream_;
-
+ private:
     VideoPacketQueue *yuy_packet_pool_;
     /** 这是创建RenderThread的context, 要共享给我们这个EGLContext线程 **/
     EGLContext load_texture_context_;
@@ -75,5 +87,6 @@ private:
     int time_mills_;
 };
 
-}
-#endif // TRINITY_SOFT_ENCODER_ADAPTER_H
+}  // namespace trinity
+
+#endif  // TRINITY_SOFT_ENCODER_ADAPTER_H

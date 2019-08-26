@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include "video_x264_encoder.h"
 #include "android_xlog.h"
 
@@ -23,7 +40,6 @@ int VideoX264Encoder::Init(int width, int height, int videoBitRate, float frameR
 		LOGE("alloc Video Stream Failed... \n");
 		return -1;
 	}
-	//5:分配AVFrame存储编码之前的YUV420P的原始数据
 	AllocAVFrame();
 	frame_->width = width;
 	frame_->height = height;
@@ -263,4 +279,4 @@ void VideoX264Encoder::AllocAVFrame() {
 				   codec_context_->height);
 }
 
-}
+}  // namespace trinity
