@@ -152,7 +152,7 @@ void SoftEncoderAdapter::DestroyEncoder() {
 }
 
 void *SoftEncoderAdapter::StartDownloadThread(void *ptr) {
-    SoftEncoderAdapter *softEncoderAdapter = (SoftEncoderAdapter *) ptr;
+    SoftEncoderAdapter *softEncoderAdapter = reinterpret_cast<SoftEncoderAdapter*>(ptr);
     softEncoderAdapter->renderLoop();
     pthread_exit(0);
 }

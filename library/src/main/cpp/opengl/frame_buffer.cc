@@ -21,8 +21,12 @@
 //
 
 #include "frame_buffer.h"
-#include "size.h"
+#if __ANDROID__
 #include "android_xlog.h"
+#elif __APPLE__
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#define LOGI 
+#endif
 
 namespace trinity {
 
@@ -46,7 +50,9 @@ void FrameBuffer::CompileFrameBuffer(int camera_width, int camera_height) {
 
     int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE) {
+#if __ANDROID__
         LOGE("frame buffer error");
+#endif
     }
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

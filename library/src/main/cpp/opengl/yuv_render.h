@@ -23,11 +23,16 @@
 #ifndef TRINITY_YUV_RENDER_H
 #define TRINITY_YUV_RENDER_H
 
+#if __ANDROID__
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <GLES2/gl2.h>
-
+#include <GLES2/gl2ext.h>
 #include "egl_core.h"
+#elif __APPLE__
+#include <OpenGL/OpenGL.h>
+#include <OpenGL/gl.h>
+#endif
 
 extern "C" {
 #include "libavcodec/avcodec.h"

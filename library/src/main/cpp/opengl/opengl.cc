@@ -20,12 +20,18 @@
 // Created by wlanjie on 2019/4/13.
 //
 
+#if __ANDROID__
 #include <malloc.h>
-#include "opengl.h"
 #include "android_xlog.h"
+#elif __APPLE__
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#define LOGI
+#define LOGE
+#endif
+#include "opengl.h"
 #include "matrix.h"
-#include "gl.h"
 #include "size.h"
+#include "gl.h"
 
 namespace trinity {
 
@@ -230,7 +236,11 @@ void OpenGL::ProcessImage(GLuint texture_id, const GLfloat *vertex_coordinate, c
     SetUniformMatrix4f("textureMatrix", 1, texture_matrix);
 
     glActiveTexture(GL_TEXTURE0);
+#if __ANDROID__
     glBindTexture(type_ == TEXTURE_OES ? GL_TEXTURE_EXTERNAL_OES : GL_TEXTURE_2D, texture_id);
+#elif __APPLE__
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+#endif
     SetInt("inputImageTexture", 0);
     OnDrawArrays();
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

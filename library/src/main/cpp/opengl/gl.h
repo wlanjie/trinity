@@ -42,7 +42,9 @@ static const char* DEFAULT_OES_FRAGMENT_SHADER =
         "}\n";
 
 static const char* DEFAULT_VERTEX_SHADER =
+        "#ifdef GL_ES\n"
         "precision highp float;\n"
+        "#endif\n"
         "attribute vec4 position;\n"
         "attribute vec4 inputTextureCoordinate;\n"
         "varying vec2 textureCoordinate;\n"
@@ -52,7 +54,9 @@ static const char* DEFAULT_VERTEX_SHADER =
         "}";
 
 static const char* DEFAULT_FRAGMENT_SHADER =
+        "#ifdef GL_ES\n"
         "precision highp float;\n"
+        "#endif\n"
         "varying vec2 textureCoordinate;\n"
         "uniform sampler2D inputImageTexture;\n"
         "void main() {\n"

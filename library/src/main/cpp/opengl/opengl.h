@@ -23,10 +23,16 @@
 #ifndef TRINITY_OPENGL_H
 #define TRINITY_OPENGL_H
 
+#if __ANDROID__
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
+#elif __APPLE__
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#include <OpenGL/OpenGL.h>
+#include <OpenGL/gl.h>
+#endif
 
 namespace trinity {
 
