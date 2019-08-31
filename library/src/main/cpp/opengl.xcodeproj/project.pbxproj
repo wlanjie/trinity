@@ -20,6 +20,7 @@
 		702B75D023140B870089082D /* libswresample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 702B75CA23140B870089082D /* libswresample.a */; };
 		702B75D123140B870089082D /* libavfilter.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 702B75CB23140B870089082D /* libavfilter.a */; };
 		702B75D32314C9950089082D /* matrix.cc in Sources */ = {isa = PBXBuildFile; fileRef = 702B75D22314C9950089082D /* matrix.cc */; };
+		7064C9E62318EEF700F5D22B /* gaussian_blur.cc in Sources */ = {isa = PBXBuildFile; fileRef = 7064C9E52318EEF700F5D22B /* gaussian_blur.cc */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -56,7 +57,11 @@
 		702B75CA23140B870089082D /* libswresample.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libswresample.a; path = ../../../../../../../../usr/local/Cellar/ffmpeg/4.1.3_1/lib/libswresample.a; sourceTree = "<group>"; };
 		702B75CB23140B870089082D /* libavfilter.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavfilter.a; path = ../../../../../../../../usr/local/Cellar/ffmpeg/4.1.3_1/lib/libavfilter.a; sourceTree = "<group>"; };
 		702B75D22314C9950089082D /* matrix.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = matrix.cc; path = util/matrix.cc; sourceTree = "<group>"; };
+		7048204B231A668B00FCE038 /* blur_split_screen.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = blur_split_screen.h; sourceTree = "<group>"; };
 		705552712314CCEA007D98BB /* gl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gl.h; sourceTree = "<group>"; };
+		7064C9E42318EEF700F5D22B /* gaussian_blur.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gaussian_blur.h; sourceTree = "<group>"; };
+		7064C9E52318EEF700F5D22B /* gaussian_blur.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = gaussian_blur.cc; sourceTree = "<group>"; };
+		70C9469D2319507E00728A62 /* opengl_observer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = opengl_observer.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -111,6 +116,10 @@
 				702B75BC2313E4E40089082D /* yuv_render.cc */,
 				702B75BB2313E4E40089082D /* yuv_render.h */,
 				702B75B12313E40B0089082D /* main.cc */,
+				7064C9E42318EEF700F5D22B /* gaussian_blur.h */,
+				7064C9E52318EEF700F5D22B /* gaussian_blur.cc */,
+				70C9469D2319507E00728A62 /* opengl_observer.h */,
+				7048204B231A668B00FCE038 /* blur_split_screen.h */,
 			);
 			path = opengl;
 			sourceTree = "<group>";
@@ -189,6 +198,7 @@
 				702B75D32314C9950089082D /* matrix.cc in Sources */,
 				702B75BF2313E4E40089082D /* pixel_late.cc in Sources */,
 				702B75BD2313E4E40089082D /* opengl.cc in Sources */,
+				7064C9E62318EEF700F5D22B /* gaussian_blur.cc in Sources */,
 				702B75B22313E40B0089082D /* main.cc in Sources */,
 				702B75BE2313E4E40089082D /* frame_buffer.cc in Sources */,
 			);

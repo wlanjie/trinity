@@ -20,7 +20,10 @@
 #include "stb_image.h"
 #include "opengl.h"
 #include "gl.h"
+#include "gaussian_blur.h"
+#include "blur_split_screen.h"
 
+using namespace trinity;
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode) {
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
@@ -60,12 +63,15 @@ int main() {
     stbi_image_free(data);
     
     clock_t start = clock();
+    
+//    GaussianBlur gaussian_blur(512, 512, 1.0f);
+    BlurSplitScreen blur_split_screen(512, 512);
     while(!glfwWindowShouldClose(window)) {
         glfwPollEvents();
         uint64_t current_time = (uint64_t) ((double) (clock() - start) / CLOCKS_PER_SEC * 1000);
 //        printf("time: %lld\n", current_time);
-        
-        render_screen.ProcessImage(texture_id);
+        int process_id = blur_split_screen.OnDrawFrame(texture_id);
+        render_screen.ProcessImage(process_id);
         glfwSwapBuffers(window);
         usleep(30 * 1000);
     }

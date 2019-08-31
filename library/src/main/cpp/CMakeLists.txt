@@ -66,7 +66,7 @@ file(GLOB FILES "${PATH_TO_MEDIACORE}/*.cc")
 file(GLOB FILES_CAMERA "${PATH_TO_MEDIACORE}/camera/*.cc")
 file(GLOB FILES_MESSAGE "${PATH_TO_MEDIACORE}/message/*.cc")
 file(GLOB FILES_EGL "${PATH_TO_MEDIACORE}/egl/*.cc")
-file(GLOB FILES_OPENGL "${PATH_TO_MEDIACORE}/opengl/*.cc")
+file(GLOB FILES_OPENGL "${PATH_TO_MEDIACORE}/opengl")
 file(GLOB FILES_ENCODE "${PATH_TO_MEDIACORE}/encode/*.cc")
 file(GLOB FILES_JSON "${PATH_TO_MEDIACORE}/json/*.c")
 file(GLOB FILES_DECODE "${PATH_TO_MEDIACORE}/decode/*.cc")
@@ -88,7 +88,6 @@ add_library(
         ${FILES_CAMERA}
         ${FILES_MESSAGE}
         ${FILES_EGL}
-        ${FILES_OPENGL}
         ${FILES_ENCODE}
         ${FILES_JSON}
         ${FILES_DECODE}
@@ -100,7 +99,12 @@ add_library(
         ${FILES_PLAYER}
         ${FILES_PLAYER_C}
         ${FILE_OPENSL}
-        ${FILE_VIDEO_EDITOR})
+        ${FILE_VIDEO_EDITOR}
+        ${FILES_OPENGL}/encode_render.cc
+        ${FILES_OPENGL}/frame_buffer.cc
+        ${FILES_OPENGL}/gaussian_blur.cc
+        ${FILES_OPENGL}/opengl.cc
+        ${FILES_OPENGL}/yuv_render.cc)
 
 set(FFMPEG_LIB ${CMAKE_CURRENT_LIST_DIR}/../../../../extra/ffmpeg/${ANDROID_ABI})
 add_library(avcodec STATIC IMPORTED)

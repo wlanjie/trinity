@@ -50,6 +50,7 @@ static const GLfloat defaultTextureCoordinate[] = {
 };
 
 OpenGL::OpenGL() {
+    gl_observer_ = nullptr;
     type_ = TEXTURE_2D;
     width_ = 0;
     height_ = 0;
@@ -61,6 +62,7 @@ OpenGL::OpenGL() {
 }
 
 OpenGL::OpenGL(int width, int height) {
+    gl_observer_ = nullptr;
     type_ = TEXTURE_2D;
     width_ = width;
     height_ = height;
@@ -72,6 +74,7 @@ OpenGL::OpenGL(int width, int height) {
 }
 
 OpenGL::OpenGL(const char *vertex, const char *fragment) {
+    gl_observer_ = nullptr;
     type_ = TEXTURE_2D;
     width_ = 0;
     height_ = 0;
@@ -83,6 +86,7 @@ OpenGL::OpenGL(const char *vertex, const char *fragment) {
 }
 
 OpenGL::OpenGL(int width, int height, const char *vertex, const char *fragment) {
+    gl_observer_ = nullptr;
     type_ = TEXTURE_2D;
     this->width_ = width;
     this->height_ = height;
@@ -127,6 +131,10 @@ void OpenGL::InitCoordinates() {
     default_texture_coordinates_[6] = 1.0f;
     default_texture_coordinates_[7] = 1.0f;
 }
+    
+void OpenGL::SetOnGLObserver(OnGLObserver *observer) {
+    gl_observer_ = observer;
+}    
 
 void OpenGL::SetTextureType(trinity::TextureType type) {
     type_ = type;
@@ -226,6 +234,9 @@ void OpenGL::ProcessImage(GLuint texture_id, const GLfloat *vertex_coordinate, c
     }
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    if (nullptr != gl_observer_) {
+        gl_observer_->OnGLParams();
+    }
     RunOnDrawTasks();
     GLuint positionAttribute = static_cast<GLuint>(glGetAttribLocation(program_, "position"));
     glEnableVertexAttribArray(positionAttribute);
@@ -242,6 +253,9 @@ void OpenGL::ProcessImage(GLuint texture_id, const GLfloat *vertex_coordinate, c
     glBindTexture(GL_TEXTURE_2D, texture_id);
 #endif
     SetInt("inputImageTexture", 0);
+    if (nullptr != gl_observer_) {
+        gl_observer_->OnGLArrays();
+    }
     OnDrawArrays();
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glDisableVertexAttribArray(positionAttribute);

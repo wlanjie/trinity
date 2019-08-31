@@ -33,6 +33,7 @@
 #include <OpenGL/OpenGL.h>
 #include <OpenGL/gl.h>
 #endif
+#include "opengl_observer.h"
 
 namespace trinity {
 
@@ -57,6 +58,7 @@ class OpenGL {
     OpenGL(int width, int height, const char* vertex, const char* fragment);
     ~OpenGL();
     void InitCoordinates();
+    void SetOnGLObserver(OnGLObserver* observer);
     void SetTextureType(TextureType type = TEXTURE_2D);
     void Init(const char* vertex, const char* fragment);
     void SetFrame(int source_width, int source_height, int target_width, int target_height, RenderFrame frame_type = FIT);
@@ -84,6 +86,7 @@ class OpenGL {
     void Link();
 
  private:
+    OnGLObserver* gl_observer_; 
     TextureType type_;
     GLuint program_;
     int width_;
