@@ -103,11 +103,17 @@ interface TrinityVideoEditor {
 
   fun updateFilter(config: String, actionId: Int)
 
-  fun addMusic(path: String, startTime: Long, endTime: Long): Int
+  fun addMusic(config: String): Int
+
+  fun updateMusic(config: String, actionId: Int)
+
+  fun deleteMusic(actionId: Int)
 
   fun addAction(config: String): Int
 
   fun updateAction(config: String, actionId: Int)
+
+  fun deleteAction(actionId: Int)
 
   /**
    * 开始播放

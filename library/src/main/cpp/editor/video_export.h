@@ -31,6 +31,7 @@
 #include "video_encoder_adapter.h"
 #include "audio_encoder_adapter.h"
 #include "video_consumer_thread.h"
+#include "music_decoder_controller.h"
 #include "yuv_render.h"
 #include "image_process.h"
 #include "handler.h"
@@ -82,6 +83,7 @@ class VideoExport {
     pthread_t export_video_thread_;
     pthread_t export_audio_thread_;
     std::deque<MediaClip*> clip_deque_;
+    std::deque<MusicDecoderController*> music_controller_deque_;
     bool export_ing;
     EGLCore* egl_core_;
     EGLSurface egl_surface_;

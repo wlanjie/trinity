@@ -54,7 +54,7 @@ static int audioCallback(uint8_t* buffer, size_t buffer_size, void* context) {
 }
 
 void MusicDecoderController::Init(float packet_buffer_time_percent, int vocal_sample_rate) {
-    LOGI("enter packet_buffer_time_percent: %d vocal_sample_rate: %d", packet_buffer_time_percent, vocal_sample_rate);
+    LOGI("enter packet_buffer_time_percent: %f vocal_sample_rate: %d", packet_buffer_time_percent, vocal_sample_rate);
     volume_ = 1.0f;
     volume_max_ = 1.0f;
     vocal_sample_rate_ = vocal_sample_rate;
@@ -65,7 +65,7 @@ void MusicDecoderController::Init(float packet_buffer_time_percent, int vocal_sa
     buffer_queue_ = new short[buffer_queue_size_];
     silent_samples_ = new short[accompany_packet_buffer_size_];
     memset(silent_samples_, 0, accompany_packet_buffer_size_ * 2);
-    packet_pool_ = PacketPool::GetInstance();
+    packet_pool_ = new PacketPool();
     packet_pool_->InitDecoderAccompanyPacketQueue();
     packet_pool_->InitAccompanyPacketQueue(vocal_sample_rate, CHANNEL_PER_FRAME);
     InitDecoderThread();
@@ -204,6 +204,10 @@ void MusicDecoderController::Destroy() {
     if (nullptr != silent_samples_) {
         delete[] silent_samples_;
         silent_samples_ = nullptr;
+    }
+    if (nullptr != packet_pool_) {
+        delete packet_pool_;
+        packet_pool_ = nullptr;
     }
     LOGI("leave MusicDecoderController::Destroy");
 }
@@ -374,7 +378,6 @@ void MusicDecoderController::DestroyRender() {
 }
 
 void MusicDecoderController::PushPacketToQueue(AudioPacket *packet) {
-    LOGI("enter PushAccompanyPacketToQueue size: %d", packet->size);
     memcpy(buffer_queue_ + buffer_queue_cursor_, packet->buffer, packet->size * sizeof(short));
     buffer_queue_cursor_ += packet->size;
     float position = packet->position;
@@ -396,7 +399,6 @@ void MusicDecoderController::PushPacketToQueue(AudioPacket *packet) {
         }
         packet_pool_->PushAccompanyPacketToQueue(actualPacket);
     }
-    LOGI("leave PushAccompanyPacketToQueue");
 }
 
 int MusicDecoderController::BuildSamples(short *samples) {

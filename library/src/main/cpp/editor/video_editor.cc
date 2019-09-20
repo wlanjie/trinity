@@ -226,13 +226,49 @@ void VideoEditor::UpdateFilter(const char *filter_config, int action_id) {
     }
 }
 
-int VideoEditor::AddMusic(const char *path, uint64_t start_time, uint64_t end_time) {
-    if (nullptr == music_player_) {
-        music_player_ = new MusicDecoderController();
-        music_player_->Init(0.2f, 44100);
-        music_player_->Start(path);
+void VideoEditor::DeleteFilter(int action_id) {
+    if (nullptr != video_player_) {
+        // TODO delete
+        Message* message = new Message();
     }
-    return 0;
+}
+
+int VideoEditor::AddMusic(const char* music_config) {
+    if (nullptr != video_player_) {
+        int actId = current_action_id_++;
+        char *config = new char[strlen(music_config) + 1];
+        sprintf(config, "%s%c", music_config, 0);
+        Message *message = new Message(kMusic, actId, 0, config);
+        video_player_->SendGLMessage(message);
+
+        if (nullptr != editor_resource_) {
+            editor_resource_->AddMusic(music_config, actId);
+        }
+        return actId;
+    }
+    return -1;
+}
+
+void VideoEditor::UpdateMusic(const char* music_config, int action_id) {
+    if (nullptr != video_player_) {
+        char *config = new char[strlen(music_config) + 1];
+        sprintf(config, "%s%c", music_config, 0);
+        Message *message = new Message(kMusicUpdate, action_id, 0, config);
+        video_player_->SendGLMessage(message);
+    }
+    if (nullptr != editor_resource_) {
+        editor_resource_->UpdateMusic(music_config, action_id);
+    }
+}
+
+void VideoEditor::DeleteMusic(int action_id) {
+    if (nullptr != video_player_) {
+        Message *message = new Message(kMusicDelete, action_id, 0);
+        video_player_->SendGLMessage(message);
+    }
+    if (nullptr != editor_resource_) {
+        editor_resource_->DeleteMusic(action_id);
+    }
 }
 
 int VideoEditor::AddAction(const char *effect_config) {
@@ -252,13 +288,24 @@ int VideoEditor::AddAction(const char *effect_config) {
 }
 
 void VideoEditor::UpdateAction(const char *effect_config, int action_id) {
-    char* config = new char[strlen(effect_config) + 1];
-    sprintf(config, "%s%c", effect_config, 0);
-    Message* message = new Message(kEffectUpdate, action_id, 0, config);
-    video_player_->SendGLMessage(message);
-
+    if (nullptr != video_player_) {
+        char *config = new char[strlen(effect_config) + 1];
+        sprintf(config, "%s%c", effect_config, 0);
+        Message *message = new Message(kEffectUpdate, action_id, 0, config);
+        video_player_->SendGLMessage(message);
+    }
     if (nullptr != editor_resource_) {
         editor_resource_->UpdateAction(effect_config, action_id);
+    }
+}
+
+void VideoEditor::DeleteAction(int action_id) {
+    if (nullptr != video_player_) {
+        Message *message = new Message(kEffectDelete, action_id, 0);
+        video_player_->SendGLMessage(message);
+    }
+    if (nullptr != editor_resource_) {
+        editor_resource_->DeleteAction(action_id);
     }
 }
 
@@ -299,6 +346,14 @@ int VideoEditor::OnComplete() {
         video_player_->Stop();
     }
     return 0;
+}
+
+void VideoEditor::FreeMusicPlayer() {
+    if (nullptr != music_player_) {
+        music_player_->Destroy();
+        delete music_player_;
+        music_player_ = nullptr;
+    }
 }
 
 void VideoEditor::FreeStateEvent() {
@@ -349,11 +404,17 @@ void VideoEditor::Pause() {
     if (nullptr != video_player_) {
         video_player_->Pause();
     }
+    if (nullptr != music_player_) {
+        music_player_->Pause();
+    }
 }
 
 void VideoEditor::Resume() {
     if (nullptr != video_player_) {
         video_player_->Resume();
+    }
+    if (nullptr != music_player_) {
+        music_player_->Resume();
     }
 }
 
@@ -381,6 +442,7 @@ void VideoEditor::Destroy() {
     FreeVideoRenderEvent();
     handler_->PostMessage(new Message(MESSAGE_QUEUE_LOOP_QUIT_FLAG));
     pthread_join(complete_thread_, nullptr);
+    FreeMusicPlayer();
     LOGE("leave Destroy");
 }
 
@@ -426,6 +488,22 @@ void VideoEditor::OnGLMessage(trinity::Message *msg) {
         case kEffectUpdate:
             OnUpdateAction(static_cast<char *>(msg->GetObj()), msg->GetArg1());
             break;
+
+        case kEffectDelete:
+            OnDeleteAction(msg->GetArg1());
+            break;
+
+        case kMusic:
+            OnAddMusic(static_cast<char *>(msg->GetObj()), msg->GetArg1());
+            break;
+
+        case kMusicUpdate:
+            OnUpdateMusic(static_cast<char *>(msg->GetObj()), msg->GetArg1());
+            break;
+
+        case kMusicDelete:
+            OnDeleteMusic(msg->GetArg1());
+            break;
         default:
             break;
     }
@@ -452,6 +530,52 @@ void VideoEditor::OnUpdateAction(char *config, int action_id) {
     LOGI("update action id: %d config: %s", action_id, config);
     image_process_->OnAction(config, action_id);
     delete[] config;
+}
+
+void VideoEditor::OnDeleteAction(int action_id) {
+    if (nullptr == image_process_) {
+        return;
+    }
+    LOGI("delete action id: %d", action_id);
+    image_process_->RemoveAction(action_id);
+}
+
+void VideoEditor::OnAddMusic(char *config, int action_id) {
+    FreeMusicPlayer();
+    cJSON* music_config_json = cJSON_Parse(config);
+    if (nullptr != music_config_json) {
+        cJSON* path_json = cJSON_GetObjectItem(music_config_json, "path");
+        cJSON* start_time_json = cJSON_GetObjectItem(music_config_json, "startTime");
+        cJSON* end_time_json = cJSON_GetObjectItem(music_config_json, "endTime");
+
+        music_player_ = new MusicDecoderController();
+        music_player_->Init(0.2f, 44100);
+        int start_time = 0;
+        if (nullptr != start_time_json) {
+            start_time = start_time_json->valueint;
+        }
+        // TODO time
+        int end_time = INT32_MAX;
+        if (nullptr != end_time_json) {
+            end_time = end_time_json->valueint;
+        }
+        if (nullptr != path_json) {
+            music_player_->Start(path_json->valuestring);
+        }
+    }
+
+    delete[] config;
+}
+
+void VideoEditor::OnUpdateMusic(char *config, int action_id) {
+    if (nullptr != music_player_) {
+        music_player_->Stop();
+        music_player_->Start("");
+    }
+}
+
+void VideoEditor::OnDeleteMusic(int aciton_id) {
+    FreeMusicPlayer();
 }
 
 }  // namespace trinity

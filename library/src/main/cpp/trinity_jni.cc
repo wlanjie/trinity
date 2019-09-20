@@ -475,15 +475,33 @@ static void Android_JNI_video_editor_updateFilter(JNIEnv* env, jobject object, j
     env->ReleaseStringUTFChars(config, config_buffer);
 }
 
-static jint Android_JNI_video_editor_addMusic(JNIEnv* env, jobject object, jlong handle, jstring music_path, jlong start_time, jlong end_time) {
+static jint Android_JNI_video_editor_addMusic(JNIEnv* env, jobject object, jlong handle, jstring music_config) {
     if (handle <= 0) {
         return 0;
     }
     VideoEditor* editor = reinterpret_cast<VideoEditor*>(handle);
-    const char* path = env->GetStringUTFChars(music_path, JNI_FALSE);
-    int result = editor->AddMusic(path, start_time, end_time);
-    env->ReleaseStringUTFChars(music_path, path);
+    const char* config = env->GetStringUTFChars(music_config, JNI_FALSE);
+    int result = editor->AddMusic(config);
+    env->ReleaseStringUTFChars(music_config, config);
     return result;
+}
+
+static void Android_JNI_video_editor_updateMusic(JNIEnv* env, jobject object, jlong handle, jstring music_config, jint action_id) {
+    if (handle <= 0) {
+        return;
+    }
+    auto* editor = reinterpret_cast<VideoEditor*>(handle);
+    const char* config = env->GetStringUTFChars(music_config, JNI_FALSE);
+    editor->UpdateMusic(config, action_id);
+    env->ReleaseStringUTFChars(music_config, config);
+}
+
+static void Android_JNI_video_editor_deleteMusic(JNIEnv* env, jobject object, jlong handle, jint action_id) {
+    if (handle <= 0) {
+        return;
+    }
+    auto* editor = reinterpret_cast<VideoEditor*>(handle);
+    editor->DeleteMusic(action_id);
 }
 
 static int Android_JNI_video_editor_addAction(JNIEnv* env, jobject object, jlong handle, jstring config) {
@@ -491,7 +509,7 @@ static int Android_JNI_video_editor_addAction(JNIEnv* env, jobject object, jlong
         return -1;
     }
     const char* config_buffer = env->GetStringUTFChars(config, JNI_FALSE);
-    VideoEditor* editor = reinterpret_cast<VideoEditor*>(handle);
+    auto* editor = reinterpret_cast<VideoEditor*>(handle);
     int actionId = editor->AddAction(config_buffer);
     env->ReleaseStringUTFChars(config, config_buffer);
     return actionId;
@@ -502,9 +520,17 @@ static void Android_JNI_video_editor_updateAction(JNIEnv* env, jobject object, j
         return;
     }
     const char* config_buffer = env->GetStringUTFChars(config, JNI_FALSE);
-    VideoEditor* editor = reinterpret_cast<VideoEditor*>(handle);
+    auto editor = reinterpret_cast<VideoEditor*>(handle);
     editor->UpdateAction(config_buffer, action_id);
     env->ReleaseStringUTFChars(config, config_buffer);
+}
+
+static void Android_JNI_video_editor_deleteAction(JNIEnv* env, jobject object, jlong handle, jint action_id) {
+    if (handle <= 0) {
+        return;
+    }
+    auto* editor = reinterpret_cast<VideoEditor*>(handle);
+    editor->DeleteAction(action_id);
 }
 
 static int Android_JNI_video_editor_play(JNIEnv* env, jobject object, jlong handle, jboolean repeat) {
@@ -638,9 +664,12 @@ static JNINativeMethod videoEditorMethods[] = {
         {"getClipIndex",        "(JJ)I",                                                 (void **) Android_JNI_video_editor_getClipIndex },
         {"addFilter",           "(JLjava/lang/String;)I",                                (void **) Android_JNI_video_editor_addFilter },
         {"updateFilter",        "(JLjava/lang/String;I)V",                               (void **) Android_JNI_video_editor_updateFilter },
-        {"addMusic",            "(JLjava/lang/String;JJ)I",                              (void **) Android_JNI_video_editor_addMusic },
+        {"addMusic",            "(JLjava/lang/String;)I",                                (void **) Android_JNI_video_editor_addMusic },
+        {"updateMusic",         "(JLjava/lang/String;I)V",                               (void **) Android_JNI_video_editor_updateMusic },
+        {"deleteMusic",         "(JI)V",                                                 (void **) Android_JNI_video_editor_deleteMusic },
         {"addAction",           "(JLjava/lang/String;)I",                                (void **) Android_JNI_video_editor_addAction },
         {"updateAction",        "(JLjava/lang/String;I)V",                               (void **) Android_JNI_video_editor_updateAction },
+        {"deleteAction",        "(JI)V",                                                 (void **) Android_JNI_video_editor_deleteAction },
         {"play",                "(JZ)I",                                                 (void **) Android_JNI_video_editor_play },
         {"pause",               "(J)V",                                                  (void **) Android_JNI_video_editor_pause },
         {"resume",              "(J)V",                                                  (void **) Android_JNI_video_editor_resume },

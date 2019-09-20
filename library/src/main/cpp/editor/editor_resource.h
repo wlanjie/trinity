@@ -40,19 +40,19 @@ class EditorResource {
     void InsertClip(MediaClip* clip);
     void RemoveClip(int index);
     void ReplaceClip(int index, MediaClip* clip);
-    void AddFilter(const char* config, int action_id);
-    void UpdateFilter(const char* config, int action_id);
     void AddAction(const char* config, int action_id);
     void UpdateAction(const char* config, int action_id);
-    void AddFilter(const char* lut_path, uint64_t start_time, uint64_t end_time, int action_id);
-    void AddMusic(const char* path, uint64_t start_time, uint64_t end_time);
-    void AddAction(int effect_type, uint64_t start_time, uint64_t end_time);
+    void DeleteAction(int action_id);
+    void AddMusic(const char* config, int action_id);
+    void UpdateMusic(const char* config, int action_id);
+    void DeleteMusic(int action_id);
 
  private:
     FILE* resource_file_;
     cJSON* root_json_;
     cJSON* media_json_;
     cJSON* effect_json_;
+    cJSON* music_json_;
 };
 
 }  // namespace trinity

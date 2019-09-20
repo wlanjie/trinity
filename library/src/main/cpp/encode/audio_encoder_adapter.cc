@@ -57,6 +57,7 @@ void AudioEncoderAdapter::Init(PacketPool *pool, int audio_sample_rate, int audi
     memcpy(audio_codec_name_, audio_codec_name, audio_codec_name_length);
     encoding_ = true;
     aac_packet_pool_ = AudioPacketPool::GetInstance();
+    output_stream_.open("/sdcard/encode.pcm", std::ios_base::binary | std::ios_base::out);
     pthread_create(&audio_encoder_thread_, nullptr, StartEncodeThread, this);
 }
 
@@ -161,6 +162,7 @@ int AudioEncoderAdapter::GetAudioPacket() {
     if (nullptr == packet_buffer_) {
         packet_buffer_ = new short[packet_buffer_size_];
     }
+    output_stream_.write(reinterpret_cast<const char *>(audioPacket->buffer), audioPacket->size * sizeof(short));
     memcpy(packet_buffer_, audioPacket->buffer, audioPacket->size * sizeof(short));
 //    int actualSize = this->ProcessAudio();
 //    if (actualSize > 0 && actualSize < packet_buffer_size_) {

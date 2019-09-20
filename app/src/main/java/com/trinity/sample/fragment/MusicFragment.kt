@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.trinity.sample.EditorActivity
 import com.trinity.sample.R
 import com.trinity.sample.RecordActivity
 import com.trinity.sample.adapter.MusicAdapter
@@ -29,7 +30,10 @@ class MusicFragment : Fragment() {
     recyclerView.adapter = MusicAdapter(requireActivity()) {
       if (activity is RecordActivity) {
         (activity as RecordActivity).setMusic(it)
+      } else if (activity is EditorActivity) {
+        (activity as EditorActivity).setMusic(it)
       }
+
     }
     recyclerView.layoutManager = LinearLayoutManager(requireActivity(), RecyclerView.VERTICAL, false)
 
@@ -37,6 +41,8 @@ class MusicFragment : Fragment() {
       .setOnClickListener {
         if (activity is RecordActivity) {
           (activity as RecordActivity).closeBottomSheet()
+        } else if (activity is EditorActivity) {
+          (activity as EditorActivity).closeBottomSheet()
         }
       }
   }

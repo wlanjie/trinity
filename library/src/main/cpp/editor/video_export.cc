@@ -392,6 +392,11 @@ void VideoExport::ProcessVideoExport() {
         export_config_json_ = nullptr;
     }
 
+    for (auto clip : clip_deque_) {
+        delete clip;
+    }
+    clip_deque_.clear();
+
     egl_core_->ReleaseSurface(egl_surface_);
     egl_core_->Release();
     egl_surface_ = EGL_NO_SURFACE;

@@ -222,16 +222,34 @@ class VideoEditor(
    * @param endTime 到哪里结束
    * @return
    */
-  override fun addMusic(path: String, startTime: Long, endTime: Long): Int {
-    val file = File(path)
-    if (!file.exists() || file.length() == 0L) {
-      // 文件不存在
-      return ErrorCode.FILE_NOT_FOUND
-    }
-    return addMusic(mId, path, startTime, endTime)
+  override fun addMusic(config: String): Int {
+//    val file = File(path)
+//    if (!file.exists() || file.length() == 0L) {
+//      // 文件不存在
+//      return ErrorCode.FILE_NOT_FOUND
+//    }
+    return addMusic(mId, config)
   }
 
-  private external fun addMusic(id: Long, path: String, startTime: Long, endTime: Long): Int
+  private external fun addMusic(id: Long, config: String): Int
+
+  override fun updateMusic(config: String, actionId: Int) {
+    if (mId <= 0) {
+      return
+    }
+    updateMusic(mId, config, actionId)
+  }
+
+  private external fun updateMusic(id: Long, config: String, actionId: Int)
+
+  override fun deleteMusic(actionId: Int) {
+    if (mId <= 0) {
+      return
+    }
+    deleteMusic(mId, actionId)
+  }
+
+  private external fun deleteMusic(id: Long, actionId: Int)
 
   override fun addAction(config: String): Int {
     if (mId <= 0) {
@@ -250,6 +268,15 @@ class VideoEditor(
   }
 
   private external fun updateAction(handle: Long, config: String, actionId: Int)
+
+  override fun deleteAction(actionId: Int) {
+    if (mId <= 0) {
+      return
+    }
+    deleteAction(mId, actionId)
+  }
+
+  private external fun deleteAction(handle: Long, actionId: Int)
 
   /**
    * 开始播放

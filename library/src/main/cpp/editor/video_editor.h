@@ -97,11 +97,19 @@ class VideoEditor : public GLObserver {
 
     void UpdateFilter(const char* filter_config, int action_id);
 
-    int AddMusic(const char* path, uint64_t start_time, uint64_t end_time);
+    void DeleteFilter(int action_id);
+
+    int AddMusic(const char* music_config);
+
+    void UpdateMusic(const char* music_config, int action_id);
+
+    void DeleteMusic(int action_id);
 
     int AddAction(const char* effect_config);
 
     void UpdateAction(const char* effect_config, int action_id);
+
+    void DeleteAction(int action_id);
 
     // 开始播放
     // 是否循环播放
@@ -129,10 +137,14 @@ class VideoEditor : public GLObserver {
  private:
     void OnAddAction(char* config, int action_id);
     void OnUpdateAction(char* config, int action_id);
-
+    void OnDeleteAction(int action_id);
+    void OnAddMusic(char* config, int action_id);
+    void OnUpdateMusic(char* config, int action_id);
+    void OnDeleteMusic(int aciton_id);
  private:
     static int OnCompleteEvent(StateEvent* event);
     static int OnVideoRender(OnVideoRenderEvent* event, int texture_id, int width, int height, uint64_t current_time);
+    void FreeMusicPlayer();
     void FreeStateEvent();
     void AllocStateEvent();
     void FreeVideoRenderEvent();

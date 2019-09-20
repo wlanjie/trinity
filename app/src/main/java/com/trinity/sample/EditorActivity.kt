@@ -11,9 +11,12 @@ import android.view.*
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.fragment.app.transaction
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.tencent.mars.xlog.Log
 import com.tencent.mars.xlog.Xlog
@@ -26,6 +29,7 @@ import com.trinity.sample.editor.*
 import com.trinity.sample.entity.EffectInfo
 import com.trinity.sample.entity.Filter
 import com.trinity.sample.entity.MediaItem
+import com.trinity.sample.fragment.MusicFragment
 import com.trinity.sample.listener.OnEffectTouchListener
 import com.trinity.sample.view.*
 import com.trinity.sample.view.ThumbLineBar
@@ -42,6 +46,7 @@ import java.nio.charset.Charset
  */
 class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLayout.BaseOnTabSelectedListener<TabLayout.Tab>, ThumbLineBar.OnBarSeekListener, PlayerListener, OnEffectTouchListener {
   companion object {
+    private const val MUSIC_TAG = "music"
     private const val USE_ANIMATION_REMAIN_TIME = 300 * 1000
   }
 
@@ -55,6 +60,8 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
   private lateinit var mViewOperator: ViewOperator
   private lateinit var mActionBar: RelativeLayout
   private lateinit var mThumbLineBar: OverlayThumbLineBar
+  private lateinit var mInsideBottomSheet: FrameLayout
+  private lateinit var mBottomSheetLayout: CoordinatorLayout
   private lateinit var mVideoEditor: VideoEditor
   private var mLutFilter: LutFilterChooser ?= null
   private var mEffect: EffectChooser ?= null
@@ -71,6 +78,7 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
   private var mSplitScreenFourId = -1
   private var mSplitScreenSixId = -1
   private var mSplitScreenNineId = -1
+  private var mMusicId = -1
 
   @SuppressLint("ClickableViewAccessibility")
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -97,6 +105,8 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
     val rootView = findViewById<RelativeLayout>(R.id.root_view)
     mViewOperator = ViewOperator(rootView, mActionBar, mSurfaceView, mTabLayout, mPasterContainer, mPlayImage)
     mViewOperator.setAnimatorListener(this)
+    mInsideBottomSheet = findViewById(R.id.frame_container)
+    mBottomSheetLayout = findViewById(R.id.editor_coordinator)
 
     mPlayImage.setOnClickListener { mVideoEditor.resume() }
     mPauseImage.setOnClickListener { mVideoEditor.pause() }
@@ -235,15 +245,12 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
   }
 
   override fun onTabReselected(tab: TabLayout.Tab) {
-    println("onTabReselected")
   }
 
   override fun onTabUnselected(tab: TabLayout.Tab) {
-    println("onTabUnselected")
   }
 
   override fun onTabSelected(tab: TabLayout.Tab) {
-    println("onTabSelected")
     when (tab.text) {
       getString(R.string.filter) -> {
         setActiveIndex(EditorPage.FILTER)
@@ -251,10 +258,14 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
       getString(R.string.effect) -> {
         setActiveIndex(EditorPage.FILTER_EFFECT)
       }
+      getString(R.string.music) -> {
+        setActiveIndex(EditorPage.AUDIO_MIX)
+      }
     }
   }
 
   private fun setActiveIndex(page: EditorPage) {
+    mBottomSheetLayout.visibility = View.GONE
     when (page) {
       EditorPage.FILTER -> {
         if (mLutFilter == null) {
@@ -276,6 +287,9 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
         mEffect?.let {
           mViewOperator.showBottomView(it)
         }
+      }
+      EditorPage.AUDIO_MIX -> {
+        showMusic()
       }
     }
   }
@@ -393,17 +407,37 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
     mVideoEditor.resume()
   }
 
+  fun setMusic(path: String) {
+    val jsonObject = JSONObject()
+    jsonObject.put("path", path)
+    if (mMusicId != -1) {
+      mVideoEditor.updateMusic(jsonObject.toString(), mMusicId)
+    } else {
+      mVideoEditor.addMusic(jsonObject.toString())
+    }
+    closeBottomSheet()
+  }
+
+  fun closeBottomSheet() {
+    val behavior = BottomSheetBehavior.from(mInsideBottomSheet)
+    behavior.state = BottomSheetBehavior.STATE_HIDDEN
+  }
+
   private fun showMusic() {
-    val dialog = BottomSheetDialog(this)
-    val view = LayoutInflater.from(this).inflate(R.layout.bottom_sheet_filter, null)
-    val recyclerView = view as RecyclerView
-    recyclerView.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
-    recyclerView.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
-    recyclerView.adapter = MusicAdapter(this) {}
-    dialog.setContentView(view)
-    dialog.setCancelable(true)
-    dialog.setCanceledOnTouchOutside(true)
-    dialog.show()
+    mBottomSheetLayout.visibility = View.VISIBLE
+    var musicFragment = supportFragmentManager.findFragmentByTag(MUSIC_TAG)
+    if (musicFragment == null) {
+      musicFragment = MusicFragment.newInstance()
+      supportFragmentManager.transaction {
+        replace(R.id.frame_container, musicFragment, MUSIC_TAG)
+      }
+    }
+    val behavior = BottomSheetBehavior.from(mInsideBottomSheet)
+    if (behavior.state != BottomSheetBehavior.STATE_EXPANDED) {
+      behavior.state = BottomSheetBehavior.STATE_EXPANDED
+    } else {
+      behavior.state = BottomSheetBehavior.STATE_HIDDEN
+    }
   }
 
   private fun setFilter(filter: Filter) {

@@ -34,7 +34,7 @@ class MusicAdapter(private val context: Context, private val callback: (music: S
         val time = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Media.DURATION))
         val url = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.DATA))
         val name = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.DISPLAY_NAME))
-        val sbr = name.substring(name.length - 3, name.length)
+        val sbr = url.substring(url.length - 3, url.length)
         if ("mp3" == sbr) {
           val m = Music(url, name, time)
           musics.add(m)

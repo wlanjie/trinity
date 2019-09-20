@@ -65,7 +65,11 @@ typedef enum {
     kFilter = 5,
     kFlashWhite = 6,
     kEffect = 7,
-    kEffectUpdate = 8
+    kEffectUpdate = 8,
+    kEffectDelete = 9,
+    kMusic = 10,
+    kMusicUpdate = 11,
+    kMusicDelete = 12
 } EffectMessage;
 
 typedef struct OnVideoRenderEvent {

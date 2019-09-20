@@ -35,7 +35,6 @@ namespace trinity {
 
 class PacketPool {
  protected:
-    PacketPool();
     static PacketPool* instance_;
     AudioPacketQueue* audio_packet_queue_;
     int audio_sample_rate_;
@@ -66,6 +65,7 @@ class PacketPool {
 
  public:
     static PacketPool* GetInstance();
+    PacketPool();
     virtual ~PacketPool();
 
     virtual void InitAudioPacketQueue(int audio_sample_rate);
