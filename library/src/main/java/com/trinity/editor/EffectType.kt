@@ -22,4 +22,5 @@ enum class EffectType {
   Filter,
   FlashWhite,
   SplitScreen,
+  BlurSplitScreen,
 }

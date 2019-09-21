@@ -5,6 +5,7 @@ import android.view.View
 import android.widget.VideoView
 import androidx.appcompat.app.AppCompatActivity
 import com.timqi.sectorprogressview.ColorfulRingProgressView
+import com.trinity.core.TrinityCore
 import com.trinity.editor.VideoExport
 import com.trinity.listener.OnExportListener
 
@@ -24,8 +25,8 @@ class VideoExportActivity : AppCompatActivity(), OnExportListener {
     mVideoView.setOnPreparedListener {
       it.isLooping = true
     }
-    val export = VideoExport(this)
-    export.export("/sdcard/export.mp4", 544, 960, 25, 3000 * 1024, 44100, 1, 128 * 1000, this)
+    val export = TrinityCore.createExport(this)
+    export.export("/sdcard/export.mp4", 544, 960, 25, 3000, 44100, 1, 128, this)
   }
 
   override fun onExportProgress(progress: Float) {

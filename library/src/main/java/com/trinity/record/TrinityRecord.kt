@@ -275,16 +275,18 @@ class TrinityRecord(
 
   /**
    * 设置camera缩放
-   * 1.0 为最大缩放
+   * 100 为最大缩放
    */
-  fun zoom(zoom: Float) {
+  fun setZoom(zoom: Int) {
+    mCamera.setZoom(zoom)
   }
 
   /**
    * 设置camera曝光度
-   * 1.0 为最大
+   * 100 为最大
    */
-  fun iso(iso: Float) {
+  fun setExposureCompensation(exposureCompensation: Int) {
+    mCamera.setExposureCompensation(exposureCompensation)
   }
 
   /**
@@ -310,7 +312,7 @@ class TrinityRecord(
    * 录制结束
    */
   override fun end(timer: Timer) {
-    stopEncode()
+    stopRecording()
   }
 
   private fun isLandscape(displayOrientation: Int): Boolean {
@@ -318,15 +320,65 @@ class TrinityRecord(
   }
 
   /**
-   * 开启录制
-   * @param width 录制视频的宽
-   * @param height 录制视频的高
-   * @param videoBitRate 录制视频的码率
-   * @param frameRate 录制视频的帧率
-   * @param useHardWareEncode 是否使用硬编码
+   * 添加一个特效, 包含普通滤镜等
+   * @param config json 内容, 底层根据解析json来判断添加什么效果
+   * @return Int 返回当前特效的id, 在更新和删除一个特效时必须传入
+   */
+  fun addAction(config: String): Int {
+    return 0
+  }
+
+  /**
+   * 更新一个特效
+   * @param config 更新的json内容,底层根据解析json来判断更新什么效果
+   * @param actionId Int 创建action时返回的id
+   */
+  fun updateAction(config: String, actionId: Int) {
+
+  }
+
+  /**
+   * 删除一个特效
+   * @param actionId 创建action时返回的id
+   */
+  fun deleteAction(actionId: Int) {
+
+  }
+
+  /**
+   * 设置录制角度
+   * @param rotation 角度包含 0 90 180 270
+   */
+  fun setRecordRotation(rotation: Int) {
+
+  }
+
+  /**
+   * 设置静音录制
+   * 静音录制需要把麦克风采集到的数据全部设置为0即可
+   * @param mute true为静音
+   */
+  fun setMute(mute: Boolean) {
+
+  }
+
+  /**
+   * 开始录制一段视频
+   * @param path 录制的视频保存的地址
+   * @param width 录制视频的宽, SDK中会做16倍整数的运算, 可能最终输出视频的宽和设置进去的不一致
+   * @param height 录制视频的高, SDK中会做16倍整数的运算, 可能最终输出视频的宽和设置进去的不一致
+   * @param videoBitRate 视频输出的码率, 如果设置的是2000, 则为2M, 最终输出的和设置的可能有差别
+   * @param frameRate 视频输出的帧率
+   * @param useHardWareEncode 是否使用硬编码, 如果设置为true, 而硬编码不支持,则自动切换到软编码
+   * @param audioSampleRate 音频的采样率
+   * @param audioChannel 音频的声道数
+   * @param audioBitRate 音频的码率
+   * @param duration 需要录制多少时间
+   * @return Int ErrorCode.SUCCESS 为成功,其它为失败
+   * @throws InitRecorderFailException
    */
   @Throws(InitRecorderFailException::class)
-  fun startEncode(path: String,
+  fun startRecording(path: String,
                   width: Int, height: Int,
                   videoBitRate: Int, frameRate: Int,
                   useHardWareEncode: Boolean,
@@ -367,7 +419,7 @@ class TrinityRecord(
   /**
    * 停止录制
    */
-  fun stopEncode() {
+  fun stopRecording() {
     Log.i("trinity", "stopEncode")
     mTimer.stop()
     mAudioPlayer?.pause()

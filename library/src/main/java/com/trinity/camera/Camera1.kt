@@ -55,6 +55,8 @@ class Camera1(
   private var mSurfaceTexture: SurfaceTexture ?= null
   private var mFocusEndRunnable: Runnable ?= null
   private var mResolution = PreviewResolution.RESOLUTION_1280x720
+  private var mZoom = 0
+  private var mExposureCompensation = 0
 
   companion object {
     private const val AUTOFOCUS_END_DELAY_MILLIS: Long = 2500
@@ -153,10 +155,10 @@ class Camera1(
     }
   }
 
-  private fun applyZoom(params: android.hardware.Camera.Parameters, zoom: Float) {
+  private fun applyZoom(params: android.hardware.Camera.Parameters, zoom: Int) {
     if (params.isZoomSupported) {
       val max = params.maxZoom
-      params.zoom = (zoom * max).toInt()
+      params.zoom = (zoom / 100f * max).toInt()
     }
   }
 
@@ -164,14 +166,10 @@ class Camera1(
     if (params.isAutoExposureLockSupported) {
       val max = params.maxExposureCompensation
       val min = params.minExposureCompensation
-      val value = if (exposureCorrection < min) {
-        min
+      val value = if (exposureCorrection <= 50) {
+        exposureCorrection / 50f * min
       } else {
-        if (exposureCorrection > max) {
-          max
-        } else {
-          exposureCorrection
-        }
+        (exposureCorrection - 50f) / 50f * max
       }
       params.exposureCompensation = value.toInt()
     }
@@ -250,8 +248,8 @@ class Camera1(
       applyFocusMode(it)
       applyFlash(it)
       applyWhiteBalance(it)
-      applyZoom(it, 0f)
-      applyExposureCorrection(it, 0)
+      applyZoom(it, mZoom)
+      applyExposureCorrection(it, mExposureCompensation)
     }
     val size = computePreviewStreamSize(resolution)
     Log.i("trinity", "setPreviewSize width: ${size.width} height: ${size.height}")
@@ -323,6 +321,28 @@ class Camera1(
   override fun setAspectRatio(ratio: AspectRatio): Boolean {
     mAspectRatio = ratio
     return false
+  }
+
+  override fun setZoom(zoom: Int) {
+    if (mCameraParameters == null) {
+      mZoom = zoom
+    } else {
+      mCameraParameters?.let {
+        applyZoom(it, zoom)
+        mCamera?.parameters = it
+      }
+    }
+  }
+
+  override fun setExposureCompensation(exposureCompensation: Int) {
+    if (mCameraParameters == null) {
+      mExposureCompensation = exposureCompensation
+    } else {
+      mCameraParameters?.let {
+        applyExposureCorrection(it, exposureCompensation)
+        mCamera?.parameters = it
+      }
+    }
   }
 
   override fun setFlash(flash: Flash) {

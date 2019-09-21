@@ -27,7 +27,7 @@ import com.trinity.util.Trinity
 /**
  * Created by wlanjie on 2019-07-30
  */
-class VideoExport(private val context: Context) {
+class VideoExport(private val context: Context) : TrinityVideoExport {
 
   private var mHandle = create()
   // 硬编码对象
@@ -36,7 +36,7 @@ class VideoExport(private val context: Context) {
   private var mSurface: Surface ?= null
   private var mListener: OnExportListener ?= null
 
-  fun export(
+  override fun export(
       path: String,
       width: Int,
       height: Int,
@@ -52,11 +52,11 @@ class VideoExport(private val context: Context) {
     return export(mHandle, resourcePath, path, width, height, frameRate, videoBitRate, sampleRate, channelCount, audioBitRate)
   }
 
-  fun cancel() {
+  override fun cancel() {
 
   }
 
-  fun release() {
+  override fun release() {
     if (mHandle <= 0) {
       return
     }

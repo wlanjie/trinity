@@ -296,7 +296,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
         height = 640
       }
     }
-    mRecord.startEncode(path, width, height,
+    mRecord.startRecording(path, width, height,
       mVideoBitRate, mFrameRate, mHardwareEncode,
       mSampleRate, mChannels, mAudioBitRate, mRecordDuration)
     val media = MediaItem(path, "video", width, height, Int.MAX_VALUE)
@@ -304,7 +304,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
   }
 
   override fun onUp() {
-    mRecord.stopEncode()
+    mRecord.stopRecording()
     mRecordDurations.add(mCurrentRecordDuration)
     runOnUiThread {
       mLineView.stop()
@@ -361,8 +361,8 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
       mFrameRate = (preferences.getString("frame_rate", "25") ?: "25").toInt()
       mChannels = (preferences.getString("channels", "1") ?: "1").toInt()
       mSampleRate = (preferences.getString("sample_rate", "44100") ?: "44100").toInt()
-      mVideoBitRate = (preferences.getString("video_bit_rate", "18432000") ?: "18432000").toInt()
-      mAudioBitRate = (preferences.getString("audio_bit_rate", "128000") ?: "128000").toInt()
+      mVideoBitRate = (preferences.getString("video_bit_rate", "18432") ?: "18432").toInt()
+      mAudioBitRate = (preferences.getString("audio_bit_rate", "128") ?: "128").toInt()
       mRecordDuration = (preferences.getString("record_duration", "60000") ?: "60000").toInt()
     } catch (e: Exception) {
       e.printStackTrace()

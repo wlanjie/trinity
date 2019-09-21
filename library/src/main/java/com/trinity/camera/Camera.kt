@@ -38,6 +38,10 @@ interface Camera {
 
   fun setAspectRatio(ratio: AspectRatio): Boolean
 
+  fun setZoom(zoom: Int)
+
+  fun setExposureCompensation(exposureCompensation: Int)
+
   fun setFlash(flash: Flash)
 
   fun getFlash(): Flash

@@ -247,7 +247,7 @@ int VideoExport::Export(const char *export_config, const char *path, int width, 
 
     export_ing = true;
     packet_thread_ = new VideoConsumerThread();
-    int ret = packet_thread_->Init(path, width, height, frame_rate, video_bit_rate, sample_rate, channel_count, audio_bit_rate, "libfdk_aac");
+    int ret = packet_thread_->Init(path, width, height, frame_rate, video_bit_rate * 1000, sample_rate, channel_count, audio_bit_rate * 1000, "libfdk_aac");
     if (ret < 0) {
         return ret;
     }
@@ -256,8 +256,8 @@ int VideoExport::Export(const char *export_config, const char *path, int width, 
     AudioPacketPool::GetInstance()->InitAudioPacketQueue();
     packet_thread_->StartAsync();
 
-    video_width_ = width;
-    video_height_ = height;
+    video_width_ = (int) (floor(width / 16.0f)) * 16;
+    video_height_ = (int) (floor(height / 16.0f)) * 16;
 
     for (int i = 0; i < clip_size; i++) {
         cJSON* path_item = cJSON_GetObjectItem(item, "path");
@@ -278,9 +278,9 @@ int VideoExport::Export(const char *export_config, const char *path, int width, 
 
     free(buffer);
     encoder_ = new SoftEncoderAdapter(vertex_coordinate_, texture_coordinate_);
-    encoder_->Init(width, height, video_bit_rate, frame_rate);
+    encoder_->Init(width, height, video_bit_rate * 1000, frame_rate);
     audio_encoder_adapter_ = new AudioEncoderAdapter();
-    audio_encoder_adapter_->Init(packet_pool_, 44100, 1, 128 * 1024, "libfdk_aac");
+    audio_encoder_adapter_->Init(packet_pool_, 44100, 1, 128 * 1000, "libfdk_aac");
     MediaClip* clip = clip_deque_.at(0);
     LOGE("StartDecode");
     StartDecode(clip);

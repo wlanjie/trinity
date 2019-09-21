@@ -549,11 +549,13 @@ void CameraRecord::StartEncoding(const char* path,
         delete encoder_;
         encoder_ = nullptr;
     }
+    int video_width = (int) (floor(width / 16.0f)) * 16;
+    int video_height = (int) (floor(height / 16.0f)) * 16;
     if (nullptr != packet_thread_) {
         PacketPool::GetInstance()->InitRecordingVideoPacketQueue();
         PacketPool::GetInstance()->InitAudioPacketQueue(44100);
         AudioPacketPool::GetInstance()->InitAudioPacketQueue();
-        int ret = packet_thread_->Init(path, width, height, frame_rate, video_bit_rate, audio_sample_rate, audio_channel, audio_bit_rate, "libfdk_aac");
+        int ret = packet_thread_->Init(path, video_width, video_height, frame_rate, video_bit_rate * 1000, audio_sample_rate, audio_channel, audio_bit_rate * 1000, "libfdk_aac");
         if (ret >= 0) {
             packet_thread_->StartAsync();
         }
@@ -563,7 +565,7 @@ void CameraRecord::StartEncoding(const char* path,
     } else {
         encoder_ = new SoftEncoderAdapter(vertex_coordinate_, texture_coordinate_);
     }
-    encoder_->Init(width, height, video_bit_rate, frame_rate);
+    encoder_->Init(video_width, video_height, video_bit_rate * 1000, frame_rate);
     if (nullptr != handler_) {
         handler_->PostMessage(new Message(MSG_START_RECORDING));
     }

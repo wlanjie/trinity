@@ -20,10 +20,8 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.tencent.mars.xlog.Log
 import com.tencent.mars.xlog.Xlog
-import com.trinity.editor.EffectType
-import com.trinity.editor.MediaClip
-import com.trinity.editor.TimeRange
-import com.trinity.editor.VideoEditor
+import com.trinity.core.TrinityCore
+import com.trinity.editor.*
 import com.trinity.sample.adapter.MusicAdapter
 import com.trinity.sample.editor.*
 import com.trinity.sample.entity.EffectInfo
@@ -62,7 +60,7 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
   private lateinit var mThumbLineBar: OverlayThumbLineBar
   private lateinit var mInsideBottomSheet: FrameLayout
   private lateinit var mBottomSheetLayout: CoordinatorLayout
-  private lateinit var mVideoEditor: VideoEditor
+  private lateinit var mVideoEditor: TrinityVideoEditor
   private var mLutFilter: LutFilterChooser ?= null
   private var mEffect: EffectChooser ?= null
   private var mUseInvert = false
@@ -84,7 +82,7 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_editor)
-    mVideoEditor = VideoEditor(this)
+    mVideoEditor = TrinityCore.createEditor(this)
 //    openLog()
 
     mEffectController = EffectController(this, mVideoEditor)
