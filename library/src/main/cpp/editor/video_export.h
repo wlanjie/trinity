@@ -31,7 +31,8 @@
 #include "video_encoder_adapter.h"
 #include "audio_encoder_adapter.h"
 #include "video_consumer_thread.h"
-#include "music_decoder_controller.h"
+#include "music_decoder.h"
+#include "decode/resample.h"
 #include "yuv_render.h"
 #include "image_process.h"
 #include "handler.h"
@@ -69,6 +70,7 @@ class VideoExport {
     void StartDecode(MediaClip* clip);
     void FreeResource();
     void OnEffect();
+    void OnMusics();
     void ProcessVideoExport();
     void ProcessAudioExport();
     void OnExportProgress(uint64_t current_time);
@@ -83,7 +85,11 @@ class VideoExport {
     pthread_t export_video_thread_;
     pthread_t export_audio_thread_;
     std::deque<MediaClip*> clip_deque_;
-    std::deque<MusicDecoderController*> music_controller_deque_;
+    std::deque<MusicDecoder*> music_decoder_deque_;
+    std::deque<trinity::Resample*> resample_deque_;
+    int accompany_packet_buffer_size_;
+    int accompany_sample_rate_;
+    int vocal_sample_rate_;
     bool export_ing;
     EGLCore* egl_core_;
     EGLSurface egl_surface_;

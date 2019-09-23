@@ -123,6 +123,7 @@ int MusicDecoderController::ReadSamples(uint8_t* samples, int size) {
         if (samplePacketSize != -1 && samplePacketSize <= size) {
             // copy the raw data to samples
             adjustSamplesVolume(accompanyPacket->buffer, samplePacketSize, volume_ / volume_max_);
+            // TODO crash
             memcpy(samples, accompanyPacket->buffer, samplePacketSize * 2);
             // push accompany packet_ to accompany queue_
             PushPacketToQueue(accompanyPacket);

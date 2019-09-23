@@ -84,6 +84,7 @@ int MusicDecoder::Init(const char *path) {
         memset(path_, 0, length + 1);
         memcpy(path_, path, length + 1);
     }
+    LOGI("music path: %s", path);
     int ret = avformat_open_input(&format_context_, path, nullptr, nullptr);
     if (ret != 0) {
         LOGE("open file error: %s", av_err2str(ret));
@@ -131,6 +132,7 @@ int MusicDecoder::Init(const char *path) {
         }
     }
     audio_frame_ = av_frame_alloc();
+    LOGI("sample_rate: %d channels: %d", audio_stream->codecpar->sample_rate, audio_stream->codecpar->channels);
     return 0;
 }
 

@@ -35,6 +35,9 @@ VideoExport::VideoExport(JNIEnv* env, jobject object) {
     vm_ = vm;
     object_ = env->NewGlobalRef(object);
     video_duration_ = 0;
+    accompany_packet_buffer_size_ = 2048;
+    accompany_sample_rate_ = 0;
+    vocal_sample_rate_ = 0;
     export_ing = false;
     egl_core_ = nullptr;
     egl_surface_ = EGL_NO_SURFACE;
@@ -191,6 +194,49 @@ void VideoExport::OnEffect() {
     }
 }
 
+void VideoExport::OnMusics() {
+    if (nullptr != export_config_json_) {
+        cJSON* musics = cJSON_GetObjectItem(export_config_json_, "musics");
+        if (nullptr != musics) {
+            int music_size = cJSON_GetArraySize(musics);
+            for (int i = 0; i < music_size; ++i) {
+                cJSON* music_child = cJSON_GetArrayItem(musics, i);
+                cJSON* config_json = cJSON_GetObjectItem(music_child, "config");
+                if (nullptr != config_json) {
+                    cJSON* config = cJSON_Parse(config_json->valuestring);
+                    cJSON* path_json = cJSON_GetObjectItem(config, "path");
+                    cJSON* start_time_json = cJSON_GetObjectItem(config, "statTime");
+                    cJSON* end_time_json = cJSON_GetObjectItem(config, "endTime");
+
+                    if (nullptr != path_json) {
+                        char* path = path_json->valuestring;
+                        MusicDecoder* decoder = new MusicDecoder();
+                        int ret = decoder->Init(path, accompany_packet_buffer_size_);
+                        int actualAccompanyPacketBufferSize = accompany_packet_buffer_size_;
+                        if (ret >= 0) {
+                            accompany_sample_rate_ = decoder->GetSampleRate();
+                            if (vocal_sample_rate_ != accompany_sample_rate_) {
+
+                            }
+                            trinity::Resample* resample = new trinity::Resample();
+                            float ratio = accompany_sample_rate_ * 1.0f / vocal_sample_rate_;
+                            actualAccompanyPacketBufferSize = ratio * accompany_packet_buffer_size_;
+                            ret = resample->Init(accompany_sample_rate_, vocal_sample_rate_, actualAccompanyPacketBufferSize / 2, 2);
+                            if (ret < 0) {
+                                LOGE("resample Init error");
+                            }
+                            resample_deque_.push_back(resample);
+                            decoder->SetPacketBufferSize(actualAccompanyPacketBufferSize);
+                            // TODO time
+                            music_decoder_deque_.push_back(decoder);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 void VideoExport::StartDecode(MediaClip *clip) {
     media_decode_ = reinterpret_cast<MediaDecode*>(av_malloc(sizeof(MediaDecode)));
     memset(media_decode_, 0, sizeof(MediaDecode));
@@ -246,6 +292,7 @@ int VideoExport::Export(const char *export_config, const char *path, int width, 
     cJSON* item = clips->child;
 
     export_ing = true;
+    vocal_sample_rate_ = sample_rate;
     packet_thread_ = new VideoConsumerThread();
     int ret = packet_thread_->Init(path, width, height, frame_rate, video_bit_rate * 1000, sample_rate, channel_count, audio_bit_rate * 1000, "libfdk_aac");
     if (ret < 0) {
@@ -463,6 +510,7 @@ void* VideoExport::ExportAudioThread(void *context) {
 }
 
 void VideoExport::ProcessAudioExport() {
+    OnMusics();
     while (true) {
         pthread_mutex_lock(&media_mutex_);
         if (nullptr == media_decode_) {
@@ -473,13 +521,55 @@ void VideoExport::ProcessAudioExport() {
         if (!export_ing) {
             break;
         }
+
+        AudioPacket* music_packet = nullptr;
+        for (int i = 0; i < music_decoder_deque_.size(); ++i) {
+            auto* decoder = music_decoder_deque_.at(i);
+            music_packet = decoder->DecodePacket();
+            auto resample = resample_deque_.at(i);
+
+            short* stereoSamples = music_packet->buffer;
+            int stereoSampleSize = music_packet->size;
+            if (stereoSampleSize > 0) {
+                int monoSampleSize = stereoSampleSize / 2;
+                auto** samples = new short*[2];
+                samples[0] = new short[monoSampleSize];
+                samples[1] = new short[monoSampleSize];
+                for (int index = 0; index < monoSampleSize; index++) {
+                    samples[0][index] = stereoSamples[2 * index];
+                    samples[1][index] = stereoSamples[2 * index + 1];
+                }
+                float transfer_ratio = accompany_sample_rate_ / static_cast<float>(vocal_sample_rate_);
+                int accompanySampleSize = static_cast<int>(monoSampleSize * 1.0f / transfer_ratio);
+                uint8_t out_data[accompanySampleSize * 2 * 2];
+                int out_nb_bytes = 0;
+                resample->Process(samples, out_data, monoSampleSize, &out_nb_bytes);
+                delete[] samples[0];
+                delete[] samples[1];
+                delete[] stereoSamples;
+                if (out_nb_bytes > 0) {
+                    accompanySampleSize = out_nb_bytes / 2;
+                    auto* accompanySamples = new short[accompanySampleSize];
+                    convertShortArrayFromByteArray(out_data, out_nb_bytes, accompanySamples, 1.0);
+                    music_packet->buffer = accompanySamples;
+                    music_packet->size = accompanySampleSize;
+                }
+            }
+        }
+
         int audio_size = Resample();
         if (audio_size > 0) {
             // TODO buffer池
-            AudioPacket *packet = new AudioPacket();
-            short *samples = new short[audio_size / sizeof(short)];
+            auto *packet = new AudioPacket();
+            auto *samples = new short[audio_size / sizeof(short)];
             memcpy(samples, audio_buf, audio_size);
-            packet->buffer = samples;
+            if (music_packet != nullptr && nullptr != music_packet->buffer) {
+                auto* mix = new short[audio_size];
+                mixtureAccompanyAudio(samples, music_packet->buffer, audio_size / sizeof(short), mix);
+                packet->buffer = mix;
+            } else {
+                packet->buffer = samples;
+            }
             packet->size = audio_size / sizeof(short);
             packet_pool_->PushAudioPacketToQueue(packet);
         }
@@ -487,6 +577,16 @@ void VideoExport::ProcessAudioExport() {
     if (nullptr != swr_context_) {
         swr_free(&swr_context_);
     }
+    for (auto decoder : music_decoder_deque_) {
+        decoder->Destroy();
+        delete decoder;
+    }
+    music_decoder_deque_.clear();
+    for (auto resample : resample_deque_) {
+        resample->Destroy();
+        delete resample;
+    }
+    resample_deque_.clear();
 }
 
 int VideoExport::Resample() {
