@@ -29,6 +29,7 @@
 #define FILTER "Filter"
 #define FLASH_WHITE "FlashWhite"
 #define SPLIT_SCREEN "SplitScreen"
+#define BLUR_SPLIT_SCREEN "BlurSplitScreen"
 
 namespace trinity {
 
@@ -78,16 +79,22 @@ void ImageProcess::ParseConfig(char *config, int action_id) {
         if (nullptr != effect_type_json) {
             char* effect_type = effect_type_json->valuestring;
             if (strcmp(effect_type, FILTER) == 0) {
+                // 滤镜
                 OnFilter(start_time, end_time, json, action_id);
             } else if (strcmp(effect_type, FLASH_WHITE) == 0) {
+                // 闪白
                 OnFlashWhite(10, start_time, end_time, action_id);
             } else if (strcmp(effect_type, SPLIT_SCREEN) == 0) {
+                // 分屏
                 int split_count = 0;
                 cJSON* split_count_json = cJSON_GetObjectItem(json, "splitScreenCount");
                 if (nullptr != split_count_json) {
                     split_count = split_count_json->valueint;
                 }
                 OnSplitScreen(split_count, start_time, end_time, action_id);
+            } else if (strcmp(effect_type, BLUR_SPLIT_SCREEN) == 0) {
+                // 模糊分屏
+                OnBlurSplitScreen(start_time, end_time, action_id);
             }
         }
         cJSON_Delete(json);
@@ -196,6 +203,20 @@ void ImageProcess::OnSplitScreen(int screen_count, uint64_t start_time, uint64_t
         FrameBuffer* frame_buffer = effects_[action_id];
         frame_buffer->SetStartTime(start_time);
         frame_buffer->SetEndTime(end_time);
+    }
+}
+
+void ImageProcess::OnBlurSplitScreen(uint64_t start_time, uint64_t end_time, int action_id) {
+    auto result = effects_.find(action_id);
+    if (result == effects_.end()) {
+        auto* screen = new BlurSplitScreen(720, 1280);
+        screen->SetStartTime(start_time);
+        screen->SetEndTime(end_time);
+        effects_.insert(std::pair<int, FrameBuffer*>(action_id, screen));
+    } else {
+        auto* screen = effects_[action_id];
+        screen->SetStartTime(start_time);
+        screen->SetEndTime(end_time);
     }
 }
 

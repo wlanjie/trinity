@@ -65,12 +65,13 @@ int main() {
     clock_t start = clock();
     
 //    GaussianBlur gaussian_blur(512, 512, 1.0f);
-    BlurSplitScreen blur_split_screen(512, 512);
+//    BlurSplitScreen blur_split_screen(512, 512);
+    FrameBuffer* frame_buffer = new BlurSplitScreen(512, 512);
     while(!glfwWindowShouldClose(window)) {
         glfwPollEvents();
         uint64_t current_time = (uint64_t) ((double) (clock() - start) / CLOCKS_PER_SEC * 1000);
 //        printf("time: %lld\n", current_time);
-        int process_id = blur_split_screen.OnDrawFrame(texture_id);
+        int process_id = frame_buffer->OnDrawFrame(texture_id);
         render_screen.ProcessImage(process_id);
         glfwSwapBuffers(window);
         usleep(30 * 1000);

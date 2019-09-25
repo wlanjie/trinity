@@ -11,6 +11,9 @@
 
 #include "frame_buffer.h"
 #include "gaussian_blur.h"
+#ifdef __ANDROID__
+#include "android_xlog.h"
+#endif
 
 namespace trinity {
 
@@ -54,7 +57,7 @@ class BlurSplitScreen : public FrameBuffer {
         gaussian_blur_ = nullptr;
     }
     
-    int OnDrawFrame(int texture_id, uint64_t current_time = 0) {
+    virtual GLuint OnDrawFrame(GLuint texture_id, uint64_t current_time = 0) {
         blur_texture_id_ = gaussian_blur_->OnDrawFrame(texture_id);
         return FrameBuffer::OnDrawFrame(texture_id, current_time);
     }

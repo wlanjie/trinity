@@ -23,7 +23,7 @@ import java.util.*
 
 class VideoFragment : Fragment() {
 
-  private val mAdapter = MediaAdapter()
+  private lateinit var mAdapter: MediaAdapter
 
   companion object {
     private const val DURATION = "duration"
@@ -38,6 +38,7 @@ class VideoFragment : Fragment() {
 
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
+    mAdapter = MediaAdapter()
     val recyclerView = view.findViewById<RecyclerView>(R.id.recycler_view)
     recyclerView.layoutManager = GridLayoutManager(activity, 4)
     recyclerView.adapter = mAdapter

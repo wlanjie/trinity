@@ -28,5 +28,10 @@
     "name": "九屏",
     "color": "#dc143c",
     "effectName": "SplitScreen"
+  },
+  {
+    "name": "模糊分屏",
+    "color": "#EA0000",
+    "effectName": "SplitScreen"
   }
 ]

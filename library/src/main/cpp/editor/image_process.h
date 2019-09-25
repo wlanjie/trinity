@@ -27,6 +27,8 @@
 #include "action.h"
 #include "flash_white.h"
 #include "filter.h"
+#include "blur_split_screen.h"
+#include "gaussian_blur.h"
 
 extern "C" {
 #include "cJSON.h"
@@ -61,6 +63,7 @@ class ImageProcess {
     void OnRotate(float rotate, int action_id);
     void OnFlashWhite(int time, uint64_t start_time, uint64_t end_time, int action_id = NO_ACTION);
     void OnSplitScreen(int screen_count, uint64_t start_time, uint64_t end_time, int action_id = NO_ACTION);
+    void OnBlurSplitScreen(uint64_t start_time, uint64_t end_time, int action_id = NO_ACTION);
     void OnFilter(int start_time, int end_time, cJSON* json, int action_id);
 
  private:

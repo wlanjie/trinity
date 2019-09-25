@@ -76,6 +76,7 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
   private var mSplitScreenFourId = -1
   private var mSplitScreenSixId = -1
   private var mSplitScreenNineId = -1
+  private var mBlurSplitScreenId = -1
   private var mMusicId = -1
 
   @SuppressLint("ClickableViewAccessibility")
@@ -346,6 +347,9 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
         jsonObject.put("splitScreenCount", 9)
         jsonObject.put("effectType", EffectType.SplitScreen.name)
         mSplitScreenNineId = mVideoEditor.addAction(jsonObject.toString())
+      } else if ("模糊分屏" == effectName) {
+        jsonObject.put("effectType", EffectType.BlurSplitScreen.name)
+        mBlurSplitScreenId = mVideoEditor.addAction(jsonObject.toString())
       }
       mEffectController.onEventAnimationFilterLongClick(EffectInfo())
     } else if (event == MotionEvent.ACTION_UP) {
@@ -386,6 +390,11 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
         jsonObject.put("endTime", mVideoEditor.getCurrentPosition())
         jsonObject.put("splitScreenCount", 9)
         mVideoEditor.updateAction(jsonObject.toString(), mSplitScreenNineId)
+      } else if ("模糊分屏" == effectName) {
+        jsonObject.put("effectType", EffectType.BlurSplitScreen.name)
+        jsonObject.put("startTime", mStartTime)
+        jsonObject.put("endTime", mVideoEditor.getCurrentPosition())
+        mVideoEditor.updateAction(jsonObject.toString(), mBlurSplitScreenId)
       }
       mEffectController.onEventAnimationFilterClickUp(EffectInfo())
     }
