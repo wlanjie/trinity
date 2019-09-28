@@ -115,6 +115,8 @@ interface TrinityVideoEditor {
 
   fun deleteAction(actionId: Int)
 
+  fun seek(time: Int)
+
   /**
    * 开始播放
    * @param repeat 是否循环播放

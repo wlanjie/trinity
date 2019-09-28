@@ -70,7 +70,7 @@ abstract class Chooser : FrameLayout {
     mThumbContainer?.let {
       it.removeAllViews()
       it.addView(bar)
-      bar.showOverlay(getEditorPage())
+//      bar.showOverlay(getEditorPage())
       bar.setBackgroundResource(Color.TRANSPARENT)
       bar.show()
       mThumbLineBar = bar

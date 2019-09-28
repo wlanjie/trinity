@@ -77,7 +77,7 @@ class ThumbRecyclerAdapter(private var mCount: Int, duration: Int, private var m
       return
     }
     Log.d(TAG, "requestThumbnailImage() times :" + times[0] + " ,position = " + position)
-    mFetcher!!.requestThumbnailImage(times, object : ThumbnailFetcher.OnThumbnailCompletionListener {
+    mFetcher?.requestThumbnailImage(times, object : ThumbnailFetcher.OnThumbnailCompletionListener {
 
       private var vecIndex = 1
 
@@ -173,9 +173,9 @@ class ThumbRecyclerAdapter(private var mCount: Int, duration: Int, private var m
   }
 
   companion object {
-    private val TAG = "ThumbRecyclerAdapter"
-    private val VIEW_TYPE_HEADER = 1
-    private val VIEW_TYPE_FOOTER = 2
-    private val VIEW_TYPE_THUMBNAIL = 3
+    private const val TAG = "ThumbRecyclerAdapter"
+    private const val VIEW_TYPE_HEADER = 1
+    private const val VIEW_TYPE_FOOTER = 2
+    private const val VIEW_TYPE_THUMBNAIL = 3
   }
 }

@@ -533,6 +533,14 @@ static void Android_JNI_video_editor_deleteAction(JNIEnv* env, jobject object, j
     editor->DeleteAction(action_id);
 }
 
+static void Android_JNI_video_editor_seek(JNIEnv* env, jobject object, jlong handle, jint time) {
+    if (handle <= 0) {
+        return;
+    }
+    auto* editor = reinterpret_cast<VideoEditor*>(handle);
+    editor->Seek(time);
+}
+
 static int Android_JNI_video_editor_play(JNIEnv* env, jobject object, jlong handle, jboolean repeat) {
     if (handle <= 0) {
         return 0;
@@ -670,6 +678,7 @@ static JNINativeMethod videoEditorMethods[] = {
         {"addAction",           "(JLjava/lang/String;)I",                                (void **) Android_JNI_video_editor_addAction },
         {"updateAction",        "(JLjava/lang/String;I)V",                               (void **) Android_JNI_video_editor_updateAction },
         {"deleteAction",        "(JI)V",                                                 (void **) Android_JNI_video_editor_deleteAction },
+        {"seek",                "(JI)V",                                                 (void **) Android_JNI_video_editor_seek },
         {"play",                "(JZ)I",                                                 (void **) Android_JNI_video_editor_play },
         {"pause",               "(J)V",                                                  (void **) Android_JNI_video_editor_pause },
         {"resume",              "(J)V",                                                  (void **) Android_JNI_video_editor_resume },

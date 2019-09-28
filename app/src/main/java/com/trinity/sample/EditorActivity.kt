@@ -5,7 +5,6 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Point
 import android.os.Bundle
-import android.os.Environment
 import android.util.TypedValue
 import android.view.*
 import android.view.GestureDetector.SimpleOnGestureListener
@@ -13,31 +12,22 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.fragment.app.transaction
-import androidx.recyclerview.widget.DividerItemDecoration
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.tencent.mars.xlog.Log
-import com.tencent.mars.xlog.Xlog
 import com.trinity.core.TrinityCore
-import com.trinity.editor.*
-import com.trinity.sample.adapter.MusicAdapter
+import com.trinity.editor.EffectType
+import com.trinity.editor.MediaClip
+import com.trinity.editor.TimeRange
+import com.trinity.editor.TrinityVideoEditor
 import com.trinity.sample.editor.*
+import com.trinity.sample.entity.Effect
 import com.trinity.sample.entity.EffectInfo
 import com.trinity.sample.entity.Filter
 import com.trinity.sample.entity.MediaItem
 import com.trinity.sample.fragment.MusicFragment
 import com.trinity.sample.listener.OnEffectTouchListener
 import com.trinity.sample.view.*
-import com.trinity.sample.view.ThumbLineBar
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
 import org.json.JSONObject
-import java.io.File
-import java.io.FileOutputStream
-import java.nio.ByteBuffer
-import java.nio.charset.Charset
+import java.util.*
 
 /**
  * Create by wlanjie on 2019/4/13-下午3:14
@@ -68,6 +58,8 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
   private var mThumbLineOverlayView: ThumbLineOverlay.ThumbLineOverlayView ?= null
   private var mThumbnailFetcher: ThumbnailFetcher ?= null
   private lateinit var mEffectController: EffectController
+//  private val mEffects = LinkedHashMap<String, EffectInfo>()
+  private val mEffects =  LinkedList<EffectInfo>()
   private var mStartTime: Long = 0
   private var mFilterId = -1
   private var mFlashWhiteId = -1
@@ -147,7 +139,7 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
         }
 
         override fun getTotalDuration(): Long {
-          return 10000
+          return mVideoEditor.getVideoDuration()
         }
 
         override fun release() {
@@ -293,110 +285,149 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
     }
   }
 
-  override fun onEffectTouchEvent(event: Int, effectName: String) {
+  override fun onEffectTouchEvent(event: Int, effect: Effect) {
     if (event == MotionEvent.ACTION_DOWN) {
       mStartTime = mVideoEditor.getCurrentPosition()
       mVideoEditor.resume()
       val jsonObject = JSONObject()
       jsonObject.put("startTime", mStartTime)
       jsonObject.put("endTime", Long.MAX_VALUE)
-      if ("闪白" == effectName) {
-        /**
-         *  {
-         *   "effectType": 0,
-         *   "startTime": 0,
-         *   "endTime": 10000
-         *  }
-         */
-        jsonObject.put("effectType", EffectType.FlashWhite.name)
-        mFlashWhiteId = mVideoEditor.addAction(jsonObject.toString())
-//        mFlashWhiteId = mVideoEditor.addAction(EffectType.FLASH_WHITE, 0, Long.MAX_VALUE)
-      } else if ("两屏" == effectName) {
-        /**
-         *  {
-         *   "effectType": 0,
-         *   "startTime": 0,
-         *   "endTime": 10000,
-         *   "splitScreenCount": 2
-         *  }
-         */
-        jsonObject.put("splitScreenCount", 2)
-        jsonObject.put("effectType", EffectType.SplitScreen.name)
-        mSplitScreenTwoId = mVideoEditor.addAction(jsonObject.toString())
-      } else if ("三屏" == effectName) {
-        /**
-         *  {
-         *   "effectType": 0,
-         *   "startTime": 0,
-         *   "endTime": 10000,
-         *   "splitScreenCount": 3
-         *  }
-         */
-        jsonObject.put("splitScreenCount", 3)
-        jsonObject.put("effectType", EffectType.SplitScreen.name)
-        mSplitScreenThreeId = mVideoEditor.addAction(jsonObject.toString())
-      } else if ("四屏" == effectName) {
-        jsonObject.put("splitScreenCount", 4)
-        jsonObject.put("effectType", EffectType.SplitScreen.name)
-        mSplitScreenFourId = mVideoEditor.addAction(jsonObject.toString())
-      } else if ("六屏" == effectName) {
-        jsonObject.put("splitScreenCount", 6)
-        jsonObject.put("effectType", EffectType.SplitScreen.name)
-        mSplitScreenSixId = mVideoEditor.addAction(jsonObject.toString())
-      } else if ("九屏" == effectName) {
-        jsonObject.put("splitScreenCount", 9)
-        jsonObject.put("effectType", EffectType.SplitScreen.name)
-        mSplitScreenNineId = mVideoEditor.addAction(jsonObject.toString())
-      } else if ("模糊分屏" == effectName) {
-        jsonObject.put("effectType", EffectType.BlurSplitScreen.name)
-        mBlurSplitScreenId = mVideoEditor.addAction(jsonObject.toString())
+      when (effect.id) {
+        EffectId.UNDO.ordinal -> {
+          return
+        }
+
+        EffectId.FLASH_WHITE.ordinal -> {
+          /**
+           *  {
+           *   "effectType": 0,
+           *   "startTime": 0,
+           *   "endTime": 10000
+           *  }
+           */
+          jsonObject.put("effectType", EffectType.FlashWhite.name)
+          mFlashWhiteId = mVideoEditor.addAction(jsonObject.toString())
+        }
+
+        EffectId.TWO_SPLIT_SCREEN.ordinal -> {
+          /**
+           *  {
+           *   "effectType": 0,
+           *   "startTime": 0,
+           *   "endTime": 10000,
+           *   "splitScreenCount": 2
+           *  }
+           */
+          jsonObject.put("splitScreenCount", 2)
+          jsonObject.put("effectType", EffectType.SplitScreen.name)
+          mSplitScreenTwoId = mVideoEditor.addAction(jsonObject.toString())
+        }
+
+        EffectId.THREE_SPLIT_SCREEN.ordinal -> {
+          /**
+           *  {
+           *   "effectType": 0,
+           *   "startTime": 0,
+           *   "endTime": 10000,
+           *   "splitScreenCount": 3
+           *  }
+           */
+          jsonObject.put("splitScreenCount", 3)
+          jsonObject.put("effectType", EffectType.SplitScreen.name)
+          mSplitScreenThreeId = mVideoEditor.addAction(jsonObject.toString())
+        }
+
+        EffectId.FOUR_SPLIT_SCREEN.ordinal -> {
+          jsonObject.put("splitScreenCount", 4)
+          jsonObject.put("effectType", EffectType.SplitScreen.name)
+          mSplitScreenFourId = mVideoEditor.addAction(jsonObject.toString())
+        }
+
+        EffectId.SIX_SPLIT_SCREEN.ordinal -> {
+          jsonObject.put("splitScreenCount", 6)
+          jsonObject.put("effectType", EffectType.SplitScreen.name)
+          mSplitScreenSixId = mVideoEditor.addAction(jsonObject.toString())
+        }
+
+        EffectId.NINE_SPLIT_SCREEN.ordinal -> {
+          jsonObject.put("splitScreenCount", 9)
+          jsonObject.put("effectType", EffectType.SplitScreen.name)
+          mSplitScreenNineId = mVideoEditor.addAction(jsonObject.toString())
+        }
+
+        EffectId.BLUR_SPLIT_SCREEN.ordinal -> {
+          jsonObject.put("effectType", EffectType.BlurSplitScreen.name)
+          mBlurSplitScreenId = mVideoEditor.addAction(jsonObject.toString())
+        }
       }
-      mEffectController.onEventAnimationFilterLongClick(EffectInfo())
+      effect.startTime = mStartTime.toInt()
+      mEffectController.onEventAnimationFilterLongClick(effect)
     } else if (event == MotionEvent.ACTION_UP) {
       mVideoEditor.pause()
       val jsonObject = JSONObject()
-      if ("闪白" == effectName) {
-        jsonObject.put("effectType", EffectType.FlashWhite.name)
-        jsonObject.put("startTime", mStartTime)
-        jsonObject.put("endTime", mVideoEditor.getCurrentPosition())
-        mVideoEditor.updateAction(jsonObject.toString(), mFlashWhiteId)
-      } else if ("两屏" == effectName) {
-        jsonObject.put("effectType", EffectType.SplitScreen.name)
-        jsonObject.put("startTime", mStartTime)
-        jsonObject.put("endTime", mVideoEditor.getCurrentPosition())
-        jsonObject.put("splitScreenCount", 2)
-        mVideoEditor.updateAction(jsonObject.toString(), mSplitScreenTwoId)
-      } else if ("三屏" == effectName) {
-        jsonObject.put("effectType", EffectType.SplitScreen.name)
-        jsonObject.put("startTime", mStartTime)
-        jsonObject.put("endTime", mVideoEditor.getCurrentPosition())
-        jsonObject.put("splitScreenCount", 3)
-        mVideoEditor.updateAction(jsonObject.toString(), mSplitScreenThreeId)
-      } else if ("四屏" == effectName) {
-        jsonObject.put("effectType", EffectType.SplitScreen.name)
-        jsonObject.put("startTime", mStartTime)
-        jsonObject.put("endTime", mVideoEditor.getCurrentPosition())
-        jsonObject.put("splitScreenCount", 4)
-        mVideoEditor.updateAction(jsonObject.toString(), mSplitScreenFourId)
-      } else if ("六屏" == effectName) {
-        jsonObject.put("effectType", EffectType.SplitScreen.name)
-        jsonObject.put("startTime", mStartTime)
-        jsonObject.put("endTime", mVideoEditor.getCurrentPosition())
-        jsonObject.put("splitScreenCount", 6)
-        mVideoEditor.updateAction(jsonObject.toString(), mSplitScreenSixId)
-      } else if ("九屏" == effectName) {
-        jsonObject.put("effectType", EffectType.SplitScreen.name)
-        jsonObject.put("startTime", mStartTime)
-        jsonObject.put("endTime", mVideoEditor.getCurrentPosition())
-        jsonObject.put("splitScreenCount", 9)
-        mVideoEditor.updateAction(jsonObject.toString(), mSplitScreenNineId)
-      } else if ("模糊分屏" == effectName) {
-        jsonObject.put("effectType", EffectType.BlurSplitScreen.name)
-        jsonObject.put("startTime", mStartTime)
-        jsonObject.put("endTime", mVideoEditor.getCurrentPosition())
-        mVideoEditor.updateAction(jsonObject.toString(), mBlurSplitScreenId)
+      var mEffectId = -1
+      when (effect.id) {
+        EffectId.UNDO.ordinal -> {
+          println("UNDO")
+          if (!mEffects.isEmpty()) {
+            val info = mEffects.removeLast()
+            mEffectController.onEventAnimationFilterDelete(Effect(0, "", ""))
+            mVideoEditor.deleteAction(info.actionId)
+            mVideoEditor.seek(info.startTime.toInt())
+          }
+          return
+        }
+
+        EffectId.FLASH_WHITE.ordinal -> {
+          mEffectId = mFlashWhiteId
+          jsonObject.put("effectType", EffectType.FlashWhite.name)
+        }
+
+        EffectId.TWO_SPLIT_SCREEN.ordinal -> {
+          jsonObject.put("effectType", EffectType.SplitScreen.name)
+          jsonObject.put("splitScreenCount", 2)
+          mEffectId = mSplitScreenTwoId
+        }
+
+        EffectId.THREE_SPLIT_SCREEN.ordinal -> {
+          jsonObject.put("effectType", EffectType.SplitScreen.name)
+          jsonObject.put("splitScreenCount", 3)
+          mEffectId = mSplitScreenThreeId
+        }
+
+        EffectId.FOUR_SPLIT_SCREEN.ordinal -> {
+          jsonObject.put("effectType", EffectType.SplitScreen.name)
+          jsonObject.put("splitScreenCount", 4)
+          mEffectId = mSplitScreenFourId
+        }
+
+        EffectId.SIX_SPLIT_SCREEN.ordinal -> {
+          jsonObject.put("effectType", EffectType.SplitScreen.name)
+          jsonObject.put("splitScreenCount", 6)
+          mEffectId = mSplitScreenSixId
+        }
+
+        EffectId.NINE_SPLIT_SCREEN.ordinal -> {
+          jsonObject.put("effectType", EffectType.SplitScreen.name)
+          jsonObject.put("splitScreenCount", 9)
+          mEffectId = mSplitScreenNineId
+        }
+
+        EffectId.BLUR_SPLIT_SCREEN.ordinal -> {
+          jsonObject.put("effectType", EffectType.BlurSplitScreen.name)
+          mEffectId = mBlurSplitScreenId
+        }
       }
-      mEffectController.onEventAnimationFilterClickUp(EffectInfo())
+      val effectInfo = EffectInfo()
+      effectInfo.actionId = mEffectId
+      effectInfo.startTime = mStartTime
+//      mEffects[effect.name + "_" + mStartTime] = effectInfo
+      mEffects.add(effectInfo)
+      println("startTime: " + mStartTime + " endTime: " + mVideoEditor.getCurrentPosition())
+      jsonObject.put("startTime", mStartTime)
+      jsonObject.put("endTime", mVideoEditor.getCurrentPosition())
+      mVideoEditor.updateAction(jsonObject.toString(), mEffectId)
+      mEffectController.onEventAnimationFilterClickUp(effect)
     }
   }
 

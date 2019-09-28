@@ -28,7 +28,7 @@ class ThumbLineOverlay(
     private var mContext: Context? = null
     private var mOverlayContainer: ViewGroup? = null
     var uiEditorPage: EditorPage? = null
-    var middleViewColor = 0
+    private var middleViewColor = 0
 
     val overlayView: View?
         get() = mOverlayContainer
@@ -205,10 +205,7 @@ class ThumbLineOverlay(
     fun updateMiddleViewColor(middleViewColor: Int) {
         if (this.middleViewColor != middleViewColor) {
             this.middleViewColor = middleViewColor
-            mSelectedMiddleView!!.setBackgroundColor(
-                mContext!!.resources
-                    .getColor(middleViewColor)
-            )
+            mSelectedMiddleView?.setBackgroundColor(middleViewColor)
         }
 
     }
@@ -225,10 +222,7 @@ class ThumbLineOverlay(
                 mTailView!!.active()
                 mHeadView!!.active()
                 if (middleViewColor != 0) {
-                    mSelectedMiddleView!!.setBackgroundColor(
-                        mContext!!.resources
-                            .getColor(middleViewColor)
-                    )
+                    mSelectedMiddleView?.setBackgroundColor(middleViewColor)
                 } else {
                     mSelectedMiddleView!!.setBackgroundColor(
                         mContext!!.resources
@@ -240,12 +234,9 @@ class ThumbLineOverlay(
                 mTailView!!.fix()
                 mHeadView!!.fix()
                 if (middleViewColor != 0) {
-                    mSelectedMiddleView!!.setBackgroundColor(
-                        mContext!!.resources
-                            .getColor(middleViewColor)
-                    )
+                    mSelectedMiddleView?.setBackgroundColor(middleViewColor)
                 } else {
-                    mSelectedMiddleView!!.setBackgroundColor(
+                    mSelectedMiddleView?.setBackgroundColor(
                         mContext!!.resources
                             .getColor(R.color.timeline_bar_active_overlay)
                     )

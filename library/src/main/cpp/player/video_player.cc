@@ -395,10 +395,10 @@ void VideoPlayer::OnSeekEvent(SeekEvent* event, int seek_flag) {
         int64_t seek_target = video_player->media_decode_->seek_pos * (AV_TIME_BASE / 1000);
         SetClock(&video_player->player_state_->external_clock, seek_target * 1.0 / AV_TIME_BASE, 0);
     }
-    if (video_player->media_decode_->paused) {
-        video_player->StreamTogglePause(video_player->media_decode_, video_player->player_state_);
-        video_player->player_state_->step = 1;
-    }
+//    if (video_player->media_decode_->paused) {
+//        video_player->StreamTogglePause(video_player->media_decode_, video_player->player_state_);
+//        video_player->player_state_->step = 1;
+//    }
 }
 
 void VideoPlayer::OnAudioPrepareEvent(AudioEvent *event, int size) {
@@ -948,6 +948,9 @@ void VideoPlayer::RenderVideoFrame(VideoEvent* event) {
 
 void VideoPlayer::Seek(int start_time) {
     av_seek(media_decode_, start_time);
+    if (nullptr != handler_) {
+        handler_->PostMessage(new Message(kRenderFrame));
+    }
 }
 
 int64_t VideoPlayer::GetCurrentPosition() {

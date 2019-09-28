@@ -278,6 +278,15 @@ class VideoEditor(
 
   private external fun deleteAction(handle: Long, actionId: Int)
 
+  override fun seek(time: Int) {
+    if (mId <= 0) {
+      return
+    }
+    seek(mId, time)
+  }
+
+  private external fun seek(id: Long, time: Int)
+
   /**
    * 开始播放
    * @param repeat 是否循环播放

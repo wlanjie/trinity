@@ -1,6 +1,6 @@
 package com.trinity.sample.entity
 
 class EffectInfo {
-  var path = ""
+  var actionId = 0
   var startTime = 0L
 }

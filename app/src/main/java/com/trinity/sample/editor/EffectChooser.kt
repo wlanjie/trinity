@@ -12,7 +12,6 @@ import com.google.gson.reflect.TypeToken
 import com.trinity.sample.R
 import com.trinity.sample.adapter.EffectAdapter
 import com.trinity.sample.entity.Effect
-import com.trinity.sample.entity.EffectInfo
 import com.trinity.sample.listener.OnEffectTouchListener
 import java.nio.charset.Charset
 
@@ -55,7 +54,7 @@ class EffectChooser : Chooser, EffectAdapter.OnItemTouchListener {
     return mThumbnailContainer
   }
 
-  override fun onTouchEvent(event: Int, position: Int, effect: String) {
+  override fun onTouchEvent(event: Int, position: Int, effect: Effect) {
     if (event == MotionEvent.ACTION_UP) {
       if (mThumbLineBar?.isTouching == false) {
         isClickable = true

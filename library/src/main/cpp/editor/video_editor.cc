@@ -384,6 +384,12 @@ void VideoEditor::AllocVideoRenderEvent() {
     on_video_render_event_->context = this;
 }
 
+void VideoEditor::Seek(int time) {
+    if (nullptr != video_player_) {
+        video_player_->Seek(time);
+    }
+}
+
 int VideoEditor::Play(bool repeat, JNIEnv* env, jobject object) {
     if (clip_deque_.empty()) {
         return -1;

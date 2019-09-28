@@ -1,35 +1,47 @@
 [
   {
+    "id": 0,
+    "name": "撤回",
+    "color": "#4F4F4F"
+  },
+  {
+    "id": 1,
     "name": "闪白",
     "color": "#23bdb1",
     "effectName": "FlashWhite"
   },
   {
+    "id": 2,
     "name": "两屏",
     "color": "#e77e86",
     "effectName": "SplitScreen"
   },
   {
+    "id": 3,
     "name": "三屏",
     "color": "#dc424e",
     "effectName": "SplitScreen"
   },
   {
+    "id": 4,
     "name": "四屏",
     "color": "#c12430",
     "effectName": "SplitScreen"
   },
   {
+    "id": 5,
     "name": "六屏",
     "color": "#ef2f3e",
     "effectName": "SplitScreen"
   },
   {
+    "id": 6,
     "name": "九屏",
     "color": "#dc143c",
     "effectName": "SplitScreen"
   },
   {
+    "id": 7,
     "name": "模糊分屏",
     "color": "#EA0000",
     "effectName": "SplitScreen"

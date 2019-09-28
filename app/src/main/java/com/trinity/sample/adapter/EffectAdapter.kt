@@ -40,7 +40,7 @@ class EffectAdapter(context: Context, effects: List<Effect>) : RecyclerView.Adap
 //        effectInfo.type = UIEditorPage.FILTER_EFFECT
 //        effectInfo.setPath(mFilterList.get(position))
 //        effectInfo.id = position
-        mTouchListener?.onTouchEvent(MotionEvent.ACTION_DOWN, position, effect.name)
+        mTouchListener?.onTouchEvent(MotionEvent.ACTION_DOWN, position, effect)
         mAdding = true
       }
     }
@@ -57,35 +57,42 @@ class EffectAdapter(context: Context, effects: List<Effect>) : RecyclerView.Adap
 
   override fun onBindViewHolder(holder: ViewHolder, position: Int) {
     val effect = mEffects[position]
+    if (effect.id == 0) {
+      holder.image.visibility = View.VISIBLE
+      holder.effectName.visibility = View.GONE
+      holder.image.setImageResource(R.drawable.bg_undo)
+    } else {
+      holder.image.visibility = View.GONE
+      holder.effectName.visibility = View.VISIBLE
+      holder.image.setImageResource(R.mipmap.ic_launcher_round)
+    }
     holder.effectName.text = effect.name
     holder.effectName.setColor(Color.parseColor(effect.color))
     holder.itemView.setOnTouchListener(this)
-    holder.image.setImageResource(R.mipmap.ic_launcher_round)
     holder.itemView.tag = holder
   }
 
   class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-    val image = itemView.findViewById<CircleImageView>(R.id.resource_image_view)
-    val select = itemView.findViewById<ImageView>(R.id.select_state)
-    val effectName = itemView.findViewById<CircleTextView>(R.id.effect_name)
+    val image: CircleImageView = itemView.findViewById(R.id.resource_image_view)
+    val select: ImageView = itemView.findViewById(R.id.select_state)
+    val effectName: CircleTextView = itemView.findViewById(R.id.effect_name)
   }
 
   override fun onTouch(v: View?, event: MotionEvent?): Boolean {
     mDetector.onTouchEvent(event)
-    val actionMasked = MotionEventCompat.getActionMasked(event)
-    when (actionMasked) {
+    when (MotionEventCompat.getActionMasked(event)) {
       MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
-        if (!mAdding) {
-          mPressView = null
-          return true
-        }
+//        if (!mAdding) {
+//          mPressView = null
+//          return true
+//        }
         if (v != mPressView) {
           return true
         }
         val holder = v?.tag as ViewHolder
         val position = holder.adapterPosition
         val effect = mEffects[position]
-        mTouchListener?.onTouchEvent(MotionEvent.ACTION_UP, position, effect.name)
+        mTouchListener?.onTouchEvent(MotionEvent.ACTION_UP, position, effect)
         holder.image.visibility = View.VISIBLE
         holder.select.visibility = View.GONE
         mAdding = false
@@ -108,6 +115,6 @@ class EffectAdapter(context: Context, effects: List<Effect>) : RecyclerView.Adap
   }
 
   interface OnItemTouchListener {
-    fun onTouchEvent(event: Int, position: Int, effect: String)
+    fun onTouchEvent(event: Int, position: Int, effect: Effect)
   }
 }

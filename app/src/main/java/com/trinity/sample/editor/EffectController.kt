@@ -1,6 +1,7 @@
 package com.trinity.sample.editor
 
 import android.content.Context
+import android.graphics.Color
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
@@ -9,7 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import com.trinity.editor.TrinityVideoEditor
 import com.trinity.sample.R
-import com.trinity.sample.entity.EffectInfo
+import com.trinity.sample.entity.Effect
 import com.trinity.sample.view.OverlayThumbLineBar
 import com.trinity.sample.view.ThumbLineOverlay
 import java.util.*
@@ -29,16 +30,16 @@ class EffectController(private val context: Context, private val videoEditor: Tr
   private var mOverlayColor = 0
   private var mOverlayHandler = TimelineBarOverlayHandler(Looper.getMainLooper())
   private var mCurrOverlayView: OverlayView? = null
-  private val mAddedFilter = Stack<EffectInfo>()
-  private var mAddedFilterTemp: Stack<EffectInfo> ?= null
+  private val mAddedFilter = Stack<Effect>()
+  private var mAddedFilterTemp: Stack<Effect> ?= null
   private val mAddedOverlay = Stack<ThumbLineOverlay>()
   private var mAddedOverlayTemp: Stack<ThumbLineOverlay>? = null
   private var mCurrOverlay: ThumbLineOverlay? = null
   private var mInvert = false
   private var mLastStartTime: Long = 0
 
-  fun onEventAnimationFilterLongClick(info: EffectInfo) {
-    mLastStartTime = info.startTime
+  fun onEventAnimationFilterLongClick(info: Effect) {
+    mLastStartTime = info.startTime.toLong()
     selectOverlayColor(info)
     mOverlayHandler.sendEmptyMessage(MESSAGE_ADD_OVERLAY)
     if (mAddedFilterTemp == null) {
@@ -48,7 +49,7 @@ class EffectController(private val context: Context, private val videoEditor: Tr
     mAddedFilterTemp?.push(info)
   }
 
-  fun onEventAnimationFilterClickUp(info: EffectInfo) {
+  fun onEventAnimationFilterClickUp(info: Effect) {
     mAddedFilterTemp?.let {
       if (it.isNotEmpty()) {
         val lastFilter = it[it.size - 1]
@@ -57,9 +58,9 @@ class EffectController(private val context: Context, private val videoEditor: Tr
     }
   }
 
-  fun onEventAnimationFilterDelete(info: EffectInfo) {
+  fun onEventAnimationFilterDelete(info: Effect) {
     if (mAddedFilterTemp == null) {
-      mAddedFilterTemp = Stack<EffectInfo>()
+      mAddedFilterTemp = Stack<Effect>()
       mAddedFilterTemp?.addAll(mAddedFilter)
     }
     mAddedFilterTemp?.let {
@@ -168,17 +169,17 @@ class EffectController(private val context: Context, private val videoEditor: Tr
     mThumbLineBar = thumbLineBar
   }
 
-  private fun selectOverlayColor(ef: EffectInfo) {
-    var colorRes = R.color.effect_color1
-    val path = ef.path
-    when {
-      path.contains("幻影") -> colorRes = R.color.effect_color1
-      path.contains("重影") -> colorRes = R.color.effect_color2
-      path.contains("抖动") -> colorRes = R.color.effect_color3
-      path.contains("朦胧") -> colorRes = R.color.effect_color4
-      path.contains("科幻") -> colorRes = R.color.effect_color5
-    }
-    mOverlayColor = colorRes
+  private fun selectOverlayColor(ef: Effect) {
+//    var colorRes = R.color.effect_color1
+//    val path = ef.path
+//    when {
+//      path.contains("幻影") -> colorRes = R.color.effect_color1
+//      path.contains("重影") -> colorRes = R.color.effect_color2
+//      path.contains("抖动") -> colorRes = R.color.effect_color3
+//      path.contains("朦胧") -> colorRes = R.color.effect_color4
+//      path.contains("科幻") -> colorRes = R.color.effect_color5
+//    }
+    mOverlayColor = Color.parseColor(ef.color)
   }
 
   class OverlayView(context: Context, isInvert: Boolean) : ThumbLineOverlay.ThumbLineOverlayView {

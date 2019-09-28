@@ -111,6 +111,8 @@ class VideoEditor : public GLObserver {
 
     void DeleteAction(int action_id);
 
+    void Seek(int time);
+
     // 开始播放
     // 是否循环播放
     int Play(bool repeat, JNIEnv* env, jobject object);
