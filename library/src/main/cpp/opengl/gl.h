@@ -136,4 +136,5 @@ static const char* SCREEN_NINE_FRAGMENT_SHADER =
         "    textureCoordinateToUse.y = (textureCoordinate.y - float(col) / 3.0) * 3.0;         \n"
         "    gl_FragColor=texture2D(inputImageTexture, textureCoordinateToUse);                 \n"
         "}                                                                                      \n";
+
 #endif //TRINITY_GL_H

@@ -17,7 +17,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "287"
             endingLineNumber = "287"
-            landmarkName = "OpenGL::CompileShader(const char *shader_string, GLuint shader)"
+            landmarkName = "OpenGL::CompileShader(shader_string, shader)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

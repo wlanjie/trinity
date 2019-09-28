@@ -1,3 +1,21 @@
+/*
+* Copyright (C) 2019 Trinity. All rights reserved.
+* Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*      http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
 //
 //  main.cc
 //  opengl
@@ -22,6 +40,7 @@
 #include "gl.h"
 #include "gaussian_blur.h"
 #include "blur_split_screen.h"
+#include "scale.h"
 
 using namespace trinity;
 
@@ -66,7 +85,26 @@ int main() {
     
 //    GaussianBlur gaussian_blur(512, 512, 1.0f);
 //    BlurSplitScreen blur_split_screen(512, 512);
-    FrameBuffer* frame_buffer = new BlurSplitScreen(512, 512);
+//    FrameBuffer* frame_buffer = new BlurSplitScreen(512, 512);
+    Scale* frame_buffer = new Scale(512, 512);
+    float* scale_percent = new float[15];
+    scale_percent[0] = 1.0f;
+    scale_percent[1] = 1.07f;
+    scale_percent[2] = 1.14f;
+    scale_percent[3] = 1.21f;
+    scale_percent[4] = 1.26f;
+    scale_percent[5] = 1.32f;
+    scale_percent[6] = 1.45f;
+    scale_percent[7] = 1.53f;
+    scale_percent[8] = 1.66f;
+    scale_percent[9] = 1.79f;
+    scale_percent[10] = 1.96f;
+    scale_percent[11] = 1.84f;
+    scale_percent[12] = 1.76f;
+    scale_percent[13] = 1.67f;
+    scale_percent[14] = 1.45f;
+    scale_percent[15] = 1.28f;
+    frame_buffer->SetScalePercent(scale_percent, 15);
     while(!glfwWindowShouldClose(window)) {
         glfwPollEvents();
         uint64_t current_time = (uint64_t) ((double) (clock() - start) / CLOCKS_PER_SEC * 1000);
