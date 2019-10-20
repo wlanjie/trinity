@@ -179,6 +179,7 @@ void CameraRecord::Draw() {
         ConfigCamera();
     }
     if (camera_size_change_) {
+        camera_size_change_ = false;
         if (nullptr != frame_buffer_) {
             delete frame_buffer_;
             frame_buffer_ = nullptr;

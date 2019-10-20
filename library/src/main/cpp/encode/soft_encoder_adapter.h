@@ -73,8 +73,6 @@ class SoftEncoderAdapter : public VideoEncoderAdapter {
     enum DownloadThreadMessage {
         MSG_NONE = 0, MSG_WINDOW_SET, MSG_RENDER_LOOP_EXIT
     };
-    pthread_mutex_t preview_thread_lock_;
-    pthread_cond_t preview_thread_condition_;
     pthread_mutex_t lock_;
     pthread_cond_t condition_;
     enum DownloadThreadMessage msg_;
