@@ -61,6 +61,7 @@
 		705552712314CCEA007D98BB /* gl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gl.h; sourceTree = "<group>"; };
 		7064C9E42318EEF700F5D22B /* gaussian_blur.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gaussian_blur.h; sourceTree = "<group>"; };
 		7064C9E52318EEF700F5D22B /* gaussian_blur.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = gaussian_blur.cc; sourceTree = "<group>"; };
+		70BDAA02235C58540009FD16 /* soul_scale.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = soul_scale.h; sourceTree = "<group>"; };
 		70C9469D2319507E00728A62 /* opengl_observer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = opengl_observer.h; sourceTree = "<group>"; };
 		70F802B1233F743100798389 /* scale.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = scale.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -122,6 +123,7 @@
 				70C9469D2319507E00728A62 /* opengl_observer.h */,
 				7048204B231A668B00FCE038 /* blur_split_screen.h */,
 				70F802B1233F743100798389 /* scale.h */,
+				70BDAA02235C58540009FD16 /* soul_scale.h */,
 			);
 			path = opengl;
 			sourceTree = "<group>";
@@ -326,14 +328,14 @@
 				CODE_SIGN_STYLE = Automatic;
 				HEADER_SEARCH_PATHS = (
 					"${PROJECT_DIR}/util",
-					/usr/local/Cellar/ffmpeg/4.1.3_1/include/,
+					/usr/local/Cellar/ffmpeg/4.2.1_1/include/,
 					/usr/local/Cellar/glfw/3.2.1/include/GLFW,
 					"${PROJECT_DIR}/stb",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					/usr/local/Cellar/glfw/3.2.1/lib,
-					/usr/local/Cellar/ffmpeg/4.1.3_1/lib,
+					/usr/local/Cellar/ffmpeg/4.2.1_1/lib,
 				);
 				OTHER_CFLAGS = "";
 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
@@ -348,14 +350,14 @@
 				CODE_SIGN_STYLE = Automatic;
 				HEADER_SEARCH_PATHS = (
 					"${PROJECT_DIR}/util",
-					/usr/local/Cellar/ffmpeg/4.1.3_1/include/,
+					/usr/local/Cellar/ffmpeg/4.2.1_1/include/,
 					/usr/local/Cellar/glfw/3.2.1/include/GLFW,
 					"${PROJECT_DIR}/stb",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					/usr/local/Cellar/glfw/3.2.1/lib,
-					/usr/local/Cellar/ffmpeg/4.1.3_1/lib,
+					/usr/local/Cellar/ffmpeg/4.2.1_1/lib,
 				);
 				OTHER_CFLAGS = "";
 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";

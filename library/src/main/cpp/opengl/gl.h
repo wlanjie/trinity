@@ -22,6 +22,7 @@
 #ifndef TRINITY_GL_H
 #define TRINITY_GL_H
 
+// 默认带matrix的顶点shader
 static const char* DEFAULT_VERTEX_MATRIX_SHADER =
         "attribute vec4 position;\n"
         "attribute vec4 inputTextureCoordinate;\n"
@@ -32,6 +33,7 @@ static const char* DEFAULT_VERTEX_MATRIX_SHADER =
         "  gl_Position = position;\n"
         "}\n";
 
+// 默认OES fragment shader
 static const char* DEFAULT_OES_FRAGMENT_SHADER =
         "#extension GL_OES_EGL_image_external : require\n"
         "precision mediump float;\n"
@@ -41,6 +43,7 @@ static const char* DEFAULT_OES_FRAGMENT_SHADER =
         "  gl_FragColor = texture2D(yuvTexSampler, textureCoordinate);\n"
         "}\n";
 
+// 默认顶点shader
 static const char* DEFAULT_VERTEX_SHADER =
         "#ifdef GL_ES\n"
         "precision highp float;\n"
@@ -53,6 +56,7 @@ static const char* DEFAULT_VERTEX_SHADER =
         "    textureCoordinate = inputTextureCoordinate.xy;\n"
         "}";
 
+// 默认fragment shader
 static const char* DEFAULT_FRAGMENT_SHADER =
         "#ifdef GL_ES\n"
         "precision highp float;\n"
@@ -63,6 +67,7 @@ static const char* DEFAULT_FRAGMENT_SHADER =
         "    gl_FragColor = texture2D(inputImageTexture, textureCoordinate);\n"
         "}";
 
+// 闪白效果
 static const char* FLASH_WHITE_FRAGMENT_SHADER =
         "precision highp float;\n"
         "varying vec2 textureCoordinate;\n"
@@ -73,6 +78,7 @@ static const char* FLASH_WHITE_FRAGMENT_SHADER =
         "    gl_FragColor = vec4(textureColor.r + exposureColor, textureColor.g + exposureColor, textureColor.b + exposureColor, textureColor.a);\n"
         "}\n";
 
+// 两分屏效果
 static const char *SCREEN_TWO_FRAGMENT_SHADER =
         "precision highp float;                                                                 \n"
         "uniform sampler2D inputImageTexture;                                                   \n"
@@ -85,6 +91,7 @@ static const char *SCREEN_TWO_FRAGMENT_SHADER =
         "    gl_FragColor=texture2D(inputImageTexture, textureCoordinateToUse);                 \n"
         "}                                                                                      \n";
 
+// 三分屏效果
 static const char* SCREEN_THREE_FRAGMENT_SHADER =
         "precision highp float;                                                                 \n"
         "uniform sampler2D inputImageTexture;                                                   \n"
@@ -97,6 +104,7 @@ static const char* SCREEN_THREE_FRAGMENT_SHADER =
         "    gl_FragColor=texture2D(inputImageTexture, textureCoordinateToUse);                 \n"
         "}                                                                                      \n";
 
+// 四分屏效果
 static const char* SCREEN_FOUR_FRAGMENT_SHADER =
         "precision highp float;                                                                 \n"
         "uniform sampler2D inputImageTexture;                                                   \n"
@@ -110,6 +118,7 @@ static const char* SCREEN_FOUR_FRAGMENT_SHADER =
         "    gl_FragColor=texture2D(inputImageTexture, textureCoordinateToUse);                 \n"
         "}                                                                                      \n";
 
+// 六分屏效果
 static const char* SCREEN_SIX_FRAGMENT_SHADER =
         "precision highp float;                                                                 \n"
         "uniform sampler2D inputImageTexture;                                                   \n"
@@ -124,6 +133,7 @@ static const char* SCREEN_SIX_FRAGMENT_SHADER =
         "    gl_FragColor=texture2D(inputImageTexture, textureCoordinateToUse);                 \n"
         "}                                                                                      \n";
 
+// 九分屏效果
 static const char* SCREEN_NINE_FRAGMENT_SHADER =
         "precision highp float;                                                                 \n"
         "uniform sampler2D inputImageTexture;                                                   \n"

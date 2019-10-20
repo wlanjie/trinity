@@ -19,7 +19,7 @@
 //
 //  scale.h
 //  opengl
-//
+//  缩放效果
 //  Created by wlanjie on 2019/9/28.
 //  Copyright © 2019 com.wlanjie.opengl. All rights reserved.
 //
@@ -96,6 +96,6 @@ class Scale : public FrameBuffer {
    int index_;        
 };
 
-}
+} // namespace trinity
 
 #endif /* scale_h */

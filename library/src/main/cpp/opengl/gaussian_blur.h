@@ -19,7 +19,7 @@
 //
 //  gaussian_blur.h
 //  opengl
-//
+//  高斯模糊
 //  Created by wlanjie on 2019/8/30.
 //  Copyright © 2019 com.wlanjie.opengl. All rights reserved.
 //

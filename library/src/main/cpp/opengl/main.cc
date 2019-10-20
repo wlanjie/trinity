@@ -41,6 +41,7 @@
 #include "gaussian_blur.h"
 #include "blur_split_screen.h"
 #include "scale.h"
+#include "soul_scale.h"
 
 using namespace trinity;
 
@@ -86,7 +87,8 @@ int main() {
 //    GaussianBlur gaussian_blur(512, 512, 1.0f);
 //    BlurSplitScreen blur_split_screen(512, 512);
 //    FrameBuffer* frame_buffer = new BlurSplitScreen(512, 512);
-    Scale* frame_buffer = new Scale(512, 512);
+//    Scale* frame_buffer = new Scale(512, 512);
+    SoulScale* frame_buffer = new SoulScale(512, 512);
     float* scale_percent = new float[15];
     scale_percent[0] = 1.0f;
     scale_percent[1] = 1.07f;
@@ -104,7 +106,47 @@ int main() {
     scale_percent[13] = 1.67f;
     scale_percent[14] = 1.45f;
     scale_percent[15] = 1.28f;
-    frame_buffer->SetScalePercent(scale_percent, 15);
+    
+    float* soul_scale = new float[15];
+    soul_scale[0] = 1.084553;
+    soul_scale[1] = 1.173257;
+    soul_scale[2] = 1.266176;
+    soul_scale[3] = 1.363377;
+    soul_scale[4] = 1.464923;
+    soul_scale[5] = 1.570877;
+    soul_scale[6] = 1.681300;
+    soul_scale[7] = 1.796254;
+    soul_scale[8] = 1.915799;
+    soul_scale[9] = 2.039995;
+    soul_scale[10] = 2.168901;
+    soul_scale[11] = 2.302574;
+    soul_scale[12] = 2.302574;
+    soul_scale[13] = 2.302574;
+    soul_scale[14] = 2.302574;
+    soul_scale[15] = 2.302574;
+    
+    frame_buffer->SetScalePercent(soul_scale, 15);
+    
+    float* mix = new float[15];
+    mix[0] = 0.411498;
+    mix[1] = 0.340743;
+    mix[2] = 0.283781;
+    mix[3] = 0.237625;
+    mix[4] = 0.199993;
+    mix[5] = 0.169133;
+    mix[6] = 0.143688;
+    mix[7] = 0.122599;
+    mix[8] = 0.037117;
+    mix[9] = 0.028870;
+    mix[10] = 0.022595;
+    mix[11] = 0.017788;
+    mix[12] = 0.010000;
+    mix[13] = 0.010000;
+    mix[14] = 0.010000;
+    mix[15] = 0.010000;
+    
+    frame_buffer->SetMixPercent(mix, 15);
+    
     while(!glfwWindowShouldClose(window)) {
         glfwPollEvents();
         uint64_t current_time = (uint64_t) ((double) (clock() - start) / CLOCKS_PER_SEC * 1000);

@@ -19,7 +19,7 @@
 //
 //  blur_split_screen.h
 //  opengl
-//
+//  模糊分屏
 //  Created by wlanjie on 2019/8/31.
 //  Copyright © 2019 com.wlanjie.opengl. All rights reserved.
 //
