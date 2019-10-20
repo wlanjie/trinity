@@ -53,6 +53,9 @@ CameraRecord::CameraRecord(JNIEnv* env) {
     render_type_ = CROP;
     vertex_coordinate_ = nullptr;
     texture_coordinate_ = nullptr;
+    frame_count_ = 0;
+    pre_fps_count_time_ = 0;
+    fps_ = 0.0F;
 }
 
 CameraRecord::~CameraRecord() {}
@@ -613,6 +616,7 @@ void CameraRecord::RenderFrame() {
 //        ProcessVideoFrame(position);
         if (EGL_NO_SURFACE != preview_surface_) {
             Draw();
+            FPS();
         }
 
         int64_t duration = getCurrentTime() - start_time_;
@@ -633,6 +637,21 @@ void CameraRecord::SetFrameType(int frame) {
     }
     render_screen_->SetFrame(screen_width_, screen_height_,
             MIN(camera_width_, camera_height_), MAX(camera_width_, camera_height_), frame_type);
+}
+
+void CameraRecord::FPS() {
+    if (pre_fps_count_time_ == 0) {
+        pre_fps_count_time_ = getCurrentTime();
+    }
+    frame_count_ += 1;
+    long current_time = getCurrentTime();
+    if (current_time > pre_fps_count_time_ + 1000) {
+        fps_ = frame_count_ * 1.0F * 1000 / (current_time - pre_fps_count_time_);
+        frame_count_ = 0;
+        pre_fps_count_time_ = current_time;
+    }
+
+//    LOGD("fps: %f", fps_);
 }
 
 }  // namespace trinity

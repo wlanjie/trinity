@@ -130,6 +130,8 @@ class CameraRecord {
 
     void ProcessMessage();
 
+    void FPS();
+
  private:
     ANativeWindow *window_;
     JNIEnv* env_;
@@ -158,6 +160,9 @@ class CameraRecord {
     int64_t start_time_;
     float speed_;
     int render_type_;
+    int frame_count_;
+    int64_t pre_fps_count_time_;
+    float fps_;
 };
 
 class CameraRecordHandler : public Handler {
