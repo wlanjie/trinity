@@ -28,24 +28,31 @@
 #define soul_out_h
 
 #include "frame_buffer.h"
+#include "gl.h"
 
-#if __ANDROID__
+#ifdef __ANDROID__
 static const char* SOUL_SCALE_FRAGMENT_SHADER = 
     "precision highp float;                                                                     \n"
     "varying highp vec2 textureCoordinate;                                                      \n"
+    // 放大系数
     "uniform highp float scalePercent;                                                          \n"
+    // 两个texture合成时的透明系数
     "uniform lowp float mixturePercent;                                                         \n"
-    "uniform float mixturePercent;                                                              \n"
     "uniform sampler2D inputImageTexture;                                                       \n"
     "uniform sampler2D inputImageTexture2;                                                      \n"
     "void main() {                                                                              \n"
     "   lowp vec4 textureColor = texture2D(inputImageTexture, textureCoordinate);               \n"
     "   highp vec2 textureCoordinateToUse = textureCoordinate;                                  \n"
+    //  纹理的中心点, 从中心点开始放大
     "   highp vec2 center = vec2(0.5, 0.5);                                                     \n"
     "   textureCoordinateToUse -= center;                                                       \n"
+    //  根据设置进来的缩放系数进行纹理的坐标缩放
     "   textureCoordinateToUse = textureCoordinateToUse / scalePercent;                         \n"
     "   textureCoordinateToUse += center;                                                       \n"
+    //  运算后的坐标如 (0.2, 0.8)
+    //  获取放大后的颜色信息
     "   lowp vec4 textureColor2 = texture2D(inputImageTexture2, textureCoordinateToUse);        \n"
+    //  原始纹理和放大后的纹理做合成
     "   gl_FragColor = mix(textureColor, textureColor2, mixturePercent);                        \n"
     "}                                                                                          \n";
 #else

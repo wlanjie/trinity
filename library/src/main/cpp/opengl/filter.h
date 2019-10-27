@@ -28,11 +28,11 @@
 namespace trinity {
 
 static const char* FILTER_FRAGMENT_SHADER =
-        "precision highp float;\n"
-        "varying highp vec2 textureCoordinate;\n"
-        "varying highp vec2 textureCoordinate2;\n"
-        "uniform sampler2D inputImageTexture;\n"
-        "uniform sampler2D inputImageTextureLookup;\n"
+        "precision highp float;                                                                      \n"
+        "varying highp vec2 textureCoordinate;                                                       \n"
+        "varying highp vec2 textureCoordinate2;                                                      \n"
+        "uniform sampler2D inputImageTexture;                                                        \n"
+        "uniform sampler2D inputImageTextureLookup;                                                  \n"
         "uniform float intensity;                                                                    \n"
         "void main () {                                                                              \n"
         " vec4 textureColor = texture2D(inputImageTexture, textureCoordinate);                       \n"
@@ -62,16 +62,16 @@ static const char* FILTER_FRAGMENT_SHADER =
         "}\n";
 
 static const char* FILTER_VERTEX_SHADER =
-        "precision highp float;\n"
-        "attribute vec4 position;\n"
-        "attribute vec2 inputTextureCoordinate;\n"
-        "varying vec2 textureCoordinate;\n"
-        "varying vec2 textureCoordinate2;\n"
-        "void main() {\n"
-        "    gl_Position = position;\n"
-        "    textureCoordinate = inputTextureCoordinate.xy;\n"
-        "    textureCoordinate2 = inputTextureCoordinate.xy * 0.5 + 0.5;\n"
-        "}";
+        "precision highp float;                                                                      \n"
+        "attribute vec4 position;                                                                    \n"
+        "attribute vec2 inputTextureCoordinate;                                                      \n"
+        "varying vec2 textureCoordinate;                                                             \n"
+        "varying vec2 textureCoordinate2;                                                            \n"
+        "void main() {                                                                               \n"
+        "    gl_Position = position;                                                                 \n"
+        "    textureCoordinate = inputTextureCoordinate.xy;                                          \n"
+        "    textureCoordinate2 = inputTextureCoordinate.xy * 0.5 + 0.5;                             \n"
+        "}                                                                                           \n";
 
 
 class Filter : public FrameBuffer {

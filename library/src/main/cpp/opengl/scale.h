@@ -96,6 +96,6 @@ class Scale : public FrameBuffer {
    int index_;        
 };
 
-} // namespace trinity
+}  // namespace trinity
 
 #endif /* scale_h */

@@ -1,4 +1,9 @@
+
+
+
+
 # trinity
+
 ![icon~](https://github.com/wlanjie/trinity/blob/master/trinity@2x.png)
 
 [![Build Status](https://travis-ci.org/LaiFengiOS/LFLiveKit.svg)](https://travis-ci.org/LaiFengiOS/LFLiveKit)&nbsp;
@@ -14,6 +19,7 @@
 ![演示](screen_shot.gif)
 
 ## 系统版本
+
 支持Android 4.3及以上版本
 
 ## 开发环境
@@ -28,16 +34,145 @@
 - xlogger
 
 ## 功能
-- [x] 	有声短视频拍摄
-- [x] 	支持横屏和竖屏拍摄
-- [x] 	支持自定义相机配置
-- [x]   支持快慢速拍摄
-- [x] 	支持自定义麦克风配置
-- [x] 	支持导出视频参数自定义
-- [x] 	导入短视频编辑
-- [x] 	分段添加滤镜功能
-- [x] 	分段添加视频特效功能
-- [x] 	添加背景音乐
+<table>
+  <tr>
+      <td rowspan="16">视频拍摄<br/>
+  </tr>
+  <tr>
+      <td>功能说明</td>
+      <td>是否支持</td>
+  </tr>
+  <tr>
+      <td>多段录制</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>自定义时长</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>自定义相机配置</td>
+      <td align="center">√</td>
+  </tr>  
+  <tr>
+      <td>摄像头切换</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>闪光灯</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>焦距调节</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>手动对焦</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>静音</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>美颜</td>
+      <td align="center">x</td>
+  </tr>
+  <tr>
+      <td>磨皮</td>
+      <td align="center">x</td>
+  </tr>
+  <tr>
+      <td>自定义分辨率及码率</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>录制背景音</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>录制变速</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>软硬编码</td>
+      <td align="center">√</td>
+  </tr>
+	<tr>
+      <td rowspan="6">视频编辑<br/>
+  </tr>
+  <tr>
+      <td>多段编辑</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>替换片段</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>设置片段时间</td>
+      <td align="center">√</td>
+  </tr>  
+  <tr>
+      <td>背景音乐</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>硬解码</td>
+      <td align="center">x</td>
+  </tr>
+  <tr>
+      <td rowspan="14">特效<br/>
+  </tr>
+  <tr>
+      <td>滤镜</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+	    <td>闪白</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>两分屏</td>
+      <td align="center">√</td>
+  </tr>  
+  <tr>
+      <td>三分屏</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>四分屏</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>六分屏</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>九分屏</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>模糊分屏</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>高斯模糊</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>灵魂出窍</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>抖动</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>毛刺</td>
+      <td align="center">√</td>
+  </tr>
+</table>
 
 ## 使用
 
