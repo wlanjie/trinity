@@ -1,20 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="16dp">
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="16dp"
+    android:layout_marginBottom="16dp">
 
-    <ImageView
+    <FrameLayout
+        android:id="@+id/thumbnail_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <View
+            android:id="@+id/select_view"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/bg_filter_select"
+            android:visibility="gone" />
+
+        <ImageView
             android:id="@+id/filter_thumbnail"
             android:layout_width="40dp"
-            android:layout_height="40dp"/>
+            android:layout_height="40dp"
+            android:layout_gravity="center" />
+    </FrameLayout>
 
     <TextView
-            android:id="@+id/filter_name"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_below="@id/filter_thumbnail"
-            android:textColor="@android:color/white"/>
+        android:id="@+id/filter_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/thumbnail_layout"
+        android:layout_centerHorizontal="true"
+        android:textColor="@android:color/white" />
 </RelativeLayout>

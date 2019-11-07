@@ -1,0 +1,18 @@
+{
+  "effect": [
+    {
+      "name": "SplitScreen",
+      "vertexShader": "",
+      "vertexUniforms": [],
+      "fragmentShader": "",
+      "startTime": 0,
+      "endTime": 10000000,
+      "fragmentUniforms": [
+        {
+          "name": "splitScreenCount",
+          "data": 6
+        }
+      ]
+    }
+  ]
+}

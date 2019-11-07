@@ -24,3 +24,5 @@ local.properties
 
 # git commit
 node_modules
+
+__pycache__

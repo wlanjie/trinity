@@ -113,23 +113,23 @@ OpenGL::~OpenGL() {
 }
 
 void OpenGL::InitCoordinates() {
-    default_vertex_coordinates_[0] = -1.0f;
-    default_vertex_coordinates_[1] = -1.0f;
-    default_vertex_coordinates_[2] = 1.0f;
-    default_vertex_coordinates_[3] = -1.0f;
-    default_vertex_coordinates_[4] = -1.0f;
-    default_vertex_coordinates_[5] = 1.0f;
-    default_vertex_coordinates_[6] = 1.0f;
-    default_vertex_coordinates_[7] = 1.0f;
+    default_vertex_coordinates_[0] = -1.0F;
+    default_vertex_coordinates_[1] = -1.0F;
+    default_vertex_coordinates_[2] = 1.0F;
+    default_vertex_coordinates_[3] = -1.0F;
+    default_vertex_coordinates_[4] = -1.0F;
+    default_vertex_coordinates_[5] = 1.0F;
+    default_vertex_coordinates_[6] = 1.0F;
+    default_vertex_coordinates_[7] = 1.0F;
 
-    default_texture_coordinates_[0] = 0.0f;
-    default_texture_coordinates_[1] = 0.0f;
-    default_texture_coordinates_[2] = 1.0f;
-    default_texture_coordinates_[3] = 0.0f;
-    default_texture_coordinates_[4] = 0.0f;
-    default_texture_coordinates_[5] = 1.0f;
-    default_texture_coordinates_[6] = 1.0f;
-    default_texture_coordinates_[7] = 1.0f;
+    default_texture_coordinates_[0] = 0.0F;
+    default_texture_coordinates_[1] = 0.0F;
+    default_texture_coordinates_[2] = 1.0F;
+    default_texture_coordinates_[3] = 0.0F;
+    default_texture_coordinates_[4] = 0.0F;
+    default_texture_coordinates_[5] = 1.0F;
+    default_texture_coordinates_[6] = 1.0F;
+    default_texture_coordinates_[7] = 1.0F;
 }
     
 void OpenGL::SetOnGLObserver(OnGLObserver *observer) {
@@ -145,27 +145,37 @@ void OpenGL::Init(const char* vertex, const char* fragment) {
 }
 
 void OpenGL::SetFrame(int source_width, int source_height, int target_width, int target_height, RenderFrame frame_type) {
-    LOGI("SetFrame source_width: %d source_height: %d target_width: %d target_height: %d", source_width, source_height, target_width, target_height);
-    Size ratio = Size(target_width == 0 ? source_width : target_width,
-                      target_height == 0 ? source_height : target_height);
-    Rect bounds = Rect(0, 0, source_width, source_height);
-    Rect* rect = bounds.GetRectWithAspectRatio(ratio);
-    float width_scale = rect->GetWidth() / bounds.GetWidth();
-    float height_scale = rect->GetHeight() / bounds.GetHeight();
-    LOGI("width_scale: %f height_scale: %f", width_scale, height_scale);
-    InitCoordinates();
+    LOGE("SetFrame source_width: %d source_height: %d target_width: %d target_height: %d", source_width, source_height, target_width, target_height);
+    float target_ratio = target_width * 1.0F / target_height;
+    float scale_width = 1.0F;
+    float scale_height = 1.0F;
     if (frame_type == FIT) {
-        for (int i = 0; i < 4; i++) {
-            default_vertex_coordinates_[i * 2] = defaultVertexCoordinates[i * 2] * width_scale;
-            default_vertex_coordinates_[i * 2 + 1] = defaultVertexCoordinates[i * 2 + 1] * height_scale;
+        float source_ratio = source_width * 1.0F / source_height;
+        if (source_ratio > target_ratio) {
+            scale_width = 1.0F;
+            scale_height = target_ratio / source_ratio;
+        } else {
+            scale_width = source_ratio / target_ratio;
+            scale_height = 1.0F;
         }
     } else if (frame_type == CROP) {
-        for (int i = 0; i < 4; i++) {
-            float x = default_texture_coordinates_[i * 2];
-            default_texture_coordinates_[i * 2] = (x == 0.0f ? (1.0f - height_scale) : height_scale);
+        float source_ratio = source_width * 1.0F / source_height;
+        if (source_ratio > target_ratio) {
+            scale_width = source_ratio / target_ratio;
+            scale_height = 1.0F;
+        } else {
+            scale_width = 1.0F;
+            scale_height = target_ratio / source_ratio;
         }
     }
-    delete rect;
+    default_vertex_coordinates_[0] = -scale_width;
+    default_vertex_coordinates_[1] = -scale_height;
+    default_vertex_coordinates_[2] = scale_width;
+    default_vertex_coordinates_[3] = -scale_height;
+    default_vertex_coordinates_[4] = -scale_width;
+    default_vertex_coordinates_[5] = scale_height;
+    default_vertex_coordinates_[6] = scale_width;
+    default_vertex_coordinates_[7] = scale_height;
 }
 
 void OpenGL::SetOutput(int width, int height) {

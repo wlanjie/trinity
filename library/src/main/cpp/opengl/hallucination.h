@@ -122,10 +122,10 @@ class Hallucination : public FrameBuffer {
     }
     
     virtual GLuint OnDrawFrame(GLuint texture_id, uint64_t current_time = 0) {
-         current_index_++;
          if (current_index_ % 2 == 0) {
             last_texture_id_ = last_texture_frame_->OnDrawFrame(texture_id);
          }
+         current_index_++;
          return FrameBuffer::OnDrawFrame(texture_id, current_time);
     }
     

@@ -8,42 +8,70 @@
     "id": 1,
     "name": "闪白",
     "color": "#23bdb1",
+    "effect": "effect/flash_white.json",
     "effectName": "FlashWhite"
   },
   {
     "id": 2,
     "name": "两屏",
     "color": "#e77e86",
+    "effect": "effect/two_split_screen.json",
     "effectName": "SplitScreen"
   },
   {
     "id": 3,
     "name": "三屏",
     "color": "#dc424e",
+    "effect": "effect/three_split_screen.json",
     "effectName": "SplitScreen"
   },
   {
     "id": 4,
     "name": "四屏",
     "color": "#c12430",
+    "effect": "effect/four_split_screen.json",
     "effectName": "SplitScreen"
   },
   {
     "id": 5,
     "name": "六屏",
     "color": "#ef2f3e",
+    "effect": "effect/six_split_screen.json",
     "effectName": "SplitScreen"
   },
   {
     "id": 6,
     "name": "九屏",
     "color": "#dc143c",
+    "effect": "effect/nine_split_screen.json",
     "effectName": "SplitScreen"
   },
   {
     "id": 7,
     "name": "模糊分屏",
     "color": "#EA0000",
+    "effect": "effect/blur_split_screen.json",
     "effectName": "SplitScreen"
+  },
+  {
+    "id": 8,
+    "name": "灵魂出窍",
+    "color": "#EA0000",
+    "effect": "effect/soul_scale.json",
+    "effectName": "SoulScale"
+  },
+  {
+    "id": 9,
+    "name": "抖动",
+    "color": "#EA0000",
+    "effect": "effect/shake.json",
+    "effectName": "Shake"
+  },
+  {
+    "id": 10,
+    "name": "毛刺",
+    "color": "#EA0000",
+    "effect": "effect/skin_needling.json",
+    "effectName": "SkinNeedling"
   }
 ]

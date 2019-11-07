@@ -131,9 +131,9 @@ void PacketPool::PushAudioPacketToQueue(AudioPacket *audioPacket) {
             buffer_cursor_ += length;
             audioPacketBufferCursor += length;
             if (buffer_cursor_ == buffer_size_) {
-                AudioPacket* targetAudioPacket = new AudioPacket();
+                auto* targetAudioPacket = new AudioPacket();
                 targetAudioPacket->size = buffer_size_;
-                short * audioBuffer = new short[buffer_size_];
+                auto * audioBuffer = new short[buffer_size_];
                 memcpy(audioBuffer, buffer_, buffer_size_ * sizeof(short));
                 targetAudioPacket->buffer = audioBuffer;
                 audio_packet_queue_->Put(targetAudioPacket);
@@ -231,9 +231,9 @@ void PacketPool::PushAccompanyPacketToQueue(AudioPacket *accompanyPacket) {
         accompany_buffer_cursor_ += length;
         audioPacketBufferCursor += length;
         if (accompany_buffer_cursor_ == accompany_buffer_size_) {
-            AudioPacket *targetAudioPacket = new AudioPacket();
+            auto *targetAudioPacket = new AudioPacket();
             targetAudioPacket->size = accompany_buffer_size_;
-            short *audioBuffer = new short[accompany_buffer_size_];
+            auto *audioBuffer = new short[accompany_buffer_size_];
             memcpy(audioBuffer, accompany_buffer_, accompany_buffer_size_ * sizeof(short));
             targetAudioPacket->buffer = audioBuffer;
             targetAudioPacket->position = accompanyPacket->position;

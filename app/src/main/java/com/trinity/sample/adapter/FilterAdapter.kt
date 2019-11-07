@@ -21,6 +21,7 @@ import java.nio.charset.Charset
 class FilterAdapter(private val context: Context, val callback: (filter: Filter)->Unit) : RecyclerView.Adapter<FilterAdapter.ViewHolder>() {
 
   private val mFilter: List<Filter>
+  private var mSelectPosition = 0
 
   private inline fun <reified T> genericType() = object: TypeToken<T>() {}.type
 
@@ -50,14 +51,22 @@ class FilterAdapter(private val context: Context, val callback: (filter: Filter)
       .load(context.externalCacheDir?.absolutePath + "/filter/${filter.thumbnail}")
       .apply(RequestOptions.bitmapTransform(CircleCrop()))
       .into(holder.imageView)
+    if (position == mSelectPosition) {
+      holder.selectView.visibility = View.VISIBLE
+    } else {
+      holder.selectView.visibility = View.INVISIBLE
+    }
     holder.textView.text = filter.name
     holder.itemView.setOnClickListener {
       callback(filter)
+      mSelectPosition = position
+      notifyDataSetChanged()
     }
   }
 
   class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-    val imageView = itemView.findViewById<ImageView>(R.id.filter_thumbnail)
-    val textView = itemView.findViewById<TextView>(R.id.filter_name)
+    val imageView: ImageView = itemView.findViewById(R.id.filter_thumbnail)
+    val textView: TextView = itemView.findViewById(R.id.filter_name)
+    val selectView: View = itemView.findViewById(R.id.select_view)
   }
 }

@@ -85,8 +85,8 @@ class Scale : public FrameBuffer {
  protected:
    virtual void RunOnDrawTasks() {
         if (size_ > 0 && scale_percent_ != nullptr) {
-            index_++;
             SetFloat("scalePercent", scale_percent_[index_ % size_]);
+            index_++;
         }
    }
    

@@ -25,42 +25,61 @@
 
 #include "frame_buffer.h"
 #include "gl.h"
+#include "android_xlog.h"
 
-#define MAX_FRAMES 16
-#define SKIP_FRAMES 4
+// 闪白效果
+static const char* FLASH_WHITE_FRAGMENT_SHADER =
+        "precision highp float;\n"
+        "varying vec2 textureCoordinate;\n"
+        "uniform sampler2D inputImageTexture;\n"
+        "uniform float alphaTimeLine;\n"
+        "void main() {\n"
+        "    gl_FragColor = texture2D(inputImageTexture, textureCoordinate) + alphaTimeLine * vec4(1.0,1.0,1.0,0.0);\n"
+        "}\n";
 
 namespace trinity {
 
 class FlashWhite : public FrameBuffer {
  public:
-    FlashWhite(int width, int height) : FrameBuffer(width, height, DEFAULT_VERTEX_SHADER, FLASH_WHITE_FRAGMENT_SHADER) {
-        progress_ = 0;
-        frames_ = 0;
+    FlashWhite(int width, int height) : FrameBuffer(width, height, DEFAULT_VERTEX_SHADER, FLASH_WHITE_FRAGMENT_SHADER),
+            alpha_time_(nullptr),
+            size_(0),
+            index_(0) {
         SetOutput(width, height);
+    }
+
+    ~FlashWhite() {
+        if (nullptr != alpha_time_) {
+            delete[] alpha_time_;
+            alpha_time_ = 0;
+        }
+        size_ = 0;
+        index_ = 0;
+    }
+
+    void SetAlphaTime(float* alpha_time, int size) {
+        if (alpha_time_ != nullptr) {
+            delete[] alpha_time_;
+            alpha_time_ = nullptr;
+        }
+        size_ = size;
+        alpha_time_ = new float[size];
+        memcpy(alpha_time_, alpha_time, size * sizeof(float));
     }
 
  protected:
     virtual void RunOnDrawTasks() {
         FrameBuffer::RunOnDrawTasks();
-        if (frames_ <= MAX_FRAMES) {
-            progress_ = frames_ * 1.0f / MAX_FRAMES;
-        } else {
-            progress_ = 2.0f - frames_ * 1.0f / MAX_FRAMES;
+        if (size_ > 0 && nullptr != alpha_time_) {
+            SetFloat("alphaTimeLine", alpha_time_[index_ % size_]);
+            index_++;
         }
-//        progress_ = frames_ * 1.0f / MAX_FRAMES;
-        if (progress_ > 1) {
-            progress_ = 0;
-        }
-        frames_++;
-        if (frames_ > MAX_FRAMES) {
-            frames_ = 0;
-        }
-        SetFloat("exposureColor", progress_);
     }
 
  private:
-    int frames_;
-    float progress_;
+    float* alpha_time_;
+    int size_;
+    int index_;
 };
 
 }  // namespace trinity

@@ -84,11 +84,11 @@ FrameBuffer::~FrameBuffer() {
     glDeleteFramebuffers(1, &frameBuffer_id_);
 }
 
-void FrameBuffer::SetStartTime(uint64_t time) {
+void FrameBuffer::SetStartTime(int time) {
     start_time_ = time;
 }
 
-void FrameBuffer::SetEndTime(uint64_t time) {
+void FrameBuffer::SetEndTime(int time) {
     end_time_ = time;
 }
 

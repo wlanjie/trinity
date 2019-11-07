@@ -26,10 +26,13 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-#define FILTER "Filter"
-#define FLASH_WHITE "FlashWhite"
-#define SPLIT_SCREEN "SplitScreen"
-#define BLUR_SPLIT_SCREEN "BlurSplitScreen"
+#define FILTER                  "Filter"
+#define FLASH_WHITE             "FlashWhite"
+#define SPLIT_SCREEN            "SplitScreen"
+#define BLUR_SPLIT_SCREEN       "BlurSplitScreen"
+#define SOUL_SCALE              "SoulScale"
+#define SHAKE                   "Shake"
+#define SKIN_NEEDLING           "SkinNeedling"
 
 namespace trinity {
 
@@ -65,36 +68,66 @@ void ImageProcess::OnAction(char* config, int action_id) {
 void ImageProcess::ParseConfig(char *config, int action_id) {
     cJSON* json = cJSON_Parse(config);
     if (nullptr != json) {
-        cJSON* start_time_json = cJSON_GetObjectItem(json, "startTime");
-        cJSON* end_time_json = cJSON_GetObjectItem(json, "endTime");
-        int start_time = 0;
-        if (nullptr != start_time_json) {
-            start_time = start_time_json->valueint;
-        }
-        int end_time = INT_MAX;
-        if (nullptr != end_time_json) {
-            end_time = end_time_json->valueint;
-        }
-        cJSON* effect_type_json = cJSON_GetObjectItem(json, "effectType");
-        if (nullptr != effect_type_json) {
-            char* effect_type = effect_type_json->valuestring;
-            if (strcmp(effect_type, FILTER) == 0) {
-                // 滤镜
-                OnFilter(start_time, end_time, json, action_id);
-            } else if (strcmp(effect_type, FLASH_WHITE) == 0) {
-                // 闪白
-                OnFlashWhite(10, start_time, end_time, action_id);
-            } else if (strcmp(effect_type, SPLIT_SCREEN) == 0) {
-                // 分屏
-                int split_count = 0;
-                cJSON* split_count_json = cJSON_GetObjectItem(json, "splitScreenCount");
-                if (nullptr != split_count_json) {
-                    split_count = split_count_json->valueint;
+        cJSON* effect_json = cJSON_GetObjectItem(json, "effect");
+        if (nullptr != effect_json) {
+            int effect_size = cJSON_GetArraySize(effect_json);
+            for (int i = 0; i < effect_size; ++i) {
+                cJSON *effect_item_json = cJSON_GetArrayItem(effect_json, i);
+                cJSON *name_json = cJSON_GetObjectItem(effect_item_json, "name");
+                cJSON *vertex_shader_json = cJSON_GetObjectItem(effect_item_json, "vertexShader");
+                cJSON *fragment_shader_json = cJSON_GetObjectItem(effect_item_json, "fragmentShader");
+                cJSON *start_time_json = cJSON_GetObjectItem(effect_item_json, "startTime");
+                cJSON *end_time_json = cJSON_GetObjectItem(effect_item_json, "endTime");
+                cJSON *vertex_uniforms_json = cJSON_GetObjectItem(effect_item_json, "vertexUniforms");
+                cJSON *fragment_uniforms_json = cJSON_GetObjectItem(effect_item_json, "fragmentUniforms");
+
+                if (nullptr == name_json) {
+                    continue;
                 }
-                OnSplitScreen(split_count, start_time, end_time, action_id);
-            } else if (strcmp(effect_type, BLUR_SPLIT_SCREEN) == 0) {
-                // 模糊分屏
-                OnBlurSplitScreen(start_time, end_time, action_id);
+                char* name = name_json->valuestring;
+                char* vertex_shader = nullptr;
+                if (nullptr != vertex_shader_json) {
+                    vertex_shader = vertex_shader_json->valuestring;
+                }
+                char* fragment_shader = nullptr;
+                if (nullptr != fragment_shader_json) {
+                    fragment_shader = fragment_shader_json->valuestring;
+                }
+                int start_time = 0;
+                if (nullptr != start_time_json) {
+                    start_time = start_time_json->valueint;
+                }
+                int end_time = INT_MAX;
+                if (nullptr != end_time_json) {
+                    end_time = end_time_json->valueint;
+                }
+                int vertex_uniforms_size = 0;
+                if (nullptr != vertex_uniforms_json) {
+                    vertex_uniforms_size = cJSON_GetArraySize(vertex_uniforms_json);
+                }
+                if (strcmp(name, FILTER) == 0) {
+                    // 滤镜
+                    OnFilter(start_time, end_time, json, action_id);
+                } else if (strcmp(name, FLASH_WHITE) == 0) {
+                    // 闪白
+                    OnFlashWhite(fragment_uniforms_json, start_time, end_time, action_id);
+                } else if (strcmp(name, SPLIT_SCREEN) == 0) {
+                    // 分屏
+                    OnSplitScreen(fragment_uniforms_json, start_time, end_time, action_id);
+                } else if (strcmp(name, BLUR_SPLIT_SCREEN) == 0) {
+                    // 模糊分屏
+                    OnBlurSplitScreen(fragment_uniforms_json, start_time, end_time, action_id);
+                } else if (strcmp(name, SOUL_SCALE) == 0) {
+                    // 灵魂出窍
+//                cJSON*
+                    OnSoulScale(fragment_uniforms_json, start_time, end_time, action_id);
+                } else if (strcmp(name, SHAKE) == 0) {
+                    // 抖动
+                    OnShake(fragment_uniforms_json, start_time, end_time, action_id);
+                } else if (strcmp(name, SKIN_NEEDLING) == 0) {
+                    // 毛刺
+                    OnSkinNeedling(fragment_uniforms_json, start_time, end_time, action_id);
+                }
             }
         }
         cJSON_Delete(json);
@@ -137,7 +170,7 @@ void ImageProcess::OnFilter(int start_time, int end_time, cJSON* json, int actio
         if ((lut_width == 512 && lut_height == 512) || (lut_width == 64 && lut_height == 64)) {
             auto result = effects_.find(action_id);
             if (result == effects_.end()) {
-                Filter *filter = new Filter(lut_buffer, 720, 1280);
+                auto *filter = new Filter(lut_buffer, 720, 1280);
                 filter->SetStartTime(start_time);
                 filter->SetEndTime(end_time);
                 filter->SetIntensity(intensity);
@@ -146,7 +179,7 @@ void ImageProcess::OnFilter(int start_time, int end_time, cJSON* json, int actio
                 FrameBuffer *frame_buffer = effects_[action_id];
                 frame_buffer->SetStartTime(start_time);
                 frame_buffer->SetEndTime(end_time);
-                Filter *filter = dynamic_cast<Filter *>(frame_buffer);
+                auto *filter = dynamic_cast<Filter *>(frame_buffer);
                 if (nullptr != filter) {
                     filter->SetIntensity(intensity);
                     filter->UpdateLut(lut_buffer, 720, 1280);
@@ -160,27 +193,76 @@ void ImageProcess::OnFilter(int start_time, int end_time, cJSON* json, int actio
 void ImageProcess::OnRotate(float rotate, int action_id) {
 }
 
-void ImageProcess::OnFlashWhite(int time, uint64_t start_time, uint64_t end_time, int action_id) {
+void ImageProcess::OnFlashWhite(cJSON* fragment_uniforms, int start_time, int end_time, int action_id) {
     auto result = effects_.find(action_id);
     if (result == effects_.end()) {
-        FlashWhite* flash_write = new FlashWhite(720, 1280);
+        int fragment_uniforms_size = 0;
+        if (nullptr != fragment_uniforms) {
+            fragment_uniforms_size = cJSON_GetArraySize(fragment_uniforms);
+        }
+        auto* flash_write = new FlashWhite(720, 1280);
         flash_write->SetStartTime(start_time);
         flash_write->SetEndTime(end_time);
+        for (int index = 0; index < fragment_uniforms_size; ++index) {
+            cJSON *fragment_uniforms_item_json = cJSON_GetArrayItem(fragment_uniforms, index);
+            if (nullptr == fragment_uniforms_item_json) {
+                return;
+            }
+            cJSON *fragment_uniforms_name_json = cJSON_GetObjectItem(fragment_uniforms_item_json, "name");
+            cJSON* fragment_uniforms_data_json = cJSON_GetObjectItem(fragment_uniforms_item_json, "data");
+            if (nullptr == fragment_uniforms_name_json) {
+                return;
+            }
+            if (nullptr == fragment_uniforms_data_json) {
+                return;
+            }
+            int size = cJSON_GetArraySize(fragment_uniforms_data_json);
+            auto* param_value = new float[size];
+            for (int i = 0; i < size; i++) {
+                cJSON* data_item = cJSON_GetArrayItem(fragment_uniforms_data_json, i);
+                auto value = static_cast<float>(data_item->valuedouble);
+                param_value[i] = value;
+            }
+            char* name = fragment_uniforms_name_json->valuestring;
+            if (strcmp(name, "alphaTimeLine") == 0) {
+                flash_write->SetAlphaTime(param_value, size);
+            }
+            delete[] param_value;
+        }
         effects_.insert(std::pair<int, FrameBuffer*>(action_id, flash_write));
     } else {
         FrameBuffer* frame_buffer = effects_[action_id];
         frame_buffer->SetStartTime(start_time);
         frame_buffer->SetEndTime(end_time);
-//        FlashWhite* flash_white = dynamic_cast<FlashWhite*>(frame_buffer);
-//        if (nullptr != flash_white) {
-//
-//        }
     }
 }
 
-void ImageProcess::OnSplitScreen(int screen_count, uint64_t start_time, uint64_t end_time, int action_id) {
+void ImageProcess::OnSplitScreen(cJSON* fragment_uniforms, int start_time, int end_time, int action_id) {
     auto result = effects_.find(action_id);
     if (result == effects_.end()) {
+        int fragment_uniforms_size = 0;
+        if (nullptr != fragment_uniforms) {
+            fragment_uniforms_size = cJSON_GetArraySize(fragment_uniforms);
+        }
+        int screen_count = 0;
+        for (int index = 0; index < fragment_uniforms_size; ++index) {
+            cJSON *fragment_uniforms_item_json = cJSON_GetArrayItem(fragment_uniforms, index);
+            if (nullptr == fragment_uniforms_item_json) {
+                return;
+            }
+            cJSON *fragment_uniforms_name_json = cJSON_GetObjectItem(fragment_uniforms_item_json, "name");
+            if (nullptr == fragment_uniforms_name_json) {
+                return;
+            }
+            cJSON* fragment_uniforms_data_json = cJSON_GetObjectItem(fragment_uniforms_item_json, "data");
+            char* name = fragment_uniforms_name_json->valuestring;
+            if (strcmp(name, "splitScreenCount") == 0 && nullptr != fragment_uniforms_data_json) {
+                screen_count = fragment_uniforms_data_json->valueint;
+            }
+        }
+        if (screen_count == 0) {
+            return;
+        }
         FrameBuffer* frame_buffer = nullptr;
         if (screen_count == 2) {
             frame_buffer = new FrameBuffer(720, 1280, DEFAULT_VERTEX_SHADER, SCREEN_TWO_FRAGMENT_SHADER);
@@ -206,7 +288,7 @@ void ImageProcess::OnSplitScreen(int screen_count, uint64_t start_time, uint64_t
     }
 }
 
-void ImageProcess::OnBlurSplitScreen(uint64_t start_time, uint64_t end_time, int action_id) {
+void ImageProcess::OnBlurSplitScreen(cJSON* fragment_uniforms, int start_time, int end_time, int action_id) {
     auto result = effects_.find(action_id);
     if (result == effects_.end()) {
         auto* screen = new BlurSplitScreen(720, 1280);
@@ -217,6 +299,137 @@ void ImageProcess::OnBlurSplitScreen(uint64_t start_time, uint64_t end_time, int
         auto* screen = effects_[action_id];
         screen->SetStartTime(start_time);
         screen->SetEndTime(end_time);
+    }
+}
+
+void ImageProcess::OnSoulScale(cJSON* fragment_uniforms, int start_time, int end_time, int action_id) {
+    auto result = effects_.find(action_id);
+    if (result == effects_.end()) {
+        int fragment_uniforms_size = 0;
+        if (nullptr != fragment_uniforms) {
+            fragment_uniforms_size = cJSON_GetArraySize(fragment_uniforms);
+        }
+        auto* soul_scale = new SoulScale(720, 1280);
+        soul_scale->SetStartTime(start_time);
+        soul_scale->SetEndTime(end_time);
+        for (int index = 0; index < fragment_uniforms_size; ++index) {
+            cJSON *fragment_uniforms_item_json = cJSON_GetArrayItem(fragment_uniforms, index);
+            if (nullptr == fragment_uniforms_item_json) {
+                return;
+            }
+            cJSON *fragment_uniforms_name_json = cJSON_GetObjectItem(fragment_uniforms_item_json, "name");
+            cJSON* fragment_uniforms_data_json = cJSON_GetObjectItem(fragment_uniforms_item_json, "data");
+            if (nullptr == fragment_uniforms_name_json) {
+                return;
+            }
+            if (nullptr == fragment_uniforms_data_json) {
+                return;
+            }
+            char* name = fragment_uniforms_name_json->valuestring;
+            int size = cJSON_GetArraySize(fragment_uniforms_data_json);
+            auto* param_value = new float[size];
+            for (int i = 0; i < size; i++) {
+                cJSON* data_item = cJSON_GetArrayItem(fragment_uniforms_data_json, i);
+                auto value = static_cast<float>(data_item->valuedouble);
+                param_value[i] = value;
+            }
+            if (strcmp(name, "mixturePercent") == 0) {
+                soul_scale->SetMixPercent(param_value, size);
+            } else if (strcmp(name, "scalePercent") == 0) {
+                soul_scale->SetScalePercent(param_value, size);
+            }
+            delete[] param_value;
+        }
+        effects_.insert(std::pair<int, FrameBuffer*>(action_id, soul_scale));
+    } else {
+        FrameBuffer* frame_buffer = effects_[action_id];
+        frame_buffer->SetStartTime(start_time);
+        frame_buffer->SetEndTime(end_time);
+    }
+}
+
+void ImageProcess::OnShake(cJSON* fragment_uniforms, int start_time, int end_time, int action_id) {
+    auto result = effects_.find(action_id);
+    if (result == effects_.end()) {
+        int fragment_uniforms_size = 0;
+        if (nullptr != fragment_uniforms) {
+            fragment_uniforms_size = cJSON_GetArraySize(fragment_uniforms);
+        }
+        auto* shake = new Shake(720, 1280);
+        shake->SetStartTime(start_time);
+        shake->SetEndTime(end_time);
+        for (int index = 0; index < fragment_uniforms_size; ++index) {
+            cJSON *fragment_uniforms_item_json = cJSON_GetArrayItem(fragment_uniforms, index);
+            if (nullptr == fragment_uniforms_item_json) {
+                return;
+            }
+            cJSON *fragment_uniforms_name_json = cJSON_GetObjectItem(fragment_uniforms_item_json, "name");
+            cJSON* fragment_uniforms_data_json = cJSON_GetObjectItem(fragment_uniforms_item_json, "data");
+            if (nullptr == fragment_uniforms_name_json) {
+                return;
+            }
+            if (nullptr == fragment_uniforms_data_json) {
+                return;
+            }
+            char* name = fragment_uniforms_name_json->valuestring;
+            int size = cJSON_GetArraySize(fragment_uniforms_data_json);
+            auto* param_value = new float[size];
+            for (int i = 0; i < size; i++) {
+                cJSON* data_item = cJSON_GetArrayItem(fragment_uniforms_data_json, i);
+                auto value = static_cast<float>(data_item->valuedouble);
+                param_value[i] = value;
+            }
+            if (strcmp(name, "scale") == 0) {
+                shake->SetScalePercent(param_value, size);
+            }
+            delete[] param_value;
+        }
+        effects_.insert(std::pair<int, FrameBuffer*>(action_id, shake));
+    } else {
+        FrameBuffer* frame_buffer = effects_[action_id];
+        frame_buffer->SetStartTime(start_time);
+        frame_buffer->SetEndTime(end_time);
+    }
+}
+
+void ImageProcess::OnSkinNeedling(cJSON* fragment_uniforms, int start_time, int end_time, int action_id) {
+    auto result = effects_.find(action_id);
+    if (result == effects_.end()) {
+        int fragment_uniforms_size = 0;
+        if (nullptr != fragment_uniforms) {
+            fragment_uniforms_size = cJSON_GetArraySize(fragment_uniforms);
+        }
+        auto* skin_needling = new SkinNeedling(720, 1280);
+        skin_needling->SetStartTime(start_time);
+        skin_needling->SetEndTime(end_time);
+        for (int index = 0; index < fragment_uniforms_size; ++index) {
+            cJSON *fragment_uniforms_item_json = cJSON_GetArrayItem(fragment_uniforms, index);
+            if (nullptr == fragment_uniforms_item_json) {
+                return;
+            }
+            cJSON *fragment_uniforms_name_json = cJSON_GetObjectItem(fragment_uniforms_item_json, "name");
+            cJSON* fragment_uniforms_data_json = cJSON_GetObjectItem(fragment_uniforms_item_json, "data");
+            if (nullptr == fragment_uniforms_name_json) {
+                return;
+            }
+            char* name = fragment_uniforms_name_json->valuestring;
+            if (strcmp(name, "") == 0 && nullptr != fragment_uniforms_data_json) {
+                int size = cJSON_GetArraySize(fragment_uniforms_data_json);
+                auto* param_value = new float[size];
+                for (int i = 0; i < size; i++) {
+                    cJSON* data_item = cJSON_GetArrayItem(fragment_uniforms_data_json, i);
+                    auto value = static_cast<float>(data_item->valuedouble);
+                    param_value[i] = value;
+                }
+//                skin_needling->(param_value, size);
+                delete[] param_value;
+            }
+        }
+        effects_.insert(std::pair<int, FrameBuffer*>(action_id, skin_needling));
+    } else {
+        FrameBuffer* frame_buffer = effects_[action_id];
+        frame_buffer->SetStartTime(start_time);
+        frame_buffer->SetEndTime(end_time);
     }
 }
 

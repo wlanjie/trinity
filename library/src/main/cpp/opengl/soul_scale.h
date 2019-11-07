@@ -88,7 +88,18 @@ class SoulScale : public FrameBuffer {
           mix_texture_id_(0) {
     }
     
-    ~SoulScale() = default;
+    ~SoulScale() {
+        if (nullptr != scale_percent_) {
+            delete[] scale_percent_;
+            scale_percent_ = nullptr;
+        }
+        scale_size_ = 0;
+        if (nullptr != mix_percent_) {
+            delete[] mix_percent_;
+            mix_percent_ = nullptr;
+        }
+        mix_size_ = 0;
+    }
     
     virtual GLuint OnDrawFrame(GLuint texture_id, uint64_t current_time = 0) {
         mix_texture_id_ = texture_id;
@@ -96,24 +107,34 @@ class SoulScale : public FrameBuffer {
     }
     
      void SetScalePercent(float* scale_percent, int size) {
-         scale_percent_ = scale_percent;
+         if (nullptr != scale_percent_) {
+             delete[] scale_percent_;
+             scale_percent_ = nullptr;
+         }
+         scale_percent_ = new float[size];
+         memcpy(scale_percent_, scale_percent, size * sizeof(float));
          scale_size_ = size;
      }
      
      void SetMixPercent(float* mix_percent, int size) {
-        mix_percent_ = mix_percent;
+        if (nullptr != mix_percent_) {
+            delete[] mix_percent_;
+            mix_percent_ = nullptr;
+        }
+        mix_percent_ = new float[size];
+        memcpy(mix_percent_, mix_percent, size * sizeof(float));
         mix_size_ = size;
      }
      
  protected:
      virtual void RunOnDrawTasks() {
           if (scale_size_ > 0 && scale_percent_ != nullptr) {
-              scale_index_++;
               SetFloat("scalePercent", scale_percent_[scale_index_ % scale_size_]);
+              scale_index_++;
           }
           if (mix_size_ > 0 && mix_percent_ != nullptr) {
-              mix_index_++;
               SetFloat("mixturePercent", mix_percent_[mix_index_ % mix_size_]);
+              mix_index_++;
           }
           if (mix_index_ % 15 == 0) {
               glActiveTexture(GL_TEXTURE1);

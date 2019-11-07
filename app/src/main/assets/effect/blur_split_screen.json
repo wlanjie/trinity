@@ -1,0 +1,13 @@
+{
+  "effect": [
+    {
+      "name": "BlurSplitScreen",
+      "vertexShader": "",
+      "vertexUniforms": [],
+      "fragmentShader": "",
+      "startTime": 0,
+      "endTime": 10000000,
+      "fragmentUniforms": []
+    }
+  ]
+}

@@ -635,8 +635,9 @@ void CameraRecord::SetFrameType(int frame) {
     } else if (frame == 2) {
         frame_type = CROP;
     }
-    render_screen_->SetFrame(screen_width_, screen_height_,
-            MIN(camera_width_, camera_height_), MAX(camera_width_, camera_height_), frame_type);
+    render_screen_->SetFrame(MIN(camera_width_, camera_height_),
+            MAX(camera_width_, camera_height_),
+            screen_width_, screen_height_, frame_type);
 }
 
 void CameraRecord::FPS() {

@@ -17,6 +17,7 @@ import androidx.fragment.app.transaction
 import androidx.preference.PreferenceManager
 import com.github.florent37.runtimepermission.kotlin.askPermission
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.tencent.mars.xlog.Log
 import com.trinity.OnRecordingListener
 import com.trinity.camera.CameraCallback
 import com.trinity.camera.Flash
@@ -159,10 +160,9 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     }
     medias.forEach {
       mRecordDurations.add(it.duration)
-      mLineView.setDuration(it.duration)
+      mLineView.addProgress(it.duration * 1.0f / mRecordDuration)
       mMedias.add(it)
     }
-    mLineView.stop()
   }
 
   private fun showMedia() {
@@ -248,16 +248,16 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
   private fun deleteFile(view: View) {
     view.setOnClickListener {
       if (mMedias.isNotEmpty()) {
-        val media = mMedias.removeAt(mMedias.size - 1)
-        val file = File(media.path)
-        if (file.exists()) {
-          file.delete()
-        }
-        mLineView.remove()
+//        val media = mMedias.removeAt(mMedias.size - 1)
+//        val file = File(media.path)
+//        if (file.exists()) {
+//          file.delete()
+//        }
+        mLineView.deleteProgress()
       }
-    }
-    if (mRecordDurations.isNotEmpty()) {
-      mRecordDurations.removeAt(mRecordDurations.size - 1)
+      if (mRecordDurations.isNotEmpty()) {
+        mRecordDurations.removeAt(mRecordDurations.size - 1)
+      }
     }
   }
 
@@ -266,6 +266,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     mRecordDurations.forEach {
       duration += it
     }
+    Log.i("trinity", "duration: $duration size: ${mRecordDurations.size}")
     if (duration >= mRecordDuration) {
       Toast.makeText(this, "已达最大时长", Toast.LENGTH_LONG).show()
       return
@@ -307,7 +308,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     mRecord.stopRecording()
     mRecordDurations.add(mCurrentRecordDuration)
     runOnUiThread {
-      mLineView.stop()
+      mLineView.addProgress(mCurrentRecordDuration * 1.0f / mRecordDuration)
     }
   }
 
@@ -339,7 +340,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
   override fun onRecording(currentTime: Int, duration: Int) {
     mCurrentRecordDuration = currentTime
     runOnUiThread {
-      mLineView.setDuration(currentTime)
+      mLineView.setLoadingProgress(currentTime * 1.0f / duration)
     }
   }
 
@@ -368,7 +369,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
       e.printStackTrace()
     }
     setPreviewResolution(preferences.getString("preview_resolution", "720P"))
-    mLineView.setMaxDuration(mRecordDuration)
+//    mLineView.setMaxDuration(mRecordDuration)
   }
 
   override fun onPause() {

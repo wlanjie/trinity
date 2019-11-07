@@ -68,15 +68,15 @@ static const char* DEFAULT_FRAGMENT_SHADER =
         "}";
 
 // 闪白效果
-static const char* FLASH_WHITE_FRAGMENT_SHADER =
-        "precision highp float;\n"
-        "varying vec2 textureCoordinate;\n"
-        "uniform sampler2D inputImageTexture;\n"
-        "uniform float exposureColor;\n"
-        "void main() {\n"
-        "    vec4 textureColor = texture2D(inputImageTexture, textureCoordinate);\n"
-        "    gl_FragColor = vec4(textureColor.r + exposureColor, textureColor.g + exposureColor, textureColor.b + exposureColor, textureColor.a);\n"
-        "}\n";
+//static const char* FLASH_WHITE_FRAGMENT_SHADER =
+//        "precision highp float;\n"
+//        "varying vec2 textureCoordinate;\n"
+//        "uniform sampler2D inputImageTexture;\n"
+//        "uniform float exposureColor;\n"
+//        "void main() {\n"
+//        "    vec4 textureColor = texture2D(inputImageTexture, textureCoordinate);\n"
+//        "    gl_FragColor = vec4(textureColor.r + exposureColor, textureColor.g + exposureColor, textureColor.b + exposureColor, textureColor.a);\n"
+//        "}\n";
 
 // 两分屏效果
 static const char *SCREEN_TWO_FRAGMENT_SHADER =

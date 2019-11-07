@@ -23,4 +23,7 @@ enum class EffectType {
   FlashWhite,
   SplitScreen,
   BlurSplitScreen,
+  SoulScale,
+  Shake,
+  SkinNeedling
 }

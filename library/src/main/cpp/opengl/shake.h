@@ -73,7 +73,12 @@ class Shake : public FrameBuffer {
 
     }
 
-    ~Shake() = default;
+    ~Shake() {
+        if (nullptr != scale_percent_) {
+            delete scale_percent_;
+            scale_percent_ = nullptr;
+        }
+    }
     
     void SetScalePercent(float* scale_percent, int size) {
         scale_percent_ = scale_percent;
@@ -82,8 +87,8 @@ class Shake : public FrameBuffer {
  protected:
     virtual void RunOnDrawTasks() {
        if (size_ > 0 && scale_percent_ != nullptr) {
-           index_++;
            SetFloat("scale", scale_percent_[index_ % size_]);
+           index_++;
        }
     }
   

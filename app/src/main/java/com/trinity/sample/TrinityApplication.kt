@@ -30,7 +30,7 @@ class TrinityApplication : Application() {
   override fun onCreate() {
     super.onCreate()
 
-//    CrashReport.initCrashReport(applicationContext, "c998b23a2d", true)
+    CrashReport.initCrashReport(applicationContext, "c998b23a2d", true)
     val filterLocalDir = externalCacheDir?.absolutePath + "/filter/"
     val file = File(filterLocalDir)
     if (!file.exists()) {

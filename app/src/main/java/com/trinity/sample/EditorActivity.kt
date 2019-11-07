@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.fragment.app.transaction
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.gson.JsonObject
 import com.trinity.core.TrinityCore
 import com.trinity.editor.EffectType
 import com.trinity.editor.MediaClip
@@ -27,6 +28,7 @@ import com.trinity.sample.fragment.MusicFragment
 import com.trinity.sample.listener.OnEffectTouchListener
 import com.trinity.sample.view.*
 import org.json.JSONObject
+import java.nio.charset.Charset
 import java.util.*
 
 /**
@@ -61,6 +63,7 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
 //  private val mEffects = LinkedHashMap<String, EffectInfo>()
   private val mEffects =  LinkedList<EffectInfo>()
   private var mStartTime: Long = 0
+  private val mActionIds = mutableMapOf<String, Int>()
   private var mFilterId = -1
   private var mFlashWhiteId = -1
   private var mSplitScreenTwoId = -1
@@ -204,7 +207,7 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
   }
 
   override fun getDuration(): Long {
-    return 10000
+    return mVideoEditor.getVideoDuration()
   }
 
   override fun updateDuration(duration: Long) {
@@ -289,145 +292,47 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
     if (event == MotionEvent.ACTION_DOWN) {
       mStartTime = mVideoEditor.getCurrentPosition()
       mVideoEditor.resume()
-      val jsonObject = JSONObject()
-      jsonObject.put("startTime", mStartTime)
-      jsonObject.put("endTime", Long.MAX_VALUE)
-      when (effect.id) {
-        EffectId.UNDO.ordinal -> {
-          return
-        }
-
-        EffectId.FLASH_WHITE.ordinal -> {
-          /**
-           *  {
-           *   "effectType": 0,
-           *   "startTime": 0,
-           *   "endTime": 10000
-           *  }
-           */
-          jsonObject.put("effectType", EffectType.FlashWhite.name)
-          mFlashWhiteId = mVideoEditor.addAction(jsonObject.toString())
-        }
-
-        EffectId.TWO_SPLIT_SCREEN.ordinal -> {
-          /**
-           *  {
-           *   "effectType": 0,
-           *   "startTime": 0,
-           *   "endTime": 10000,
-           *   "splitScreenCount": 2
-           *  }
-           */
-          jsonObject.put("splitScreenCount", 2)
-          jsonObject.put("effectType", EffectType.SplitScreen.name)
-          mSplitScreenTwoId = mVideoEditor.addAction(jsonObject.toString())
-        }
-
-        EffectId.THREE_SPLIT_SCREEN.ordinal -> {
-          /**
-           *  {
-           *   "effectType": 0,
-           *   "startTime": 0,
-           *   "endTime": 10000,
-           *   "splitScreenCount": 3
-           *  }
-           */
-          jsonObject.put("splitScreenCount", 3)
-          jsonObject.put("effectType", EffectType.SplitScreen.name)
-          mSplitScreenThreeId = mVideoEditor.addAction(jsonObject.toString())
-        }
-
-        EffectId.FOUR_SPLIT_SCREEN.ordinal -> {
-          jsonObject.put("splitScreenCount", 4)
-          jsonObject.put("effectType", EffectType.SplitScreen.name)
-          mSplitScreenFourId = mVideoEditor.addAction(jsonObject.toString())
-        }
-
-        EffectId.SIX_SPLIT_SCREEN.ordinal -> {
-          jsonObject.put("splitScreenCount", 6)
-          jsonObject.put("effectType", EffectType.SplitScreen.name)
-          mSplitScreenSixId = mVideoEditor.addAction(jsonObject.toString())
-        }
-
-        EffectId.NINE_SPLIT_SCREEN.ordinal -> {
-          jsonObject.put("splitScreenCount", 9)
-          jsonObject.put("effectType", EffectType.SplitScreen.name)
-          mSplitScreenNineId = mVideoEditor.addAction(jsonObject.toString())
-        }
-
-        EffectId.BLUR_SPLIT_SCREEN.ordinal -> {
-          jsonObject.put("effectType", EffectType.BlurSplitScreen.name)
-          mBlurSplitScreenId = mVideoEditor.addAction(jsonObject.toString())
-        }
+      if (effect.id == EffectId.UNDO.ordinal) {
+        return
+      } else {
+        val stream = assets.open(effect.effect)
+        val bytes = ByteArray(stream.available())
+        stream.read(bytes)
+        val effectJson = String(bytes, Charset.forName("utf-8"))
+        val actionId = mVideoEditor.addAction(effectJson)
+        mActionIds[effect.name] = actionId
       }
       effect.startTime = mStartTime.toInt()
       mEffectController.onEventAnimationFilterLongClick(effect)
     } else if (event == MotionEvent.ACTION_UP) {
       mVideoEditor.pause()
-      val jsonObject = JSONObject()
-      var mEffectId = -1
-      when (effect.id) {
-        EffectId.UNDO.ordinal -> {
-          println("UNDO")
-          if (!mEffects.isEmpty()) {
-            val info = mEffects.removeLast()
-            mEffectController.onEventAnimationFilterDelete(Effect(0, "", ""))
-            mVideoEditor.deleteAction(info.actionId)
-            mVideoEditor.seek(info.startTime.toInt())
-          }
-          return
+      if (effect.id == EffectId.UNDO.ordinal) {
+        if (!mEffects.isEmpty()) {
+          val info = mEffects.removeLast()
+          mEffectController.onEventAnimationFilterDelete(Effect(0, "", "", ""))
+          mVideoEditor.deleteAction(info.actionId)
+          mVideoEditor.seek(info.startTime.toInt())
         }
-
-        EffectId.FLASH_WHITE.ordinal -> {
-          mEffectId = mFlashWhiteId
-          jsonObject.put("effectType", EffectType.FlashWhite.name)
+        return
+      } else {
+        val stream = assets.open(effect.effect)
+        val bytes = ByteArray(stream.available())
+        stream.read(bytes)
+        val effectJson = JSONObject(String(bytes, Charset.forName("utf-8")))
+        val effectItemArrayJson = effectJson.optJSONArray("effect") ?: return
+        for (i in 0 until effectItemArrayJson.length()) {
+          val effectItemJson = effectItemArrayJson.optJSONObject(i)
+          effectItemJson.put("endTime", mVideoEditor.getCurrentPosition())
+          effectItemJson.put("startTime", mStartTime)
         }
-
-        EffectId.TWO_SPLIT_SCREEN.ordinal -> {
-          jsonObject.put("effectType", EffectType.SplitScreen.name)
-          jsonObject.put("splitScreenCount", 2)
-          mEffectId = mSplitScreenTwoId
-        }
-
-        EffectId.THREE_SPLIT_SCREEN.ordinal -> {
-          jsonObject.put("effectType", EffectType.SplitScreen.name)
-          jsonObject.put("splitScreenCount", 3)
-          mEffectId = mSplitScreenThreeId
-        }
-
-        EffectId.FOUR_SPLIT_SCREEN.ordinal -> {
-          jsonObject.put("effectType", EffectType.SplitScreen.name)
-          jsonObject.put("splitScreenCount", 4)
-          mEffectId = mSplitScreenFourId
-        }
-
-        EffectId.SIX_SPLIT_SCREEN.ordinal -> {
-          jsonObject.put("effectType", EffectType.SplitScreen.name)
-          jsonObject.put("splitScreenCount", 6)
-          mEffectId = mSplitScreenSixId
-        }
-
-        EffectId.NINE_SPLIT_SCREEN.ordinal -> {
-          jsonObject.put("effectType", EffectType.SplitScreen.name)
-          jsonObject.put("splitScreenCount", 9)
-          mEffectId = mSplitScreenNineId
-        }
-
-        EffectId.BLUR_SPLIT_SCREEN.ordinal -> {
-          jsonObject.put("effectType", EffectType.BlurSplitScreen.name)
-          mEffectId = mBlurSplitScreenId
-        }
+        val effectInfo = EffectInfo()
+        val actionId = mActionIds[effect.name] ?: return
+        effectInfo.actionId = actionId
+        effectInfo.startTime = mStartTime
+        mEffects.add(effectInfo)
+        mVideoEditor.updateAction(effectJson.toString(), actionId)
+        mEffectController.onEventAnimationFilterClickUp(effect)
       }
-      val effectInfo = EffectInfo()
-      effectInfo.actionId = mEffectId
-      effectInfo.startTime = mStartTime
-//      mEffects[effect.name + "_" + mStartTime] = effectInfo
-      mEffects.add(effectInfo)
-      println("startTime: " + mStartTime + " endTime: " + mVideoEditor.getCurrentPosition())
-      jsonObject.put("startTime", mStartTime)
-      jsonObject.put("endTime", mVideoEditor.getCurrentPosition())
-      mVideoEditor.updateAction(jsonObject.toString(), mEffectId)
-      mEffectController.onEventAnimationFilterClickUp(effect)
     }
   }
 

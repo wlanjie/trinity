@@ -158,23 +158,23 @@ class SkinNeedling : public FrameBuffer {
  protected:
    virtual void RunOnDrawTasks() {
       if (line_jitter_x_size_ > 0 && line_jitter_x_ != nullptr) {
-          line_jitter_x_index_++;
           SetFloat("lineJitterX", line_jitter_x_[line_jitter_x_index_ % line_jitter_x_size_]);
+          line_jitter_x_index_++;
       }
       
       if (line_jitter_y_size_ > 0 && line_jitter_y_ != nullptr) {
-          line_jitter_y_index_++;
           SetFloat("lineJitterY", line_jitter_y_[line_jitter_y_index_ % line_jitter_y_size_]);
+          line_jitter_y_index_++;
       }
           
       if (drift_x_size_ > 0 && drift_x_ != nullptr) {
-          drift_x_index_++;
           SetFloat("driftX", drift_x_[drift_x_index_ % drift_x_size_]);
+           drift_x_index_++;
       }
               
       if (drift_y_size_ > 0 && drift_y_ != nullptr) {
-          drift_y_index_++;
           SetFloat("driftY", drift_y_[drift_y_index_ % drift_y_size_]);
+          drift_y_index_++;
       }
    }
     

@@ -313,7 +313,7 @@ int main() {
     
 //    runSkinNeeding();
 //    FrameBuffer* frame_buffer = runSeventySecond();
-    FrameBuffer* frame_buffer = runHallucination();
+    FrameBuffer* frame_buffer = runSoulScale();
     
     while(!glfwWindowShouldClose(window)) {
         glfwPollEvents();

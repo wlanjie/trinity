@@ -53,7 +53,6 @@ class AudioEncoderAdapter {
     int audio_bit_rate_;
     char* audio_codec_name_;
     double packet_buffer_presentation_time_mills_;
-    std::fstream output_stream_;
 
  protected:
     static void* StartEncodeThread(void* context);

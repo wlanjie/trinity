@@ -6,88 +6,130 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
-import android.util.TypedValue
 import android.view.View
-import androidx.core.content.ContextCompat
+import androidx.annotation.Nullable
 import com.trinity.sample.R
-
-import java.util.ArrayList
+import java.util.*
 
 class LineProgressView : View {
 
-  private val paint = Paint()
-  private val durations = mutableListOf<Int>()
-  private var maxDuration = 0
-  private var currentDuration = 0
-  private var roundRectF = RectF()
+    private var mPaint: Paint? = null
 
-  constructor(context: Context) : super(context) {
-    init()
-  }
+    private var mRadius = RADIUS.toFloat()
 
-  constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-    init()
-  }
+    private var mBackgroundColor = BACKGROUND_COLOR
 
-  constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
-    init()
-  }
+    private var mContentColor = CONTENT_COLOR
 
-  private fun init() {
-    paint.isAntiAlias = true
-  }
+    private var mDividerColor = DIVIDER_COLOR
 
-  fun setMaxDuration(maxDuration: Int) {
-    this.maxDuration = maxDuration
-  }
+    private var mDividerWidth = DIVIDER_WIDTH
 
-  private fun addDuration(duration: Int) {
-    durations.add(duration)
-  }
+    private var mLoadingProgress: Float = 0.toFloat()
 
-  fun stop() {
-    durations.add(currentDuration)
-    currentDuration = 0
-    invalidate()
-  }
+    private val mProgressList = ArrayList<Float>()
 
-  fun setDuration(duration: Int) {
-    currentDuration = duration
-    invalidate()
-  }
-
-  override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-    super.onLayout(changed, left, top, right, bottom)
-    paint.strokeWidth = height.toFloat()
-    roundRectF = RectF(0f, 0f, width.toFloat(), TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 6.0f, resources.displayMetrics))
-  }
-
-  override fun onDraw(canvas: Canvas) {
-    super.onDraw(canvas)
-
-    paint.color = Color.parseColor("#80FF9800")
-//    canvas.drawLine(0f, 0f, width.toFloat(), 0f, paint)
-    canvas.drawRoundRect(roundRectF, 100.0f, 100.0f, paint)
-
-    paint.color = Color.WHITE
-    var current = 0
-    durations.forEach {
-      current += it
+    constructor(context: Context) : super(context) {
+        init()
     }
-    canvas.drawLine(0f, 0f, width.toFloat() * (current + currentDuration) / maxDuration, 0f, paint)
 
-    paint.color = ContextCompat.getColor(context, R.color.colorPrimaryDark)
-    var currentPoint = 0f
-    durations.forEach {
-      currentPoint += it
-      canvas.drawLine(width.toFloat() * currentPoint/ maxDuration, 0f, width.toFloat() * currentPoint / maxDuration + roundRectF.bottom, 0f, paint)
+    constructor(context: Context, @Nullable attrs: AttributeSet) : super(context, attrs) {
+        init()
+        val ta = context.obtainStyledAttributes(attrs, R.styleable.ProgressView)
+        try {
+            mRadius = ta.getDimensionPixelSize(R.styleable.ProgressView_pv_radius, RADIUS).toFloat()
+            mBackgroundColor = ta.getColor(R.styleable.ProgressView_pv_bg_color, BACKGROUND_COLOR)
+            mContentColor = ta.getColor(R.styleable.ProgressView_pv_content_color, CONTENT_COLOR)
+            mDividerColor = ta.getColor(R.styleable.ProgressView_pv_divider_color, DIVIDER_COLOR)
+            mDividerWidth =
+                ta.getDimensionPixelSize(R.styleable.ProgressView_pv_divider_width, DIVIDER_WIDTH)
+        } finally {
+            ta.recycle()
+        }
     }
-  }
 
-  fun remove() {
-    if (durations.isNotEmpty()) {
-      durations.removeAt(durations.size - 1)
-      invalidate()
+    private fun init() {
+        mPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     }
-  }
+
+    override fun onDraw(canvas: Canvas) {
+        drawBackground(canvas)
+        drawContent(canvas)
+        drawDivider(canvas)
+    }
+
+    private fun drawBackground(canvas: Canvas) {
+        mPaint!!.color = mBackgroundColor
+        canvas.drawRoundRect(
+            RectF(0f, 0f, measuredWidth.toFloat(), measuredHeight.toFloat()),
+            mRadius, mRadius, mPaint!!
+        )
+    }
+
+    private fun drawContent(canvas: Canvas) {
+        var total = 0f
+        for (progress in mProgressList) {
+            total += progress
+        }
+        total += mLoadingProgress
+        val width = (total * measuredWidth).toInt()
+        mPaint!!.color = mContentColor
+        canvas.drawRoundRect(
+            RectF(0f, 0f, width.toFloat(), measuredHeight.toFloat()),
+            mRadius, mRadius, mPaint!!
+        )
+        if (width < mRadius) {
+            return
+        }
+        canvas.drawRect(RectF(mRadius, 0f, width.toFloat(), measuredHeight.toFloat()), mPaint!!)
+    }
+
+    private fun drawDivider(canvas: Canvas) {
+        mPaint!!.color = mDividerColor
+        var left = 0
+        for (progress in mProgressList) {
+            left += (progress * measuredWidth).toInt()
+            canvas.drawRect(
+                (left - mDividerWidth).toFloat(),
+                0f,
+                left.toFloat(),
+                measuredHeight.toFloat(),
+                mPaint!!
+            )
+        }
+    }
+
+    fun setLoadingProgress(loadingProgress: Float) {
+        mLoadingProgress = loadingProgress
+        invalidate()
+    }
+
+    fun addProgress(progress: Float) {
+        mLoadingProgress = 0f
+        mProgressList.add(progress)
+        invalidate()
+    }
+
+    fun deleteProgress() {
+        mProgressList.removeAt(mProgressList.size - 1)
+        invalidate()
+    }
+
+    fun clear() {
+        mProgressList.clear()
+        invalidate()
+    }
+
+    companion object {
+
+        private const val RADIUS = 4
+
+        private const val DIVIDER_WIDTH = 2
+
+        private val BACKGROUND_COLOR = Color.parseColor("#22000000")
+
+        private val CONTENT_COLOR = Color.parseColor("#face15")
+
+        private const val DIVIDER_COLOR = Color.WHITE
+    }
 }

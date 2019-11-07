@@ -31,7 +31,7 @@ EGLShareContext::EGLShareContext() {
 }
 
 void EGLShareContext::Init() {
-    LOGI("Create EGLContext EGLCore::Init");
+//    LOGI("Create EGLContext EGLCore::Init");
     shared_context_ = EGL_NO_CONTEXT;
     EGLint numConfigs;
     shared_display_ = EGL_NO_DISPLAY;
