@@ -37,6 +37,7 @@ import com.trinity.sample.view.RecordButton
 import com.trinity.sample.view.foucs.AutoFocusTrigger
 import com.trinity.sample.view.foucs.DefaultAutoFocusMarker
 import com.trinity.sample.view.foucs.MarkerLayout
+import kotlinx.android.synthetic.main.fragment_media.*
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -315,6 +316,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
   fun setMusic(music: String) {
     val musicInfo = MusicInfo(music)
     mRecord.setBackgroundMusic(musicInfo)
+    closeBottomSheet()
   }
 
   override fun onClick() {

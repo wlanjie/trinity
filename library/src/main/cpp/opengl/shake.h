@@ -81,7 +81,12 @@ class Shake : public FrameBuffer {
     }
     
     void SetScalePercent(float* scale_percent, int size) {
-        scale_percent_ = scale_percent;
+        if (nullptr != scale_percent_) {
+            delete scale_percent_;
+            scale_percent_ = nullptr;
+        }
+        scale_percent_ = new float[size];
+        memcpy(scale_percent_, scale_percent, size * sizeof(float));
         size_ = size;
     }
  protected:
