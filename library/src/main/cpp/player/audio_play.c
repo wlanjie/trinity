@@ -38,7 +38,7 @@ static int64_t get_delta_time(AudioPlayContext * context) {
 }
 
 static int get_audio_frame(AVPlayContext* context) {
-    AudioPlayContext* audio_play_context = context->audio_player_context;
+    AudioPlayContext* audio_play_context = NULL;
     if (context->status == IDEL || context->status == PAUSED || context->status == BUFFER_EMPTY) {
         return -1;
     }
@@ -70,9 +70,9 @@ static int get_audio_frame(AVPlayContext* context) {
                                       AV_TIME_BASE_Q);
     if(audio_play_context->buffer_size < audio_play_context->frame_size){
         audio_play_context->buffer_size = audio_play_context->frame_size;
-        if(audio_play_context->buffer == NULL){
+        if (audio_play_context->buffer == NULL) {
             audio_play_context->buffer = malloc((size_t) audio_play_context->buffer_size);
-        }else{
+        } else {
             audio_play_context->buffer = realloc(audio_play_context->buffer, (size_t) audio_play_context->buffer_size);
         }
     }
@@ -86,7 +86,7 @@ static int get_audio_frame(AVPlayContext* context) {
 
 static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *args) {
     AVPlayContext* context = args;
-    AudioPlayContext * ctx = context->audio_player_context;
+    AudioPlayContext* ctx = NULL;
     pthread_mutex_lock(ctx->lock);
     assert(bq == bqPlayerBufferQueue);
     if (-1 == get_audio_frame(context)) {
@@ -122,6 +122,7 @@ void audio_player_release(AudioPlayContext *audio_play_context);
 void audio_player_create(int rate, int channel, AVPlayContext *context);
 
 AudioPlayContext* audio_engine_create() {
+    LOGE("audio_engine_create");
     SLresult result;
     // create engine
     result = slCreateEngine(&engineObject, 0, NULL, 0, NULL, NULL);
@@ -159,6 +160,7 @@ AudioPlayContext* audio_engine_create() {
 }
 
 void audio_player_create(int rate, int channel, AVPlayContext *context) {
+    LOGI("enter %s rate: %d channel: %d", __func__, rate, channel);
     SLresult result;
     // configure audio source
     SLDataLocator_AndroidSimpleBufferQueue loc_bufq = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE, 2};
@@ -232,16 +234,14 @@ void audio_player_create(int rate, int channel, AVPlayContext *context) {
     result = (*bqPlayerPlay)->SetPlayState(bqPlayerPlay, SL_PLAYSTATE_PAUSED);
     assert(SL_RESULT_SUCCESS == result);
     (void) result;
+    LOGI("leave %s", __func__);
 }
 
 void audio_player_shutdown() {
+    LOGI("enter %s", __func__);
     if(bqPlayerPlay != NULL){
         (*bqPlayerPlay)->SetPlayState(bqPlayerPlay, SL_PLAYSTATE_STOPPED);
     }
-}
-
-void audio_player_release(AudioPlayContext *audio_play_context) {
-    // destroy buffer queue audio player object, and invalidate all associated interfaces
     if (bqPlayerObject != NULL) {
         (*bqPlayerObject)->Destroy(bqPlayerObject);
         bqPlayerObject = NULL;
@@ -249,12 +249,18 @@ void audio_player_release(AudioPlayContext *audio_play_context) {
         bqPlayerBufferQueue = NULL;
         bqPlayerVolume = NULL;
     }
+    LOGI("leave %s", __func__);
+}
+
+void audio_player_release(AudioPlayContext *audio_play_context) {
+    LOGI("enter %s", __func__);
+    // destroy buffer queue audio player object, and invalidate all associated interfaces
+
     // destroy output mix object, and invalidate all associated interfaces
     if (outputMixObject != NULL) {
         (*outputMixObject)->Destroy(outputMixObject);
         outputMixObject = NULL;
     }
-
     // destroy engine object, and invalidate all associated interfaces
     if (engineObject != NULL) {
         (*engineObject)->Destroy(engineObject);
@@ -266,8 +272,9 @@ void audio_player_release(AudioPlayContext *audio_play_context) {
         pthread_mutex_destroy(audio_play_context->lock);
         free(audio_play_context->lock);
     }
-    if(audio_play_context->buffer != NULL){
+    if (audio_play_context->buffer != NULL) {
         free(audio_play_context->buffer);
     }
     free(audio_play_context);
+    LOGI("leave %s", __func__);
 }

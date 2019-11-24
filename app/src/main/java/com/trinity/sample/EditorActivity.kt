@@ -19,6 +19,7 @@ import com.trinity.editor.EffectType
 import com.trinity.editor.MediaClip
 import com.trinity.editor.TimeRange
 import com.trinity.editor.TrinityVideoEditor
+import com.trinity.listener.OnRenderListener
 import com.trinity.sample.editor.*
 import com.trinity.sample.entity.Effect
 import com.trinity.sample.entity.EffectInfo
@@ -27,6 +28,7 @@ import com.trinity.sample.entity.MediaItem
 import com.trinity.sample.fragment.MusicFragment
 import com.trinity.sample.listener.OnEffectTouchListener
 import com.trinity.sample.view.*
+import org.json.JSONArray
 import org.json.JSONObject
 import java.nio.charset.Charset
 import java.util.*
@@ -34,7 +36,7 @@ import java.util.*
 /**
  * Create by wlanjie on 2019/4/13-下午3:14
  */
-class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLayout.BaseOnTabSelectedListener<TabLayout.Tab>, ThumbLineBar.OnBarSeekListener, PlayerListener, OnEffectTouchListener {
+class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLayout.BaseOnTabSelectedListener<TabLayout.Tab>, ThumbLineBar.OnBarSeekListener, PlayerListener, OnEffectTouchListener, OnRenderListener {
   companion object {
     private const val MUSIC_TAG = "music"
     private const val USE_ANIMATION_REMAIN_TIME = 300 * 1000
@@ -109,6 +111,7 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
     }
 
     mVideoEditor.setSurfaceView(mSurfaceView)
+    mVideoEditor.setOnRenderListener(this)
     val medias = intent.getSerializableExtra("medias") as Array<MediaItem>
 //    val clip = MediaClip(file.absolutePath, TimeRange(0, 10000))
 //    mVideoEditor.insertClip(clip)
@@ -320,18 +323,21 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
         stream.read(bytes)
         val effectJson = JSONObject(String(bytes, Charset.forName("utf-8")))
         val effectItemArrayJson = effectJson.optJSONArray("effect") ?: return
+        val endTime = mVideoEditor.getCurrentPosition()
         for (i in 0 until effectItemArrayJson.length()) {
           val effectItemJson = effectItemArrayJson.optJSONObject(i)
-          effectItemJson.put("endTime", mVideoEditor.getCurrentPosition())
+          effectItemJson.put("endTime", endTime)
           effectItemJson.put("startTime", mStartTime)
         }
         val effectInfo = EffectInfo()
         val actionId = mActionIds[effect.name] ?: return
         effectInfo.actionId = actionId
         effectInfo.startTime = mStartTime
+        effectInfo.endTime = endTime
         mEffects.add(effectInfo)
         mVideoEditor.updateAction(effectJson.toString(), actionId)
         mEffectController.onEventAnimationFilterClickUp(effect)
+        println(effectJson.toString())
       }
     }
   }
@@ -384,16 +390,20 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
   }
 
   private fun setFilter(filter: Filter) {
+    val effectJson = JSONObject()
+    val jsonArray = JSONArray()
     val jsonObject = JSONObject()
-    jsonObject.put("effectType", EffectType.Filter.name)
+    jsonObject.put("name", EffectType.Filter.name)
     jsonObject.put("startTime", 0)
     jsonObject.put("endTime", Int.MAX_VALUE)
     jsonObject.put("lut", externalCacheDir?.absolutePath + "/filter/${filter.lut}")
     jsonObject.put("intensity", 1.0f)
+    jsonArray.put(jsonObject)
+    effectJson.put("effect", jsonArray)
     if (mFilterId == -1) {
-      mFilterId = mVideoEditor.addAction(jsonObject.toString())
+      mFilterId = mVideoEditor.addAction(effectJson.toString())
     } else {
-      mVideoEditor.updateAction(jsonObject.toString(), mFilterId)
+      mVideoEditor.updateAction(effectJson.toString(), mFilterId)
     }
   }
 
@@ -430,6 +440,29 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
     override fun onSingleTapConfirmed(e: MotionEvent?): Boolean {
       return super.onSingleTapConfirmed(e)
     }
+  }
+
+  override fun onSurfaceCreated() {
+  }
+
+  override fun onDrawFrame(textureId: Int, width: Int, height: Int, matrix: FloatArray?): Int {
+    // 检查在相同时间内是否有其它特效,如果有,则先删除,保证一个时间段只有一个效果
+    val position = mVideoEditor.getCurrentPosition()
+    var effectIndex = -1
+    mEffects.forEachIndexed { index, item ->
+      println("startTime: $position item.startTime: ${item.startTime} item.endTime: ${item.endTime}")
+      if (position >= item.startTime && position <= item.endTime && item.actionId != -1) {
+        mVideoEditor.deleteAction(item.actionId)
+        effectIndex = index
+      }
+    }
+    if (effectIndex != -1) {
+      mEffects.removeAt(effectIndex)
+    }
+    return -1
+  }
+
+  override fun onSurfaceDestroy() {
   }
 
 }

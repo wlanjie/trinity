@@ -249,7 +249,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
   private fun deleteFile(view: View) {
     view.setOnClickListener {
       if (mMedias.isNotEmpty()) {
-//        val media = mMedias.removeAt(mMedias.size - 1)
+        mMedias.removeAt(mMedias.size - 1)
 //        val file = File(media.path)
 //        if (file.exists()) {
 //          file.delete()
@@ -378,22 +378,26 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     super.onPause()
     mPermissionDenied = false
     mRecord.stopPreview()
+    println("onPause")
     PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(this)
   }
 
-//  override fun onDestroy() {
-//    super.onDestroy()
+  override fun onDestroy() {
+    super.onDestroy()
+    println("onDestroy")
 //    closeLog()
-//  }
-
-  override fun onSurfaceCreated() {
   }
 
-  override fun onDrawFrame(textureId: Int, width: Int, height: Int, matrix: FloatArray): Int {
+  override fun onSurfaceCreated() {
+    println("onSurfaceCreated")
+  }
+
+  override fun onDrawFrame(textureId: Int, width: Int, height: Int, matrix: FloatArray?): Int {
     return 0
   }
 
   override fun onSurfaceDestroy() {
+    println("onSurfaceDestroy")
   }
 
   override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences, key: String) {

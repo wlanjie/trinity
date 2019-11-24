@@ -16,6 +16,9 @@ class AudioRecordProcessor : RecordProcessor {
     }
 
     override fun destroy() {
+        if (handle == 0L) {
+            return
+        }
         destroy(handle)
         handle = 0
     }

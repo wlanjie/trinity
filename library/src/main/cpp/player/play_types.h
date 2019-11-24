@@ -9,14 +9,16 @@
 #ifndef play_types_h
 #define play_types_h
 
+#include <stdbool.h>
+#include <android/native_window_jni.h>
+#include <android/looper.h>
 #include "libavformat/avformat.h"
 #include "libavcodec/avcodec.h"
 #include "libavutil/imgutils.h"
 #include "libavfilter/avfilter.h"
-#include <android/native_window_jni.h>
-#include "video_render_types.h"
+#include "libavfilter/buffersrc.h"
+#include "libavfilter/buffersink.h"
 #include "macro.h"
-#include <android/looper.h>
 
 #if __ANDROID_API__ >= NDK_MEDIACODEC_VERSION
 #include <media/NdkMediaCodec.h>
@@ -28,7 +30,7 @@ typedef struct JavaClass {
     jmethodID player_onPlayStatusChanged;
     jmethodID player_onPlayError;
 
-    jclass HwDecodeBridge;
+    jobject media_codec_object;
     jmethodID codec_init;
     jmethodID codec_stop;
     jmethodID codec_flush;
@@ -37,17 +39,11 @@ typedef struct JavaClass {
     jmethodID codec_getInputBuffer;
     jmethodID codec_dequeueOutputBufferIndex;
     jmethodID codec_formatChange;
-    __attribute__((unused))
-    jmethodID codec_getOutputBuffer;
-    jmethodID codec_releaseOutPutBuffer;
-    jmethodID codec_release;
-
-    jclass SurfaceTextureBridge;
-    jmethodID texture_getSurface;
     jmethodID texture_updateTexImage;
     jmethodID texture_getTransformMatrix;
     __attribute__((unused))
-    jmethodID texture_release;
+    jmethodID codec_getOutputBuffer;
+    jmethodID codec_releaseOutPutBuffer;
 } JavaClass;
 
 typedef struct Clock {
@@ -86,7 +82,6 @@ typedef struct PacketPool {
 } PacketPool;
 
 typedef struct MediaCodecContext {
-    JNIEnv *env;
 #if __ANDROID_API__ >= NDK_MEDIACODEC_VERSION
     AMediaCodec *codec;
     AMediaFormat *format;
@@ -140,7 +135,7 @@ typedef struct AudioPlayContext {
     pthread_mutex_t *lock;
     unsigned int play_pos;
     int buffer_size;
-    uint8_t * buffer;
+    uint8_t* buffer;
     int frame_size;
 
     void (*play)(struct AVPlayContext *pd);
@@ -154,19 +149,9 @@ typedef struct AudioPlayContext {
     int64_t (*get_delta_time)(struct AudioPlayContext * ctx);
 } AudioPlayContext;
 
-typedef struct Statistics {
-    int64_t last_update_time;
-    int64_t last_update_bytes;
-    int64_t last_update_frames;
-    int64_t bytes;
-    int64_t frames;
-    uint8_t *ret_buffer;
-    jobject ret_buffer_java;
-} Statistics;
-
 typedef struct AVPlayContext {
     JavaVM *vm;
-    JNIEnv *env;
+    void* priv_data;
     int run_android_version;
     int sample_rate;
     jobject *play_object;
@@ -185,7 +170,6 @@ typedef struct AVPlayContext {
     pthread_t read_stream_thread;
     pthread_t audio_decode_thread;
     pthread_t video_decode_thread;
-    pthread_t gl_thread;
 
     // 封装
     AVFormatContext *format_context;
@@ -205,14 +189,12 @@ typedef struct AVPlayContext {
     FrameQueue *video_frame_queue;
 
     // 音频
-    AudioPlayContext *audio_player_context;
     AudioFilterContext *audio_filter_context;
     AVCodecContext *audio_codec_context;
     AVCodec *audio_codec;
     AVFrame *audio_frame;
 
     // 软硬解公用
-    VideoRenderContext *video_render_context;
     AVFrame *video_frame;
     int width;
     int height;
@@ -241,6 +223,12 @@ typedef struct AVPlayContext {
     //end of file
     bool eof;
 
+    bool abort_request;
+
+    int media_codec_texture_id;
+
+    pthread_mutex_t media_codec_mutex;
+
     // error code
     // -1 stop by user
     // -2 read stream time out
@@ -253,17 +241,18 @@ typedef struct AVPlayContext {
     // 7xx video play  openGL
     int error_code;
 
-    // 统计
-    Statistics *statistics;
-
     // message
     ALooper *main_looper;
     int pipe_fd[2];
 
-    void (*send_message)(struct AVPlayContext *pd, int message);
+    void (*send_message)(struct AVPlayContext* pd, int message);
 
-    void (*change_status)(struct AVPlayContext *pd, PlayStatus status);
+    void (*change_status)(struct AVPlayContext* pd, PlayStatus status);
 
-    void (*on_error)(struct AVPlayContext * pd, int error_code);
+    void (*on_error)(struct AVPlayContext* pd, int error_code);
+
+    void (*on_complete)(struct AVPlayContext* context);
+
+    void (*play_audio)(struct AVPlayContext* context);
 } AVPlayContext;
 #endif  // play_types_h

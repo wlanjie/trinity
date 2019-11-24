@@ -1,29 +1,35 @@
 package com.trinity.decoder
 
+import android.graphics.SurfaceTexture
 import android.media.MediaCodec
 import android.media.MediaFormat
 import android.view.Surface
+import com.tencent.mars.xlog.Log
 import java.io.IOException
 import java.lang.Exception
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-object MediaCodecDecode {
+class MediaCodecDecode {
 
   private var mMediaCodec: MediaCodec? = null
   private var mFormat: MediaFormat? = null
+  private var mSurfaceTexture: SurfaceTexture ?= null
   private var mOutputSurface: Surface? = null
   private var mOutputBufferInfo = MediaCodec.BufferInfo()
   private val mBuffer = ByteBuffer.allocateDirect(16)
   private val mChangeBuffer = ByteBuffer.allocateDirect(12)
+  private val mMatrix = FloatArray(16)
 
   init {
     mBuffer.order(ByteOrder.BIG_ENDIAN)
     mChangeBuffer.order(ByteOrder.BIG_ENDIAN)
   }
 
-  fun init(codecName: String, width: Int, height: Int, csd0: ByteBuffer?, csd1: ByteBuffer?) {
+  fun start(textureId: Int, codecName: String, width: Int, height: Int,
+           csd0: ByteBuffer?, csd1: ByteBuffer?) {
     try {
+      Log.i("trinity", "enter MediaCodec Start textureId: $textureId codecName: $codecName width: $width height: $height")
       mMediaCodec = MediaCodec.createDecoderByType(codecName)
       mFormat = MediaFormat()
       mFormat?.setString(MediaFormat.KEY_MIME, codecName)
@@ -51,23 +57,44 @@ object MediaCodecDecode {
           mFormat?.setByteBuffer("csd-0", csd0)
         }
       }
+      mSurfaceTexture = SurfaceTexture(textureId)
+      mOutputSurface = Surface(mSurfaceTexture)
       mMediaCodec?.configure(mFormat, mOutputSurface, null, 0)
       mMediaCodec?.start()
     } catch (e: IOException) {
       e.printStackTrace()
     }
+    Log.i("trinity", "leave MediaCodec Start")
   }
 
   fun stop() {
+    Log.i("trinity", "enter MediaCodec Stop")
+    flush()
     mMediaCodec?.stop()
+    mMediaCodec?.release()
+    mSurfaceTexture?.release()
+    mSurfaceTexture = null
+    mOutputSurface?.release()
+    mOutputSurface = null
+    mMediaCodec = null
+    mFormat = null
+    Log.i("trinity", "leave MediaCodec Stop")
   }
 
   fun flush() {
+//    while (true) {
+//      val id = mMediaCodec?.dequeueOutputBuffer(mOutputBufferInfo, 0) ?: -1
+//      if (id < 0) {
+//        break
+//      }
+//      Log.e("trinity", "flush id: $id")
+//      mMediaCodec?.releaseOutputBuffer(id, true)
+//    }
     mMediaCodec?.flush()
   }
 
   fun dequeueInputBuffer(timeout: Long): Int {
-    return mMediaCodec?.dequeueInputBuffer(timeout) ?: -1
+    return mMediaCodec?.dequeueInputBuffer(timeout) ?: -10
   }
 
   fun getInputBuffer(id: Int): ByteBuffer? {
@@ -75,13 +102,15 @@ object MediaCodecDecode {
   }
 
   fun queueInputBuffer(id: Int, size: Int, pts: Long, flags: Int) {
+//    Log.e("trinity", "id: $id size: $size pts: $pts")
     mMediaCodec?.queueInputBuffer(id, 0, size, pts, flags)
   }
 
   fun dequeueOutputBufferIndex(timeout: Long): ByteBuffer? {
-    val id = mMediaCodec?.dequeueOutputBuffer(mOutputBufferInfo, timeout) ?: -1
+    val id = mMediaCodec?.dequeueOutputBuffer(mOutputBufferInfo, timeout) ?: -1000
     mBuffer.position(0)
     mBuffer.putInt(id)
+//    Log.e("trinity", "dequeueOutputBufferIndex id: $id")
     if (id >= 0) {
       mBuffer.putInt(mOutputBufferInfo.offset)
       mBuffer.putLong(mOutputBufferInfo.presentationTimeUs)
@@ -91,6 +120,7 @@ object MediaCodecDecode {
 
   fun releaseOutputBuffer(id: Int) {
     try {
+//      Log.e("trinity", "releaseOutputBuffer: $id")
       mMediaCodec?.releaseOutputBuffer(id, true)
     } catch (e: Exception) {
       e.printStackTrace()
@@ -113,13 +143,12 @@ object MediaCodecDecode {
     return mMediaCodec?.outputBuffers?.get(id)
   }
 
-  fun release() {
-    mMediaCodec?.release()
-    mMediaCodec = null
-    mFormat = null
+  fun updateTexImage() {
+    mSurfaceTexture?.updateTexImage()
   }
 
-  fun setOutputSurface(surface: Surface?) {
-    mOutputSurface = surface
+  fun getTransformMatrix(): FloatArray {
+    mSurfaceTexture?.getTransformMatrix(mMatrix)
+    return mMatrix
   }
 }

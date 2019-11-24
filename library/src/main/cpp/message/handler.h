@@ -30,12 +30,14 @@ namespace trinity {
 
 class Handler {
  private:
-    MessageQueue* mQueue;
+    MessageQueue* queue_;
 
  public:
+    explicit Handler();
     explicit Handler(MessageQueue* mQueue);
     ~Handler();
 
+    void InitMessageQueue(MessageQueue *queue);
     int PostMessage(Message *msg);
     int GetQueueSize();
     virtual void HandleMessage(Message *msg){}

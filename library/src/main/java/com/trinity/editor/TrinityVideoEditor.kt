@@ -19,6 +19,7 @@
 package com.trinity.editor
 
 import android.view.SurfaceView
+import com.trinity.listener.OnRenderListener
 
 interface TrinityVideoEditor {
 
@@ -114,6 +115,8 @@ interface TrinityVideoEditor {
   fun updateAction(config: String, actionId: Int)
 
   fun deleteAction(actionId: Int)
+
+  fun setOnRenderListener(l: OnRenderListener)
 
   fun seek(time: Int)
 

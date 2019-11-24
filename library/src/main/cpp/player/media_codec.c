@@ -7,6 +7,7 @@
 //
 
 #include <unistd.h>
+#include <pthread.h>
 #include "media_codec.h"
 
 #if __ANDROID_API__ >= NDK_MEDIACODEC_VERSION
@@ -243,6 +244,7 @@ static int64_t get_long(uint8_t *buf) {
 
 MediaCodecContext *create_mediacodec_context(
         AVPlayContext *context) {
+    LOGI("enter %s", __func__);
     MediaCodecContext *media_codec_context = (MediaCodecContext *) malloc(sizeof(MediaCodecContext));
     AVCodecParameters *codecpar = context->format_context->streams[context->video_index]->codecpar;
     media_codec_context->width = codecpar->width;
@@ -250,18 +252,23 @@ MediaCodecContext *create_mediacodec_context(
     media_codec_context->codec_id = codecpar->codec_id;
     media_codec_context->nal_size = 0;
     media_codec_context->pix_format = AV_PIX_FMT_NONE;
+    LOGI("leave %s", __func__);
     return media_codec_context;
 }
 
 void mediacodec_start(AVPlayContext *context){
     MediaCodecContext *media_codec_context = context->media_codec_context;
-    JNIEnv *env = media_codec_context->env;
+    if (media_codec_context == NULL) {
+        return;
+    }
+    JNIEnv *env = NULL;
+    (*context->vm)->AttachCurrentThread(context->vm, &env, NULL);
     JavaClass* java_class = context->java_class;
     AVCodecParameters *codecpar = context->format_context->streams[context->video_index]->codecpar;
-    jobject codecName = NULL, csd_0 = NULL, csd_1 = NULL;
-    while(context->video_render_context->texture_window == NULL){
-        usleep(10000);
-    }
+    jobject codecName = NULL;
+    jobject csd_0 = NULL;
+    jobject csd_1 = NULL;
+    LOGI("enter %s", __func__);
     switch (media_codec_context->codec_id) {
         case AV_CODEC_ID_H264:
             codecName = (*env)->NewStringUTF(env, "video/avc");
@@ -277,15 +284,15 @@ void mediacodec_start(AVPlayContext *context){
                 }
                 csd_0 = (*env)->NewDirectByteBuffer(env, sps_buf, sps_size);
                 csd_1 = (*env)->NewDirectByteBuffer(env, pps_buf, pps_size);
-                (*env)->CallStaticVoidMethod(env, java_class->HwDecodeBridge, java_class->codec_init,
-                                                codecName, media_codec_context->width, media_codec_context->height, csd_0, csd_1);
+                (*env)->CallVoidMethod(env, java_class->media_codec_object, java_class->codec_init,
+                                                context->media_codec_texture_id, codecName, media_codec_context->width, media_codec_context->height, csd_0, csd_1);
                 free(sps_buf);
                 free(pps_buf);
                 (*env)->DeleteLocalRef(env, csd_0);
                 (*env)->DeleteLocalRef(env, csd_1);
             } else {
-                (*env)->CallStaticVoidMethod(env, java_class->HwDecodeBridge, java_class->codec_init,
-                                                codecName, media_codec_context->width, media_codec_context->height, NULL, NULL);
+                (*env)->CallVoidMethod(env, java_class->media_codec_object, java_class->codec_init,
+                                                context->media_codec_texture_id, codecName, media_codec_context->width, media_codec_context->height, NULL, NULL);
             }
             break;
         case AV_CODEC_ID_HEVC:
@@ -302,39 +309,39 @@ void mediacodec_start(AVPlayContext *context){
                     LOGE("%s:convert_sps_pps: failed\n", __func__);
                 }
                 csd_0 = (*env)->NewDirectByteBuffer(env, convert_buf, sps_pps_size);
-                (*env)->CallStaticVoidMethod(env, java_class->HwDecodeBridge, java_class->codec_init,
-                                                codecName, media_codec_context->width, media_codec_context->height, csd_0, NULL);
+                (*env)->CallVoidMethod(env, java_class->media_codec_object, java_class->codec_init,
+                                                context->media_codec_texture_id, codecName, media_codec_context->width, media_codec_context->height, csd_0, NULL);
                 free(convert_buf);
                 (*env)->DeleteLocalRef(env, csd_0);
             }else{
-                (*env)->CallStaticVoidMethod(env, java_class->HwDecodeBridge, java_class->codec_init, codecName,
-                                                media_codec_context->width, media_codec_context->height, NULL, NULL);
+                (*env)->CallVoidMethod(env, java_class->media_codec_object, java_class->codec_init, codecName,
+                                                context->media_codec_texture_id, media_codec_context->width, media_codec_context->height, NULL, NULL);
             }
             break;
         case AV_CODEC_ID_MPEG4:
             codecName = (*env)->NewStringUTF(env, "video/mp4v-es");
             csd_0 = (*env)->NewDirectByteBuffer(env, codecpar->extradata,
                                                    (jlong) (codecpar->extradata_size));
-            (*env)->CallStaticVoidMethod(env, java_class->HwDecodeBridge, java_class->codec_init, codecName,
-                                            media_codec_context->width, media_codec_context->height, csd_0, NULL);
+            (*env)->CallVoidMethod(env, java_class->media_codec_object, java_class->codec_init,
+                    context->media_codec_texture_id, codecName, media_codec_context->width, media_codec_context->height, csd_0, NULL);
             (*env)->DeleteLocalRef(env, csd_0);
             break;
         case AV_CODEC_ID_VP8:
             codecName = (*env)->NewStringUTF(env, "video/x-vnd.on2.vp8");
-            (*env)->CallStaticVoidMethod(env, java_class->HwDecodeBridge, java_class->codec_init, codecName,
-                                            media_codec_context->width, media_codec_context->height, NULL, NULL);
+            (*env)->CallVoidMethod(env, java_class->media_codec_object, java_class->codec_init,
+                    context->media_codec_texture_id, codecName, media_codec_context->width, media_codec_context->height, NULL, NULL);
             break;
         case AV_CODEC_ID_VP9:
             codecName = (*env)->NewStringUTF(env, "video/x-vnd.on2.vp9");
-            (*env)->CallStaticVoidMethod(env, java_class->HwDecodeBridge, java_class->codec_init, codecName,
-                                            media_codec_context->width, media_codec_context->height, NULL, NULL);
+            (*env)->CallVoidMethod(env, java_class->media_codec_object, java_class->codec_init,
+                    context->media_codec_texture_id, codecName, media_codec_context->width, media_codec_context->height, NULL, NULL);
             break;
         case AV_CODEC_ID_H263:
             codecName = (*env)->NewStringUTF(env, "video/3gpp");
             csd_0 = (*env)->NewDirectByteBuffer(env, codecpar->extradata,
                                                    (jlong) (codecpar->extradata_size));
-            (*env)->CallStaticVoidMethod(env, java_class->HwDecodeBridge, java_class->codec_init, codecName,
-                                            media_codec_context->width, media_codec_context->height, csd_0, NULL);
+            (*env)->CallVoidMethod(env, java_class->media_codec_object, java_class->codec_init,
+                    context->media_codec_texture_id, codecName, media_codec_context->width, media_codec_context->height, csd_0, NULL);
             (*env)->DeleteLocalRef(env, csd_0);
             break;
         default:
@@ -343,65 +350,60 @@ void mediacodec_start(AVPlayContext *context){
     if (codecName != NULL) {
         (*env)->DeleteLocalRef(env, codecName);
     }
+    (*context->vm)->DetachCurrentThread(context->vm);
+    LOGI("leave %s", __func__);
 }
 
 void mediacodec_release_buffer(AVPlayContext *context, AVFrame *frame) {
-    JNIEnv *env = context->media_codec_context->env;
+    pthread_mutex_lock(&context->media_codec_mutex);
+    if (context->media_codec_context == NULL) {
+        LOGE("context->media_codec_context == NULL");
+        pthread_mutex_unlock(&context->media_codec_mutex);
+        return;
+    }
+    JavaVM* vm = context->vm;
+    JNIEnv* env = NULL;
+    if ((*vm)->AttachCurrentThread(vm, &env, NULL) != JNI_OK) {
+        pthread_mutex_unlock(&context->media_codec_mutex);
+        LOGE("AttachCurrentThread error");
+        return;
+    }
     JavaClass* java_class = context->java_class;
-    (*env)->CallStaticVoidMethod(env, java_class->HwDecodeBridge, java_class->codec_releaseOutPutBuffer,
+    (*env)->CallVoidMethod(env, java_class->media_codec_object, java_class->codec_releaseOutPutBuffer,
                                     (int)frame->HW_BUFFER_ID);
+    (*vm)->DetachCurrentThread(vm);
+    pthread_mutex_unlock(&context->media_codec_mutex);
 }
 
 int mediacodec_receive_frame(AVPlayContext *context, AVFrame *frame) {
-    JNIEnv *env = context->media_codec_context->env;
-    JavaClass* java_class = context->java_class;
     MediaCodecContext *media_codec_context = context->media_codec_context;
+    if (media_codec_context == NULL) {
+        return -1;
+    }
+    JNIEnv *env = NULL;
+    (*context->vm)->AttachCurrentThread(context->vm, &env, NULL);
+    JavaClass* java_class = context->java_class;
     int output_ret = 1;
-    jobject deqret = (*env)->CallStaticObjectMethod(env, java_class->HwDecodeBridge,
+    jobject deqret = (*env)->CallObjectMethod(env, java_class->media_codec_object,
                                                        java_class->codec_dequeueOutputBufferIndex,
                                                        (jlong) 0);
     uint8_t *retbuf = (*env)->GetDirectBufferAddress(env, deqret);
     int outbufidx = get_int(retbuf);
-//    int offset = get_int(retbuf + 4);
     int64_t pts = get_long(retbuf + 8);
     (*env)->DeleteLocalRef(env, deqret);
 
     if (outbufidx >= 0) {
-//        jobject obuf = (*env)->CallStaticObjectMethod(env, java_class->HwDecodeBridge,
-//                                                         java_class->codec_getOutputBuffer, outbufidx);
-//        uint8_t *outputBuf = (*env)->GetDirectBufferAddress(env, obuf);
-//        int size = av_image_get_buffer_size(media_codec_context->pix_format, media_codec_context->width, media_codec_context->height, 1);
         frame->pts = pts;
         frame->format = PIX_FMT_EGL_EXT;
         frame->width = context->width;
         frame->linesize[0] = context->width;
-//        frame->linesize[0] = media_codec_context->width;
         frame->height = context->height;
         frame->HW_BUFFER_ID = outbufidx;
-//        frame->data[0] = outputBuf + offset;
-//        (*env)->DeleteLocalRef(env, obuf);
-
-        // use media_codec_context->height  to reslove  media_codec_context->height != context->height
-//        switch (media_codec_context->pix_format) {
-//            case AV_PIX_FMT_YUV420P:
-//                frame->data[1] = frame->data[0] + frame->linesize[0] * media_codec_context->height;
-//                frame->linesize[1] = frame->linesize[0] / 2;
-//                frame->data[2] = frame->data[1] + frame->linesize[0] * media_codec_context->height / 4;
-//                frame->linesize[2] = frame->linesize[0] / 2;
-//                break;
-//            case AV_PIX_FMT_NV12:
-//                frame->data[1] = frame->data[0] + frame->linesize[0] * media_codec_context->height;
-//                frame->linesize[1] = frame->linesize[0];
-//                break;
-//            default:
-//                break;
-//        }
         output_ret = 0;
     } else {
         switch (outbufidx) {
-            // AMEDIACODEC_INFO_OUTPUT_FORMAT_CHANGED
             case -2: {
-                jobject newFormat = (*env)->CallStaticObjectMethod(env, java_class->HwDecodeBridge,
+                jobject newFormat = (*env)->CallObjectMethod(env, java_class->media_codec_object,
                                                                       java_class->codec_formatChange);
                 uint8_t *fmtbuf = (*env)->GetDirectBufferAddress(env, newFormat);
                 media_codec_context->width = get_int(fmtbuf);
@@ -423,10 +425,8 @@ int mediacodec_receive_frame(AVPlayContext *context, AVFrame *frame) {
                 output_ret = -2;
                 break;
             }
-            // AMEDIACODEC_INFO_OUTPUT_BUFFERS_CHANGED
             case -3:
                 break;
-            // AMEDIACODEC_INFO_TRY_AGAIN_LATER
             case -1:
                 break;
             default:
@@ -434,14 +434,18 @@ int mediacodec_receive_frame(AVPlayContext *context, AVFrame *frame) {
         }
 
     }
+    (*context->vm)->DetachCurrentThread(context->vm);
     return output_ret;
 }
 
 int mediacodec_send_packet(AVPlayContext *context, AVPacket *packet) {
-    JNIEnv *env = context->media_codec_context->env;
-    JavaClass* java_class = context->java_class;
+    if (packet == NULL) {
+        return -2;
+    }
     MediaCodecContext *media_codec_context = context->media_codec_context;
-    if (packet == NULL) { return -2; }
+    JNIEnv *env = NULL;
+    (*context->vm)->AttachCurrentThread(context->vm, &env, NULL);
+    JavaClass* java_class = context->java_class;
     int keyframe_flag = 0;
 //    av_packet_split_side_data(packet);
     int64_t time_stamp = packet->pts;
@@ -462,53 +466,98 @@ int mediacodec_send_packet(AVPlayContext *context, AVPacket *packet) {
     if ((packet->flags | AV_PKT_FLAG_KEY) > 0) {
         keyframe_flag |= 0x1;
     }
-//    ssize_t id = AMediaCodec_dequeueInputBuffer(media_codec_context->codec, 1000000);
-    int id = (*env)->CallStaticIntMethod(env, java_class->HwDecodeBridge,
-                                            java_class->codec_dequeueInputBuffer, (jlong) 1000000);
+    int id = (*env)->CallIntMethod(env, java_class->media_codec_object, java_class->codec_dequeueInputBuffer, (jlong) 1000000);
     if (id >= 0) {
-        jobject inputBuffer = (*env)->CallStaticObjectMethod(env, java_class->HwDecodeBridge,
-                                                                java_class->codec_getInputBuffer, id);
+        jobject inputBuffer = (*env)->CallObjectMethod(env, java_class->media_codec_object, java_class->codec_getInputBuffer, id);
         uint8_t *buf = (*env)->GetDirectBufferAddress(env, inputBuffer);
         jlong size = (*env)->GetDirectBufferCapacity(env, inputBuffer);
-//        uint8_t *buf = AMediaCodec_getInputBuffer(media_codec_context->codec, id, &size);
         if (buf != NULL && size >= packet->size) {
             memcpy(buf, packet->data, (size_t) packet->size);
-//            media_status = AMediaCodec_queueInputBuffer(media_codec_context->codec, id, 0, packet->size, time_stamp,
-//                                                        keyframe_flag);
-            (*env)->CallStaticVoidMethod(env, java_class->HwDecodeBridge,
+            (*env)->CallVoidMethod(env, java_class->media_codec_object,
                                             java_class->codec_queueInputBuffer,
                                             (jint) id, (jint) packet->size,
                                             (jlong) time_stamp, (jint) keyframe_flag);
         }
         (*env)->DeleteLocalRef(env, inputBuffer);
-        // AMEDIACODEC_INFO_TRY_AGAIN_LATER
     } else if (id == -1) {
+        (*context->vm)->DetachCurrentThread(context->vm);
         return -1;
     } else {
         LOGE("input buffer id < 0  value == %zd", id);
     }
+
+    (*context->vm)->DetachCurrentThread(context->vm);
     return 0;
 }
 
 void mediacodec_flush(AVPlayContext *context) {
-    JNIEnv *env = context->media_codec_context->env;
+    LOGI("enter %s", __func__);
+    pthread_mutex_lock(&context->media_codec_mutex);
+    MediaCodecContext* media_codec_context = context->media_codec_context;
+    if (media_codec_context == NULL) {
+        pthread_mutex_unlock(&context->media_codec_mutex);
+        return;
+    }
+    JNIEnv *env = NULL;
+    (*context->vm)->AttachCurrentThread(context->vm, &env, NULL);
     JavaClass* java_class = context->java_class;
-    (*env)->CallStaticVoidMethod(env, java_class->HwDecodeBridge, java_class->codec_flush);
-}
-
-void mediacodec_release_context(AVPlayContext *context) {
-    JNIEnv *env = context->env;
-    JavaClass* java_class = context->java_class;
-    (*env)->CallStaticVoidMethod(env, java_class->HwDecodeBridge, java_class->codec_release);
-    MediaCodecContext *media_codec_context = context->media_codec_context;
-    free(media_codec_context);
-    context->media_codec_context = NULL;
+    (*env)->CallVoidMethod(env, java_class->media_codec_object, java_class->codec_flush);
+    (*context->vm)->DetachCurrentThread(context->vm);
+    LOGI("leave %s", __func__);
+    pthread_mutex_unlock(&context->media_codec_mutex);
 }
 
 void mediacodec_stop(AVPlayContext *context) {
-    JNIEnv *env = context->media_codec_context->env;
+    LOGI("enter %s", __func__);
+    pthread_mutex_lock(&context->media_codec_mutex);
+    MediaCodecContext* media_codec_context = context->media_codec_context;
+    if (media_codec_context == NULL) {
+        pthread_mutex_unlock(&context->media_codec_mutex);
+        return;
+    }
+    JNIEnv *env = NULL;
+    (*context->vm)->AttachCurrentThread(context->vm, &env, NULL);
     JavaClass* java_class = context->java_class;
-    (*env)->CallStaticVoidMethod(env, java_class->HwDecodeBridge, java_class->codec_stop);
+    (*env)->CallVoidMethod(env, java_class->media_codec_object, java_class->codec_stop);
+    (*context->vm)->DetachCurrentThread(context->vm);
+    free(context->media_codec_context);
+    context->media_codec_context = NULL;
+    pthread_mutex_unlock(&context->media_codec_mutex);
+    LOGI("leave %s", __func__);
+}
+
+void mediacodec_update_image(AVPlayContext* context) {
+    pthread_mutex_lock(&context->media_codec_mutex);
+    MediaCodecContext* media_codec_context = context->media_codec_context;
+    if (media_codec_context == NULL) {
+        pthread_mutex_unlock(&context->media_codec_mutex);
+        return;
+    }
+    JNIEnv *env = NULL;
+    JavaClass* java_class = context->java_class;
+    (*context->vm)->AttachCurrentThread(context->vm, &env, NULL);
+    (*env)->CallVoidMethod(env, java_class->media_codec_object, java_class->texture_updateTexImage);
+    (*context->vm)->DetachCurrentThread(context->vm);
+    pthread_mutex_unlock(&context->media_codec_mutex);
+}
+
+int mediacodec_get_texture_matrix(AVPlayContext* context, float* texture_matrix) {
+    pthread_mutex_lock(&context->media_codec_mutex);
+    MediaCodecContext* media_codec_context = context->media_codec_context;
+    if (media_codec_context == NULL) {
+        pthread_mutex_unlock(&context->media_codec_mutex);
+        return -1;
+    }
+    JNIEnv *env = NULL;
+    JavaClass* java_class = context->java_class;
+    (*context->vm)->AttachCurrentThread(context->vm, &env, NULL);
+    jfloatArray texture_matrix_array = (*env)->CallObjectMethod(env, java_class->media_codec_object,
+            java_class->texture_getTransformMatrix);
+    (*env)->GetFloatArrayRegion(env, texture_matrix_array, 0, 16, texture_matrix);
+    (*env)->DeleteLocalRef(env, texture_matrix_array);
+    (*context->vm)->DetachCurrentThread(context->vm);
+    pthread_mutex_unlock(&context->media_codec_mutex);
+    return 0;
 }
 
 #endif

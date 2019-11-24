@@ -107,7 +107,7 @@ void ImageProcess::ParseConfig(char *config, int action_id) {
                 }
                 if (strcmp(name, FILTER) == 0) {
                     // 滤镜
-                    OnFilter(start_time, end_time, json, action_id);
+                    OnFilter(start_time, end_time, effect_item_json, action_id);
                 } else if (strcmp(name, FLASH_WHITE) == 0) {
                     // 闪白
                     OnFlashWhite(fragment_uniforms_json, start_time, end_time, action_id);
@@ -119,7 +119,6 @@ void ImageProcess::ParseConfig(char *config, int action_id) {
                     OnBlurSplitScreen(fragment_uniforms_json, start_time, end_time, action_id);
                 } else if (strcmp(name, SOUL_SCALE) == 0) {
                     // 灵魂出窍
-//                cJSON*
                     OnSoulScale(fragment_uniforms_json, start_time, end_time, action_id);
                 } else if (strcmp(name, SHAKE) == 0) {
                     // 抖动
@@ -152,6 +151,7 @@ void ImageProcess::ClearAction() {
 }
 
 void ImageProcess::OnFilter(int start_time, int end_time, cJSON* json, int action_id) {
+    LOGI("enter %s start_time: %d end_time: %d action_id: %d", __func__, start_time, end_time, action_id);
     cJSON* intensity_json = cJSON_GetObjectItem(json, "intensity");
     float intensity = 1.0f;
     if (nullptr != intensity_json) {
@@ -165,6 +165,7 @@ void ImageProcess::OnFilter(int start_time, int end_time, cJSON* json, int actio
         int channels = 0;
         unsigned char* lut_buffer = stbi_load(lut_path, &lut_width, &lut_height, &channels, STBI_rgb_alpha);
         if (nullptr == lut_buffer) {
+            LOGE("load filter image error.");
             return;
         }
         if ((lut_width == 512 && lut_height == 512) || (lut_width == 64 && lut_height == 64)) {
@@ -188,6 +189,7 @@ void ImageProcess::OnFilter(int start_time, int end_time, cJSON* json, int actio
         }
         stbi_image_free(lut_buffer);
     }
+    LOGI("leave %s", __func__);
 }
 
 void ImageProcess::OnRotate(float rotate, int action_id) {

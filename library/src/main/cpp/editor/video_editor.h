@@ -29,7 +29,6 @@
 #include <cstdint>
 #include <deque>
 
-//#include "video_player.h"
 #include "yuv_render.h"
 #include "pixel_late.h"
 #include "flash_white.h"
@@ -39,26 +38,23 @@
 #include "image_process.h"
 #include "music_decoder_controller.h"
 #include "editor_resource.h"
+#include "player.h"
 #include "trinity.h"
-
-extern "C" {
-#include "av_play.h"
-};
 
 namespace trinity {
 
-class VideoEditor {
+class VideoEditor : public Handler, public PlayerEventObserver {
  public:
-    explicit VideoEditor(const char* resource_path);
+    explicit VideoEditor(JNIEnv* env, jobject object, const char* resource_path);
     ~VideoEditor();
 
     int Init();
 
-    void OnSurfaceCreated(JNIEnv* env, jobject object, jobject surface);
+    void OnSurfaceCreated(jobject surface);
 
     void OnSurfaceChanged(int width, int height);
 
-    void OnSurfaceDestroyed(JNIEnv* env);
+    void OnSurfaceDestroyed();
 
     // 获取所有clip的时长总和
     int64_t GetVideoDuration() const;
@@ -96,13 +92,6 @@ class VideoEditor {
     // 根据时间获取clip的index
     int GetClipIndex(int64_t time);
 
-    // 添加滤镜
-    int AddFilter(const char* filter_config);
-
-    void UpdateFilter(const char* filter_config, int action_id);
-
-    void DeleteFilter(int action_id);
-
     int AddMusic(const char* music_config);
 
     void UpdateMusic(const char* music_config, int action_id);
@@ -132,74 +121,21 @@ class VideoEditor {
 
     void Destroy();
 
-    int OnComplete();
-
-    virtual void OnGLCreate();
-
-    virtual void OnGLMessage(Message* msg);
-
-    virtual void OnGLDestroy();
+    virtual void OnComplete();
 
  private:
-    void OnAddAction(char* config, int action_id);
-    void OnUpdateAction(char* config, int action_id);
-    void OnDeleteAction(int action_id);
-    void OnAddMusic(char* config, int action_id);
-    void OnUpdateMusic(char* config, int action_id);
-    void OnDeleteMusic(int aciton_id);
- private:
-//    static int OnCompleteEvent(StateEvent* event);
-//    static int OnVideoRender(OnVideoRenderEvent* event, int texture_id, int width, int height, uint64_t current_time);
-    void FreeMusicPlayer();
-    void FreeStateEvent();
-    void AllocStateEvent();
-    void FreeVideoRenderEvent();
-    void AllocVideoRenderEvent();
-    static void* CompleteThread(void* context);
-    void ProcessMessage();
-
- private:
-    EditorResource* editor_resource_;
+    JavaVM* vm_;
     std::deque<MediaClip*> clip_deque_;
     pthread_mutex_t queue_mutex_;
     pthread_cond_t queue_cond_;
     ANativeWindow* window_;
     jobject video_editor_object_;
-
-    AVPlayContext* av_play_context_;
-
     // 是否循环播放
     bool repeat_;
     // 当前播放的文件位置
     int play_index;
-    ImageProcess* image_process_;
-
-    MusicDecoderController* music_player_;
-    pthread_t complete_thread_;
-    MessageQueue* message_queue_;
-    int current_action_id_;
-};
-
-class PlayerHandler : public Handler {
- public:
-    PlayerHandler(VideoEditor* editor, MessageQueue* queue) : Handler(queue) {
-        editor_ = editor;
-    }
-
-    void HandleMessage(Message* msg) {
-        int what = msg->GetWhat();
-        switch (what) {
-//            case kStartPlayer:
-//                editor_->OnComplete();
-//                break;
-
-            default:
-                break;
-        }
-    }
-
- private:
-    VideoEditor* editor_;
+    Player* player_;
+    EditorResource* editor_resource_;
 };
 
 }  // namespace trinity
