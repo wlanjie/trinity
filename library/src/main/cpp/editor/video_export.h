@@ -39,7 +39,7 @@
 #include "trinity.h"
 
 extern "C" {
-#include "ffmpeg_decode.h"
+//#include "ffmpeg_decode.h"
 #include "cJSON.h"
 };
 
@@ -64,7 +64,7 @@ class VideoExport {
 
  private:
     static void* ExportVideoThread(void* context);
-    static int OnCompleteState(StateEvent* event);
+//    static int OnCompleteState(StateEvent* event);
     static void* ExportAudioThread(void* context);
     static void* ExportMessageThread(void* context);
     void StartDecode(MediaClip* clip);
@@ -93,8 +93,8 @@ class VideoExport {
     bool export_ing;
     EGLCore* egl_core_;
     EGLSurface egl_surface_;
-    MediaDecode* media_decode_;
-    StateEvent* state_event_;
+//    MediaDecode* media_decode_;
+//    StateEvent* state_event_;
     int export_index_;
     int video_width_;
     int video_height_;

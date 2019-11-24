@@ -29,7 +29,7 @@
 #include <cstdint>
 #include <deque>
 
-#include "video_player.h"
+//#include "video_player.h"
 #include "yuv_render.h"
 #include "pixel_late.h"
 #include "flash_white.h"
@@ -41,9 +41,13 @@
 #include "editor_resource.h"
 #include "trinity.h"
 
+extern "C" {
+#include "av_play.h"
+};
+
 namespace trinity {
 
-class VideoEditor : public GLObserver {
+class VideoEditor {
  public:
     explicit VideoEditor(const char* resource_path);
     ~VideoEditor();
@@ -144,8 +148,8 @@ class VideoEditor : public GLObserver {
     void OnUpdateMusic(char* config, int action_id);
     void OnDeleteMusic(int aciton_id);
  private:
-    static int OnCompleteEvent(StateEvent* event);
-    static int OnVideoRender(OnVideoRenderEvent* event, int texture_id, int width, int height, uint64_t current_time);
+//    static int OnCompleteEvent(StateEvent* event);
+//    static int OnVideoRender(OnVideoRenderEvent* event, int texture_id, int width, int height, uint64_t current_time);
     void FreeMusicPlayer();
     void FreeStateEvent();
     void AllocStateEvent();
@@ -162,7 +166,8 @@ class VideoEditor : public GLObserver {
     ANativeWindow* window_;
     jobject video_editor_object_;
 
-    VideoPlayer* video_player_;
+    AVPlayContext* av_play_context_;
+
     // 是否循环播放
     bool repeat_;
     // 当前播放的文件位置
@@ -170,13 +175,8 @@ class VideoEditor : public GLObserver {
     ImageProcess* image_process_;
 
     MusicDecoderController* music_player_;
-    StateEvent* state_event_;
-    OnVideoRenderEvent* on_video_render_event_;
-
     pthread_t complete_thread_;
     MessageQueue* message_queue_;
-    PlayerHandler* handler_;
-
     int current_action_id_;
 };
 
@@ -189,9 +189,9 @@ class PlayerHandler : public Handler {
     void HandleMessage(Message* msg) {
         int what = msg->GetWhat();
         switch (what) {
-            case kStartPlayer:
-                editor_->OnComplete();
-                break;
+//            case kStartPlayer:
+//                editor_->OnComplete();
+//                break;
 
             default:
                 break;
