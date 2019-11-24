@@ -41,8 +41,8 @@ VideoExport::VideoExport(JNIEnv* env, jobject object) {
     export_ing = false;
     egl_core_ = nullptr;
     egl_surface_ = EGL_NO_SURFACE;
-    media_decode_ = nullptr;
-    state_event_ = nullptr;
+//    media_decode_ = nullptr;
+//    state_event_ = nullptr;
     yuv_render_ = nullptr;
     export_index_ = 0;
     video_width_ = 0;
@@ -131,11 +131,11 @@ void VideoExport::ProcessMessage() {
     }
 }
 
-int VideoExport::OnCompleteState(StateEvent *event) {
-    VideoExport* video_export = reinterpret_cast<VideoExport*>(event->context);
-    video_export->video_export_handler_->PostMessage(new Message(kStartNextExport));
-    return 0;
-}
+//int VideoExport::OnCompleteState(StateEvent *event) {
+//    VideoExport* video_export = reinterpret_cast<VideoExport*>(event->context);
+//    video_export->video_export_handler_->PostMessage(new Message(kStartNextExport));
+//    return 0;
+//}
 
 int VideoExport::OnComplete() {
     pthread_mutex_lock(&media_mutex_);
@@ -158,15 +158,15 @@ int VideoExport::OnComplete() {
 }
 
 void VideoExport::FreeResource() {
-    av_decode_destroy(media_decode_);
-    if (nullptr != media_decode_) {
-        av_free(media_decode_);
-        media_decode_ = nullptr;
-    }
-    if (nullptr != state_event_) {
-        av_free(state_event_);
-        state_event_ = nullptr;
-    }
+//    av_decode_destroy(media_decode_);
+//    if (nullptr != media_decode_) {
+//        av_free(media_decode_);
+//        media_decode_ = nullptr;
+//    }
+//    if (nullptr != state_event_) {
+//        av_free(state_event_);
+//        state_event_ = nullptr;
+//    }
 }
 
 void VideoExport::OnEffect() {
@@ -238,18 +238,18 @@ void VideoExport::OnMusics() {
 }
 
 void VideoExport::StartDecode(MediaClip *clip) {
-    media_decode_ = reinterpret_cast<MediaDecode*>(av_malloc(sizeof(MediaDecode)));
-    memset(media_decode_, 0, sizeof(MediaDecode));
-    media_decode_->start_time = clip->start_time;
-    media_decode_->end_time = clip->end_time == 0 ? INT64_MAX : clip->end_time;
-
-    state_event_ = reinterpret_cast<StateEvent*>(av_malloc(sizeof(StateEvent)));
-    memset(state_event_, 0, sizeof(StateEvent));
-    state_event_->context = this;
-    state_event_->on_complete_event = OnCompleteState;
-    media_decode_->state_event = state_event_;
-
-    av_decode_start(media_decode_, clip->file_name);
+//    media_decode_ = reinterpret_cast<MediaDecode*>(av_malloc(sizeof(MediaDecode)));
+//    memset(media_decode_, 0, sizeof(MediaDecode));
+//    media_decode_->start_time = clip->start_time;
+//    media_decode_->end_time = clip->end_time == 0 ? INT64_MAX : clip->end_time;
+//
+//    state_event_ = reinterpret_cast<StateEvent*>(av_malloc(sizeof(StateEvent)));
+//    memset(state_event_, 0, sizeof(StateEvent));
+//    state_event_->context = this;
+//    state_event_->on_complete_event = OnCompleteState;
+//    media_decode_->state_event = state_event_;
+//
+//    av_decode_start(media_decode_, clip->file_name);
 }
 
 int VideoExport::Export(const char *export_config, const char *path, int width, int height, int frame_rate,
@@ -358,69 +358,69 @@ void VideoExport::ProcessVideoExport() {
 
     FrameBuffer* frame_buffer = new FrameBuffer(video_width_, video_height_, DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
     encoder_->CreateEncoder(egl_core_, frame_buffer->GetTextureId());
-    while (true) {
-        pthread_mutex_lock(&media_mutex_);
-        if (nullptr == media_decode_) {
-            if (!export_ing) {
-                pthread_mutex_unlock(&media_mutex_);
-                break;
-            }
-            pthread_cond_wait(&media_cond_, &media_mutex_);
-        }
-        pthread_mutex_unlock(&media_mutex_);
-        if (!export_ing) {
-            break;
-        }
-        if (media_decode_->video_frame_queue.size == 0) {
-            av_usleep(10000);
-            continue;
-        }
-        if (frame_queue_nb_remaining(&media_decode_->video_frame_queue) == 0) {
-            continue;
-        }
-        Frame* vp = frame_queue_peek(&media_decode_->video_frame_queue);
-        if (vp->serial != media_decode_->video_packet_queue.serial) {
-            frame_queue_next(&media_decode_->video_frame_queue);
-            continue;
-        }
-        frame_queue_next(&media_decode_->video_frame_queue);
-        Frame* frame = frame_queue_peek_last(&media_decode_->video_frame_queue);
-        if (frame->frame != nullptr) {
-            if (isnan(frame->pts)) {
-                continue;
-            }
-            if (!frame->uploaded && frame->frame != nullptr) {
-                int width = MIN(frame->frame->linesize[0], frame->frame->width);
-                int height = frame->frame->height;
-                if (frame_width_ != width || frame_height_ != height) {
-                    frame_width_ = width;
-                    frame_height_ = height;
-                    if (nullptr != yuv_render_) {
-                        delete yuv_render_;
-                    }
-                    yuv_render_ = new YuvRender(frame->width, frame->height, video_width_, video_height_, 0);
-                }
-                int texture_id = yuv_render_->DrawFrame(frame->frame);
-                current_time_ = (uint64_t) (frame->frame->pts * av_q2d(media_decode_->video_stream->time_base) * 1000);
-                if (image_process_ != nullptr) {
-                    texture_id = image_process_->Process(texture_id, current_time_, frame->width, frame->height, 0, 0);
-                }
-                frame_buffer->OnDrawFrame(texture_id);
-                if (!egl_core_->SwapBuffers(egl_surface_)) {
-                    LOGE("eglSwapBuffers error: %d", eglGetError());
-                }
-                if (current_time_ == 0)  {
-                    continue;
-                }
-                if (previous_time_ != 0) {
-                    current_time_ = current_time_ + previous_time_;
-                }
-                encoder_->Encode(current_time_);
-                OnExportProgress(current_time_);
-                frame->uploaded = 1;
-            }
-        }
-    }
+//    while (true) {
+//        pthread_mutex_lock(&media_mutex_);
+//        if (nullptr == media_decode_) {
+//            if (!export_ing) {
+//                pthread_mutex_unlock(&media_mutex_);
+//                break;
+//            }
+//            pthread_cond_wait(&media_cond_, &media_mutex_);
+//        }
+//        pthread_mutex_unlock(&media_mutex_);
+//        if (!export_ing) {
+//            break;
+//        }
+//        if (media_decode_->video_frame_queue.size == 0) {
+//            av_usleep(10000);
+//            continue;
+//        }
+//        if (frame_queue_nb_remaining(&media_decode_->video_frame_queue) == 0) {
+//            continue;
+//        }
+//        Frame* vp = frame_queue_peek(&media_decode_->video_frame_queue);
+//        if (vp->serial != media_decode_->video_packet_queue.serial) {
+//            frame_queue_next(&media_decode_->video_frame_queue);
+//            continue;
+//        }
+//        frame_queue_next(&media_decode_->video_frame_queue);
+//        Frame* frame = frame_queue_peek_last(&media_decode_->video_frame_queue);
+//        if (frame->frame != nullptr) {
+//            if (isnan(frame->pts)) {
+//                continue;
+//            }
+//            if (!frame->uploaded && frame->frame != nullptr) {
+//                int width = MIN(frame->frame->linesize[0], frame->frame->width);
+//                int height = frame->frame->height;
+//                if (frame_width_ != width || frame_height_ != height) {
+//                    frame_width_ = width;
+//                    frame_height_ = height;
+//                    if (nullptr != yuv_render_) {
+//                        delete yuv_render_;
+//                    }
+//                    yuv_render_ = new YuvRender(frame->width, frame->height, video_width_, video_height_, 0);
+//                }
+//                int texture_id = yuv_render_->DrawFrame(frame->frame);
+//                current_time_ = (uint64_t) (frame->frame->pts * av_q2d(media_decode_->video_stream->time_base) * 1000);
+//                if (image_process_ != nullptr) {
+//                    texture_id = image_process_->Process(texture_id, current_time_, frame->width, frame->height, 0, 0);
+//                }
+//                frame_buffer->OnDrawFrame(texture_id);
+//                if (!egl_core_->SwapBuffers(egl_surface_)) {
+//                    LOGE("eglSwapBuffers error: %d", eglGetError());
+//                }
+//                if (current_time_ == 0)  {
+//                    continue;
+//                }
+//                if (previous_time_ != 0) {
+//                    current_time_ = current_time_ + previous_time_;
+//                }
+//                encoder_->Encode(current_time_);
+//                OnExportProgress(current_time_);
+//                frame->uploaded = 1;
+//            }
+//        }
+//    }
     encoder_->DestroyEncoder();
     delete encoder_;
     packet_thread_->Stop();
@@ -510,154 +510,155 @@ void* VideoExport::ExportAudioThread(void *context) {
 }
 
 void VideoExport::ProcessAudioExport() {
-    OnMusics();
-    while (true) {
-        pthread_mutex_lock(&media_mutex_);
-        if (nullptr == media_decode_) {
-            LOGE("Audio wait");
-            pthread_cond_wait(&media_cond_, &media_mutex_);
-        }
-        pthread_mutex_unlock(&media_mutex_);
-        if (!export_ing) {
-            break;
-        }
-
-        AudioPacket* music_packet = nullptr;
-        for (int i = 0; i < music_decoder_deque_.size(); ++i) {
-            auto* decoder = music_decoder_deque_.at(i);
-            music_packet = decoder->DecodePacket();
-            auto resample = resample_deque_.at(i);
-
-            short* stereoSamples = music_packet->buffer;
-            int stereoSampleSize = music_packet->size;
-            if (stereoSampleSize > 0) {
-                int monoSampleSize = stereoSampleSize / 2;
-                auto** samples = new short*[2];
-                samples[0] = new short[monoSampleSize];
-                samples[1] = new short[monoSampleSize];
-                for (int index = 0; index < monoSampleSize; index++) {
-                    samples[0][index] = stereoSamples[2 * index];
-                    samples[1][index] = stereoSamples[2 * index + 1];
-                }
-                float transfer_ratio = accompany_sample_rate_ / static_cast<float>(vocal_sample_rate_);
-                int accompanySampleSize = static_cast<int>(monoSampleSize * 1.0f / transfer_ratio);
-                uint8_t out_data[accompanySampleSize * 2 * 2];
-                int out_nb_bytes = 0;
-                resample->Process(samples, out_data, monoSampleSize, &out_nb_bytes);
-                delete[] samples[0];
-                delete[] samples[1];
-                delete[] stereoSamples;
-                if (out_nb_bytes > 0) {
-                    accompanySampleSize = out_nb_bytes / 2;
-                    auto* accompanySamples = new short[accompanySampleSize];
-                    convertShortArrayFromByteArray(out_data, out_nb_bytes, accompanySamples, 1.0);
-                    music_packet->buffer = accompanySamples;
-                    music_packet->size = accompanySampleSize;
-                }
-            }
-        }
-
-        int audio_size = Resample();
-        if (audio_size > 0) {
-            // TODO buffer池
-            auto *packet = new AudioPacket();
-            auto *samples = new short[audio_size / sizeof(short)];
-            memcpy(samples, audio_buf, audio_size);
-            if (music_packet != nullptr && nullptr != music_packet->buffer) {
-                auto* mix = new short[audio_size];
-                mixtureAccompanyAudio(samples, music_packet->buffer, audio_size / sizeof(short), mix);
-                packet->buffer = mix;
-            } else {
-                packet->buffer = samples;
-            }
-            packet->size = audio_size / sizeof(short);
-            packet_pool_->PushAudioPacketToQueue(packet);
-        }
-    }
-    if (nullptr != swr_context_) {
-        swr_free(&swr_context_);
-    }
-    for (auto decoder : music_decoder_deque_) {
-        decoder->Destroy();
-        delete decoder;
-    }
-    music_decoder_deque_.clear();
-    for (auto resample : resample_deque_) {
-        resample->Destroy();
-        delete resample;
-    }
-    resample_deque_.clear();
+//    OnMusics();
+//    while (true) {
+//        pthread_mutex_lock(&media_mutex_);
+//        if (nullptr == media_decode_) {
+//            LOGE("Audio wait");
+//            pthread_cond_wait(&media_cond_, &media_mutex_);
+//        }
+//        pthread_mutex_unlock(&media_mutex_);
+//        if (!export_ing) {
+//            break;
+//        }
+//
+//        AudioPacket* music_packet = nullptr;
+//        for (int i = 0; i < music_decoder_deque_.size(); ++i) {
+//            auto* decoder = music_decoder_deque_.at(i);
+//            music_packet = decoder->DecodePacket();
+//            auto resample = resample_deque_.at(i);
+//
+//            short* stereoSamples = music_packet->buffer;
+//            int stereoSampleSize = music_packet->size;
+//            if (stereoSampleSize > 0) {
+//                int monoSampleSize = stereoSampleSize / 2;
+//                auto** samples = new short*[2];
+//                samples[0] = new short[monoSampleSize];
+//                samples[1] = new short[monoSampleSize];
+//                for (int index = 0; index < monoSampleSize; index++) {
+//                    samples[0][index] = stereoSamples[2 * index];
+//                    samples[1][index] = stereoSamples[2 * index + 1];
+//                }
+//                float transfer_ratio = accompany_sample_rate_ / static_cast<float>(vocal_sample_rate_);
+//                int accompanySampleSize = static_cast<int>(monoSampleSize * 1.0f / transfer_ratio);
+//                uint8_t out_data[accompanySampleSize * 2 * 2];
+//                int out_nb_bytes = 0;
+//                resample->Process(samples, out_data, monoSampleSize, &out_nb_bytes);
+//                delete[] samples[0];
+//                delete[] samples[1];
+//                delete[] stereoSamples;
+//                if (out_nb_bytes > 0) {
+//                    accompanySampleSize = out_nb_bytes / 2;
+//                    auto* accompanySamples = new short[accompanySampleSize];
+//                    convertShortArrayFromByteArray(out_data, out_nb_bytes, accompanySamples, 1.0);
+//                    music_packet->buffer = accompanySamples;
+//                    music_packet->size = accompanySampleSize;
+//                }
+//            }
+//        }
+//
+//        int audio_size = Resample();
+//        if (audio_size > 0) {
+//            // TODO buffer池
+//            auto *packet = new AudioPacket();
+//            auto *samples = new short[audio_size / sizeof(short)];
+//            memcpy(samples, audio_buf, audio_size);
+//            if (music_packet != nullptr && nullptr != music_packet->buffer) {
+//                auto* mix = new short[audio_size];
+//                mixtureAccompanyAudio(samples, music_packet->buffer, audio_size / sizeof(short), mix);
+//                packet->buffer = mix;
+//            } else {
+//                packet->buffer = samples;
+//            }
+//            packet->size = audio_size / sizeof(short);
+//            packet_pool_->PushAudioPacketToQueue(packet);
+//        }
+//    }
+//    if (nullptr != swr_context_) {
+//        swr_free(&swr_context_);
+//    }
+//    for (auto decoder : music_decoder_deque_) {
+//        decoder->Destroy();
+//        delete decoder;
+//    }
+//    music_decoder_deque_.clear();
+//    for (auto resample : resample_deque_) {
+//        resample->Destroy();
+//        delete resample;
+//    }
+//    resample_deque_.clear();
 }
 
 int VideoExport::Resample() {
-    Frame* frame;
-    do {
-        frame = frame_queue_peek_readable(&media_decode_->sample_frame_queue);
-        if (!frame) {
-            LOGE("frame_queue_peek_readable error");
-            return 0;
-        }
-        frame_queue_next(&media_decode_->sample_frame_queue);
-    } while (frame->serial != media_decode_->audio_packet_queue.serial);
-
-    int data_size = av_samples_get_buffer_size(NULL, av_frame_get_channels(frame->frame),
-                                               frame->frame->nb_samples, (AVSampleFormat) frame->frame->format, 1);
-
-    if (nullptr == swr_context_) {
-        uint64_t dec_channel_layout = (frame->frame->channel_layout && av_frame_get_channels(frame->frame) == av_get_channel_layout_nb_channels(frame->frame->channel_layout)) ?
-                                      frame->frame->channel_layout : av_get_default_channel_layout(av_frame_get_channels(frame->frame));
-        swr_context_ = swr_alloc_set_opts(NULL, media_decode_->audio_tgt.channel_layout, media_decode_->audio_tgt.fmt, media_decode_->audio_tgt.freq,
-                                          dec_channel_layout, (AVSampleFormat) frame->frame->format, frame->frame->sample_rate, 0, NULL);
-        if (!swr_context_ || swr_init(swr_context_) < 0) {
-            av_log(NULL, AV_LOG_ERROR,
-                   "Cannot create sample rate converter for conversion of %d Hz %s %d channels to %d Hz %s %d channels!\n",
-                   frame->frame->sample_rate, av_get_sample_fmt_name((AVSampleFormat) frame->frame->format), av_frame_get_channels(frame->frame),
-                   media_decode_->audio_tgt.freq, av_get_sample_fmt_name(media_decode_->audio_tgt.fmt), media_decode_->audio_tgt.channels);
-            swr_free(&swr_context_);
-            return -1;
-        }
-    }
-    unsigned int audio_buf1_size = 0;
-    int wanted_nb_sample = frame->frame->nb_samples;
-    int resample_data_size;
-    if (swr_context_) {
-        const uint8_t **in = (const uint8_t **) frame->frame->extended_data;
-        uint8_t **out = &audio_buf1;
-        int out_count = wanted_nb_sample * media_decode_->audio_tgt.freq / frame->frame->sample_rate + 256;
-        int out_size = av_samples_get_buffer_size(NULL, media_decode_->audio_tgt.channels, out_count, media_decode_->audio_tgt.fmt, 0);
-        if (out_size < 0) {
-            av_log(NULL, AV_LOG_ERROR, "av_samples_get_buffer_size() failed\n");
-            return -1;
-        }
-        if (wanted_nb_sample != frame->frame->nb_samples) {
-            if (swr_set_compensation(swr_context_, (wanted_nb_sample - frame->frame->nb_samples) * media_decode_->audio_tgt.freq / frame->frame->sample_rate,
-                                     wanted_nb_sample * media_decode_->audio_tgt.freq / frame->frame->sample_rate) < 0) {
-                av_log(NULL, AV_LOG_ERROR, "swr_set_compensation() failed\n");
-                return -1;
-            }
-        }
-        av_fast_malloc(&audio_buf1, &audio_buf1_size, out_size);
-        if (!audio_buf1) {
-            return AVERROR(ENOMEM);
-        }
-        int len2 = swr_convert(swr_context_, out, out_count, in, frame->frame->nb_samples);
-        if (len2 < 0) {
-            av_log(NULL, AV_LOG_ERROR, "swr_convert() failed\n");
-            return -1;
-        }
-        if (len2 == out_count) {
-            av_log(NULL, AV_LOG_WARNING, "audio buffer is probably too samll.\n");
-            if (swr_init(swr_context_) < 0) {
-                swr_free(&swr_context_);
-            }
-        }
-        audio_buf = audio_buf1;
-        resample_data_size = len2 * media_decode_->audio_tgt.channels * av_get_bytes_per_sample(media_decode_->audio_tgt.fmt);
-    } else {
-        audio_buf = frame->frame->data[0];
-        resample_data_size = data_size;
-    }
-    return resample_data_size;
+//    Frame* frame;
+//    do {
+//        frame = frame_queue_peek_readable(&media_decode_->sample_frame_queue);
+//        if (!frame) {
+//            LOGE("frame_queue_peek_readable error");
+//            return 0;
+//        }
+//        frame_queue_next(&media_decode_->sample_frame_queue);
+//    } while (frame->serial != media_decode_->audio_packet_queue.serial);
+//
+//    int data_size = av_samples_get_buffer_size(NULL, av_frame_get_channels(frame->frame),
+//                                               frame->frame->nb_samples, (AVSampleFormat) frame->frame->format, 1);
+//
+//    if (nullptr == swr_context_) {
+//        uint64_t dec_channel_layout = (frame->frame->channel_layout && av_frame_get_channels(frame->frame) == av_get_channel_layout_nb_channels(frame->frame->channel_layout)) ?
+//                                      frame->frame->channel_layout : av_get_default_channel_layout(av_frame_get_channels(frame->frame));
+//        swr_context_ = swr_alloc_set_opts(NULL, media_decode_->audio_tgt.channel_layout, media_decode_->audio_tgt.fmt, media_decode_->audio_tgt.freq,
+//                                          dec_channel_layout, (AVSampleFormat) frame->frame->format, frame->frame->sample_rate, 0, NULL);
+//        if (!swr_context_ || swr_init(swr_context_) < 0) {
+//            av_log(NULL, AV_LOG_ERROR,
+//                   "Cannot create sample rate converter for conversion of %d Hz %s %d channels to %d Hz %s %d channels!\n",
+//                   frame->frame->sample_rate, av_get_sample_fmt_name((AVSampleFormat) frame->frame->format), av_frame_get_channels(frame->frame),
+//                   media_decode_->audio_tgt.freq, av_get_sample_fmt_name(media_decode_->audio_tgt.fmt), media_decode_->audio_tgt.channels);
+//            swr_free(&swr_context_);
+//            return -1;
+//        }
+//    }
+//    unsigned int audio_buf1_size = 0;
+//    int wanted_nb_sample = frame->frame->nb_samples;
+//    int resample_data_size;
+//    if (swr_context_) {
+//        const uint8_t **in = (const uint8_t **) frame->frame->extended_data;
+//        uint8_t **out = &audio_buf1;
+//        int out_count = wanted_nb_sample * media_decode_->audio_tgt.freq / frame->frame->sample_rate + 256;
+//        int out_size = av_samples_get_buffer_size(NULL, media_decode_->audio_tgt.channels, out_count, media_decode_->audio_tgt.fmt, 0);
+//        if (out_size < 0) {
+//            av_log(NULL, AV_LOG_ERROR, "av_samples_get_buffer_size() failed\n");
+//            return -1;
+//        }
+//        if (wanted_nb_sample != frame->frame->nb_samples) {
+//            if (swr_set_compensation(swr_context_, (wanted_nb_sample - frame->frame->nb_samples) * media_decode_->audio_tgt.freq / frame->frame->sample_rate,
+//                                     wanted_nb_sample * media_decode_->audio_tgt.freq / frame->frame->sample_rate) < 0) {
+//                av_log(NULL, AV_LOG_ERROR, "swr_set_compensation() failed\n");
+//                return -1;
+//            }
+//        }
+//        av_fast_malloc(&audio_buf1, &audio_buf1_size, out_size);
+//        if (!audio_buf1) {
+//            return AVERROR(ENOMEM);
+//        }
+//        int len2 = swr_convert(swr_context_, out, out_count, in, frame->frame->nb_samples);
+//        if (len2 < 0) {
+//            av_log(NULL, AV_LOG_ERROR, "swr_convert() failed\n");
+//            return -1;
+//        }
+//        if (len2 == out_count) {
+//            av_log(NULL, AV_LOG_WARNING, "audio buffer is probably too samll.\n");
+//            if (swr_init(swr_context_) < 0) {
+//                swr_free(&swr_context_);
+//            }
+//        }
+//        audio_buf = audio_buf1;
+//        resample_data_size = len2 * media_decode_->audio_tgt.channels * av_get_bytes_per_sample(media_decode_->audio_tgt.fmt);
+//    } else {
+//        audio_buf = frame->frame->data[0];
+//        resample_data_size = data_size;
+//    }
+//    return resample_data_size;
+    return 0;
 }
 
 }  // namespace trinity

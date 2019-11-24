@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "chrono": "c",
+        "android_xlog.h": "c",
+        "system_error": "c",
+        "prctl.h": "c",
+        "buffersink.h": "c",
+        "av_play.h": "c",
+        "avformat.h": "c"
+    }
+}

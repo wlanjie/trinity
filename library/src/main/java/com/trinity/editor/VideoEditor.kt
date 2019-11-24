@@ -331,4 +331,12 @@ class VideoEditor(
   }
 
   private external fun release(id: Long)
+
+  private fun onPlayStatusChanged(status: Int) {
+
+  }
+
+  private fun onPlayError(error: Int) {
+
+  }
 }
