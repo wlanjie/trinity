@@ -198,7 +198,6 @@ static void packet_double_size(PacketQueue *queue) {
     free(queue->packets);
     queue->packets = temp_packets;
     queue->size *= 2;
-    LOGE("double queue size %d", queue->size);
 }
 
 PacketQueue* queue_create(unsigned int size) {

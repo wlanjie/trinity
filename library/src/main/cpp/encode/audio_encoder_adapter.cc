@@ -20,6 +20,7 @@
 //
 
 #include "audio_encoder_adapter.h"
+#include "android_xlog.h"
 
 namespace trinity {
 
@@ -44,7 +45,8 @@ AudioEncoderAdapter::~AudioEncoderAdapter() {
 
 void AudioEncoderAdapter::Init(PacketPool *pool, int audio_sample_rate, int audio_channels, int audio_bit_rate,
                                const char *audio_codec_name) {
-    packet_buffer_ = nullptr;
+    LOGE("enter %s", __func__);
+    packet_buffer_ = new short[4096];
     packet_buffer_size_ = 0;
     packet_buffer_cursor_ = 0;
     pcm_packet_pool_ = pool;
@@ -57,7 +59,11 @@ void AudioEncoderAdapter::Init(PacketPool *pool, int audio_sample_rate, int audi
     memcpy(audio_codec_name_, audio_codec_name, audio_codec_name_length);
     encoding_ = true;
     aac_packet_pool_ = AudioPacketPool::GetInstance();
-    pthread_create(&audio_encoder_thread_, nullptr, StartEncodeThread, this);
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+    pthread_create(&audio_encoder_thread_, &attr, StartEncodeThread, this);
+    LOGE("leave %s", __func__);
 }
 
 int AudioEncoderAdapter::GetAudioFrame(int16_t *samples, int frame_size, int nb_channels, double *presentation_time_mills) {
@@ -88,9 +94,13 @@ int AudioEncoderAdapter::GetAudioFrame(int16_t *samples, int frame_size, int nb_
 }
 
 void AudioEncoderAdapter::Destroy() {
+    LOGE("enter %s", __func__);
+    if (!encoding_) {
+        return;
+    }
     encoding_ = false;
     pcm_packet_pool_->AbortAudioPacketQueue();
-    pthread_join(audio_encoder_thread_, 0);
+    pthread_join(audio_encoder_thread_, nullptr);
     pcm_packet_pool_->DestroyAudioPacketQueue();
     if (nullptr != audio_encoder_) {
         audio_encoder_->Destroy();
@@ -102,15 +112,16 @@ void AudioEncoderAdapter::Destroy() {
         audio_codec_name_ = nullptr;
     }
     if (nullptr != packet_buffer_) {
-        delete packet_buffer_;
+        delete[] packet_buffer_;
         packet_buffer_ = nullptr;
     }
+    LOGE("leave %s", __func__);
 }
 
 void *AudioEncoderAdapter::StartEncodeThread(void *context) {
     auto* adapter = reinterpret_cast<AudioEncoderAdapter*>(context);
     adapter->StartEncode();
-    pthread_exit(0);
+    pthread_exit(nullptr);
 }
 
 static int PCMFrameCallback(int16_t *samples, int frame_size, int nb_channels, double *presentationTimeMills,
@@ -142,6 +153,9 @@ int AudioEncoderAdapter::CopyToSamples(int16_t *samples, int sample_cursor, int 
 }
 
 int AudioEncoderAdapter::GetAudioPacket() {
+    if (!encoding_) {
+        return -1;
+    }
 //    this->DiscardAudioPacket();
     AudioPacket *audioPacket = nullptr;
     if (pcm_packet_pool_->GetAccompanyPacketQueueSize() != 0) {
@@ -158,9 +172,6 @@ int AudioEncoderAdapter::GetAudioPacket() {
      * 在iOS平台 录制的是双声道的 是已经处理音效过后的 channelRatio 1
      */
     packet_buffer_size_ = (int) (audioPacket->size * 1.0);
-    if (nullptr == packet_buffer_) {
-        packet_buffer_ = new short[packet_buffer_size_];
-    }
     memcpy(packet_buffer_, audioPacket->buffer, audioPacket->size * sizeof(short));
 //    int actualSize = this->ProcessAudio();
 //    if (actualSize > 0 && actualSize < packet_buffer_size_) {

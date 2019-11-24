@@ -27,16 +27,15 @@
 namespace trinity {
 
 AudioRender::AudioRender()
-    : engine_(nullptr),
-      output_mix_object_(nullptr),
-      audio_player_object_(nullptr),
-      audio_player_buffer_queue_(nullptr),
-      audio_player_play_(nullptr),
-      buffer_(nullptr),
-      buffer_size_(0),
-      playing_state_(-1),
-      audio_player_callback_(nullptr),
-      context_(nullptr) {
+      : engine_(nullptr)
+      , output_mix_object_(nullptr)
+      , audio_player_object_(nullptr)
+      , audio_player_buffer_queue_(nullptr)
+      , audio_player_play_(nullptr)
+      , playing_state_(-1)
+      , audio_player_callback_(nullptr)
+      , context_(nullptr)
+      , play_position_(0) {
 }
 
 AudioRender::~AudioRender() {}
@@ -47,18 +46,37 @@ SLresult AudioRender::RegisterPlayerCallback() {
 }
 
 void AudioRender::PlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context) {
-    AudioRender* audioRender = reinterpret_cast<AudioRender*>(context);
+    auto* audioRender = reinterpret_cast<AudioRender*>(context);
     audioRender->ProducePacket();
 }
 void AudioRender::ProducePacket() {
     // 回调playerController中的方法来获得buffer
     if (playing_state_ == PLAYING_STATE_PLAYING) {
-        int actualSize = audio_player_callback_(buffer_, buffer_size_, context_);
-        if (actualSize > 0 && playing_state_ == PLAYING_STATE_PLAYING) {
+        uint8_t* buffer = nullptr;
+        int buffer_size;
+        int ret = audio_player_callback_(&buffer, &buffer_size, context_);
+        if (ret == -1) {
+            LOGI("ret == -1 set play paused state");
+            (*audio_player_play_)->SetPlayState(audio_player_play_, SL_PLAYSTATE_PAUSED);
+            return;
+        }
+        if (ret == 0 && buffer_size > 0 &&
+            buffer != nullptr && playing_state_ == PLAYING_STATE_PLAYING) {
             // 将提供的数据加入到播放的buffer中去
-            (*audio_player_buffer_queue_)->Enqueue(audio_player_buffer_queue_, buffer_, actualSize);
+            (*audio_player_buffer_queue_)->Enqueue(audio_player_buffer_queue_, buffer,
+                                                   static_cast<SLuint32>(buffer_size));
+            (*audio_player_play_)->GetPosition(audio_player_play_, &play_position_);
         }
     }
+}
+
+int64_t AudioRender::GetDeltaTime() {
+    SLmillisecond sec;
+    (*audio_player_play_)->GetPosition(audio_player_play_, &sec);
+    if (sec > play_position_) {
+        return (sec - play_position_) * 1000;
+    }
+    return 0;
 }
 
 SLresult AudioRender::Pause() {
@@ -74,13 +92,25 @@ SLresult AudioRender::Stop() {
     playing_state_ = PLAYING_STATE_STOPPED;
     usleep(0.05 * 1000000);
     DestroyContext();
+    play_position_ = 0;
     return SL_RESULT_SUCCESS;
 }
 
 SLresult AudioRender::Play() {
+    if (nullptr == audio_player_play_) {
+        return SL_RESULT_SUCCESS;
+    }
+    SLuint32 state = SL_PLAYSTATE_PLAYING;
+    (*audio_player_play_)->GetPlayState(audio_player_play_, &state);
+    if (state != SL_PLAYSTATE_PAUSED) {
+        return SL_RESULT_SUCCESS;
+    }
+
+    ProducePacket();
     // Set the audio player state playing
     SLresult result = SetAudioPlayerStatePlaying();
     if (SL_RESULT_SUCCESS != result) {
+        LOGE("Set Audio play error: %d", result);
         return result;
     }
     playing_state_ = PLAYING_STATE_PLAYING;
@@ -89,12 +119,14 @@ SLresult AudioRender::Play() {
 
 SLresult AudioRender::Start() {
     // Set the audio player state playing
+    LOGI("enter %s", __func__);
     SLresult result = SetAudioPlayerStatePlaying();
     if (SL_RESULT_SUCCESS != result) {
         return result;
     }
     playing_state_ = PLAYING_STATE_PLAYING;
     ProducePacket();
+    LOGI("leave %s", __func__);
     return SL_RESULT_SUCCESS;
 }
 
@@ -121,8 +153,6 @@ SLresult AudioRender::Init(int channels, int accompanySampleRate, AudioPlayerCal
         return result;
     }
 
-    // Calculate the buffer size default 50ms length
-    buffer_size_ = 2048;
     // Initialize buffer
     InitPlayerBuffer();
 
@@ -210,9 +240,10 @@ SLresult AudioRender::RealizeObject(SLObjectItf object) {
 }
 
 void AudioRender::DestroyObject(SLObjectItf& object) {
-    if (0 != object)
+    if (nullptr != object) {
         (*object)->Destroy(object);
-    object = 0;
+    }
+    object = nullptr;
 }
 
 SLresult AudioRender::CreateOutputMix() {
@@ -224,14 +255,9 @@ SLresult AudioRender::CreateOutputMix() {
 
 void AudioRender::InitPlayerBuffer() {
     // Initialize buffer
-    buffer_ = new uint8_t[2048];
 }
 
 void AudioRender::FreePlayerBuffer() {
-    if (nullptr != buffer_) {
-        delete[] buffer_;
-        buffer_ = NULL;
-    }
 }
 
 SLresult AudioRender::CreateAudioPlayer(int channels, int accompanySampleRate) {

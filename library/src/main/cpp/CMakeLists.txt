@@ -63,6 +63,7 @@ set(XLOG_HEADER ${CMAKE_CURRENT_LIST_DIR}/../../../../extra/xlogger/include)
 include_directories(${XLOG_HEADER})
 
 file(GLOB FILES "${PATH_TO_MEDIACORE}/*.cc")
+file(GLOB FILES_C "${PATH_TO_MEDIACORE}/*.c")
 file(GLOB FILES_CAMERA "${PATH_TO_MEDIACORE}/camera/*.cc")
 file(GLOB FILES_MESSAGE "${PATH_TO_MEDIACORE}/message/*.cc")
 file(GLOB FILES_EGL "${PATH_TO_MEDIACORE}/egl/*.cc")
@@ -85,6 +86,7 @@ add_library(
         SHARED
         trinity_jni.cc
         ${FILES}
+        ${FILES_C}
         ${FILES_CAMERA}
         ${FILES_MESSAGE}
         ${FILES_EGL}

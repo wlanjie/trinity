@@ -45,9 +45,7 @@ enum RenderThreadMessage {
     MSG_EGL_THREAD_EXIT
 };
 
-class CameraRecordHandler;
-
-class CameraRecord {
+class CameraRecord : public Handler {
  public:
     explicit CameraRecord(JNIEnv* env);
     virtual ~CameraRecord();
@@ -73,19 +71,9 @@ class CameraRecord {
 
     virtual void DestroyEGLContext();
 
-    virtual bool Initialize();
-
-    virtual void Destroy();
-
-    void CreatePreviewSurface();
-
-    void DestroyPreviewSurface();
-
     void CreateWindowSurface(ANativeWindow *window);
 
     void DestroyWindowSurface();
-
-    void SwitchCamera();
 
     void StartEncoding(const char* path,
             int width,
@@ -97,9 +85,20 @@ class CameraRecord {
             int audio_channel,
             int audio_bit_rate);
 
-    void StartRecording();
-
     void StopEncoding();
+
+ private:
+    virtual bool Initialize();
+
+    virtual void Destroy();
+
+    void CreatePreviewSurface();
+
+    void DestroyPreviewSurface();
+
+    void SwitchCamera();
+
+    void StartRecording();
 
     void StopRecording();
 
@@ -107,7 +106,6 @@ class CameraRecord {
 
     void SetFrameType(int frame);
 
- private:
     void Draw();
 
     void ConfigCamera();
@@ -132,6 +130,7 @@ class CameraRecord {
 
     void FPS();
 
+    virtual void HandleMessage(Message* msg);
  private:
     ANativeWindow *window_;
     JNIEnv* env_;
@@ -149,7 +148,6 @@ class CameraRecord {
     EGLSurface preview_surface_;
     FrameBuffer* frame_buffer_;
     OpenGL* render_screen_;
-    CameraRecordHandler* handler_;
     MessageQueue* queue_;
     pthread_t thread_id_;
     GLuint oes_texture_id_;
@@ -163,52 +161,7 @@ class CameraRecord {
     int frame_count_;
     int64_t pre_fps_count_time_;
     float fps_;
-};
-
-class CameraRecordHandler : public Handler {
- public:
-    CameraRecordHandler(CameraRecord* record,
-            MessageQueue* queue) : Handler(queue) {
-        record_ = record;
-    }
-
-    void HandleMessage(Message* msg) {
-        int what = msg->GetWhat();
-        switch (what) {
-            case MSG_EGL_THREAD_CREATE:
-                record_->Initialize();
-                break;
-            case MSG_EGL_CREATE_PREVIEW_SURFACE:
-                record_->CreatePreviewSurface();
-                break;
-            case MSG_SWITCH_CAMERA_FACING:
-                record_->SwitchCamera();
-                break;
-            case MSG_START_RECORDING:
-                record_->StartRecording();
-                break;
-            case MSG_STOP_RECORDING:
-                record_->StopRecording();
-                break;
-            case MSG_EGL_DESTROY_PREVIEW_SURFACE:
-                record_->DestroyPreviewSurface();
-                break;
-            case MSG_EGL_THREAD_EXIT:
-                record_->Destroy();
-                break;
-            case MSG_RENDER_FRAME:
-                record_->RenderFrame();
-                break;
-            case MSG_SET_FRAME:
-                record_->SetFrameType(msg->GetArg1());
-                break;
-            default:
-                break;
-        }
-    }
-
- private:
-    CameraRecord* record_;
+    bool start_recording;
 };
 
 }  // namespace trinity

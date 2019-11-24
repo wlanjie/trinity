@@ -48,9 +48,10 @@ MusicDecoderController::MusicDecoderController()
 
 MusicDecoderController::~MusicDecoderController() {}
 
-static int audioCallback(uint8_t* buffer, size_t buffer_size, void* context) {
-    MusicDecoderController* controller = reinterpret_cast<MusicDecoderController*>(context);
-    return controller->ReadSamples(buffer, 2048) * 2;
+static int AudioCallback(uint8_t** buffer, int* buffer_size, void* context) {
+    auto* controller = reinterpret_cast<MusicDecoderController*>(context);
+//    return controller->ReadSamples(buffer, 2048) * 2;
+    return 0;
 }
 
 void MusicDecoderController::Init(float packet_buffer_time_percent, int vocal_sample_rate) {
@@ -231,7 +232,7 @@ int MusicDecoderController::InitDecoder(const char *path) {
             actualAccompanyPacketBufferSize = ratio * accompany_packet_buffer_size_;
             ret = resample_->Init(accompany_sample_rate_, vocal_sample_rate_, actualAccompanyPacketBufferSize / 2, 2, 2);
             if (ret < 0) {
-                LOGE("resampler_ Init error\n");
+                LOGE("resampler_ InitMessageQueue error\n");
             }
         } else {
             need_resample_ = false;
@@ -246,12 +247,12 @@ int MusicDecoderController::InitRender() {
     DestroyRender();
     audio_render_ = new AudioRender();
     int sample_rate = decoder_->GetSampleRate();
-    audio_render_->Init(2, sample_rate, audioCallback, this);
+    audio_render_->Init(2, sample_rate, AudioCallback, this);
     return 0;
 }
 
 void *MusicDecoderController::StartDecoderThread(void *context) {
-    MusicDecoderController* decoderController = reinterpret_cast<MusicDecoderController*>(context);
+    auto* decoderController = reinterpret_cast<MusicDecoderController*>(context);
     pthread_mutex_lock(&decoderController->lock_);
     while (decoderController->running_) {
         if (decoderController->suspend_flag_) {

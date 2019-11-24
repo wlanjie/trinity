@@ -248,10 +248,10 @@ void OpenGL::ProcessImage(GLuint texture_id, const GLfloat *vertex_coordinate, c
         gl_observer_->OnGLParams();
     }
     RunOnDrawTasks();
-    GLuint positionAttribute = static_cast<GLuint>(glGetAttribLocation(program_, "position"));
+    auto positionAttribute = static_cast<GLuint>(glGetAttribLocation(program_, "position"));
     glEnableVertexAttribArray(positionAttribute);
     glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), vertex_coordinate);
-    GLuint textureCoordinateAttribute = static_cast<GLuint>(glGetAttribLocation(program_, "inputTextureCoordinate"));
+    auto textureCoordinateAttribute = static_cast<GLuint>(glGetAttribLocation(program_, "inputTextureCoordinate"));
     glEnableVertexAttribArray(textureCoordinateAttribute);
     glVertexAttribPointer(textureCoordinateAttribute, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), texture_coordinate);
     SetUniformMatrix4f("textureMatrix", 1, texture_matrix);
@@ -270,7 +270,7 @@ void OpenGL::ProcessImage(GLuint texture_id, const GLfloat *vertex_coordinate, c
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glDisableVertexAttribArray(positionAttribute);
     glDisableVertexAttribArray(textureCoordinateAttribute);
-//    glBindTexture(type_ == TEXTURE_OES ? GL_TEXTURE_EXTERNAL_OES : GL_TEXTURE_2D, 0);
+    glBindTexture(type_ == TEXTURE_OES ? GL_TEXTURE_EXTERNAL_OES : GL_TEXTURE_2D, 0);
 }
 
 void OpenGL::RunOnDrawTasks() {}

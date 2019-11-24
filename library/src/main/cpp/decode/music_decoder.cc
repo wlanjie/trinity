@@ -127,7 +127,7 @@ int MusicDecoder::Init(const char *path) {
             if (swr_context_)
                 swr_free(&swr_context_);
             avcodec_close(codec_context_);
-            LOGE("Init resampler_ failed...");
+            LOGE("InitMessageQueue resampler_ failed...");
             return -1;
         }
     }

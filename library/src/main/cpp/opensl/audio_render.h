@@ -30,7 +30,7 @@
 
 namespace trinity {
 
-typedef int(*AudioPlayerCallback)(uint8_t* , size_t, void* ctx);
+typedef int(*AudioPlayerCallback)(uint8_t**, int*, void* context);
 
 class AudioRender {
  public:
@@ -45,6 +45,7 @@ class AudioRender {
     bool IsPlaying();
     long GetCurrentTimeMills();
     void DestroyContext();
+    int64_t GetDeltaTime();
 
  private:
     // 初始化OpenSL要播放的buffer
@@ -81,12 +82,10 @@ class AudioRender {
     SLObjectItf audio_player_object_;
     SLAndroidSimpleBufferQueueItf audio_player_buffer_queue_;
     SLPlayItf audio_player_play_;
-
-    uint8_t* buffer_;
-    size_t buffer_size_;
     int playing_state_;
     AudioPlayerCallback audio_player_callback_;
     void* context_;
+    SLmillisecond play_position_;
 };
 
 }  // namespace trinity

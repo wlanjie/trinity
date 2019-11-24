@@ -72,8 +72,10 @@ void audio_filter_change_speed(AVPlayContext *context, float speed) {
              time_base.num, time_base.den, dec_ctx->sample_rate,
              av_get_sample_fmt_name(dec_ctx->sample_fmt), audio_filter_context->channels,
              audio_filter_context->channel_layout);
+
     avfilter_graph_create_filter(&audio_filter_context->buffer_src_context, audio_filter_context->abuffer_src, "in", args, NULL,
                                  audio_filter_context->filter_graph);
+
     avfilter_graph_create_filter(&audio_filter_context->buffer_sink_context, audio_filter_context->abuffer_sink, "out", NULL, NULL,
                                  audio_filter_context->filter_graph);
 
@@ -97,11 +99,16 @@ void audio_filter_change_speed(AVPlayContext *context, float speed) {
     audio_filter_context->inputs->next = NULL;
 
     char filter_descr[128] = {0};
-    sprintf(filter_descr, "atempo=%.2f", speed);
-    avfilter_graph_parse_ptr(audio_filter_context->filter_graph, filter_descr, &audio_filter_context->inputs, &audio_filter_context->outputs, NULL);
+//    sprintf(filter_descr, "atempo=%.2f", speed);
+    avfilter_graph_parse_ptr(audio_filter_context->filter_graph, "anull", &audio_filter_context->inputs, &audio_filter_context->outputs, NULL);
+
+//    int ret = avfilter_link(audio_filter_context->buffer_src_context, 0, audio_filter_context->buffer_sink_context, 0);
+//    if (ret < 0) {
+//        LOGE("avfilter_link error: %s", av_err2str(ret));
+//    }
     avfilter_graph_config(audio_filter_context->filter_graph, NULL);
 //    audio_filter_context->outlink = audio_filter_context->buffer_sink_context->inputs[0];
     pthread_mutex_unlock(audio_filter_context->mutex);
-    avfilter_inout_free(&audio_filter_context->inputs);
-    avfilter_inout_free(&audio_filter_context->outputs);
+//    avfilter_inout_free(&audio_filter_context->inputs);
+//    avfilter_inout_free(&audio_filter_context->outputs);
 }

@@ -39,7 +39,8 @@
 #include "trinity.h"
 
 extern "C" {
-//#include "ffmpeg_decode.h"
+#include "av_play.h"
+#include "queue.h"
 #include "cJSON.h"
 };
 
@@ -60,11 +61,11 @@ class VideoExport {
             int width, int height, int frame_rate, int video_bit_rate,
             int sample_rate, int channel_count, int audio_bit_rate);
 
-    int OnComplete();
 
  private:
+    static void OnCompleteEvent(AVPlayContext* context);
+    int OnComplete();
     static void* ExportVideoThread(void* context);
-//    static int OnCompleteState(StateEvent* event);
     static void* ExportAudioThread(void* context);
     static void* ExportMessageThread(void* context);
     void StartDecode(MediaClip* clip);
@@ -90,7 +91,7 @@ class VideoExport {
     int accompany_packet_buffer_size_;
     int accompany_sample_rate_;
     int vocal_sample_rate_;
-    bool export_ing;
+    bool export_ing_;
     EGLCore* egl_core_;
     EGLSurface egl_surface_;
 //    MediaDecode* media_decode_;
@@ -109,7 +110,7 @@ class VideoExport {
     uint64_t current_time_;
     uint64_t previous_time_;
     SwrContext* swr_context_;
-    uint8_t *audio_buf;
+    uint8_t *audio_buffer_;
     uint8_t *audio_buf1;
     short* audio_samples_;
     VideoExportHandler* video_export_handler_;
@@ -118,10 +119,10 @@ class VideoExport {
     int time_diff_;
     pthread_mutex_t media_mutex_;
     pthread_cond_t media_cond_;
-
     cJSON* export_config_json_;
     GLfloat* vertex_coordinate_;
     GLfloat* texture_coordinate_;
+    AVPlayContext* av_play_context_;
 };
 
 class VideoExportHandler : public Handler {
@@ -134,7 +135,6 @@ class VideoExportHandler : public Handler {
         int what = msg->GetWhat();
         switch (what) {
             case kStartNextExport:
-                video_export_->OnComplete();
                 break;
 
             default:

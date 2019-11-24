@@ -36,6 +36,7 @@ VideoX264Encoder::~VideoX264Encoder() {
 }
 
 int VideoX264Encoder::Init(int width, int height, int videoBitRate, float frameRate, PacketPool *packetPool) {
+	LOGI("enter %s", __func__);
 	if (AllocVideoStream(width, height, videoBitRate, frameRate) < 0) {
 		LOGE("alloc Video Stream Failed... \n");
 		return -1;
@@ -46,10 +47,14 @@ int VideoX264Encoder::Init(int width, int height, int videoBitRate, float frameR
 	frame_->format = AV_PIX_FMT_YUV420P;
 	packet_pool_ = packetPool;
 	sps_unwrite_flag_ = true;
+	LOGI("leave %s", __func__);
 	return 0;
 }
 
 int VideoX264Encoder::Encode(VideoPacket *yuy2VideoPacket) {
+	if (nullptr == yuy2_picture_buf_) {
+		return -1;
+	}
 	memcpy(yuy2_picture_buf_, yuy2VideoPacket->buffer, yuy2VideoPacket->size);
     frame_->data[0] = yuy2VideoPacket->buffer;
     frame_->data[1] = yuy2VideoPacket->buffer + frame_->width * frame_->height;

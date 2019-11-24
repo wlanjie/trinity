@@ -26,7 +26,9 @@
 
 namespace trinity {
 
-CameraRecord::CameraRecord(JNIEnv* env) {
+CameraRecord::CameraRecord(JNIEnv* env) : Handler()
+    , start_time_(0)
+    , start_recording(false){
     window_ = nullptr;
     env_ = env;
     vm_ = nullptr;
@@ -36,7 +38,6 @@ CameraRecord::CameraRecord(JNIEnv* env) {
     camera_width_ = 0;
     camera_height_ = 0;
     camera_size_change_ = false;
-    handler_ = nullptr;
     queue_ = nullptr;
     egl_core_ = nullptr;
     render_screen_ = nullptr;
@@ -95,16 +96,14 @@ void CameraRecord::PrepareEGLContext(
     this->screen_height_ = screen_height;
     packet_thread_ = new VideoConsumerThread();
     queue_ = new MessageQueue("CameraRecord message queue");
-    handler_ = new CameraRecordHandler(this, queue_);
-    handler_->PostMessage(new Message(MSG_EGL_THREAD_CREATE));
+    InitMessageQueue(queue_);
+    PostMessage(new Message(MSG_EGL_THREAD_CREATE));
     pthread_create(&thread_id_, 0, ThreadStartCallback, this);
     LOGI("leave PrepareEGLContext");
 }
 
 void CameraRecord::NotifyFrameAvailable() {
-    if (nullptr != handler_) {
-        handler_->PostMessage(new Message(MSG_RENDER_FRAME));
-    }
+    PostMessage(new Message(MSG_RENDER_FRAME));
 }
 
 void CameraRecord::SetSpeed(float speed) {
@@ -122,15 +121,11 @@ void CameraRecord::SetRenderType(int type) {
 
 void CameraRecord::SetFrame(int frame) {
     LOGI("SetFrame: %d", frame);
-    if (nullptr != handler_) {
-        handler_->PostMessage(new Message(MSG_SET_FRAME, frame, 0));
-    }
+    PostMessage(new Message(MSG_SET_FRAME, frame, 0));
 }
 
 void CameraRecord::SwitchCameraFacing() {
-    if (nullptr != handler_) {
-        handler_->PostMessage(new Message(MSG_SWITCH_CAMERA_FACING));
-    }
+    PostMessage(new Message(MSG_SWITCH_CAMERA_FACING));
 }
 
 void CameraRecord::ResetRenderSize(int screen_width, int screen_height) {
@@ -141,19 +136,13 @@ void CameraRecord::ResetRenderSize(int screen_width, int screen_height) {
 
 void CameraRecord::DestroyEGLContext() {
     LOGI("%s enter", __FUNCTION__);
-    if (nullptr != handler_) {
-        handler_->PostMessage(new Message(MSG_EGL_THREAD_EXIT));
-        handler_->PostMessage(new Message(MESSAGE_QUEUE_LOOP_QUIT_FLAG));
-    }
+    PostMessage(new Message(MSG_EGL_THREAD_EXIT));
+    PostMessage(new Message(MESSAGE_QUEUE_LOOP_QUIT_FLAG));
     pthread_join(thread_id_, 0);
     if (nullptr != queue_) {
         queue_->Abort();
         delete queue_;
         queue_ = nullptr;
-    }
-    if (nullptr != handler_) {
-        delete handler_;
-        handler_ = nullptr;
     }
     if (nullptr != packet_thread_) {
         delete packet_thread_;
@@ -192,6 +181,12 @@ void CameraRecord::Draw() {
         frame_buffer_ = new FrameBuffer(MIN(camera_width_, camera_height_),
                                         MAX(camera_width_, camera_height_),
                                         DEFAULT_VERTEX_MATRIX_SHADER, DEFAULT_OES_FRAGMENT_SHADER);
+    }
+    if (start_recording) {
+        start_recording = false;
+        start_time_ = 0;
+        encoder_->CreateEncoder(egl_core_, frame_buffer_->GetTextureId());
+        encoding_ = true;
     }
     render_screen_->SetOutput(screen_width_, screen_height_);
     frame_buffer_->SetOutput(MIN(camera_width_, camera_height_),
@@ -315,7 +310,7 @@ void CameraRecord::onSurfaceCreated() {
 }
 
 int CameraRecord::OnDrawFrame(int texture_id, int width, int height) {
-    JNIEnv *env;
+    JNIEnv *env = nullptr;
     if (vm_->AttachCurrentThread(&env, nullptr) != JNI_OK) {
         LOGE("%s: AttachCurrentThread() failed", __FUNCTION__);
         return 0;
@@ -413,7 +408,7 @@ void CameraRecord::ReleaseCamera() {
 }
 
 void *CameraRecord::ThreadStartCallback(void *myself) {
-    CameraRecord *record = reinterpret_cast<CameraRecord*>(myself);
+    auto *record = reinterpret_cast<CameraRecord*>(myself);
     record->ProcessMessage();
     pthread_exit(0);
 }
@@ -479,6 +474,7 @@ void CameraRecord::Destroy() {
     }
     ReleaseCamera();
     if (nullptr != egl_core_) {
+        LOGI("destroy context: %p", egl_core_->GetContext());
         egl_core_->Release();
         delete egl_core_;
         egl_core_ = nullptr;
@@ -493,16 +489,12 @@ void CameraRecord::Destroy() {
 void CameraRecord::CreateWindowSurface(ANativeWindow *window) {
     if (nullptr != window_) {
         window_ = window;
-        if (nullptr != handler_) {
-            handler_->PostMessage(new Message(MSG_EGL_CREATE_PREVIEW_SURFACE));
-        }
+        PostMessage(new Message(MSG_EGL_CREATE_PREVIEW_SURFACE));
     }
 }
 
 void CameraRecord::DestroyWindowSurface() {
-    if (nullptr != handler_) {
-        handler_->PostMessage(new Message(MSG_EGL_DESTROY_PREVIEW_SURFACE));
-    }
+    PostMessage(new Message(MSG_EGL_DESTROY_PREVIEW_SURFACE));
 }
 
 void CameraRecord::CreatePreviewSurface() {
@@ -570,25 +562,17 @@ void CameraRecord::StartEncoding(const char* path,
         encoder_ = new SoftEncoderAdapter(vertex_coordinate_, texture_coordinate_);
     }
     encoder_->Init(video_width, video_height, video_bit_rate * 1000, frame_rate);
-    if (nullptr != handler_) {
-        handler_->PostMessage(new Message(MSG_START_RECORDING));
-    }
+    PostMessage(new Message(MSG_START_RECORDING));
 }
 
 void CameraRecord::StartRecording() {
     LOGI("StartRecording");
-    start_time_ = 0;
-    if (nullptr != encoder_) {
-        encoder_->CreateEncoder(egl_core_, frame_buffer_->GetTextureId());
-        encoding_ = true;
-    }
+    start_recording = true;
 }
 
 void CameraRecord::StopEncoding() {
     LOGI("StopEncoding");
-    if (nullptr != handler_) {
-        handler_->PostMessage(new Message(MSG_STOP_RECORDING));
-    }
+    PostMessage(new Message(MSG_STOP_RECORDING));
 }
 
 void CameraRecord::StopRecording() {
@@ -653,6 +637,41 @@ void CameraRecord::FPS() {
     }
 
 //    LOGD("fps: %f", fps_);
+}
+
+void CameraRecord::HandleMessage(trinity::Message *msg) {
+    int what = msg->GetWhat();
+    switch (what) {
+        case MSG_EGL_THREAD_CREATE:
+            Initialize();
+            break;
+        case MSG_EGL_CREATE_PREVIEW_SURFACE:
+            CreatePreviewSurface();
+            break;
+        case MSG_SWITCH_CAMERA_FACING:
+            SwitchCamera();
+            break;
+        case MSG_START_RECORDING:
+            StartRecording();
+            break;
+        case MSG_STOP_RECORDING:
+            StopRecording();
+            break;
+        case MSG_EGL_DESTROY_PREVIEW_SURFACE:
+            DestroyPreviewSurface();
+            break;
+        case MSG_EGL_THREAD_EXIT:
+            Destroy();
+            break;
+        case MSG_RENDER_FRAME:
+            RenderFrame();
+            break;
+        case MSG_SET_FRAME:
+            SetFrameType(msg->GetArg1());
+            break;
+        default:
+            break;
+    }
 }
 
 }  // namespace trinity

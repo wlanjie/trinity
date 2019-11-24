@@ -22,7 +22,9 @@ import android.content.Context
 import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+import com.tencent.mars.xlog.Log
 import com.trinity.ErrorCode
+import com.trinity.listener.OnRenderListener
 import java.io.File
 
 class VideoEditor(
@@ -35,6 +37,9 @@ class VideoEditor(
 
   private var mId: Long = 0
   private var mFilterActionId = NO_ACTION
+  // texture回调
+  // 可以做特效处理 textureId是TEXTURE_2D类型
+  private var mOnRenderListener: OnRenderListener ?= null
 
   init {
     val path = context.externalCacheDir?.absolutePath + "/resource.json"
@@ -277,6 +282,22 @@ class VideoEditor(
   }
 
   private external fun deleteAction(handle: Long, actionId: Int)
+
+  override fun setOnRenderListener(l: OnRenderListener) {
+    mOnRenderListener = l
+  }
+
+  /**
+   * texture回调
+   * 可以做其它特效处理, textureId为普通 TEXTURE_2D 类型
+   * @param textureId Int
+   * @param width Int
+   * @param height Int
+   */
+  @Suppress("unused")
+  private fun onDrawFrame(textureId: Int, width: Int, height: Int): Int {
+    return mOnRenderListener?.onDrawFrame(textureId, width, height, null) ?: textureId
+  }
 
   override fun seek(time: Int) {
     if (mId <= 0) {

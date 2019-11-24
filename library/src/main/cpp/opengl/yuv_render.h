@@ -44,16 +44,14 @@ namespace trinity {
 
 class YuvRender {
  public:
-    YuvRender(int width, int height, int view_width, int view_height, int degree);
+    YuvRender(int degree);
 
     ~YuvRender();
 
-    virtual int DrawFrame(AVFrame *frame);
+    virtual int DrawFrame(AVFrame* frame);
 
  private:
-    static void ConvertVertexCoordinate(int width, int height, int view_width, int view_height);
-
-    int Initialize(int width, int height);
+    int Initialize(int width, int height, const char* fragment_shader);
     void Destroy();
     void CopyFrame(uint8_t *dst, uint8_t *src, int width, int height, int line_size);
     void CreateProgram(const char* vertex, const char* fragment);

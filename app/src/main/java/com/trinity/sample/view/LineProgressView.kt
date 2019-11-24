@@ -111,6 +111,9 @@ class LineProgressView : View {
     }
 
     fun deleteProgress() {
+        if (mProgressList.isEmpty()) {
+            return
+        }
         mProgressList.removeAt(mProgressList.size - 1)
         invalidate()
     }

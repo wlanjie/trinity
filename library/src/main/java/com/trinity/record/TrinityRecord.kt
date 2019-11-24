@@ -386,33 +386,38 @@ class TrinityRecord(
                   audioChannel: Int,
                   audioBitRate: Int,
                   duration: Int): Int {
-    if (mRecording) {
-      return ErrorCode.RECORDING
-    }
-    mTimer.start((duration / mSpeed.value).toInt())
-    // TODO mAudioRecordService.sampleRate
-    resetStopState()
-    try {
-      mAudioRecordService.init()
-    } catch (e: AudioConfigurationException) {
-      e.printStackTrace()
-      return -1
-    }
-
-    mMusicInfo?.let {
-      if (mMusicPlaying) {
-        mAudioPlayer?.resume()
-      } else {
-        mMusicPlaying = true
-        mAudioPlayer?.start(it.path)
+    synchronized(this) {
+      if (mRecording) {
+        return ErrorCode.RECORDING
       }
-    }
+      mTimer.start((duration / mSpeed.value).toInt())
+      // TODO mAudioRecordService.sampleRate
+      resetStopState()
+      try {
+        mAudioRecordService.init()
+      } catch (e: AudioConfigurationException) {
+        e.printStackTrace()
+        return -1
+      }
 
-    mAudioRecordService.start()
-    setSpeed(mHandle, 1.0f / mSpeed.value)
-    startEncode(mHandle, path, width, height, videoBitRate, frameRate,
-      useHardWareEncode,
-      audioSampleRate, audioChannel, audioBitRate)
+      mMusicInfo?.let {
+        if (mMusicPlaying) {
+          mAudioPlayer?.resume()
+        } else {
+          mMusicPlaying = true
+          mAudioPlayer?.start(it.path)
+        }
+      }
+
+      mAudioRecordService.start()
+      setSpeed(mHandle, 1.0f / mSpeed.value)
+      startEncode(
+        mHandle, path, width, height, videoBitRate, frameRate,
+        useHardWareEncode,
+        audioSampleRate, audioChannel, audioBitRate
+      )
+      mRecording = true
+    }
     return ErrorCode.SUCCESS
   }
 
@@ -420,24 +425,32 @@ class TrinityRecord(
    * 停止录制
    */
   fun stopRecording() {
-    Log.i("trinity", "stopEncode")
-    mTimer.stop()
-    mAudioPlayer?.pause()
-    mPlayerService?.pauseAccompany()
-    mPlayerService = null
-    mAudioRecordService.stop()
-    mAudioRecordService.destroyAudioRecorderProcessor()
-    stopEncode(mHandle)
+    synchronized(this) {
+      Log.i("trinity", "stopEncode")
+      if (!mRecording) {
+        return
+      }
+      mRecording = false
+      mTimer.stop()
+      mAudioPlayer?.pause()
+      mPlayerService?.pauseAccompany()
+      mPlayerService = null
+      mAudioRecordService.stop()
+      mAudioRecordService.destroyAudioRecorderProcessor()
+      stopEncode(mHandle)
+    }
   }
 
   /**
    * 在activity onDestroy方法中调用,释放其它资源
    */
   fun release() {
-    mAudioPlayer?.release()
-    mTimer.release()
-    mPlayerService?.stopAccompany()
-    mPlayerService?.stop()
+    synchronized(this) {
+      mAudioPlayer?.release()
+      mTimer.release()
+      mPlayerService?.stopAccompany()
+      mPlayerService?.stop()
+    }
   }
 
   /**

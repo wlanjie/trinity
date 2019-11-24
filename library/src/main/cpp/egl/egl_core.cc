@@ -64,12 +64,12 @@ EGLConfig EGLCore::GetConfig() {
 }
 
 EGLSurface EGLCore::CreateWindowSurface(ANativeWindow *_window) {
-    EGLSurface surface = NULL;
+    EGLSurface surface = nullptr;
     EGLint format;
 
-    if (_window == NULL) {
+    if (_window == nullptr) {
         LOGE("EGLCore::CreateWindowSurface  window_ is NULL");
-        return NULL;
+        return nullptr;
     }
 
     if (!eglGetConfigAttrib(display_, config_, EGL_NATIVE_VISUAL_ID, &format)) {

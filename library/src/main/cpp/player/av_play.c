@@ -10,12 +10,9 @@
 #include <unistd.h>
 #include <sys/prctl.h>
 #include "audio_play.h"
-#include "video_render.h"
 #include "queue.h"
-#include "player_gl_thread.h"
 #include "jni_reflect.h"
 #include "audio_filter.h"
-#include "statistics.h"
 
 static int stop(AVPlayContext* context);
 
@@ -31,10 +28,13 @@ static int message_callback(int fd, int events, void *data) {
     int message;
     for (int i = 0; i < events; i++) {
         read(fd, &message, sizeof(int));
-        LOGI("recieve message ==> %d", message);
         switch (message) {
             case message_stop:
-                stop(context);
+//                stop(context);
+                LOGI("message_stop");
+                if (context->on_complete) {
+                    context->on_complete(context);
+                }
                 break;
             case message_buffer_empty:
                 change_status(context, BUFFER_EMPTY);
@@ -59,9 +59,9 @@ static void on_error_cb(AVPlayContext* context, int error_code) {
 
 static void buffer_empty_cb(void *data) {
     AVPlayContext* context = data;
-    if (context->status != BUFFER_EMPTY && !context->eof) {
-        context->send_message(context, message_buffer_empty);
-    }
+//    if (context->status != BUFFER_EMPTY && !context->eof) {
+//        context->send_message(context, message_buffer_empty);
+//    }
 }
 
 static void buffer_full_cb(void *data) {
@@ -72,6 +72,7 @@ static void buffer_full_cb(void *data) {
 }
 
 static void reset(AVPlayContext* context) {
+    LOGI("enter %s", __func__);
     if (context == NULL) {
         return;
     }
@@ -88,12 +89,12 @@ static void reset(AVPlayContext* context) {
     context->timeout_start = 0;
     clock_reset(context->audio_clock);
     clock_reset(context->video_clock);
-    statistics_reset(context->statistics);
     context->error_code = 0;
+    context->abort_request = false;
     context->frame_rotation = ROTATION_0;
     packet_pool_reset(context->packet_pool);
     context->change_status(context, IDEL);
-    video_render_ctx_reset(context->video_render_context);
+    LOGI("leave %s", __func__);
 }
 
 static inline void set_buffer_time(AVPlayContext* context) {
@@ -101,13 +102,16 @@ static inline void set_buffer_time(AVPlayContext* context) {
     AVRational time_base;
     if (context->av_track_flags & AUDIO_FLAG) {
         time_base = context->format_context->streams[context->audio_index]->time_base;
+        LOGE("audio max duration: %f", av_q2d(time_base));
         queue_set_duration(context->audio_packet_queue,
                            (uint64_t) (buffer_time_length / av_q2d(time_base)));
         context->audio_packet_queue->empty_cb = buffer_empty_cb;
         context->audio_packet_queue->full_cb = buffer_full_cb;
         context->audio_packet_queue->cb_data = context;
-    } else if (context->av_track_flags & VIDEO_FLAG) {
+    }
+    if (context->av_track_flags & VIDEO_FLAG) {
         time_base = context->format_context->streams[context->video_index]->time_base;
+        LOGE("video max duration: %f", av_q2d(time_base));
         queue_set_duration(context->video_packet_queue,
                            (uint64_t) (buffer_time_length / av_q2d(time_base)));
         context->video_packet_queue->empty_cb = buffer_empty_cb;
@@ -118,10 +122,10 @@ static inline void set_buffer_time(AVPlayContext* context) {
 
 AVPlayContext* av_play_create(JNIEnv *env, jobject instance, int play_create, int sample_rate) {
     AVPlayContext* context = (AVPlayContext *) malloc(sizeof(AVPlayContext));
-    context->env = env;
+//    memset(context, 0, sizeof(AVPlayContext));
     (*env)->GetJavaVM(env, &context->vm);
-    context->play_object = (*context->env)->NewGlobalRef(context->env, instance);
-    jni_reflect_java_class(&context->java_class, context->env);
+    context->play_object = (*env)->NewGlobalRef(env, instance);
+    jni_reflect_java_class(&context->java_class, env);
     context->run_android_version = play_create;
     context->sample_rate = sample_rate;
     context->buffer_size_max = default_buffer_size;
@@ -137,13 +141,10 @@ AVPlayContext* av_play_create(JNIEnv *env, jobject instance, int play_create, in
     context->packet_pool = packet_pool_create(400);
     context->audio_clock = clock_create();
     context->video_clock = clock_create();
-    context->statistics = statistics_create(context->env);
+    pthread_mutex_init(&context->media_codec_mutex, NULL);
     av_register_all();
     avfilter_register_all();
-    avformat_network_init();
-    context->audio_player_context = audio_engine_create();
     context->audio_filter_context = audio_filter_create();
-    context->video_render_context = video_render_ctx_create();
     context->main_looper = ALooper_forThread();
     pipe(context->pipe_fd);
     if (1 != ALooper_addFd(context->main_looper, context->pipe_fd[0], ALOOPER_POLL_CALLBACK, ALOOPER_EVENT_INPUT,
@@ -153,6 +154,7 @@ AVPlayContext* av_play_create(JNIEnv *env, jobject instance, int play_create, in
     context->change_status = change_status;
     context->send_message = send_message;
     context->on_error = on_error_cb;
+    context->play_audio = NULL;
     reset(context);
     return context;
 }
@@ -172,9 +174,6 @@ static int audio_codec_init(AVPlayContext* context) {
         LOGE("could not open audio codec\n");
         return 203;
     }
-    // Android openSL ES   can not support more than 2 channels.
-    int channels = context->audio_codec_context->channels <= 2 ? context->audio_codec_context->channels : 2;
-    context->audio_player_context->player_create(context->sample_rate, channels, context);
     context->audio_filter_context->channels = context->audio_codec_context->channels;
     context->audio_filter_context->channel_layout = context->audio_codec_context->channel_layout;
     audio_filter_change_speed(context, 1.0);
@@ -215,7 +214,7 @@ void* audio_decode_thread(void * data){
     int filter_ret = 0;
     AVFrame* decode_frame = av_frame_alloc();
     AVFrame* frame = frame_pool_get_frame(context->audio_frame_pool);
-    while (context->error_code == 0) {
+    while (!context->abort_request) {
         if(context->status == PAUSED){
             usleep(NULL_LOOP_SLEEP_US);
         }
@@ -227,28 +226,26 @@ void* audio_decode_thread(void * data){
             // 播放一些rtmp流时,audio codec context 里面的channels 和 channel_layout 属性会被avcodec_send_packet==>apply_param_change函数更改成一个错误值，可能时rtmp封装的bug
             decode_frame->channels = audio_filter_context->channels;
             decode_frame->channel_layout = audio_filter_context->channel_layout;
-            // TODO
-//            int add_ret = av_buffersrc_add_frame(audio_filter_context->buffer_src_context, decode_frame);
-//            if (add_ret >= 0) {
-//                while(1) {
-//                    filter_ret = av_buffersink_get_frame(audio_filter_context->buffer_sink_context, frame);
-//                    if(filter_ret < 0 || filter_ret == AVERROR(EAGAIN) || filter_ret == AVERROR_EOF){
-//                        break;
-//                    }
-            frame_queue_put(context->audio_frame_queue, frame);
-            frame = frame_pool_get_frame(context->audio_frame_pool);
-//                }
+            int add_ret = av_buffersrc_add_frame(audio_filter_context->buffer_src_context, frame);
+            if (add_ret >= 0) {
+                while(1) {
+                    filter_ret = av_buffersink_get_frame(audio_filter_context->buffer_sink_context, frame);
+                    if(filter_ret < 0 || filter_ret == AVERROR(EAGAIN) || filter_ret == AVERROR_EOF){
+                        break;
+                    }
+                    frame_queue_put(context->audio_frame_queue, frame);
+                    frame = frame_pool_get_frame(context->audio_frame_pool);
+                }
 //                // 触发音频播放
-//                if (context->av_track_flags & AUDIO_FLAG){
-//                    context->audio_player_context->play(context);
-//                }
-//
-//            }else{
-//                char err[128];
-//                av_strerror(add_ret, err, 127);
-//                err[127] = 0;
-//                LOGE("add to audio filter error ==>\n %s", err);
-//            }
+                if (context->av_track_flags & AUDIO_FLAG && context->play_audio){
+                    context->play_audio(context);
+                }
+            } else {
+                char err[128];
+                av_strerror(add_ret, err, 127);
+                err[127] = 0;
+                LOGE("add to audio filter error ==>\n %s", err);
+            }
             pthread_mutex_unlock(audio_filter_context->mutex);
 
         } else if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
@@ -256,9 +253,10 @@ void* audio_decode_thread(void * data){
             // buffer empty ==> wait  10ms
             // eof          ==> break
             if(packet == NULL){
-                if(context->eof){
+                if (context->eof) {
+                    LOGE("context->eof");
                     break;
-                }else{
+                } else {
                     usleep(BUFFER_EMPTY_SLEEP_US);
                     continue;
                 }
@@ -272,13 +270,16 @@ void* audio_decode_thread(void * data){
             ret = avcodec_send_packet(context->audio_codec_context, packet);
             packet_pool_unref_packet(context->packet_pool, packet);
             if (ret < 0) {
+                LOGE("ret < 0");
                 context->on_error(context, ERROR_AUDIO_DECODE_SEND_PACKET);
                 break;
             }
         } else if (ret == AVERROR(EINVAL)) {
+            LOGE("ret == AVERROR(EINVAL)");
             context->on_error(context, ERROR_AUDIO_DECODE_CODEC_NOT_OPENED);
             break;
         } else {
+            LOGE("else error");
             context->on_error(context, ERROR_AUDIO_DECODE_RECIVE_FRAME);
             break;
         }
@@ -320,7 +321,7 @@ void* video_decode_sw_thread(void* data){
     AVPlayContext* context = (AVPlayContext *)data;
     int ret;
     AVFrame* frame = frame_pool_get_frame(context->video_frame_pool);
-    while (context->error_code == 0) {
+    while (!context->abort_request) {
         if (context->just_audio) {
             // 如果只播放音频  按照音视频同步的速度丢包
             if( -1 == drop_video_packet(context)){
@@ -328,9 +329,7 @@ void* video_decode_sw_thread(void* data){
             }
         } else {
             ret = avcodec_receive_frame(context->video_codec_ctx, frame);
-            LOGE("%s ret: %d size: %d frame_size: %d count: %d", __func__, ret, context->video_packet_queue->size, context->video_frame_queue->size, context->video_frame_queue->count);
             if (ret == 0) {
-                LOGE("video_decode_sw_thread: %lld", frame->pts);
                 frame->FRAME_ROTATION = context->frame_rotation;
                 frame_queue_put(context->video_frame_queue, frame);
                 usleep(2000);
@@ -374,14 +373,14 @@ void* video_decode_sw_thread(void* data){
 }
 
 void* video_decode_hw_thread(void* data){
+    LOGE("enter %s", __func__);
     prctl(PR_SET_NAME, __func__);
     AVPlayContext* context = (AVPlayContext *)data;
-    (*context->vm)->AttachCurrentThread(context->vm, &context->media_codec_context->env, NULL);
     mediacodec_start(context);
     int ret;
-    AVPacket * packet = NULL;
-    AVFrame * frame = frame_pool_get_frame(context->video_frame_pool);
-    while (context->error_code == 0) {
+    AVPacket* packet = NULL;
+    AVFrame* frame = frame_pool_get_frame(context->video_frame_pool);
+    while (!context->abort_request) {
         if (context->just_audio) {
             // 如果只播放音频  按照音视频同步的速度丢包
             if( -1 == drop_video_packet(context)){
@@ -436,7 +435,7 @@ void* video_decode_hw_thread(void* data){
     }
     mediacodec_stop(context);
     (*context->vm)->DetachCurrentThread(context->vm);
-    LOGI("thread ==> %s exit", __func__);
+    LOGE("thread ==> %s exit", __func__);
     return NULL;
 }
 
@@ -471,7 +470,7 @@ void *read_thread(void *data) {
     AVPlayContext *context = (AVPlayContext *) data;
     AVPacket *packet = NULL;
     int ret = 0;
-    while (context->error_code == 0) {
+    while (!context->abort_request) {
         if (context->seeking == 1) {
             context->seeking = 2;
             flush_packet_queue(context);
@@ -498,11 +497,9 @@ void *read_thread(void *data) {
             context->timeout_start = 0;
             if (packet->stream_index == context->video_index) {
                 packet_queue_put(context->video_packet_queue, packet);
-                context->statistics->bytes += packet->size;
                 packet = NULL;
             } else if (packet->stream_index == context->audio_index) {
                 packet_queue_put(context->audio_packet_queue, packet);
-                context->statistics->bytes += packet->size;
                 packet = NULL;
             } else {
                 av_packet_unref(packet);
@@ -528,12 +525,14 @@ void *read_thread(void *data) {
 }
 
 int av_play_play(const char *url, float time, AVPlayContext *context) {
+    LOGE("enter %s url: %s time: %f", __func__, url, time);
+    reset(context);
     int ret = -1;
     context->format_context = avformat_alloc_context();
     context->format_context->interrupt_callback.callback = av_format_interrupt_cb;
     context->format_context->interrupt_callback.opaque = context;
     if (avformat_open_input(&context->format_context, url, NULL, NULL) != 0) {
-        LOGE("can not open url\n");
+        LOGE("can not open url: %s\n", av_err2str(ret));
         ret = 100;
         goto fail;
     }
@@ -583,7 +582,6 @@ int av_play_play(const char *url, float time, AVPlayContext *context) {
                     break;
             }
         }
-        context->is_sw_decode = true;
         if (context->is_sw_decode) {
             ret = sw_codec_init(context);
         } else {
@@ -615,17 +613,19 @@ int av_play_play(const char *url, float time, AVPlayContext *context) {
     if (time > 0) {
         av_play_seek(context, time);
     }
-    pthread_create(&context->read_stream_thread, NULL, read_thread, context);
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+    pthread_create(&context->read_stream_thread, &attr, read_thread, context);
     if (context->av_track_flags & VIDEO_FLAG) {
         if (context->is_sw_decode) {
-            pthread_create(&context->video_decode_thread, NULL, video_decode_sw_thread, context);
+            pthread_create(&context->video_decode_thread, &attr, video_decode_sw_thread, context);
         } else {
-            pthread_create(&context->video_decode_thread, NULL, video_decode_hw_thread, context);
+            pthread_create(&context->video_decode_thread, &attr, video_decode_hw_thread, context);
         }
-        pthread_create(&context->gl_thread, NULL, player_gl_thread, context);
     }
     if (context->av_track_flags & AUDIO_FLAG) {
-        pthread_create(&context->audio_decode_thread, NULL, audio_decode_thread, context);
+        pthread_create(&context->audio_decode_thread, &attr, audio_decode_thread, context);
     }
     context->change_status(context, PLAYING);
     return ret;
@@ -634,6 +634,8 @@ int av_play_play(const char *url, float time, AVPlayContext *context) {
     if (context->format_context) {
         avformat_close_input(&context->format_context);
     }
+
+    LOGI("leave %s", __func__);
     return ret;
 }
 
@@ -650,9 +652,6 @@ void av_play_set_buffer_size(AVPlayContext* context, int buffer_size) {
 
 int av_play_resume(AVPlayContext* context) {
     context->change_status(context, PLAYING);
-    if (context->av_track_flags & AUDIO_FLAG) {
-        context->audio_player_context->play(context);
-    }
     return 0;
 }
 
@@ -732,6 +731,11 @@ static inline void clean_queues(AVPlayContext* context) {
 }
 
 static int stop(AVPlayContext *context) {
+    if (context->abort_request) {
+        return -1;
+    }
+    LOGI("enter %s", __func__);
+    context->abort_request = true;
     // remove buffer call back
     context->audio_packet_queue->empty_cb = NULL;
     context->audio_packet_queue->full_cb = NULL;
@@ -746,22 +750,18 @@ static int stop(AVPlayContext *context) {
         pthread_join(context->video_decode_thread, &thread_res);
         if (context->is_sw_decode) {
             avcodec_free_context(&context->video_codec_ctx);
-        } else {
-            mediacodec_release_context(context);
         }
-        pthread_join(context->gl_thread, &thread_res);
     }
 
     if ((context->av_track_flags & AUDIO_FLAG) > 0) {
         pthread_join(context->audio_decode_thread, &thread_res);
         avcodec_free_context(&context->audio_codec_context);
-        context->audio_player_context->shutdown();
     }
 
     clean_queues(context);
     avformat_close_input(&context->format_context);
     reset(context);
-    LOGI("player stoped");
+    LOGI("leave %s", __func__);
     return 0;
 }
 
@@ -788,14 +788,15 @@ int av_play_release(AVPlayContext* context) {
     packet_queue_free(context->audio_packet_queue);
     packet_queue_free(context->video_packet_queue);
     packet_pool_release(context->packet_pool);
-    statistics_release(context->env, context->statistics);
     clock_free(context->audio_clock);
     clock_free(context->video_clock);
-    video_render_ctx_release(context->video_render_context);
-    context->audio_player_context->release(context->audio_player_context);
     audio_filter_release(context->audio_filter_context);
-    (*context->env)->DeleteGlobalRef(context->env, context->play_object);
-    jni_free(&context->java_class, context->env);
+    JNIEnv* env = NULL;
+    (*context->vm)->AttachCurrentThread(context->vm, &env, NULL);
+    (*env)->DeleteGlobalRef(env, context->play_object);
+    jni_free(&context->java_class, env);
+    (*context->vm)->DetachCurrentThread(context->vm);
+    pthread_mutex_destroy(&context->media_codec_mutex);
     free(context);
     return 0;
 }
@@ -806,13 +807,13 @@ void change_status(AVPlayContext* context, PlayStatus status) {
     } else {
         context->status = status;
     }
-    (*context->env)->CallVoidMethod(context->env, context->play_object, context->java_class->player_onPlayStatusChanged,
-                                  status);
+//    (*context->env)->CallVoidMethod(context->env, context->play_object, context->java_class->player_onPlayStatusChanged,
+//                                  status);
 }
 
 static void on_error(AVPlayContext* context) {
-    (*context->env)->CallVoidMethod(context->env, context->play_object, context->java_class->player_onPlayError,
-                                  context->error_code);
+//    (*context->env)->CallVoidMethod(context->env, context->play_object, context->java_class->player_onPlayError,
+//                                  context->error_code);
 }
 
 void change_audio_speed(float speed, AVPlayContext* context) {

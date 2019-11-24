@@ -35,7 +35,7 @@ class FrameBuffer : public OpenGL {
 
     void SetStartTime(int time);
     void SetEndTime(int time);
-//    void Init(const char* vertex, const char* fragment);
+//    void InitMessageQueue(const char* vertex, const char* fragment);
     virtual GLuint OnDrawFrame(GLuint texture_id, uint64_t current_time = 0);
     virtual GLuint OnDrawFrame(GLuint texture_id, GLfloat* matrix, uint64_t current_time = 0);
     virtual GLuint OnDrawFrame(GLuint texture_id, const GLfloat* vertex_coordinate, const GLfloat* texture_coordinate, uint64_t current_time = 0);
