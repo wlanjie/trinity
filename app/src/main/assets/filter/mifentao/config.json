@@ -1,9 +1,6 @@
 {
-    "content": {
-        "lut_130": {
-         "type" : 0,
-         "intensity": 0.85
-        }
-    },
-    "version": "1.1"
+  "version": "1.1",
+  "type": 0,
+  "intensity": 0.85,
+  "lut": "lut_130/lut_130.png"
 }

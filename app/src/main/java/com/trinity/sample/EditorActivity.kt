@@ -67,13 +67,6 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
   private var mStartTime: Long = 0
   private val mActionIds = mutableMapOf<String, Int>()
   private var mFilterId = -1
-  private var mFlashWhiteId = -1
-  private var mSplitScreenTwoId = -1
-  private var mSplitScreenThreeId = -1
-  private var mSplitScreenFourId = -1
-  private var mSplitScreenSixId = -1
-  private var mSplitScreenNineId = -1
-  private var mBlurSplitScreenId = -1
   private var mMusicId = -1
 
   @SuppressLint("ClickableViewAccessibility")
@@ -292,17 +285,15 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
   }
 
   override fun onEffectTouchEvent(event: Int, effect: Effect) {
+    val effectLocalDir = externalCacheDir?.absolutePath
+
     if (event == MotionEvent.ACTION_DOWN) {
       mStartTime = mVideoEditor.getCurrentPosition()
       mVideoEditor.resume()
       if (effect.id == EffectId.UNDO.ordinal) {
         return
       } else {
-        val stream = assets.open(effect.effect)
-        val bytes = ByteArray(stream.available())
-        stream.read(bytes)
-        val effectJson = String(bytes, Charset.forName("utf-8"))
-        val actionId = mVideoEditor.addAction(effectJson)
+        val actionId = mVideoEditor.addAction(effectLocalDir + "/" + effect.effect)
         mActionIds[effect.name] = actionId
       }
       effect.startTime = mStartTime.toInt()
@@ -318,26 +309,23 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
         }
         return
       } else {
-        val stream = assets.open(effect.effect)
-        val bytes = ByteArray(stream.available())
-        stream.read(bytes)
-        val effectJson = JSONObject(String(bytes, Charset.forName("utf-8")))
-        val effectItemArrayJson = effectJson.optJSONArray("effect") ?: return
         val endTime = mVideoEditor.getCurrentPosition()
-        for (i in 0 until effectItemArrayJson.length()) {
-          val effectItemJson = effectItemArrayJson.optJSONObject(i)
-          effectItemJson.put("endTime", endTime)
-          effectItemJson.put("startTime", mStartTime)
-        }
         val effectInfo = EffectInfo()
         val actionId = mActionIds[effect.name] ?: return
         effectInfo.actionId = actionId
         effectInfo.startTime = mStartTime
         effectInfo.endTime = endTime
         mEffects.add(effectInfo)
-        mVideoEditor.updateAction(effectJson.toString(), actionId)
+
+        // 删除同一时间的特效,保留当前的
+        mEffects.forEach {
+          if (mStartTime >= it.startTime && endTime <= it.endTime && actionId != it.actionId) {
+            mVideoEditor.deleteAction(it.actionId)
+          }
+        }
+
+        mVideoEditor.updateAction(mStartTime.toInt(), endTime.toInt(), actionId)
         mEffectController.onEventAnimationFilterClickUp(effect)
-        println(effectJson.toString())
       }
     }
   }
@@ -390,21 +378,10 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
   }
 
   private fun setFilter(filter: Filter) {
-    val effectJson = JSONObject()
-    val jsonArray = JSONArray()
-    val jsonObject = JSONObject()
-    jsonObject.put("name", EffectType.Filter.name)
-    jsonObject.put("startTime", 0)
-    jsonObject.put("endTime", Int.MAX_VALUE)
-    jsonObject.put("lut", externalCacheDir?.absolutePath + "/filter/${filter.lut}")
-    jsonObject.put("intensity", 1.0f)
-    jsonArray.put(jsonObject)
-    effectJson.put("effect", jsonArray)
-    if (mFilterId == -1) {
-      mFilterId = mVideoEditor.addAction(effectJson.toString())
-    } else {
-      mVideoEditor.updateAction(effectJson.toString(), mFilterId)
+    if (mFilterId != -1) {
+      mVideoEditor.deleteFilter(mFilterId)
     }
+    mFilterId = mVideoEditor.addFilter(externalCacheDir?.absolutePath + "/filter/${filter.config}")
   }
 
   override fun onPause() {
@@ -446,19 +423,6 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
   }
 
   override fun onDrawFrame(textureId: Int, width: Int, height: Int, matrix: FloatArray?): Int {
-    // 检查在相同时间内是否有其它特效,如果有,则先删除,保证一个时间段只有一个效果
-    val position = mVideoEditor.getCurrentPosition()
-    var effectIndex = -1
-    mEffects.forEachIndexed { index, item ->
-      println("startTime: $position item.startTime: ${item.startTime} item.endTime: ${item.endTime}")
-      if (position >= item.startTime && position <= item.endTime && item.actionId != -1) {
-        mVideoEditor.deleteAction(item.actionId)
-        effectIndex = index
-      }
-    }
-    if (effectIndex != -1) {
-      mEffects.removeAt(effectIndex)
-    }
     return -1
   }
 

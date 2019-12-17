@@ -190,6 +190,35 @@ int VideoEditor::GetClipIndex(int64_t time) {
     return 0;
 }
 
+int VideoEditor::AddFilter(const char *config) {
+    if (nullptr != player_) {
+        int action_id = player_->AddFilter(config);
+        if (nullptr != editor_resource_) {
+            editor_resource_->AddFilter(config, action_id);
+        }
+        return action_id;
+    }
+    return -1;
+}
+
+void VideoEditor::UpdateFilter(const char *config, int start_time, int end_time, int action_id) {
+    if (nullptr != player_) {
+        player_->UpdateFilter(config, start_time, end_time, action_id);
+        if (nullptr != editor_resource_) {
+            editor_resource_->UpdateFilter(config, start_time, end_time, action_id);
+        }
+    }
+}
+
+void VideoEditor::DeleteFilter(int action_id) {
+    if (nullptr != player_) {
+        player_->DeleteFilter(action_id);
+        if (nullptr != editor_resource_) {
+            editor_resource_->DeleteFilter(action_id);
+        }
+    }
+}
+
 int VideoEditor::AddMusic(const char* music_config) {
     if (nullptr != player_) {
         int action_id = player_->AddMusic(music_config);
@@ -231,11 +260,11 @@ int VideoEditor::AddAction(const char *effect_config) {
     return -1;
 }
 
-void VideoEditor::UpdateAction(const char *effect_config, int action_id) {
+void VideoEditor::UpdateAction(int start_time, int end_time, int action_id) {
     if (nullptr != player_) {
-        player_->UpdateAction(effect_config, action_id);
+        player_->UpdateAction(start_time, end_time, action_id);
         if (nullptr != editor_resource_) {
-            editor_resource_->UpdateAction(effect_config, action_id);
+            editor_resource_->UpdateAction(start_time, end_time, action_id);
         }
     }
 }
@@ -310,8 +339,7 @@ void VideoEditor::Destroy() {
     }
 
     pthread_mutex_lock(&queue_mutex_);
-    for (int i = 0; i < clip_deque_.size(); ++i) {
-        MediaClip* clip = clip_deque_.at(i);
+    for (auto clip : clip_deque_) {
         delete[] clip->file_name;
         delete clip;
     }

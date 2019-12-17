@@ -158,6 +158,7 @@ Message::Message() {
     what = -1;
     arg1 = -1;
     arg2 = -1;
+    arg3 = -1;
     obj = nullptr;
 }
 
@@ -166,6 +167,7 @@ Message::Message(int what) {
     this->what = what;
     arg1 = -1;
     arg2 = -1;
+    arg3 = -1;
     obj = nullptr;
 }
 
@@ -174,7 +176,26 @@ Message::Message(int what, int arg1, int arg2) {
     this->what = what;
     this->arg1 = arg1;
     this->arg2 = arg2;
+    arg3 = -1;
     obj = nullptr;
+}
+
+Message::Message(int what, int arg1, int arg2, int arg3) {
+    handler_ = nullptr;
+    this->what = what;
+    this->arg1 = arg1;
+    this->arg2 = arg2;
+    this->arg3 = arg3;
+    obj = nullptr;
+}
+
+Message::Message(int what, int arg1, int arg2, int arg3, void* obj) {
+    handler_ = nullptr;
+    this->what = what;
+    this->arg1 = arg1;
+    this->arg2 = arg2;
+    this->arg3 = arg3;
+    this->obj = obj;
 }
 
 Message::Message(int what, void* obj) {
@@ -182,6 +203,7 @@ Message::Message(int what, void* obj) {
     this->what = what;
     arg1 = -1;
     arg2 = -1;
+    arg3 = -1;
     this->obj = obj;
 }
 Message::Message(int what, int arg1, int arg2, void* obj) {
@@ -189,6 +211,7 @@ Message::Message(int what, int arg1, int arg2, void* obj) {
     this->what = what;
     this->arg1 = arg1;
     this->arg2 = arg2;
+    arg3 = -1;
     this->obj = obj;
 }
 Message::~Message() = default;

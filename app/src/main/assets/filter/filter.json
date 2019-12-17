@@ -2,289 +2,289 @@
     {
       "name": "白皙",
       "thumbnail": "baizan/thumbnail.jpg",
-      "config": "baizan/config.json",
+      "config": "baizan",
       "lut": "baizan/lut_117/lut_117.png"
     },
     {
       "name": "白雪",
       "thumbnail": "baixue/thumbnail.jpg",
-      "config": "baixue/config.json",
+      "config": "baixue",
       "lut": "baixue/snow/snow.png"
     },
     {
       "name": "茶灰",
       "thumbnail": "chahui/thumbnail.jpg",
-      "config": "chahui/config.json",
+      "config": "chahui",
       "lut": "chahui/lut_124/lut_124.png"
     },
     {
       "name": "城市",
       "thumbnail": "chengshi/thumbnail.jpg",
-      "config": "chengshi/config.json",
+      "config": "chengshi",
       "lut": "chengshi/lut_149/lut_149.png"
     },
     {
       "name": "初恋",
       "thumbnail": "chulian/thumbnail.jpg",
-      "config": "chulian/config.json",
+      "config": "chulian",
       "lut": "chulian/lut_118/lut_118.png"
     },
     {
       "name": "初心",
       "thumbnail": "chuxin/thumbnail.jpg",
-      "config": "chuxin/config.json",
+      "config": "chuxin",
       "lut": "chuxin/lut137/lut137.png"
     },
     {
       "name": "纯净",
       "thumbnail": "chunjing/thumbnail.jpg",
-      "config": "chunjing/config.json",
+      "config": "chunjing",
       "lut": "chunjing/pure/pure.png"
     },
     {
       "name": "纯真",
       "thumbnail": "chunzhen/thumbnail.jpg",
-      "config": "chunzhen/config.json",
+      "config": "chunzhen",
       "lut": "chunzhen/sincere/sincere.png"
     },
     {
       "name": "单色",
       "thumbnail": "danse/thumbnail.jpg",
-      "config": "danse/config.json",
+      "config": "danse",
       "lut": "danse/lut_114/lut_114.png"
     },
     {
       "name": "岛屿",
       "thumbnail": "daoyu/thumbnail.jpg",
-      "config": "daoyu/config.json",
+      "config": "daoyu",
       "lut": "daoyu/lut_151/lut_151.png"
     },
     {
       "name": "动人",
       "thumbnail": "dongren/thumbnail.jpg",
-      "config": "dongren/config.json",
+      "config": "dongren",
       "lut": "dongren/vivid_4/vivid_4.png"
     },
     {
       "name": "独角兽",
       "thumbnail": "dujiaoshou/thumbnail.jpg",
-      "config": "dujiaoshou/config.json",
+      "config": "dujiaoshou",
       "lut": "dujiaoshou/lut_155/lut_155.png"
     },
     {
       "name": "反差色",
       "thumbnail": "fanchase/thumbnail.jpg",
-      "config": "fanchase/config.json",
+      "config": "fanchase",
       "lut": "fanchase/lut_112/lut_112.png"
     },
     {
       "name": "非凡",
       "thumbnail": "feifan/thumbnail.jpg",
-      "config": "feifan/config.json",
+      "config": "feifan",
       "lut": "feifan/uncommon/uncommon.png"
     },
     {
       "name": "过往",
       "thumbnail": "guowang/thumbnail.jpg",
-      "config": "guowang/config.json",
+      "config": "guowang",
       "lut": "guowang/beyond/beyond.png"
     },
     {
       "name": "海棠",
       "thumbnail": "haitang/thumbnail.jpg",
-      "config": "haitang/config.json",
+      "config": "haitang",
       "lut": "haitang/lut_146/lut_146.png"
     },
     {
       "name": "红色",
       "thumbnail": "hongse/thumbnail.jpg",
-      "config": "hongse/config.json",
+      "config": "hongse",
       "lut": "hongse/lut_115/lut_115.png"
     },
     {
       "name": "琥珀",
       "thumbnail": "hupo/thumbnail.jpg",
-      "config": "hupo/config.json",
+      "config": "hupo",
       "lut": "hupo/lut_147/lut_147.png"
     },
     {
       "name": "焦糖",
       "thumbnail": "jiaotang/thumbnail.jpg",
-      "config": "jiaotang/config.json",
+      "config": "jiaotang",
       "lut": "jiaotang/lut139/lut139.png"
     },
     {
       "name": "可口",
       "thumbnail": "kekou/thumbnail.jpg",
-      "config": "kekou/config.json",
+      "config": "kekou",
       "lut": "kekou/lut100/lut100.png"
     },
     {
       "name": "罗密欧",
       "thumbnail": "luomio/thumbnail.jpg",
-      "config": "luomio/config.json",
+      "config": "luomio",
       "lut": "luomio/romeo/romeo.png"
     },
     {
       "name": "美味",
       "thumbnail": "meiwei/thumbnail.jpg",
-      "config": "meiwei/config.json",
+      "config": "meiwei",
       "lut": "meiwei/lut120/lut120.png"
     },
     {
       "name": "蜜粉桃",
       "thumbnail": "mifentao/thumbnail.jpg",
-      "config": "mifentao/config.json",
+      "config": "mifentao",
       "lut": "mifentao/lut_130/lut_130.png"
     },
     {
       "name": "摩卡",
       "thumbnail": "moka/thumbnail.jpg",
-      "config": "moka/config.json",
+      "config": "moka",
       "lut": "moka/lut_144/lut_144.png"
     },
     {
       "name": "慕斯",
       "thumbnail": "musi/thumbnail.jpg",
-      "config": "musi/config.json",
+      "config": "musi",
       "lut": "musi/lut_119/lut_119.png"
     },
     {
       "name": "奶茶",
       "thumbnail": "naicha/thumbnail.jpg",
-      "config": "naicha/config.json",
+      "config": "naicha",
       "lut": "naicha/lut142/lut142.png"
     },
     {
       "name": "年华",
       "thumbnail": "nianhua/thumbnail.jpg",
-      "config": "nianhua/config.json",
+      "config": "nianhua",
       "lut": "nianhua/years/years.png"
     },
     {
       "name": "拍立得",
       "thumbnail": "pailide/thumbnail.jpg",
-      "config": "pailide/config.json",
+      "config": "pailide",
       "lut": "pailide/lut_113/lut_113.png"
     },
     {
       "name": "沛蓝",
       "thumbnail": "peilan/thumbnail.jpg",
-      "config": "peilan/config.json",
+      "config": "peilan",
       "lut": "peilan/lut125/lut125.png"
     },
     {
       "name": "蔷薇",
       "thumbnail": "qiangwei/thumbnail.jpg",
-      "config": "qiangwei/config.json",
+      "config": "qiangwei",
       "lut": "qiangwei/rose/rose.png"
     },
     {
       "name": "清纯",
       "thumbnail": "qingchun/thumbnail.jpg",
-      "config": "qingchun/config.json",
+      "config": "qingchun",
       "lut": "qingchun/teen/teen.png"
     },
     {
       "name": "清凉",
       "thumbnail": "qingliang/thumbnail.jpg",
-      "config": "qingliang/config.json",
+      "config": "qingliang",
       "lut": "qingliang/lut_145/lut_145.png"
     },
     {
       "name": "清新",
       "thumbnail": "qingxin/thumbnail.jpg",
-      "config": "qingxin/config.json",
+      "config": "qingxin",
       "lut": "qingxin/lut102/lut102.png"
     },
     {
       "name": "曲奇",
       "thumbnail": "quqi/thumbnail.jpg",
-      "config": "quqi/config.json",
+      "config": "quqi",
       "lut": "quqi/beach_15/beach_15.png"
     },
     {
       "name": "日系",
       "thumbnail": "rixi/thumbnail.jpg",
-      "config": "rixi/config.json",
+      "config": "rixi",
       "lut": "rixi/fresh_5/fresh_5.png"
     },
     {
       "name": "日杂",
       "thumbnail": "riza/thumbnail.jpg",
-      "config": "riza/config.json",
+      "config": "riza",
       "lut": "riza/lut_125/lut_125.png"
     },
     {
       "name": "闪酷橘",
       "thumbnail": "shankuju/thumbnail.jpg",
-      "config": "shankuju/config.json",
+      "config": "shankuju",
       "lut": "shankuju/lut_154/lut_154.png"
     },
     {
       "name": "深黑",
       "thumbnail": "shenhei/thumbnail.jpg",
-      "config": "shenhei/config.json",
+      "config": "shenhei",
       "lut": "shenhei/lut111/lut111.png"
     },
     {
       "name": "曙光",
       "thumbnail": "shuguang/thumbnail.jpg",
-      "config": "shuguang/config.json",
+      "config": "shuguang",
       "lut": "shuguang/lut_152/lut_152.png"
     },
     {
       "name": "素净",
       "thumbnail": "sujing/thumbnail.jpg",
-      "config": "sujing/config.json",
+      "config": "sujing",
       "lut": "sujing/lut123/lut123.png"
     },
     {
       "name": "酸奶",
       "thumbnail": "suannai/thumbnail.jpg",
-      "config": "suannai/config.json",
+      "config": "suannai",
       "lut": "suannai/lut_140/lut_140.png"
     },
     {
       "name": "蔚蓝",
       "thumbnail": "weilan/thumbnail.jpg",
-      "config": "weilan/config.json",
+      "config": "weilan",
       "lut": "weilan/lut110/lut110.png"
     },
     {
       "name": "乌邦托",
       "thumbnail": "wubangtuo/thumbnail.jpg",
-      "config": "wubangtuo/config.json",
+      "config": "wubangtuo",
       "lut": "wubangtuo/lut_153/lut_153.png"
     },
     {
       "name": "西柚",
       "thumbnail": "xiyou/thumbnail.jpg",
-      "config": "xiyou/config.json",
+      "config": "xiyou",
       "lut": "xiyou/lut_143/lut_143.png"
     },
     {
       "name": "鲜嫩",
       "thumbnail": "xiannei/thumbnail.jpg",
-      "config": "xiannei/config.json",
+      "config": "xiannei",
       "lut": "xiannei/lut141/lut141.png"
     },
     {
       "name": "芝士",
       "thumbnail": "zhishi/thumbnail.jpg",
-      "config": "zhishi/config.json",
+      "config": "zhishi",
       "lut": "zhishi/lut129/lut129.png"
     },
     {
       "name": "仲夏",
       "thumbnail": "zhongxia/thumbnail.jpg",
-      "config": "zhongxia/config.json",
+      "config": "zhongxia",
       "lut": "zhongxia/lut_148/lut_148.png"
     },
     {
       "name": "自然",
       "thumbnail": "ziran/thumbnail.jpg",
-      "config": "ziran/config.json",
+      "config": "ziran",
       "lut": "ziran/normal_android/normal_android.png"
     }
   ]

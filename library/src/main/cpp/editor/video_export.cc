@@ -26,6 +26,7 @@
 #include "media_encode_adapter.h"
 #include "android_xlog.h"
 #include "tools.h"
+#include "gl.h"
 
 namespace trinity {
 
@@ -185,17 +186,58 @@ void VideoExport::FreeResource() {
     }
 }
 
+void VideoExport::OnFilter() {
+    if (nullptr != export_config_json_) {
+        cJSON* filters = cJSON_GetObjectItem(export_config_json_, "filters");
+        if (nullptr != filters) {
+            int filter_size = cJSON_GetArraySize(filters);
+            for (int i = 0; i < filter_size; i++) {
+                cJSON* filter_child = cJSON_GetArrayItem(filters, i);
+                cJSON* config_json = cJSON_GetObjectItem(filter_child, "config");
+                cJSON* action_id_json = cJSON_GetObjectItem(filter_child, "actionId");
+                cJSON* start_time_json = cJSON_GetObjectItem(filter_child, "startTime");
+                cJSON* end_time_json = cJSON_GetObjectItem(filter_child, "endTime");
+                int start_time = 0;
+                if (nullptr != start_time_json) {
+                    start_time = start_time_json->valueint;
+                }
+                int end_time = INT32_MAX;
+                if (nullptr != end_time_json) {
+                    end_time = end_time_json->valueint;
+                }
+                int action_id = 0;
+                if (nullptr != action_id_json) {
+                    action_id = action_id_json->valueint;
+                }
+                if (nullptr != config_json) {
+                    char* config = config_json->valuestring;
+                    image_process_->OnFilter(config, action_id, start_time, end_time);
+                }
+            }
+        }
+    }
+}
+
 void VideoExport::OnEffect() {
     if (nullptr != export_config_json_) {
         cJSON* effects = cJSON_GetObjectItem(export_config_json_, "effects");
         if (nullptr != effects) {
             int effect_size = cJSON_GetArraySize(effects);
             if (effect_size > 0) {
-                image_process_ = new ImageProcess();
                 for (int i = 0; i < effect_size; ++i) {
                     cJSON* effects_child = cJSON_GetArrayItem(effects, i);
                     cJSON* config_json = cJSON_GetObjectItem(effects_child, "config");
                     cJSON* action_id_json = cJSON_GetObjectItem(effects_child, "actionId");
+                    cJSON* start_time_json = cJSON_GetObjectItem(effects_child, "startTime");
+                    cJSON* end_time_json = cJSON_GetObjectItem(effects_child, "endTime");
+                    int start_time = 0;
+                    if (nullptr != start_time_json) {
+                        start_time = start_time_json->valueint;
+                    }
+                    int end_time = INT32_MAX;
+                    if (nullptr != end_time_json) {
+                        end_time = end_time_json->valueint;
+                    }
                     int action_id = 0;
                     if (nullptr != action_id_json) {
                         action_id = action_id_json->valueint;
@@ -203,6 +245,7 @@ void VideoExport::OnEffect() {
                     if (nullptr != config_json) {
                         char* config = config_json->valuestring;
                         image_process_->OnAction(config, action_id);
+                        image_process_->OnUpdateAction(start_time, end_time, action_id);
                     }
                 }
             }
@@ -270,11 +313,12 @@ int VideoExport::Export(const char *export_config, const char *path, int width, 
     fseek(file, 0, SEEK_END);
     long file_size = ftell(file);
     rewind(file);
-    char* buffer = reinterpret_cast<char*>(malloc(sizeof(char) * file_size));
+    char* buffer = reinterpret_cast<char*>(malloc(sizeof(char) * file_size + 1));
     if (nullptr == buffer) {
         fclose(file);
         return -1;
     }
+    buffer[file_size] = '\0';
     size_t read_size = fread(buffer, 1, file_size, file);
     if (read_size != file_size) {
         fclose(file);
@@ -313,13 +357,13 @@ int VideoExport::Export(const char *export_config, const char *path, int width, 
     AudioPacketPool::GetInstance()->InitAudioPacketQueue();
     packet_thread_->StartAsync();
 
-    video_width_ = (int) (floor(width / 16.0f)) * 16;
-    video_height_ = (int) (floor(height / 16.0f)) * 16;
+    video_width_ = (int) (floor(width / 16.0F)) * 16;
+    video_height_ = (int) (floor(height / 16.0F)) * 16;
 
     for (int i = 0; i < clip_size; i++) {
         cJSON* path_item = cJSON_GetObjectItem(item, "path");
-        cJSON* start_time_item = cJSON_GetObjectItem(item, "start_time");
-        cJSON* end_time_item = cJSON_GetObjectItem(item, "end_time");
+        cJSON* start_time_item = cJSON_GetObjectItem(item, "startTime");
+        cJSON* end_time_item = cJSON_GetObjectItem(item, "endTime");
         item = item->next;
 
         LOGE("start_time_item: %p", start_time_item);
@@ -376,6 +420,10 @@ void VideoExport::ProcessVideoExport() {
 
     // 如果硬解码会重新创建
     FrameBuffer* media_codec_render_ = nullptr;
+    image_process_ = new ImageProcess();
+
+    // 添加config解析出来的滤镜
+    OnFilter();
 
     // 添加config解析出来的特效
     OnEffect();
@@ -429,6 +477,7 @@ void VideoExport::ProcessVideoExport() {
         if (av_play_context_->is_sw_decode) {
             texture_id = yuv_render_->DrawFrame(frame);
         } else {
+            media_codec_render_->ActiveProgram();
             texture_id = media_codec_render_->OnDrawFrame(oes_texture_);
         }
         if (av_play_context_->is_sw_decode) {
@@ -438,10 +487,10 @@ void VideoExport::ProcessVideoExport() {
         } else {
             current_time_ = static_cast<uint64_t>(av_play_context_->video_frame->pts / 1000);
         }
-        LOGI("current_time: %lld pts: %lld count: %d packet_count: %d", current_time_, frame->pts, av_play_context_->video_frame_queue->count, av_play_context_->video_packet_queue->count);
         if (image_process_ != nullptr) {
             texture_id = image_process_->Process(texture_id, current_time_, frame->width, frame->height, 0, 0);
         }
+        frame_buffer->ActiveProgram();
         frame_buffer->OnDrawFrame(texture_id);
         if (!egl_core_->SwapBuffers(egl_surface_)) {
             LOGE("eglSwapBuffers error: %d", eglGetError());
@@ -516,6 +565,7 @@ void VideoExport::OnExportProgress(uint64_t current_time) {
     if (nullptr != clazz) {
         jmethodID  export_progress_id = env->GetMethodID(clazz, "onExportProgress", "(F)V");
         if (nullptr != export_progress_id) {
+            LOGE("current_time: %lld video_duration: %lld", current_time, video_duration_);
             env->CallVoidMethod(object_, export_progress_id, current_time * 1.0f / video_duration_);
         }
     }

@@ -1,1 +1,5 @@
-{"content":{"lut110":{"type":0,"intensity":0.7}},"version":"1.1"}
+{
+  "type": 0,
+  "intensity": 0.7,
+  "lut": "lut110/lut110.png"
+}

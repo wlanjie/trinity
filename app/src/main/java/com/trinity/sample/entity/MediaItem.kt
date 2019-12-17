@@ -6,6 +6,7 @@ class MediaItem(
     val path: String,
     val type: String,
     val width: Int,
-    val height: Int,
-    val duration: Int
-) : Serializable
+    val height: Int
+) : Serializable {
+  var duration: Int = 0
+}

@@ -192,6 +192,7 @@ void EncodeRender::RunOnDrawTasks() {
 void EncodeRender::ConvertYUV420(int texture_id, int width, int height, void *buffer) {
     glViewport(0, 0, width, height);
     // 这里画的时候不能改变顶点或纹理的坐标
+    ActiveProgram();
     ProcessImage(texture_id);
     glReadPixels(0, 0, width, height * 3 / 8, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 }

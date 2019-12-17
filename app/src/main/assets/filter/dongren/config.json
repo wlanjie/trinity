@@ -1,9 +1,5 @@
 {
-    "content": {
-        "vivid_4": {
-         "type" : 0,
-         "intensity": 0.7
-        }
-    },
-    "version": "1.1"
+  "type": 0,
+  "intensity": 0.7,
+  "lut": "vivid_4/vivid_4.png"
 }

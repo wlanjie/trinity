@@ -70,6 +70,7 @@ class VideoExport {
     static void* ExportMessageThread(void* context);
     void StartDecode(MediaClip* clip);
     void FreeResource();
+    void OnFilter();
     void OnEffect();
     void OnMusics();
     void ProcessVideoExport();

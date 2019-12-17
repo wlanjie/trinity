@@ -1,0 +1,21 @@
+{
+    "requirement": {
+        "faceDetect": false,
+        "matting": false
+    },
+    "effect": [
+        {
+            "name": "四屏",
+            "vertexShader": "resource/vshader.vs",
+            "vertexUniforms": [],
+            "fragmentShader": "resource/fshader.fs",
+            "fragmentUniforms": [
+                {
+                    "name": "inputImageTexture",
+                    "type": 100
+                }
+            ]
+        }
+    ],
+    "version": 1.0
+}

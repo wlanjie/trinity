@@ -27,12 +27,15 @@ enum VideoRenderMessage {
 };
 
 typedef enum {
-    kEffect = 100,
-    kEffectUpdate = 101,
-    kEffectDelete = 102,
-    kMusic = 103,
-    kMusicUpdate = 104,
-    kMusicDelete = 105
+    kEffect             = 100,
+    kEffectUpdate       = 101,
+    kEffectDelete       = 102,
+    kMusic              = 103,
+    kMusicUpdate        = 104,
+    kMusicDelete        = 105,
+    kFilter             = 106,
+    kFilterUpdate       = 107,
+    kFilterDelete       = 108
 } EffectMessage;
 
 Player::Player(JNIEnv* env, jobject object) : Handler()
@@ -273,6 +276,27 @@ void Player::DeleteMusic(int action_id) {
     PostMessage(message);
 }
 
+int Player::AddFilter(const char* filter_config) {
+    int actId = current_action_id_++;
+    char* config = new char[strlen(filter_config) + 1];
+    sprintf(config, "%s%c", filter_config, 0);
+    auto* message = new Message(kFilter, actId, 0, config);
+    PostMessage(message);
+    return actId;
+}
+
+void Player::UpdateFilter(const char* filter_config, int start_time, int end_time, int action_id) {
+    char* config = new char[strlen(filter_config) + 1];
+    sprintf(config, "%s%c", filter_config, 0);
+    auto* message = new Message(kFilterUpdate, action_id, start_time, end_time, config);
+    PostMessage(message);
+}
+
+void Player::DeleteFilter(int action_id) {
+    auto* message = new Message(kFilterDelete, action_id, 0);
+    PostMessage(message);
+}
+
 int Player::AddAction(const char *effect_config) {
     int actId = current_action_id_++;
     char *config = new char[strlen(effect_config) + 1];
@@ -282,10 +306,8 @@ int Player::AddAction(const char *effect_config) {
     return actId;
 }
 
-void Player::UpdateAction(const char *effect_config, int action_id) {
-    char *config = new char[strlen(effect_config) + 1];
-    sprintf(config, "%s%c", effect_config, 0);
-    auto *message = new Message(kEffectUpdate, action_id, 0, config);
+void Player::UpdateAction(int start_time, int end_time, int action_id) {
+    auto *message = new Message(kEffectUpdate, start_time, end_time, action_id);
     PostMessage(message);
 }
 
@@ -303,13 +325,12 @@ void Player::OnAddAction(char *config, int action_id) {
     delete[] config;
 }
 
-void Player::OnUpdateAction(char *config, int action_id) {
+void Player::OnUpdateAction(int start_time, int end_time, int action_id) {
     if (nullptr == image_process_) {
         return;
     }
-    LOGI("update action id: %d config: %s", action_id, config);
-    image_process_->OnAction(config, action_id);
-    delete[] config;
+    LOGI("update action id: %d start_time: %d end_time: %d", action_id, start_time, end_time);
+    image_process_->OnUpdateAction(start_time, end_time, action_id);
 }
 
 void Player::OnDeleteAction(int action_id) {
@@ -364,6 +385,35 @@ void Player::FreeMusicPlayer() {
         delete music_player_;
         music_player_ = nullptr;
     }
+}
+
+void Player::OnAddFilter(char* config, int action_id) {
+    if (nullptr == image_process_) {
+        return;
+    }
+    LOGI("enter %s id: %d config: %s", __func__, action_id, config);
+    image_process_->OnFilter(config, action_id);
+    delete[] config;
+    LOGI("leave %s", __func__);
+}
+
+void Player::OnUpdateFilter(char* config, int action_id, int start_time, int end_time) {
+    if (nullptr == image_process_) {
+        return;
+    }
+    LOGI("enter %s config: %s action_id: %d start_time: %d end_time: %d", __func__, config, action_id, start_time, end_time);
+    image_process_->OnFilter(config, action_id, start_time, end_time);
+    delete[] config;
+    LOGI("leave %s", __func__);
+}
+
+void Player::OnDeleteFilter(int action_id) {
+    if (nullptr == image_process_) {
+        return;
+    }
+    LOGI("enter %s action_id: %d", __func__, action_id);
+    image_process_->OnDeleteFilter(action_id);
+    LOGI("leave %s", __func__);
 }
 
 void Player::PlayAudio(AVPlayContext* context) {
@@ -555,7 +605,7 @@ void Player::HandleMessage(Message *msg) {
             break;
 
         case kEffectUpdate:
-            OnUpdateAction(static_cast<char *>(msg->GetObj()), msg->GetArg1());
+            OnUpdateAction(msg->GetArg1(), msg->GetArg2(), msg->GetArg3());
             break;
 
         case kEffectDelete:
@@ -572,6 +622,18 @@ void Player::HandleMessage(Message *msg) {
 
         case kMusicDelete:
             OnDeleteMusic(msg->GetArg1());
+            break;
+
+        case kFilter:
+            OnAddFilter(static_cast<char *>(msg->GetObj()), msg->GetArg1());
+            break;
+
+        case kFilterUpdate:
+            OnUpdateFilter(static_cast<char *>(msg->GetObj()), msg->GetArg1(), msg->GetArg2(), msg->GetArg3());
+            break;
+
+        case kFilterDelete:
+            OnDeleteFilter(msg->GetArg1());
             break;
         default:
             break;
@@ -732,6 +794,7 @@ int Player::DrawVideoFrame() {
         if (av_play_context_->is_sw_decode) {
             texture_id = yuv_render_->DrawFrame(av_play_context_->video_frame);
         } else {
+            media_codec_render_->ActiveProgram();
             texture_id = media_codec_render_->OnDrawFrame(oes_texture_);
         }
         ReleaseVideoFrame();
@@ -765,6 +828,7 @@ void Player::Draw(int texture_id) {
         return;
     }
     int texture = OnDrawFrame(texture_id, frame_width_, frame_height_);
+    render_screen_->ActiveProgram();
     render_screen_->ProcessImage(static_cast<GLuint>(texture > 0 ? texture : texture_id), vertex_coordinate_, texture_coordinate_);
     if (!core_->SwapBuffers(render_surface_)) {
         LOGE("eglSwapBuffers error: %d", eglGetError());

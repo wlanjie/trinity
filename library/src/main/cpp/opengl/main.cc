@@ -38,7 +38,8 @@
 #include <unistd.h>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "image_process.h"
+
 #include "opengl.h"
 #include "gl.h"
 #include "gaussian_blur.h"
@@ -49,10 +50,10 @@
 #include "skin_needling.h"
 #include "seventy_second.h"
 #include "hallucination.h"
-
-extern "C" {
-#include "cJSON.h"
-}
+//
+//extern "C" {
+//#include "cJSON.h"
+//}
 
 using namespace trinity;
 
@@ -166,6 +167,7 @@ FrameBuffer* runSkinNeeding() {
         cJSON* param_json = cJSON_Parse(buffer);
         cJSON* effect_json = cJSON_GetObjectItem(param_json, "effect");
         int effect_size = cJSON_GetArraySize(effect_json);
+        cJSON_ArrayForEach
         for (int i = 0; i < effect_size; i++) {
             cJSON* effect_item_json = cJSON_GetArrayItem(effect_json, i);
             cJSON* fragment_uniforms_json = cJSON_GetObjectItem(effect_item_json, "fragmentUniforms");
@@ -306,20 +308,18 @@ int main() {
     stbi_image_free(data);
 
     clock_t start = clock();
-
-//    GaussianBlur gaussian_blur(512, 512, 1.0f);
-//    BlurSplitScreen blur_split_screen(512, 512);
-//    FrameBuffer* frame_buffer = new BlurSplitScreen(512, 512);
-    
-//    runSkinNeeding();
-//    FrameBuffer* frame_buffer = runSeventySecond();
-    FrameBuffer* frame_buffer = runSoulScale();
-    
+    ImageProcess image_process;
+    image_process.OnAction("param/twoScreen", 0);
     while(!glfwWindowShouldClose(window)) {
         glfwPollEvents();
         uint64_t current_time = (uint64_t) ((double) (clock() - start) / CLOCKS_PER_SEC * 1000);
-//        printf("time: %lld\n", current_time);
-        int process_id = frame_buffer->OnDrawFrame(texture_id);
+        printf("current_time: %lld\n", current_time);
+        if (current_time == 200) {
+            image_process.OnUpdateAction(0, 300, 0);
+        }
+        int process_id = image_process.Process(texture_id, current_time, width, height, 0, 0);
+        
+        render_screen.ActiveProgram();
         render_screen.ProcessImage(process_id);
         glfwSwapBuffers(window);
         usleep(30 * 1000);

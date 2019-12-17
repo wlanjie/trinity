@@ -194,7 +194,9 @@ void CameraRecord::Draw() {
     int texture_id = OnDrawFrame(oes_texture_id_,
             camera_width_, camera_height_);
     frame_buffer_->SetTextureType(texture_id > 0 ? TEXTURE_2D : TEXTURE_OES);
+    frame_buffer_->ActiveProgram();
     texture_id = frame_buffer_->OnDrawFrame(texture_id > 0 ? texture_id : oes_texture_id_, texture_matrix_);
+    render_screen_->ActiveProgram();
     render_screen_->ProcessImage(texture_id);
     if (!egl_core_->SwapBuffers(preview_surface_)) {
         LOGE("eglSwapBuffers(preview_surface_) returned error %d", eglGetError());

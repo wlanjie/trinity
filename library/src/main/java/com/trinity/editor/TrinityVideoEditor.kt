@@ -102,7 +102,9 @@ interface TrinityVideoEditor {
 
   fun addFilter(config: String): Int
 
-  fun updateFilter(config: String, actionId: Int)
+  fun updateFilter(config: String, startTime: Int, endTime: Int, actionId: Int)
+
+  fun deleteFilter(actionId: Int)
 
   fun addMusic(config: String): Int
 
@@ -112,7 +114,7 @@ interface TrinityVideoEditor {
 
   fun addAction(config: String): Int
 
-  fun updateAction(config: String, actionId: Int)
+  fun updateAction(startTime: Int, endTime: Int, actionId: Int)
 
   fun deleteAction(actionId: Int)
 

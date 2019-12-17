@@ -72,7 +72,8 @@ class PictureFragment : Fragment() {
         val width = cursor.getInt(cursor.getColumnIndexOrThrow(PROJECTION[3]))
         val height = cursor.getInt(cursor.getColumnIndexOrThrow(PROJECTION[4]))
         val duration = cursor.getInt(cursor.getColumnIndexOrThrow(PROJECTION[5]))
-        val item = MediaItem(path, pictureType, width, height, duration)
+        val item = MediaItem(path, pictureType, width, height)
+        item.duration = duration
         medias.add(item)
       }
       cursor?.close()

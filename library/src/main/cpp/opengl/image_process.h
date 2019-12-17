@@ -1,0 +1,120 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+//
+// Created by wlanjie on 2019-06-05.
+//
+
+#ifndef TRINITY_IMAGE_PROCESS_H
+#define TRINITY_IMAGE_PROCESS_H
+
+//#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
+#include <cstdint>
+#include <vector>
+#include <map>
+#include "frame_buffer.h"
+#include "filter.h"
+
+extern "C" {
+#include "cJSON.h"
+};
+
+#define NO_ACTION -1
+#define HORIZONTAL 0
+#define VERTICAL 1
+
+namespace trinity {
+
+typedef struct VertexUniforms {
+
+} VertexUniforms;
+
+typedef struct FragmentUniforms {
+    char* name;
+    int type;
+    int data_size;
+    double* data;
+    int data_index;
+} FragmentUniforms;
+
+typedef struct Effect {
+    std::vector<FrameBuffer*> frame_buffers;
+    std::vector<FragmentUniforms*> fragment_uniforms;
+    int start_time;
+    int end_time;
+    int action_id;
+    bool preview;
+} Effect;
+
+typedef struct FilterItem {
+    FrameBuffer* frame_buffer;
+    int start_time;
+    int end_time;
+    int action_id;
+    float intensity;
+    int type;
+} FilterItem;
+
+class ImageProcess {
+ public:
+    ImageProcess();
+    ~ImageProcess();
+
+    int Process(int texture_id, uint64_t current_time,
+            int width, int height,
+            int input_color_type, int output_color_type);
+
+    int Process(uint8_t* frame, uint64_t current_time,
+            int width, int height,
+            int input_color_type, int output_color_type);
+
+    void OnAction(char* config_path, int action_id);
+    void OnUpdateAction(int start_time, int end_time, int action_id);
+    void RemoveAction(int action_id);
+    void ClearAction();
+
+    void OnFilter(char* config_path, int action_id, int start_time = 0, int end_time = INT32_MAX);
+    void OnDeleteFilter(int action_id);
+
+ private:
+    /**
+     * 解析json配置
+     * @param config
+     * @param action_id
+     */
+    void ParseConfig(char* config_path, int action_id = -1);
+    
+    int ReadFile(char* path, char** buffer);
+    
+    /**
+     * 执行特效处理
+     * @param texture_id
+     * @param current_time
+     * @param width
+     * @param height
+     * @return
+     */
+    int OnProcess(int texture_id, uint64_t current_time, int width, int height);
+ private:
+    std::vector<Effect*> effects_;
+    std::map<int, Filter*> filters_;
+};
+
+}  // namespace trinity
+
+#endif  // TRINITY_IMAGE_PROCESS_H

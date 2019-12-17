@@ -214,11 +214,17 @@ class VideoEditor(
 
   private external fun addFilter(id: Long, config: String): Int
 
-  override fun updateFilter(config: String, actionId: Int) {
-    updateFilter(mId, config, actionId)
+  override fun updateFilter(config: String, startTime: Int, endTime: Int, actionId: Int) {
+    updateFilter(mId, config, startTime, endTime, actionId)
   }
 
-  private external fun updateFilter(id: Long, config: String, actionId: Int)
+  private external fun updateFilter(id: Long, config: String, startTime: Int, endTime: Int, actionId: Int)
+
+  override fun deleteFilter(actionId: Int) {
+    deleteFilter(mId, actionId)
+  }
+
+  private external fun deleteFilter(id: Long, actionId: Int)
 
   /**
    * 添加背景音乐
@@ -265,14 +271,14 @@ class VideoEditor(
 
   private external fun addAction(handle: Long, config: String): Int
 
-  override fun updateAction(config: String, actionId: Int) {
+  override fun updateAction(startTime: Int, endTime: Int, actionId: Int) {
     if (mId <= 0) {
       return
     }
-    updateAction(mId, config, actionId)
+    updateAction(mId, startTime, endTime, actionId)
   }
 
-  private external fun updateAction(handle: Long, config: String, actionId: Int)
+  private external fun updateAction(handle: Long, startTime: Int, endTime: Int, actionId: Int)
 
   override fun deleteAction(actionId: Int) {
     if (mId <= 0) {

@@ -218,6 +218,10 @@ void OpenGL::SetUniformMatrix4f(const char *name, int size, const GLfloat *matri
     glUniformMatrix4fv(location, size, GL_FALSE, matrix);
 }
 
+void OpenGL::ActiveProgram() {
+    glUseProgram(program_);
+}
+
 void OpenGL::ProcessImage(GLuint texture_id) {
     ProcessImage(texture_id, default_vertex_coordinates_, default_texture_coordinates_);
 }
@@ -270,7 +274,11 @@ void OpenGL::ProcessImage(GLuint texture_id, const GLfloat *vertex_coordinate, c
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glDisableVertexAttribArray(positionAttribute);
     glDisableVertexAttribArray(textureCoordinateAttribute);
+#if __ANDROID__
     glBindTexture(type_ == TEXTURE_OES ? GL_TEXTURE_EXTERNAL_OES : GL_TEXTURE_2D, 0);
+#elif __APPLE__
+    glBindTexture(GL_TEXTURE_2D, 0);
+#endif
 }
 
 void OpenGL::RunOnDrawTasks() {}
@@ -295,6 +303,8 @@ void OpenGL::CompileShader(const char *shader_string, GLuint shader) {
     glCompileShader(shader);
     GLint compiled = GL_FALSE;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
+    printf("%s\n", shader_string);
+    printf("==================\n");
     if (!compiled) {
         GLint infoLen;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);

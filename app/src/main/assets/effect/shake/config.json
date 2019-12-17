@@ -1,0 +1,42 @@
+{
+    "requirement": {
+        "faceDetect": false,
+        "matting": false
+    },
+    "effect": [
+        {
+            "name": "抖动",
+            "vertexShader": "resource/vshader.vs",
+            "vertexUniforms": [],
+            "fragmentShader": "resource/fshader.fs",
+            "fragmentUniforms": [
+                {
+                    "name": "scale",
+                    "type": 3,
+                    "data": [
+                        1,
+                        1.07,
+                        1.1,
+                        1.13,
+                        1.17,
+                        1.2,
+                        1.2,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1
+                    ]
+                },
+                {
+                    "name": "inputImageTexture",
+                    "type": 100
+                }
+            ]
+        }
+    ],
+    "version": 1.0
+}

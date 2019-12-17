@@ -24,6 +24,7 @@
 #define TRINITY_FILTER_H
 
 #include "frame_buffer.h"
+#include "gl.h"
 
 namespace trinity {
 

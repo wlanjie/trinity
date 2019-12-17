@@ -301,13 +301,15 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     mRecord.startRecording(path, width, height,
       mVideoBitRate, mFrameRate, mHardwareEncode,
       mSampleRate, mChannels, mAudioBitRate, mRecordDuration)
-    val media = MediaItem(path, "video", width, height, Int.MAX_VALUE)
+    val media = MediaItem(path, "video", width, height)
     mMedias.add(media)
   }
 
   override fun onUp() {
     mRecord.stopRecording()
     mRecordDurations.add(mCurrentRecordDuration)
+    val item = mMedias[mMedias.size - 1]
+    item.duration = mCurrentRecordDuration
     runOnUiThread {
       mLineView.addProgress(mCurrentRecordDuration * 1.0f / mRecordDuration)
     }

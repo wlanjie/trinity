@@ -46,17 +46,23 @@ public:
     int AddMusic(const char* music_config);
     void UpdateMusic(const char* music_config, int action_id);
     void DeleteMusic(int action_id);
+    int AddFilter(const char* filter_config);
+    void UpdateFilter(const char* filter_config, int start_time, int end_time, int action_id);
+    void DeleteFilter(int action_id);
     int AddAction(const char* effect_config);
-    void UpdateAction(const char* effect_config, int action_id);
+    void UpdateAction(int start_time, int end_time, int action_id);
     void DeleteAction(int action_id);
 
 private:
     void OnAddAction(char* config, int action_id);
-    void OnUpdateAction(char* config, int action_id);
+    void OnUpdateAction(int start_time, int end_time, int action_id);
     void OnDeleteAction(int action_id);
     void OnAddMusic(char* config, int action_id);
     void OnUpdateMusic(char* config, int action_id);
     void OnDeleteMusic(int action_id);
+    void OnAddFilter(char* config, int action_id);
+    void OnUpdateFilter(char* config, int start_time, int end_time, int action_id);
+    void OnDeleteFilter(int action_id);
     void FreeMusicPlayer();
     static void PlayAudio(AVPlayContext* context);
     int GetAudioFrame();

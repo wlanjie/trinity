@@ -98,9 +98,15 @@ class VideoEditor : public Handler, public PlayerEventObserver {
 
     void DeleteMusic(int action_id);
 
+    int AddFilter(const char* config);
+
+    void UpdateFilter(const char* config, int start_time, int end_time, int action_id);
+
+    void DeleteFilter(int action_id);
+
     int AddAction(const char* effect_config);
 
-    void UpdateAction(const char* effect_config, int action_id);
+    void UpdateAction(int start_time, int end_time, int action_id);
 
     void DeleteAction(int action_id);
 

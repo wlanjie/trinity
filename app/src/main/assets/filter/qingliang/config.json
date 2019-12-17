@@ -1,9 +1,5 @@
 {
-    "content": {
-        "lut_145": {
-         "type" : 0,
-         "intensity": 0.65
-        }
-    },
-    "version": "1.1"
+  "type": 0,
+  "intensity": 0.65,
+  "lut": "lut_145/lut_145.png"
 }

@@ -39,6 +39,14 @@ class TrinityApplication : Application() {
       }
     }
 
+    val effectLocalDir = externalCacheDir?.absolutePath + "/effect"
+    val effectDir = File(effectLocalDir)
+    if (!effectDir.exists()) {
+      GlobalScope.launch(Dispatchers.IO) {
+        copyAssets("effect", effectLocalDir)
+      }
+    }
+
     val logPath = Environment.getExternalStorageDirectory().absolutePath + "/trinity"
     if (BuildConfig.DEBUG) {
       Xlog.appenderOpen(Xlog.LEVEL_DEBUG, Xlog.AppednerModeAsync, "", logPath, "trinity", 0, "")

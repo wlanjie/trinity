@@ -1,9 +1,5 @@
 {
-    "content": {
-        "uncommon": {
-         "type" : 0,
-         "intensity": 0.75
-        }
-    },
-    "version": "1.1"
+  "type" : 0,
+  "intensity": 0.75,
+  "lut": "uncommon/uncommon.png"
 }

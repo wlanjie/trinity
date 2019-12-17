@@ -41,11 +41,14 @@ class EditorResource {
     void RemoveClip(int index);
     void ReplaceClip(int index, MediaClip* clip);
     void AddAction(const char* config, int action_id);
-    void UpdateAction(const char* config, int action_id);
+    void UpdateAction(int start_time, int end_time, int action_id);
     void DeleteAction(int action_id);
     void AddMusic(const char* config, int action_id);
     void UpdateMusic(const char* config, int action_id);
     void DeleteMusic(int action_id);
+    void AddFilter(const char* config, int action_id);
+    void UpdateFilter(const char* config, int start_time, int end_time, int action_id);
+    void DeleteFilter(int action_id);
 
  private:
     FILE* resource_file_;
@@ -53,6 +56,7 @@ class EditorResource {
     cJSON* media_json_;
     cJSON* effect_json_;
     cJSON* music_json_;
+    cJSON* filter_json_;
 };
 
 }  // namespace trinity

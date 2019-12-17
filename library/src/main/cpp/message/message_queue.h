@@ -35,12 +35,15 @@ class Message {
     int what;
     int arg1;
     int arg2;
+    int arg3;
     void* obj;
 
  public:
     Message();
     explicit Message(int what);
     Message(int what, int arg1, int arg2);
+    Message(int what, int arg1, int arg2, int arg3);
+    Message(int what, int arg1, int arg2, int arg3, void* obj);
     Message(int what, void* obj);
     Message(int what, int arg1, int arg2, void* obj);
     ~Message();
@@ -54,6 +57,9 @@ class Message {
     }
     int GetArg2() {
         return arg2;
+    }
+    int GetArg3() {
+        return arg3;
     }
     void* GetObj() {
         return obj;

@@ -8,42 +8,42 @@
     "id": 1,
     "name": "闪白",
     "color": "#23bdb1",
-    "effect": "effect/flash_white.json",
+    "effect": "effect/flashWhite",
     "effectName": "FlashWhite"
   },
   {
     "id": 2,
     "name": "两屏",
     "color": "#e77e86",
-    "effect": "effect/two_split_screen.json",
+    "effect": "effect/twoScreen",
     "effectName": "SplitScreen"
   },
   {
     "id": 3,
     "name": "三屏",
     "color": "#dc424e",
-    "effect": "effect/three_split_screen.json",
+    "effect": "effect/threeScreen",
     "effectName": "SplitScreen"
   },
   {
     "id": 4,
     "name": "四屏",
     "color": "#c12430",
-    "effect": "effect/four_split_screen.json",
+    "effect": "effect/fourScreen",
     "effectName": "SplitScreen"
   },
   {
     "id": 5,
     "name": "六屏",
     "color": "#ef2f3e",
-    "effect": "effect/six_split_screen.json",
+    "effect": "effect/sixScreen",
     "effectName": "SplitScreen"
   },
   {
     "id": 6,
     "name": "九屏",
     "color": "#dc143c",
-    "effect": "effect/nine_split_screen.json",
+    "effect": "effect/nineScreen",
     "effectName": "SplitScreen"
   },
   {
@@ -57,7 +57,7 @@
     "id": 8,
     "name": "灵魂出窍",
     "color": "#EA0000",
-    "effect": "effect/soul_scale.json",
+    "effect": "effect/soulScale",
     "effectName": "SoulScale"
   },
   {

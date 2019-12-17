@@ -25,7 +25,13 @@
 
 #include "frame_buffer.h"
 #include "gl.h"
+
+#if __ANDROID__
 #include "android_xlog.h"
+#elif __APPLE__
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#define LOGI 
+#endif
 
 // 闪白效果
 static const char* FLASH_WHITE_FRAGMENT_SHADER =
