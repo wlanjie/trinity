@@ -207,15 +207,15 @@ class VideoEditor(
    * @param endTime 到哪里结束
    * @return 滤镜对应的id, 删除或者更新滤镜时需要用到
    */
-  override fun addFilter(config: String): Int {
-    mFilterActionId = addFilter(mId, config)
+  override fun addFilter(configPath: String): Int {
+    mFilterActionId = addFilter(mId, configPath)
     return mFilterActionId
   }
 
   private external fun addFilter(id: Long, config: String): Int
 
-  override fun updateFilter(config: String, startTime: Int, endTime: Int, actionId: Int) {
-    updateFilter(mId, config, startTime, endTime, actionId)
+  override fun updateFilter(configPath: String, startTime: Int, endTime: Int, actionId: Int) {
+    updateFilter(mId, configPath, startTime, endTime, actionId)
   }
 
   private external fun updateFilter(id: Long, config: String, startTime: Int, endTime: Int, actionId: Int)
@@ -262,11 +262,11 @@ class VideoEditor(
 
   private external fun deleteMusic(id: Long, actionId: Int)
 
-  override fun addAction(config: String): Int {
+  override fun addAction(configPath: String): Int {
     if (mId <= 0) {
       return -1
     }
-    return addAction(mId, config)
+    return addAction(mId, configPath)
   }
 
   private external fun addAction(handle: Long, config: String): Int

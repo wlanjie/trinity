@@ -230,6 +230,10 @@ class TrinityRecord(
     return ErrorCode.SUCCESS
   }
 
+  /**
+   * 开启摄像头预览
+   * @param resolution PreviewResolution 预览分辨率选择
+   */
   fun startPreview(resolution: PreviewResolution) {
     mResolution = resolution
     if (mSurfaceTexture == null) {
@@ -244,6 +248,9 @@ class TrinityRecord(
     }
   }
 
+  /**
+   * 停止预览, 释放摄像头
+   */
   fun stopPreview() {
     mCamera.stop()
     mRequestPreview = false
@@ -261,13 +268,20 @@ class TrinityRecord(
 
   /**
    * 获取当前摄像头id
+   * @return Facing 返回前后摄像头的枚举定义
    */
+  @Suppress("unused")
   fun getCameraFacing(): Facing {
     return mCamera.getFacing()
   }
 
   /**
-   * 设置开启和关闭闪光灯
+   * 开头闪光灯
+   * @param flash
+   * Flash.OFF 关闭
+   * Flash.ON 开启
+   * Flash.TORCH
+   * Flash.AUTO 自动
    */
   fun flash(flash: Flash) {
     mCamera.setFlash(flash)
@@ -276,6 +290,7 @@ class TrinityRecord(
   /**
    * 设置camera缩放
    * 100 为最大缩放
+   * @param zoom camera缩放的值, 最大100, 最小0
    */
   fun setZoom(zoom: Int) {
     mCamera.setZoom(zoom)
@@ -284,13 +299,16 @@ class TrinityRecord(
   /**
    * 设置camera曝光度
    * 100 为最大
+   * @param exposureCompensation camera曝光的值, 最在100, 最小0
    */
+  @Suppress("unused")
   fun setExposureCompensation(exposureCompensation: Int) {
     mCamera.setExposureCompensation(exposureCompensation)
   }
 
   /**
    * 设置聚焦区域
+   * @param point 聚焦区域的x, y值
    */
   fun focus(point: PointF) {
     mCamera.focus(mViewWidth, mViewHeight, point)

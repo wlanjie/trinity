@@ -119,7 +119,7 @@
   </tr>
   <tr>
       <td>硬解码</td>
-      <td align="center">x</td>
+      <td align="center">√</td>
   </tr>
   <tr>
       <td rowspan="14">特效<br/>
@@ -288,30 +288,6 @@ mRecord.setMute(false)
 mRecord.setSpeed(mSpeed)
 ```
 
-### 添加特效
-- 添加滤镜
-``` kotlin
-/**
- * @param config 滤镜json内容
- * 具体json内容如下:
- * {
- *    "effectType": "Filter",
- *    "startTime": 0,
- *    "endTime": 2000,
- *    "lut": "/sdcard/lut.png",
- *    "intensity": 1.0
- * }
- *
- * json 参数解释:
- * effectType: 底层根据这个字段来判断添加什么效果, Filter为添加一个普通滤镜效果
- * startTime: 这个滤镜的开始时间
- * endTime: 这个滤镜的结束时间 2000代表这个滤镜在显示时只显示2秒钟
- * lut: 滤镜颜色表的地址, 必须为本地地址
- * intensity: 滤镜透明度, 0.0时和摄像头采集的无差别
- */
-val actionId = mRecord.addAction(config)
-```
-
 ### 开始录制
 
 - 开始录制一段视频
@@ -458,6 +434,10 @@ val actionId = mVideoEditor.addMusic(config)
 
 - 删除背景音乐
 ``` kotlin
+/**
+* 删除背景音乐
+* @param actionId 必须为添加背景音乐时返回的actionId
+*/
 mVideoEditor.deleteMusic(actionId)
 ```
 
@@ -465,160 +445,78 @@ mVideoEditor.deleteMusic(actionId)
 - 添加普通滤镜
 ``` kotlin
 /**
- * @param config 滤镜json内容
- * 具体json内容如下:
- * {
- *    "effectType": "Filter",
- *    "startTime": 0,
- *    "endTime": 2000,
- *    "lut": "/sdcard/lut.png",
- *    "intensity": 1.0
- * }
- *
- * json 参数解释:
- * effectType: 底层根据这个字段来判断添加什么效果, Filter为添加一个普通滤镜效果
- * startTime: 这个滤镜的开始时间
- * endTime: 这个滤镜的结束时间 2000代表这个滤镜在显示时只显示2秒钟
- * lut: 滤镜颜色表的地址, 必须为本地地址
- * intensity: 滤镜透明度, 0.0时和摄像头采集的无差别
- */
-val actionId = mVideoEditor.addAction(config)
+* 添加滤镜
+* 如: content.json的绝对路径为 /sdcard/Android/com.trinity.sample/cache/filters/config.json
+* 传入的路径只需要 /sdcard/Android/com.trinity.sample/cache/filters 即可
+* 如果当前路径不包含config.json则添加失败
+* 具体json内容如下:
+* {
+*  "type": 0,
+*  "intensity": 1.0,
+*  "lut": "lut_124/lut_124.png"
+* }
+*
+* json 参数解释:
+* type: 保留字段, 目前暂无作用
+* intensity: 滤镜透明度, 0.0时和摄像头采集的无差别
+* lut: 滤镜颜色表的地址, 必须为本地地址, 而且为相对路径
+*      sdk内部会进行路径拼接
+* @param configPath 滤镜config.json的父目录
+* @return 返回当前滤镜的唯一id
+*/
+val actionId = mVideoEditor.addFilter(config)
 ```
-- 添加闪白效果
+- 更新滤镜
 ``` kotlin
 /**
- * @param config 闪白json内容
- * 具体json内容如下:
- * {
- *    "effectType": "FlashWhite",
- *    "startTime": 0,
- *    "endTime": 2000
- * }
- *
- * json 参数解释:
- * effectType: 底层根据这个字段来判断添加什么效果, FlashWhite为添加一个闪白效果
- * startTime: 这个闪白的开始时间
- * endTime: 这个闪白的结束时间 2000代表这个闪白效果在显示时只显示2秒钟
- */
-val actionId = mVideoEditor.addAction(config)
+* 更新滤镜
+* @param configPath config.json的路径, 目前对称addFilter说明
+* @param startTime 滤镜的开始时间
+* @param endTime 滤镜的结束时间
+* @param actionId 需要更新哪个滤镜, 必须为addFilter返回的actionId
+*/
+mVideoEditor.updateFilter(config, 0, 2000, actionId)
 ```
-- 添加两分屏
+
+- 删除滤镜
+``` kotlin
+ /**
+   * 删除滤镜
+   * @param actionId 需要删除哪个滤镜, 必须为addFilter时返回的actionId
+   */
+mVideoEditor.deleteFilter(actionId)   
+```
+- 添加抖音特效
 ``` kotlin
 /**
- * @param config 闪白json内容
- * 具体json内容如下:
- * {
- *    "effectType": "SplitScreen",
- *    "startTime": 0,
- *    "endTime": 2000,
- *    "splitScreenCount": 2
- * }
- *
- * json 参数解释:
- * effectType: 底层根据这个字段来判断添加什么效果, SplitScreen为添加一个分屏效果
- * startTime: 这个分屏的开始时间
- * endTime: 这个分屏的结束时间 2000代表这个分屏效果在显示时只显示2秒钟
- * splitScreenCount: 分屏数量2个
- */
-val actionId = mVideoEditor.addAction(config)
+* 添加特效
+* 如: content.json的绝对路径为 /sdcard/Android/com.trinity.sample/cache/effects/config.json
+* 传入的路径只需要 /sdcard/Android/com.trinity.sample/cache/effects 即可
+* 如果当前路径不包含config.json则添加失败
+* @param configPath 滤镜config.json的父目录
+* @return 返回当前特效的唯一id
+*/
+val actionId = mVideoEditor.addAction(configPath)
 ```
-- 添加三分屏
+
+- 更新抖音特效
 ``` kotlin
 /**
- * @param config 闪白json内容
- * 具体json内容如下:
- * {
- *    "effectType": "SplitScreen",
- *    "startTime": 0,
- *    "endTime": 2000,
- *    "splitScreenCount": 3
- * }
- *
- * json 参数解释:
- * effectType: 底层根据这个字段来判断添加什么效果, SplitScreen为添加一个分屏效果
- * startTime: 这个分屏的开始时间
- * endTime: 这个分屏的结束时间 2000代表这个分屏效果在显示时只显示2秒钟
- * splitScreenCount: 分屏数量3个
- */
-val actionId = mVideoEditor.addAction(config)
+* 更新指定特效
+* @param startTime 特效的开始时间
+* @param endTime 特效的结束时间
+* @param actionId 需要更新哪个特效, 必须为addAction返回的actionId
+*/
+mVideoEditor.updateAction(0, 2000, actionId)
 ```
-- 添加四分屏
+
+- 删除抖音特效
 ``` kotlin
 /**
- * @param config 闪白json内容
- * 具体json内容如下:
- * {
- *    "effectType": "SplitScreen",
- *    "startTime": 0,
- *    "endTime": 2000,
- *    "splitScreenCount": 4
- * }
- *
- * json 参数解释:
- * effectType: 底层根据这个字段来判断添加什么效果, SplitScreen为添加一个分屏效果
- * startTime: 这个分屏的开始时间
- * endTime: 这个分屏的结束时间 2000代表这个分屏效果在显示时只显示2秒钟
- * splitScreenCount: 分屏数量4个
- */
-val actionId = mVideoEditor.addAction(config)
-```
-- 添加六分屏
-``` kotlin
-/**
- * @param config 闪白json内容
- * 具体json内容如下:
- * {
- *    "effectType": "SplitScreen",
- *    "startTime": 0,
- *    "endTime": 2000,
- *    "splitScreenCount": 6
- * }
- *
- * json 参数解释:
- * effectType: 底层根据这个字段来判断添加什么效果, SplitScreen为添加一个分屏效果
- * startTime: 这个分屏的开始时间
- * endTime: 这个分屏的结束时间 2000代表这个分屏效果在显示时只显示2秒钟
- * splitScreenCount: 分屏数量6个
- */
-val actionId = mVideoEditor.addAction(config)
-```
-- 添加九分屏
-``` kotlin
-/**
- * @param config 闪白json内容
- * 具体json内容如下:
- * {
- *    "effectType": "SplitScreen",
- *    "startTime": 0,
- *    "endTime": 2000,
- *    "splitScreenCount": 9
- * }
- *
- * json 参数解释:
- * effectType: 底层根据这个字段来判断添加什么效果, SplitScreen为添加一个分屏效果
- * startTime: 这个分屏的开始时间
- * endTime: 这个分屏的结束时间 2000代表这个分屏效果在显示时只显示2秒钟
- * splitScreenCount: 分屏数量9个
- */
-val actionId = mVideoEditor.addAction(config)
-```
-- 添加模糊分屏
-``` kotlin
-/**
- * @param config 闪白json内容
- * 具体json内容如下:
- * {
- *    "effectType": "BlurSplitScreen",
- *    "startTime": 0,
- *    "endTime": 2000
- * }
- *
- * json 参数解释:
- * effectType: 底层根据这个字段来判断添加什么效果, BlurSplitScreen为添加一个模糊分屏效果
- * startTime: 这个模糊分屏的开始时间
- * endTime: 这个模糊分屏的结束时间 2000代表这个模糊分屏效果在显示时只显示2秒钟
- */
-val actionId = mVideoEditor.addAction(config)
+* 删除一个特效
+* @param actionId 需要删除哪个特效, 必须为addAction返回的actionId
+*/
+mVideoEditor.deleteAction(actionId)
 ```
 
 #### 开始预览

@@ -100,26 +100,111 @@ interface TrinityVideoEditor {
    */
   fun getClipIndex(time: Long): Int
 
-  fun addFilter(config: String): Int
+  /**
+   * 添加滤镜
+   * 如: content.json的绝对路径为 /sdcard/Android/com.trinity.sample/cache/filters/config.json
+   * 传入的路径只需要 /sdcard/Android/com.trinity.sample/cache/filters 即可
+   * 如果当前路径不包含config.json则添加失败
+   * 具体json内容如下:
+   * {
+   *  "type": 0,
+   *  "intensity": 1.0,
+   *  "lut": "lut_124/lut_124.png"
+   * }
+   *
+   * json 参数解释:
+   * type: 保留字段, 目前暂无作用
+   * intensity: 滤镜透明度, 0.0时和摄像头采集的无差别
+   * lut: 滤镜颜色表的地址, 必须为本地地址, 而且为相对路径
+   *      sdk内部会进行路径拼接
+   * @param configPath 滤镜config.json的父目录
+   * @return 返回当前滤镜的唯一id
+   */
+  fun addFilter(configPath: String): Int
 
-  fun updateFilter(config: String, startTime: Int, endTime: Int, actionId: Int)
+  /**
+   * 更新滤镜
+   * @param configPath config.json的路径, 目前对称addFilter说明
+   * @param startTime 滤镜的开始时间
+   * @param endTime 滤镜的结束时间
+   * @param actionId 需要更新哪个滤镜, 必须为addFilter返回的actionId
+   */
+  fun updateFilter(configPath: String, startTime: Int, endTime: Int, actionId: Int)
 
+  /**
+   * 删除滤镜
+   * @param actionId 需要删除哪个滤镜, 必须为addFilter时返回的actionId
+   */
   fun deleteFilter(actionId: Int)
 
+  /**
+   * 添加背景音乐
+   * * 具体json内容如下:
+   * {
+   *    "path": "/sdcard/trinity.mp3",
+   *    "startTime": 0,
+   *    "endTime": 2000
+   * }
+   * json 参数解释:
+   * path: 音乐的本地地址
+   * startTime: 这个音乐的开始时间
+   * endTime: 这个音乐的结束时间 2000代表这个音乐只播放2秒钟
+   * @param config 背景音乐json内容
+   */
   fun addMusic(config: String): Int
 
+  /**
+   * 更新背景音乐
+   * * 具体json内容如下:
+   * {
+   *    "path": "/sdcard/trinity.mp3",
+   *    "startTime": 2000,
+   *    "endTime": 4000
+   * }
+   * json 参数解释:
+   * path: 音乐的本地地址
+   * startTime: 这个音乐的开始时间
+   * endTime: 这个音乐的结束时间 4000代表这个音乐从开始时间到结束时间播放2秒钟
+   * @param config 背景音乐json内容
+   */
   fun updateMusic(config: String, actionId: Int)
 
+  /**
+   * 删除背景音乐
+   * @param actionId 必须为添加背景音乐时返回的actionId
+   */
   fun deleteMusic(actionId: Int)
 
-  fun addAction(config: String): Int
+  /**
+   * 添加特效
+   * 如: content.json的绝对路径为 /sdcard/Android/com.trinity.sample/cache/effects/config.json
+   * 传入的路径只需要 /sdcard/Android/com.trinity.sample/cache/effects 即可
+   * 如果当前路径不包含config.json则添加失败
+   * @param configPath 滤镜config.json的父目录
+   * @return 返回当前特效的唯一id
+   */
+  fun addAction(configPath: String): Int
 
+  /**
+   * 更新指定特效
+   * @param startTime 特效的开始时间
+   * @param endTime 特效的结束时间
+   * @param actionId 需要更新哪个特效, 必须为addAction返回的actionId
+   */
   fun updateAction(startTime: Int, endTime: Int, actionId: Int)
 
+  /**
+   * 删除一个特效
+   * @param actionId 需要删除哪个特效, 必须为addAction返回的actionId
+   */
   fun deleteAction(actionId: Int)
 
   fun setOnRenderListener(l: OnRenderListener)
 
+  /**
+   * seek 操作
+   * @param time 设置播放的时间, 以毫秒为准
+   */
   fun seek(time: Int)
 
   /**
@@ -144,5 +229,8 @@ interface TrinityVideoEditor {
    */
   fun stop()
 
+  /**
+   * 释放编辑的资源
+   */
   fun destroy()
 }
