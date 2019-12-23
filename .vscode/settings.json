@@ -6,6 +6,9 @@
         "prctl.h": "c",
         "buffersink.h": "c",
         "av_play.h": "c",
-        "avformat.h": "c"
+        "avformat.h": "c",
+        "vector": "cpp",
+        "utility": "cpp",
+        "typeinfo": "cpp"
     }
 }

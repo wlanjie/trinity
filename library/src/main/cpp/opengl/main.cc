@@ -167,7 +167,7 @@ FrameBuffer* runSkinNeeding() {
         cJSON* param_json = cJSON_Parse(buffer);
         cJSON* effect_json = cJSON_GetObjectItem(param_json, "effect");
         int effect_size = cJSON_GetArraySize(effect_json);
-        cJSON_ArrayForEach
+
         for (int i = 0; i < effect_size; i++) {
             cJSON* effect_item_json = cJSON_GetArrayItem(effect_json, i);
             cJSON* fragment_uniforms_json = cJSON_GetObjectItem(effect_item_json, "fragmentUniforms");
@@ -309,13 +309,13 @@ int main() {
 
     clock_t start = clock();
     ImageProcess image_process;
-    image_process.OnAction("param/twoScreen", 0);
+    image_process.OnAction("param/blurScreen", 0);
     while(!glfwWindowShouldClose(window)) {
         glfwPollEvents();
-        uint64_t current_time = (uint64_t) ((double) (clock() - start) / CLOCKS_PER_SEC * 1000);
-        printf("current_time: %lld\n", current_time);
+        uint64_t current_time = (uint64_t) ((double) (clock() - start) / CLOCKS_PER_SEC * 1000) * 10;
+//        printf("current_time: %lld\n", current_time);
         if (current_time == 200) {
-            image_process.OnUpdateAction(0, 300, 0);
+//            image_process.OnUpdateAction(0, 300, 0);
         }
         int process_id = image_process.Process(texture_id, current_time, width, height, 0, 0);
         

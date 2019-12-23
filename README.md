@@ -18,6 +18,10 @@
 
 ![演示](screen_shot.gif)
 
+## 代码规范
+- kotlin缩进使用2空格缩进
+- c++代码遵循[google c++风格指南](https://zh-google-styleguide.readthedocs.io/en/latest/google-cpp-styleguide/)
+
 ## 系统版本
 
 支持Android 4.3及以上版本
@@ -172,7 +176,22 @@
       <td>毛刺</td>
       <td align="center">√</td>
   </tr>
+  <tr>
+    <td>70s</td>
+    <td align="center">√</td>
+  </tr>
 </table>
+
+## 特效调试
+项目中使用xcode调试特效效果, 使用前需要安装glfw  
+```
+brew install glfw
+```
+然后使用xcode打开即可  
+切换效果调用代码
+```
+image_process.OnAction("param/blurScreen", 0);
+```
 
 ## 使用
 

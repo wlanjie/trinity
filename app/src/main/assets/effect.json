@@ -47,6 +47,13 @@
     "effectName": "SplitScreen"
   },
   {
+    "id": 6,
+    "name": "黑白分屏",
+    "color": "#dc143c",
+    "effect": "effect/blackWhiteScreen",
+    "effectName": "blackWhiteScreen"
+  },
+  {
     "id": 7,
     "name": "模糊分屏",
     "color": "#EA0000",
@@ -58,20 +65,34 @@
     "name": "灵魂出窍",
     "color": "#EA0000",
     "effect": "effect/soulScale",
-    "effectName": "SoulScale"
+    "effectName": "effect/SoulScale"
   },
   {
     "id": 9,
     "name": "抖动",
     "color": "#EA0000",
-    "effect": "effect/shake.json",
+    "effect": "effect/shake",
     "effectName": "Shake"
   },
   {
     "id": 10,
     "name": "毛刺",
     "color": "#EA0000",
-    "effect": "effect/skin_needling.json",
+    "effect": "effect/skinNeedling",
     "effectName": "SkinNeedling"
+  },
+  {
+    "id": 10,
+    "name": "缩放",
+    "color": "#EA0000",
+    "effect": "effect/zoomInOut",
+    "effectName": "zoomInOut"
+  },
+  {
+    "id": 10,
+    "name": "70s",
+    "color": "#EA0000",
+    "effect": "effect/70s",
+    "effectName": "70s"
   }
 ]

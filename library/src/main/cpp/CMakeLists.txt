@@ -107,7 +107,9 @@ add_library(
         ${FILES_OPENGL}/gaussian_blur.cc
         ${FILES_OPENGL}/opengl.cc
         ${FILES_OPENGL}/yuv_render.cc
-        ${FILES_OPENGL}/image_process.cc)
+        ${FILES_OPENGL}/image_process.cc
+        ${FILES_OPENGL}/process_buffer.cc
+        ${FILES_OPENGL}/effect.cc)
 
 set(FFMPEG_LIB ${CMAKE_CURRENT_LIST_DIR}/../../../../extra/ffmpeg/${ANDROID_ABI})
 add_library(avcodec STATIC IMPORTED)

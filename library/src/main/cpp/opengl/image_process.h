@@ -22,13 +22,17 @@
 #define TRINITY_IMAGE_PROCESS_H
 
 //#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+//#include "stb_image.h"
 
 #include <cstdint>
 #include <vector>
 #include <map>
 #include "frame_buffer.h"
 #include "filter.h"
+#include "image_buffer.h"
+#include "opengl_observer.h"
+#include "process_buffer.h"
+#include "effect.h"
 
 extern "C" {
 #include "cJSON.h"
@@ -39,36 +43,6 @@ extern "C" {
 #define VERTICAL 1
 
 namespace trinity {
-
-typedef struct VertexUniforms {
-
-} VertexUniforms;
-
-typedef struct FragmentUniforms {
-    char* name;
-    int type;
-    int data_size;
-    double* data;
-    int data_index;
-} FragmentUniforms;
-
-typedef struct Effect {
-    std::vector<FrameBuffer*> frame_buffers;
-    std::vector<FragmentUniforms*> fragment_uniforms;
-    int start_time;
-    int end_time;
-    int action_id;
-    bool preview;
-} Effect;
-
-typedef struct FilterItem {
-    FrameBuffer* frame_buffer;
-    int start_time;
-    int end_time;
-    int action_id;
-    float intensity;
-    int type;
-} FilterItem;
 
 class ImageProcess {
  public:
@@ -100,7 +74,7 @@ class ImageProcess {
     void ParseConfig(char* config_path, int action_id = -1);
     
     int ReadFile(char* path, char** buffer);
-    
+
     /**
      * 执行特效处理
      * @param texture_id
@@ -111,8 +85,9 @@ class ImageProcess {
      */
     int OnProcess(int texture_id, uint64_t current_time, int width, int height);
  private:
-    std::vector<Effect*> effects_;
     std::map<int, Filter*> filters_;
+    std::map<int, Effect*> effects_;
+    int action_id_;
 };
 
 }  // namespace trinity

@@ -20,6 +20,7 @@
 //
 
 #include "image_process.h"
+#include "image_buffer.h"
 #include <utility>
 
 #if __ANDROID__
@@ -30,29 +31,11 @@
 #define LOGE 
 #endif
 
-enum UniformType {
-    UniformTypeSample2D = 1,
-    UniformTypeBoolean = 2,
-    UniformTypeFloat = 3,
-    UniformTypePoint = 4,
-    UniformTypeVec3 = 5,
-    UniformTypeMatrix4x4 = 8,
-    UniformTypeInputTexture = 100,
-    UniformTypeInputTextureLast = 101,
-    UniformTypeImageWidth = 200,
-    UniformTypeImageHeight = 201,
-    UniformTypeTexelWidthOffset = 300,
-    UniformTypeTexelHeightOffset = 301,
-    UniformTypeFrameTime = 302,
-    UniformTypeInputEffectIndex = 1000,
-    UniformTypeMattingTexture = 2000,
-    UniformTypeRenderCacheKey = 3000,
-};
-
 namespace trinity {
 
-ImageProcess::ImageProcess() {
-}
+ImageProcess::ImageProcess() : action_id_(-1) {
+
+};
 
 ImageProcess::~ImageProcess() {
     ClearAction();
@@ -74,172 +57,38 @@ int ImageProcess::OnProcess(int texture_id, uint64_t current_time, int width, in
         int process_texture = f->OnDrawFrame(texture, current_time);
         texture = process_texture;
     }
-    for (auto& effect : effects_) {
-        if (effect->preview) {
-            std::vector<FrameBuffer*> frame_buffers = effect->frame_buffers;
-            std::vector<FragmentUniforms*> fragment_uniforms = effect->fragment_uniforms;
-            for (FrameBuffer* buffer : frame_buffers) {
-                buffer->ActiveProgram();
-                for (FragmentUniforms *uniforms : fragment_uniforms) {
-                    if (uniforms->data_size > 0 && uniforms->data != nullptr &&
-                        uniforms->type == UniformTypeFloat) {
-                        double data = uniforms->data[uniforms->data_index % uniforms->data_size];
-                        buffer->SetFloat(uniforms->name, data);
-                        uniforms->data_index++;
-                    }
-                    if (uniforms->type == UniformTypeInputTexture) {
-                        buffer->SetInt(uniforms->name, 0);
-                    }
-                }
-                int process_texture = buffer->OnDrawFrame(texture, current_time);
-                texture = process_texture;
-            }
+    
+    if (action_id_ == -1) {
+        for (auto& effect : effects_) {
+            texture = effect.second->OnDrawFrame(texture, current_time);
+        }
+    } else {
+        auto effect_iterator = effects_.find(action_id_);
+        if (effect_iterator == effects_.end()) {
             return texture;
         }
-    }
-    for (auto& effect : effects_) {
-        LOGE("effect start_time: %d end_time: %d", effect->start_time, effect->end_time);
-        std::vector<FrameBuffer*> frame_buffers = effect->frame_buffers;
-        std::vector<FragmentUniforms*> fragment_uniforms = effect->fragment_uniforms;
-        for (FrameBuffer* buffer : frame_buffers) {
-            buffer->ActiveProgram();
-            for (FragmentUniforms* uniforms : fragment_uniforms) {
-                if (uniforms->data_size > 0 && uniforms->data != nullptr && uniforms->type == UniformTypeFloat) {
-                    double data = uniforms->data[uniforms->data_index % uniforms->data_size];
-                    buffer->SetFloat(uniforms->name, data);
-                    uniforms->data_index++;
-                }
-                if (uniforms->type == UniformTypeInputTexture) {
-                    buffer->SetInt(uniforms->name, 0);
-                }
-            }
-            int process_texture = buffer->OnDrawFrame(texture, current_time);
-            texture = process_texture;
-        }
+        texture = effect_iterator->second->OnDrawFrame(texture, current_time);
     }
     return texture;
 }
 
 void ImageProcess::OnAction(char* config_path, int action_id) {
-    ParseConfig(config_path, action_id);
+    auto* effect = new Effect();
+    effect->ParseConfig(config_path);
+    effects_.insert(std::pair<int, Effect*>(action_id, effect));
+    action_id_ = action_id;
 }
 
 void ImageProcess::OnUpdateAction(int start_time, int end_time, int action_id) {
     LOGI("enter %s start_time: %d end_time: %d action_id: %d", __func__, start_time, end_time, action_id);
-    auto it = std::find_if(effects_.begin(), effects_.end(), [action_id](const Effect* effect) -> bool {
-         return action_id == effect->action_id;
-     });
-     if (it == effects_.end()) {
-         return;
-     }
-     for (FrameBuffer* buffer : (*it)->frame_buffers) {
-        buffer->SetStartTime(start_time);
-        buffer->SetEndTime(end_time);
-     }
-     (*it)->start_time = start_time;
-     (*it)->end_time = end_time;
-     (*it)->preview = false;
-     LOGI("leave %s", __func__);
-}
-
-void ImageProcess::ParseConfig(char *config_path, int action_id) {
-    char const* config_name = "/config.json";
-    auto* config = new char[strlen(config_path) + strlen(config_name)];
-    sprintf(config, "%s%s", config_path, config_name);
-    
-    char* buffer = nullptr;
-    int ret = ReadFile(config, &buffer);
-    if (ret != 0 || buffer == nullptr) {
-        return;
-    }
-    cJSON* json = cJSON_Parse(buffer);
-    delete[] config;
-    delete[] buffer;
-    if (nullptr == json) {
-        return;
-    }
-    bool face_detect = false;
-    bool matting = false;
-    cJSON* requirement = cJSON_GetObjectItem(json, "requirement");
-    if (nullptr != requirement) {
-        cJSON* face_detect_json = cJSON_GetObjectItem(requirement, "faceDetect");
-        if (nullptr != face_detect_json && cJSON_IsBool(face_detect_json)) {
-            face_detect = face_detect_json->valueint == 1;
+    if (!effects_.empty() && action_id != -1) {
+        auto effect_iterator = effects_.find(action_id);
+        if (effect_iterator != effects_.end()) {
+            effect_iterator->second->Update(start_time, end_time);
         }
     }
-    cJSON* effect_json = cJSON_GetObjectItem(json, "effect");
-    if (nullptr == effect_json) {
-        cJSON_Delete(json);
-        return;
-    }
-    int effect_size = cJSON_GetArraySize(effect_json);
-    auto* effect = new Effect();
-    effect->action_id = action_id;
-    effect->preview = true;
-
-    for (int i = 0; i < effect_size; ++i) {
-        cJSON *effect_item_json = cJSON_GetArrayItem(effect_json, i);
-        cJSON *name_json = cJSON_GetObjectItem(effect_item_json, "name");
-        cJSON *vertex_shader_json = cJSON_GetObjectItem(effect_item_json, "vertexShader");
-        cJSON *fragment_shader_json = cJSON_GetObjectItem(effect_item_json, "fragmentShader");
-        cJSON *start_time_json = cJSON_GetObjectItem(effect_item_json, "startTime");
-        cJSON *end_time_json = cJSON_GetObjectItem(effect_item_json, "endTime");
-        cJSON *vertex_uniforms_json = cJSON_GetObjectItem(effect_item_json, "vertexUniforms");
-        cJSON *fragment_uniforms_json = cJSON_GetObjectItem(effect_item_json, "fragmentUniforms");
-        if (nullptr != vertex_shader_json && nullptr != fragment_shader_json) {
-            char* vertex_shader = vertex_shader_json->valuestring;
-            char* fragment_shader = fragment_shader_json->valuestring;
-            
-            auto* vertex_shader_path = new char[strlen(config_path) + strlen(vertex_shader)];
-            sprintf(vertex_shader_path, "%s/%s", config_path, vertex_shader);
-            auto* fragment_shader_path = new char[strlen(config_path) + strlen(fragment_shader)];
-            sprintf(fragment_shader_path, "%s/%s", config_path, fragment_shader);
-            
-            char* vertex_shader_buffer = nullptr;
-            ret = ReadFile(vertex_shader_path, &vertex_shader_buffer);
-            printf("vertex ret: %d\n", ret);
-            char* fragment_shader_buffer = nullptr;
-            ret = ReadFile(fragment_shader_path, &fragment_shader_buffer);
-            printf("fragment ret: %d\n", ret);
-            
-            if (vertex_shader_buffer != nullptr && fragment_shader_buffer != nullptr) {
-                auto* frame_buffer = new FrameBuffer(720, 1280, vertex_shader_buffer, fragment_shader_buffer);
-                effect->frame_buffers.push_back(frame_buffer);
-                delete[] vertex_shader_buffer;
-                delete[] fragment_shader_buffer;
-            }
-            delete[] fragment_shader_path;
-            delete[] vertex_shader_path;
-        }
-        if (nullptr != fragment_uniforms_json) {
-            int fragment_uniforms_size = cJSON_GetArraySize(fragment_uniforms_json);
-            for (int uniform_index = 0; uniform_index < fragment_uniforms_size; uniform_index++) {
-                auto* fragment_uniform = new FragmentUniforms();
-//                memset(fragment_uniform, 0, sizeof(fragment_uniform));
-                cJSON* fragment_uniform_item_json = cJSON_GetArrayItem(fragment_uniforms_json, uniform_index);
-                cJSON* fragment_uniform_name_json = cJSON_GetObjectItem(fragment_uniform_item_json, "name");
-                if (nullptr != fragment_uniform_name_json) {
-                    fragment_uniform->name = fragment_uniform_name_json->valuestring;
-                }
-                cJSON* fragment_uniform_type_json = cJSON_GetObjectItem(fragment_uniform_item_json, "type");
-                if (nullptr != fragment_uniform_type_json) {
-                    fragment_uniform->type = fragment_uniform_type_json->valueint;
-                }
-                cJSON* fragment_uniform_data_json = cJSON_GetObjectItem(fragment_uniform_item_json, "data");
-                if (nullptr != fragment_uniform_data_json) {
-                    int fragment_uniform_data_size = cJSON_GetArraySize(fragment_uniform_data_json);
-                    fragment_uniform->data_size = fragment_uniform_data_size;
-                    fragment_uniform->data = new double[fragment_uniform_data_size];
-                    for (int data_index = 0; data_index < fragment_uniform_data_size; data_index++) {
-                        cJSON* data_item_json = cJSON_GetArrayItem(fragment_uniform_data_json, data_index);
-                        fragment_uniform->data[data_index] = data_item_json->valuedouble;
-                    }
-                }
-                effect->fragment_uniforms.push_back(fragment_uniform);
-            }
-        }
-    }
-    effects_.push_back(effect);
+    action_id_ = -1;
+    LOGI("leave %s", __func__);
 }
 
 int ImageProcess::ReadFile(char *path, char **buffer) {
@@ -270,38 +119,34 @@ int ImageProcess::ReadFile(char *path, char **buffer) {
 }
 
 void ImageProcess::RemoveAction(int action_id) {
-    auto it = std::find_if(effects_.begin(), effects_.end(), [action_id](const Effect* effect) -> bool {
-        return action_id == effect->action_id;
-    });
-    if (it == effects_.end()) {
+    if (action_id != -1) {
         return;
     }
-    std::vector<FrameBuffer*> frame_buffers = (*it)->frame_buffers;
-    for (FrameBuffer* buffer : frame_buffers) {
-        delete buffer;
+    if (!effects_.empty()) {
+        auto effect_iterator = effects_.find(action_id);
+        if (effect_iterator != effects_.end()) {
+            Effect *effect = effect_iterator->second;
+            delete effect;
+            effects_.erase(effect_iterator);
+        }
     }
-    frame_buffers.clear();
-    effects_.erase(it);
+    if (!filters_.empty()) {
+        auto filter_iterator = filters_.find(action_id);
+        if (filter_iterator != filters_.end()) {
+            Filter* filter = filter_iterator->second;
+            delete filter;
+            filters_.erase(filter_iterator);
+        }
+    }
 }
 
 void ImageProcess::ClearAction() {
-    for (Effect* effect : effects_) {
-        for (FrameBuffer* buffer : effect->frame_buffers) {
-            delete buffer;
-        }
-        effect->frame_buffers.clear();
-
-        for (FragmentUniforms* uniforms : effect->fragment_uniforms) {
-            if (uniforms->data != nullptr) {
-                delete[] uniforms->data;
-            }
-            uniforms->data_size = 0;
-            uniforms->data_index = 0;
-            delete uniforms;
-        }
+    auto effect_iterator = effects_.begin();
+    while (effect_iterator != effects_.end()) {
+        delete effect_iterator->second;
+        effect_iterator++;
     }
     effects_.clear();
-
     for (auto& filter : filters_) {
         delete filter.second;
     }
@@ -312,7 +157,7 @@ void ImageProcess::OnFilter(char* config_path, int action_id, int start_time, in
     char const* config_name = "/config.json";
     auto* config = new char[strlen(config_path) + strlen(config_name)];
     sprintf(config, "%s%s", config_path, config_name);
-    
+
     char* buffer = nullptr;
     int ret = ReadFile(config, &buffer);
     if (ret != 0 || buffer == nullptr) {

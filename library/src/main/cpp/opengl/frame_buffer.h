@@ -44,6 +44,10 @@ class FrameBuffer : public OpenGL {
         return texture_id_;
     }
 
+    GLuint GetFrameBufferId() {
+        return frameBuffer_id_;
+    }
+
  private:
     GLuint texture_id_;
     GLuint frameBuffer_id_;
