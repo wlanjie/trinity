@@ -309,7 +309,7 @@ int main() {
 
     clock_t start = clock();
     ImageProcess image_process;
-    image_process.OnAction("param/blurScreen", 0);
+    image_process.OnAction("param/x-signal", 0);
     while(!glfwWindowShouldClose(window)) {
         glfwPollEvents();
         uint64_t current_time = (uint64_t) ((double) (clock() - start) / CLOCKS_PER_SEC * 1000) * 10;

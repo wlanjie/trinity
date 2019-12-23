@@ -1,0 +1,41 @@
+{
+    "requirement": {
+        "faceDetect": false,
+        "matting": false
+    },
+    "effect": [
+        {
+            "name": "snowFlake",
+            "vertexShader": "resource/vshader.vs",
+            "vertexUniforms": [
+                {
+                    "name": "imageWidth",
+                    "type": 200
+                },
+                {
+                    "name": "imageHeight",
+                    "type": 201
+                }
+            ],
+            "fragmentShader": "resource/fshader.fs",
+            "fragmentUniforms": [
+                {
+                    "name": "uTime",
+                    "type": 302
+                },
+                {
+                    "name": "inputImageTexture",
+                    "type": 100
+                },
+                {
+                    "name": "inputImageTexture2",
+                    "type": 1,
+                    "data": [
+                        "resource/noise.png"
+                    ]
+                }
+            ]
+        }
+    ],
+    "version": 1.0
+}

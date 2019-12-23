@@ -29,7 +29,7 @@ class LutFilterChooser : Chooser {
 
   override fun init() {
     LayoutInflater.from(context).inflate(R.layout.lut_filter_view, this)
-    val recyclerView = findViewById<RecyclerView>(R.id.effect_list_filter);
+    val recyclerView = findViewById<RecyclerView>(R.id.effect_list_filter)
     val layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
     recyclerView.layoutManager = layoutManager
     recyclerView.adapter = FilterAdapter(context) {

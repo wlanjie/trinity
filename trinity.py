@@ -16,6 +16,8 @@ print(device)
 d = u2.connect_usb(device)
 xp = d.ext_xpath
 
+effects = ["闪白", "两屏", "三屏", "四屏", "六屏", "九屏", "黑白分屏", "模糊分屏", "灵魂出窍", "抖动", "毛刺", "缩放", "70s", "x-signal"]
+
 class TrinityTestCase(unittest.TestCase):
     def setUp(self):
         self.package_name = "com.trinity.sample"
@@ -59,7 +61,7 @@ class TrinityTestCase(unittest.TestCase):
         d(resourceId="com.trinity.sample:id/done", className="android.widget.ImageView").click()
 
         # 点击滤镜
-        # xp.when("滤镜").click()
+        xp.when("滤镜").click()
         d(text="滤镜").click()
         # 遍历滤镜,所有滤镜切换一次
         for num in range(1, 8):
@@ -75,6 +77,24 @@ class TrinityTestCase(unittest.TestCase):
             d.swipe_ext("left", box=(0, self.displayHeight - 200, self.displayWidth, self.displayHeight), scale=0.7)
 
         # 点击隐藏滤镜列表
+        d(resourceId="com.trinity.sample:id/root_view", className="android.widget.RelativeLayout").click()
+
+        # 点击特效
+        d(text="特效").click()
+
+        # 遍历特效, 所有特效执行一次
+
+        for effect_name in effects:
+            try:
+                # 每个特效显示2秒
+                d(text=effect_name).long_click(2)
+            except Exception:
+                print('click effect exception')
+                self.runTest()
+            # 往左滑动
+            d.swipe_ext("left", box=(0, self.displayHeight - 200, 260, self.displayHeight), scale=0.7)                        
+
+         # 点击隐藏特效列表
         d(resourceId="com.trinity.sample:id/root_view", className="android.widget.RelativeLayout").click()
 
         # 点击下一步

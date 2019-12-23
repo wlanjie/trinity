@@ -28,8 +28,8 @@
             filePath = "opengl/effect.cc"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "110"
-            endingLineNumber = "110"
+            startingLineNumber = "113"
+            endingLineNumber = "113"
             landmarkName = "Effect::NeedTextureUnit(fragment_uniform)"
             landmarkType = "7">
          </BreakpointContent>
@@ -46,22 +46,6 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "72"
             endingLineNumber = "72"
-            landmarkName = "Effect::OnDrawFrame(texture_id, current_time)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "7D5D9F2D-496C-4A94-BF7A-6F4AFC26C418"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "opengl/effect.cc"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "49"
-            endingLineNumber = "49"
             landmarkName = "Effect::OnDrawFrame(texture_id, current_time)"
             landmarkType = "7">
          </BreakpointContent>

@@ -94,5 +94,12 @@
     "color": "#EA0000",
     "effect": "effect/70s",
     "effectName": "70s"
+  },
+  {
+    "id": 11,
+    "name": "x-signal",
+    "color": "#EA0000",
+    "effect": "effect/x-signal",
+    "effectName": "x-signal"
   }
 ]

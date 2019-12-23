@@ -92,6 +92,9 @@ void Effect::SetFloat(ShaderUniforms *fragment_uniform, ProcessBuffer *process_b
 }
 
 void Effect::SetSample2D(ShaderUniforms *fragment_uniform, ProcessBuffer *process_buffer) {
+    if (fragment_uniform->image_buffer_values.empty()) {
+        return;
+    }
     int index = fragment_uniform->data_index % fragment_uniform->image_buffer_values.size();
     ImageBuffer* image_buffer = fragment_uniform->image_buffer_values.at(index);
     SetTextureUnit(fragment_uniform, process_buffer, image_buffer->GetTextureId());
@@ -124,6 +127,7 @@ void Effect::SetUniform(SubEffect* sub_effect, ProcessBuffer* process_buffer, st
             
             case UniformTypeMattingTexture:
             case UniformTypeInputTextureLast:
+                
                 break;
             
             case UniformTypeInputEffectIndex: {
