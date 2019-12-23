@@ -6,9 +6,9 @@
 
 ![icon~](https://github.com/wlanjie/trinity/blob/master/trinity@2x.png)
 
-[![Build Status](https://travis-ci.org/LaiFengiOS/LFLiveKit.svg)](https://travis-ci.org/LaiFengiOS/LFLiveKit)&nbsp;
+<!-- [![Build Status](https://travis-ci.org/LaiFengiOS/LFLiveKit.svg)](https://travis-ci.org/LaiFengiOS/LFLiveKit)&nbsp;
 ![Version](https://img.shields.io/badge/version-v1.0-blue.svg)&nbsp;
-![platform](https://img.shields.io/badge/platform-Android-orange.svg)&nbsp;
+![platform](https://img.shields.io/badge/platform-Android-orange.svg)&nbsp; -->
 <!-- [![License MIT](https://img.shields.io/badge/license-MIT-green.svg?style=flat)](https://raw.githubusercontent.com/chenliming777/LFLiveKit/master/LICENSE)&nbsp; -->
 
 
@@ -17,6 +17,11 @@
 [apk下载](https://github.com/wlanjie/trinity/blob/master/trinity.apk)
 
 ![演示](screen_shot.gif)
+
+## QQ交流群
+```
+125218305
+```
 
 ## 代码规范
 - kotlin缩进使用2空格缩进
@@ -187,7 +192,7 @@
 ```
 brew install glfw
 ```
-然后使用xcode打开即可  
+然后使用xcode打开```library/src/main/cpp/opengl.xcodeproj```即可  
 切换效果调用代码
 ```
 image_process.OnAction("param/blurScreen", 0);
