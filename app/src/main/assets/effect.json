@@ -57,7 +57,7 @@
     "id": 7,
     "name": "模糊分屏",
     "color": "#EA0000",
-    "effect": "effect/blur_split_screen.json",
+    "effect": "effect/blurScreen",
     "effectName": "SplitScreen"
   },
   {
