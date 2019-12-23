@@ -103,7 +103,10 @@ class TrinityTestCase(unittest.TestCase):
         d.press("back")
         d.press("back")
         for index in range(0, 40):
-            d(resourceId="com.trinity.sample:id/delete", className="android.widget.ImageView").click()
+            try:
+                d(resourceId="com.trinity.sample:id/delete", className="android.widget.ImageView").click()
+            except Exception:
+                print('delete exception')
 
     def tearDown(self):
         d.set_fastinput_ime(False)
