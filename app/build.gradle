@@ -29,6 +29,9 @@ android {
         preDexLibraries true
         maxProcessCount 8
     }
+    lintOptions {
+        abortOnError false
+    }
 }
 
 dependencies {
@@ -57,6 +60,9 @@ dependencies {
 
     kapt 'com.github.bumptech.glide:compiler:4.9.0'
     implementation project(':library')
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0-alpha02'
     androidTestImplementation 'androidx.test:rules:1.3.0-alpha02'
+
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 }

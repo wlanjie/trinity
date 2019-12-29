@@ -269,10 +269,7 @@ public class MediaCodecMemoryEncoder {
 			m_videoEncoder.releaseOutputBuffer(encoderStatus, false);
 		}
 		
-		if (m_verbose)
-			Log.d("SongStudio VideoRGBMerger", "video encoderd time is: "+(System.currentTimeMillis()-currentTime));
-		
-		// try to do it again 
+		// try to do it again
 		String manufacturer = Build.MANUFACTURER;
 		String model = Build.MODEL;
 		
