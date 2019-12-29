@@ -5,6 +5,7 @@
     },
     "effect": [
         {
+            "type": "generalEffect",
             "name": "snowFlake",
             "vertexShader": "resource/vshader.vs",
             "vertexUniforms": [

@@ -1,0 +1,52 @@
+{
+    "requirement": {
+        "faceDetect": false,
+        "matting": false
+    },
+    "effect": [
+        {
+            "type": "generalEffect",
+            "name": "baseDraw",
+            "zorder": 5108,
+            "autoChangeViewport": true,
+            "vertexShader": "resource/base2d.vs",
+            "vertexUniforms": [
+                {
+                    "name": "scaling",
+                    "type": 3,
+                    "data": [
+                        0.0
+                    ]
+                },
+                {
+                    "name": "angle",
+                    "type": 3,
+                    "data": [
+                        0.0
+                    ]
+                },
+                {
+                    "name": "display_width",
+                    "type": 200
+                },
+                {
+                    "name": "display_height",
+                    "type": 201
+                }
+            ],
+            "fragmentShader": "resource/base2d.fs",
+            "fragmentUniforms": [
+                {
+                    "name": "inputImageTexture",
+                    "type": 100
+                }
+            ]
+        },
+        {
+            "type": "2DStickerV3",
+            "path": "resource/2DStickerV3",
+            "zorder": 5109
+        }
+    ],
+    "version": 1.0
+}

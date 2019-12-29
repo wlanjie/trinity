@@ -5,6 +5,7 @@
     },
     "effect": [
         {
+            "type": "generalEffect",
             "name": "缩放",
             "vertexShader": "resource/vshader.vs",
             "vertexUniforms": [],

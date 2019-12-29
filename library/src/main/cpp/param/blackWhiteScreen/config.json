@@ -5,6 +5,7 @@
     },
     "effect": [
         {
+            "type": "generalEffect",
             "name": "background",
             "vertexShader": "resource/background.vs",
             "vertexUniforms": [],
@@ -31,6 +32,7 @@
             ]
         },
         {
+            "type": "generalEffect",
             "name": "blend",
             "inputEffect": [
                 "background"

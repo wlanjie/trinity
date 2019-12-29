@@ -5,6 +5,7 @@
     },
     "effect": [
         {
+            "type": "generalEffect",
             "name": "九屏",
             "vertexShader": "resource/vshader.vs",
             "vertexUniforms": [],

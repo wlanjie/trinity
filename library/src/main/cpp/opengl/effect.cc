@@ -6,6 +6,82 @@
 
 namespace trinity {
 
+void Transform::Center(float aspect) {
+    
+}
+
+void Transform::ScaleSize(float aspect) {
+    
+}
+
+StickerSubEffect::StickerSubEffect() {
+
+}
+
+StickerSubEffect::~StickerSubEffect() {
+    sticker_idxs.clear();
+    for (auto& path : sticker_paths) {
+        delete[] path;
+    }
+    sticker_paths.clear();
+    auto image_buffer_iterator = image_buffers.begin();
+    while (image_buffer_iterator != image_buffers.end()) {
+        delete image_buffer_iterator->second;
+        image_buffer_iterator++;
+    }
+    image_buffers.clear();
+}
+
+void StickerSubEffect::SetUniform() {
+    
+}
+
+ImageBuffer* StickerSubEffect::StickerBufferAtFrameTime(float time) {
+    auto count = sticker_idxs.size();
+    int index;
+    if (fps == 0) {
+        index = pic_index % count;
+        pic_index++;
+    } else {
+        float duration = 0;
+        if (begin_frame_time == 0) {
+            begin_frame_time = time;
+        } else {
+            duration = (time - begin_frame_time) * 1.0F / 1000;
+        }
+        index = (int) (duration * fps) % count;
+    }
+    int final_index = sticker_idxs.at(index);
+    auto image_buffer_iterator = image_buffers.find(final_index);
+    if (image_buffer_iterator != image_buffers.end()) {
+        return image_buffer_iterator->second;
+    }
+    char* image_path = sticker_paths.at(final_index);
+    int sample_texture_width = 0;
+    int sample_texture_height = 0;
+    int channels = 0;
+    unsigned char* sample_texture_buffer = stbi_load(image_path, &sample_texture_width, &sample_texture_height, &channels, STBI_rgb_alpha);
+    if (nullptr != sample_texture_buffer && sample_texture_width > 0 && sample_texture_height > 0) {
+        auto* image_buffer = new ImageBuffer(sample_texture_width, sample_texture_height, sample_texture_buffer);
+        stbi_image_free(sample_texture_buffer);
+        image_buffers.insert(std::pair<int, ImageBuffer*>(final_index, image_buffer));
+        return image_buffer;
+    }
+    return nullptr;
+}
+
+void StickerV3SubEffect::VertexMatrix(Matrix4x4 **matrix) {
+    if (width == 0 || height == 0) {
+        return;
+    }
+    float sticker_aspect = width * 1.0F / height;
+    float input_aspect = input_aspect;
+    if (nullptr == transform) {
+        return;
+    }
+    
+}
+
 Effect::Effect()
     : start_time_(0)
     , end_time_(INT32_MAX) {
@@ -29,6 +105,7 @@ Effect::~Effect() {
             delete[] input_effect;
         }
         sub_effect->input_effect.clear();
+        delete sub_effect;
     }
     sub_effects_.clear();
     if (!process_buffers_.empty()) {
@@ -47,33 +124,46 @@ int Effect::OnDrawFrame(GLuint texture_id, uint64_t current_time) {
         return texture_id;
     }
     int texture = texture_id;
-    for (size_t i = 0; i < sub_effects_.size(); i++) {
-        SubEffect* sub_effect = sub_effects_.at(i);
+    for (auto iterator = sub_effects_.begin(); iterator != sub_effects_.end(); iterator++) {
+        SubEffect* sub_effect = *iterator;
 //        if (!sub_effect->enable) {
 //            continue;
 //        }
-        ProcessBuffer* process_buffer = nullptr;
-        auto process_buffer_iterator = process_buffers_.find(sub_effect->name);
-        if (process_buffer_iterator == process_buffers_.end()) {
-            return texture_id;
-        } else {
-            process_buffer = process_buffer_iterator->second;
-        }
-        if (nullptr == process_buffer) {
-            continue;
-        }
 
-        glBindFramebuffer(GL_FRAMEBUFFER, process_buffer->GetFrameBufferId());
-        process_buffer->SetOutput(720, 1280);
-        process_buffer->ActiveProgram();
-        process_buffer->Clear();
-        process_buffer->ActiveAttribute();
-        SetUniform(sub_effect, process_buffer, sub_effect->fragment_uniforms, texture_id, current_time);
-        SetUniform(sub_effect, process_buffer, sub_effect->vertex_uniforms, texture_id, current_time);
-        process_buffer->DrawArrays();
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        texture = process_buffer->GetTextureId();
-        process_buffers_.insert(std::pair<char*, ProcessBuffer*>(sub_effect->name, process_buffer));
+        if (sub_effect->type != nullptr) {
+             if (strcmp(sub_effect->type, "2DStickerV3") == 0) {
+                 StickerV3SubEffect* sticker_v3_sub_effect = reinterpret_cast<StickerV3SubEffect*>(sub_effect);
+                 if (nullptr != sticker_v3_sub_effect->blend) {
+                     ImageBuffer* image_buffer = sticker_v3_sub_effect->StickerBufferAtFrameTime(current_time);
+                     if (nullptr != image_buffer) {
+                        texture = sticker_v3_sub_effect->blend->OnDrawFrame(texture, image_buffer->GetTextureId(), nullptr);
+                     }
+                 }
+             } else if (strcmp(sub_effect->type, "generalEffect") == 0) {
+                    ProcessBuffer* process_buffer = nullptr;
+                    auto process_buffer_iterator = process_buffers_.find(sub_effect->name);
+                    if (process_buffer_iterator == process_buffers_.end()) {
+                        return texture_id;
+                    } else {
+                        process_buffer = process_buffer_iterator->second;
+                    }
+                    if (nullptr == process_buffer) {
+                        continue;
+                    }
+
+                    glBindFramebuffer(GL_FRAMEBUFFER, process_buffer->GetFrameBufferId());
+                    process_buffer->SetOutput(720, 1280);
+                    process_buffer->ActiveProgram();
+                    process_buffer->Clear();
+                    process_buffer->ActiveAttribute();
+                    SetUniform(sub_effect, process_buffer, sub_effect->fragment_uniforms, texture_id, current_time);
+                    SetUniform(sub_effect, process_buffer, sub_effect->vertex_uniforms, texture_id, current_time);
+                    process_buffer->DrawArrays();
+                    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                    texture = process_buffer->GetTextureId();
+                    process_buffers_.insert(std::pair<char*, ProcessBuffer*>(sub_effect->name, process_buffer));
+             }
+         } 
     }
     return texture;
 }
@@ -87,7 +177,6 @@ void Effect::SetFloat(ShaderUniforms *fragment_uniform, ProcessBuffer *process_b
     int index = fragment_uniform->data_index % fragment_uniform->float_values.size();
     float value = fragment_uniform->float_values.at(index);
     fragment_uniform->data_index++;
-    printf("SetFloat %f\n", value);
     process_buffer->SetFloat(fragment_uniform->name, value);
 }
 
@@ -188,9 +277,11 @@ void Effect::SetUniform(SubEffect* sub_effect, ProcessBuffer* process_buffer, st
 }
 
 void Effect::ParseConfig(char *config_path) {
-    char const* config_name = "/config.json";
-    auto* config = new char[strlen(config_path) + strlen(config_name)];
-    sprintf(config, "%s%s", config_path, config_name);
+    char const* config_name = "config.json";
+    std::string config;
+    config.append(config_path);
+    config.append("/");
+    config.append(config_name);
     
     char* buffer = nullptr;
     int ret = ReadFile(config, &buffer);
@@ -198,7 +289,6 @@ void Effect::ParseConfig(char *config_path) {
         return;
     }
     cJSON* json = cJSON_Parse(buffer);
-    delete[] config;
     delete[] buffer;
     if (nullptr == json) {
         return;
@@ -222,59 +312,28 @@ void Effect::ParseConfig(char *config_path) {
     for (int i = 0; i < effect_size; ++i) {
         auto* sub_effect = new SubEffect();
         cJSON *effect_item_json = cJSON_GetArrayItem(effect_json, i);
-        cJSON *vertex_shader_json = cJSON_GetObjectItem(effect_item_json, "vertexShader");
-        cJSON *fragment_shader_json = cJSON_GetObjectItem(effect_item_json, "fragmentShader");
-        cJSON *vertex_uniforms_json = cJSON_GetObjectItem(effect_item_json, "vertexUniforms");
-        cJSON *fragment_uniforms_json = cJSON_GetObjectItem(effect_item_json, "fragmentUniforms");
-        cJSON* name_json = cJSON_GetObjectItem(effect_item_json, "name");
-        if (nullptr != name_json) {
-            char* value = name_json->valuestring;
-            sub_effect->name = CopyValue(value);
+        cJSON* type_json = cJSON_GetObjectItem(effect_item_json, "type");
+        if (nullptr != type_json) {
+            char* value = type_json->valuestring;
+            sub_effect->type = CopyValue(value);
         }
-        cJSON* input_effect_json = cJSON_GetObjectItem(effect_item_json, "inputEffect");
-        if (nullptr != input_effect_json) {
-            int input_effect_size = cJSON_GetArraySize(input_effect_json);
-            for (int input_effect_index = 0; input_effect_index < input_effect_size; input_effect_index++) {
-                cJSON* input_effect_value = cJSON_GetArrayItem(input_effect_json, input_effect_index);
-                if (input_effect_value->type == cJSON_String) {
-                    char* value = input_effect_value->valuestring;
-                    sub_effect->input_effect.push_back(CopyValue(value));
+        // TODO delete sub_effect
+        if (nullptr != sub_effect->type) {
+            if (strcmp(sub_effect->type, "2DStickerV3") == 0) {
+                cJSON* path_json = cJSON_GetObjectItem(effect_item_json, "path");
+                if (nullptr == path_json) {
+                    return;
                 }
+                char* path_value = path_json->valuestring;
+                std::string path;
+                path.append(config_path);
+                path.append("/");
+                path.append(path_value);
+                Parse2DStickerV3(sub_effect, path);
+            } else if (strcmp(sub_effect->type, "generalEffect") == 0) {
+                ConvertGeneralConfig(effect_item_json, config_path, sub_effect);
+                sub_effects_.push_back(sub_effect);
             }
-        }
-        
-        if (nullptr != vertex_shader_json && nullptr != fragment_shader_json) {
-            char* vertex_shader = vertex_shader_json->valuestring;
-            char* fragment_shader = fragment_shader_json->valuestring;
-            
-            auto* vertex_shader_path = new char[strlen(config_path) + strlen(vertex_shader)];
-            sprintf(vertex_shader_path, "%s/%s", config_path, vertex_shader);
-            auto* fragment_shader_path = new char[strlen(config_path) + strlen(fragment_shader)];
-            sprintf(fragment_shader_path, "%s/%s", config_path, fragment_shader);
-            
-            char* vertex_shader_buffer = nullptr;
-            ret = ReadFile(vertex_shader_path, &vertex_shader_buffer);
-            printf("vertex ret: %d\n", ret);
-            char* fragment_shader_buffer = nullptr;
-            ret = ReadFile(fragment_shader_path, &fragment_shader_buffer);
-            printf("fragment ret: %d\n", ret);
-            
-            if (vertex_shader_buffer != nullptr && fragment_shader_buffer != nullptr) {
-                auto* process_buffer = new ProcessBuffer();
-                process_buffer->Init(vertex_shader_buffer, fragment_shader_buffer);
-                process_buffers_.insert(std::pair<char*, ProcessBuffer*>(sub_effect->name, process_buffer));
-                delete[] vertex_shader_buffer;
-                delete[] fragment_shader_buffer;
-            }
-            delete[] fragment_shader_path;
-            delete[] vertex_shader_path;
-        }
-        sub_effects_.push_back(sub_effect);
-        if (nullptr != fragment_uniforms_json) {
-            ParseUniform(sub_effect, config_path, fragment_uniforms_json, Fragment);
-        }
-        if (nullptr != vertex_uniforms_json) {
-            ParseUniform(sub_effect, config_path, vertex_uniforms_json, Vertex);
         }
     }
 }
@@ -288,9 +347,9 @@ char* Effect::CopyValue(char* src) {
     return value;
 }
 
-int Effect::ReadFile(char *path, char **buffer) {
-    FILE *file = fopen(path, "r");
-    printf("path: %s\n", path);
+int Effect::ReadFile(std::string& path, char **buffer) {
+    FILE *file = fopen(path.c_str(), "r");
+    printf("path: %s\n", path.c_str());
     if (file == nullptr) {
         return -1;
     }
@@ -314,6 +373,336 @@ int Effect::ReadFile(char *path, char **buffer) {
     printf("%s\n", data);
     *buffer = data;
     return 0;    
+}
+
+void Effect::ConvertStickerConfig(cJSON *effect_item_json, char *resource_root_path, SubEffect *sub_effect) {
+    
+}
+
+void Effect::ConvertGeneralConfig(cJSON *effect_item_json, char* resource_root_path, SubEffect* sub_effect) {
+    int ret = 0;
+    cJSON *vertex_shader_json = cJSON_GetObjectItem(effect_item_json, "vertexShader");
+    cJSON *fragment_shader_json = cJSON_GetObjectItem(effect_item_json, "fragmentShader");
+    cJSON *vertex_uniforms_json = cJSON_GetObjectItem(effect_item_json, "vertexUniforms");
+    cJSON *fragment_uniforms_json = cJSON_GetObjectItem(effect_item_json, "fragmentUniforms");
+    cJSON* name_json = cJSON_GetObjectItem(effect_item_json, "name");
+    if (nullptr != name_json) {
+        char* value = name_json->valuestring;
+        sub_effect->name = CopyValue(value);
+    }
+    cJSON* zorder_json = cJSON_GetObjectItem(effect_item_json, "zorder");
+    if (nullptr != zorder_json) {
+        sub_effect->zorder = zorder_json->valueint;
+    }
+    cJSON* input_effect_json = cJSON_GetObjectItem(effect_item_json, "inputEffect");
+    if (nullptr != input_effect_json) {
+        int input_effect_size = cJSON_GetArraySize(input_effect_json);
+        for (int input_effect_index = 0; input_effect_index < input_effect_size; input_effect_index++) {
+            cJSON* input_effect_value = cJSON_GetArrayItem(input_effect_json, input_effect_index);
+            if (input_effect_value->type == cJSON_String) {
+                char* value = input_effect_value->valuestring;
+                sub_effect->input_effect.push_back(CopyValue(value));
+            }
+        }
+    }
+    
+    if (nullptr != vertex_shader_json && nullptr != fragment_shader_json) {
+        char* vertex_shader = vertex_shader_json->valuestring;
+        char* fragment_shader = fragment_shader_json->valuestring;
+        
+        std::string vertex_shader_path;
+        vertex_shader_path.append(resource_root_path);
+        vertex_shader_path.append("/");
+        vertex_shader_path.append(vertex_shader);
+        
+        std::string fragment_shader_path;
+        fragment_shader_path.append(resource_root_path);
+        fragment_shader_path.append("/");
+        fragment_shader_path.append(fragment_shader);
+        
+        char* vertex_shader_buffer = nullptr;
+        ret = ReadFile(vertex_shader_path, &vertex_shader_buffer);
+        printf("vertex ret: %d\n", ret);
+        char* fragment_shader_buffer = nullptr;
+        ret = ReadFile(fragment_shader_path, &fragment_shader_buffer);
+        printf("fragment ret: %d\n", ret);
+        
+        if (vertex_shader_buffer != nullptr && fragment_shader_buffer != nullptr) {
+            auto* process_buffer = new ProcessBuffer();
+            process_buffer->Init(vertex_shader_buffer, fragment_shader_buffer);
+            process_buffers_.insert(std::pair<char*, ProcessBuffer*>(sub_effect->name, process_buffer));
+            delete[] vertex_shader_buffer;
+            delete[] fragment_shader_buffer;
+        }
+    }
+    if (nullptr != fragment_uniforms_json) {
+        ParseUniform(sub_effect, resource_root_path, fragment_uniforms_json, Fragment);
+    }
+    if (nullptr != vertex_uniforms_json) {
+        ParseUniform(sub_effect, resource_root_path, vertex_uniforms_json, Vertex);
+    }
+}
+
+void Effect::VertexMatrix(SubEffect* sub_effect, Matrix4x4 **matrix) {
+    
+}
+
+void Effect::ParseTextureFiles(cJSON *texture_files, StickerSubEffect* sub_effect, std::string& resource_root_path) {
+    int texture_file_size = cJSON_GetArraySize(texture_files);
+    for (int i = 0; i < texture_file_size; i++) {
+        cJSON* texture_file_item = cJSON_GetArrayItem(texture_files, i);
+        if (nullptr != texture_file_item && texture_file_item->type == cJSON_String) {
+            char* texture_file = texture_file_item->valuestring;
+//            auto* texture_path = new char[strlen(resource_root_path) + strlen(texture_file)];
+//            sprintf(texture_path, "%s/%s", resource_root_path, texture_file);
+            std::string sticker_path;
+            sticker_path.append(resource_root_path);
+            sticker_path.append("/");
+            sticker_path.append(texture_file);
+            sub_effect->sticker_paths.push_back(CopyValue(const_cast<char*>(sticker_path.c_str())));
+        }
+    }
+}
+
+std::string& Effect::ReplaceAllDistince(std::string &str, const std::string &old_value, const std::string &new_value) {
+    for (std::string::size_type pos(0); pos != std::string::npos; pos += new_value.length()) {
+        if ((pos = str.find(old_value, pos)) != std::string::npos) {
+            str.replace(pos, old_value.length(), new_value);
+        } else {
+            break;
+        }
+    }
+    return str;
+}
+
+void Effect::ParsePartsItem(cJSON* clip_root_json, std::string& resource_root_path) {
+    cJSON* parts_json = cJSON_GetObjectItem(clip_root_json, "parts");
+    if (nullptr == parts_json) {
+        return;
+    }
+    int parts_size = cJSON_GetArraySize(parts_json);
+    if (parts_size <= 0) {
+        return;
+    }
+    std::vector<std::string> used_keys;
+    for (int i = 0; i < parts_size; i++) {
+        cJSON* parts_item_json = cJSON_GetArrayItem(parts_json, i);
+        const char* parts_item_value = parts_item_json->string;
+        std::string key_value(parts_item_value);
+        std::string value_names[3] = { "_widthAlign", "_heightAlign", "_Vertical" };
+        std::string key = key_value;
+        
+        for (int value_index = 0; value_index < 3; value_index++) {
+            std::string value = value_names[value_index];
+            auto find = key_value.find(value);
+            if (find != std::string::npos) {
+                key = ReplaceAllDistince(key_value, value, "");
+            }
+        }
+        
+        if (std::find(used_keys.begin(), used_keys.end(), key) != used_keys.end()) {
+            continue;
+        }
+        used_keys.push_back(key_value);
+        
+        cJSON* parts_value_json = cJSON_GetObjectItem(parts_json, parts_item_value);
+        if (nullptr == parts_value_json) {
+            return;
+        }
+        auto* stickerv3 = new StickerV3SubEffect();
+        stickerv3->name = CopyValue(const_cast<char*>(key.c_str()));
+        stickerv3->face_detect = false;
+        stickerv3->type = "2DStickerV3";
+        stickerv3->blend = new Blend();
+        
+        cJSON* alpha_factor_json = cJSON_GetObjectItem(parts_value_json, "alphaFactor");
+        if (nullptr != alpha_factor_json) {
+            double alpha_factor = alpha_factor_json->valuedouble;
+            stickerv3->alpha_factor = static_cast<float>(alpha_factor);
+        }
+        cJSON* blend_mode_json = cJSON_GetObjectItem(parts_value_json, "blendmode");
+        if (nullptr != blend_mode_json) {
+            int blend_mode = blend_mode_json->valueint;
+            stickerv3->blendmode = blend_mode;
+        }
+        cJSON* fps_json = cJSON_GetObjectItem(parts_value_json, "fps");
+        if (nullptr != fps_json) {
+            int fps = fps_json->valueint;
+            stickerv3->fps = fps;
+        }
+        cJSON* width_json = cJSON_GetObjectItem(parts_value_json, "width");
+        if (nullptr != width_json) {
+            int width = width_json->valueint;
+            stickerv3->width = width;
+        }
+        cJSON* height_json = cJSON_GetObjectItem(parts_value_json, "height");
+        if (nullptr != height_json) {
+            int height = height_json->valueint;
+            stickerv3->height = height;
+        }
+        cJSON* zorder_json = cJSON_GetObjectItem(parts_value_json, "zorder");
+        if (nullptr != zorder_json) {
+            int zorder = zorder_json->valueint;
+            stickerv3->zorder = zorder;
+        }
+        cJSON* transform_type_json = cJSON_GetObjectItem(parts_value_json, "transformType");
+        if (nullptr != transform_type_json) {
+            char* transform_type = transform_type_json->valuestring;
+//            stickerv3->transform_type = CopyValue(transform_type);
+        }
+        cJSON* texture_idx_json = cJSON_GetObjectItem(parts_value_json, "textureIdx");
+        if (nullptr != texture_idx_json) {
+            cJSON* idx_json = cJSON_GetObjectItem(texture_idx_json, "idx");
+            if (nullptr != idx_json) {
+                int idx_size = cJSON_GetArraySize(idx_json);
+                for (int idx_index = 0; idx_index < idx_size; idx_index++) {
+                    cJSON* idx_item_json = cJSON_GetArrayItem(idx_json, idx_index);
+                    int idx = idx_item_json->valueint;
+                    stickerv3->sticker_idxs.push_back(idx);
+                }
+            }
+//            cJSON* type_json = cJSON_GetObjectItem(texture_idx_json, "type");
+//            if (nullptr != type_json) {
+//                texture_idx->type = CopyValue(type_json->valuestring);
+//            }
+        }
+        
+        cJSON* texture_files_json = cJSON_GetObjectItem(clip_root_json, "texturefiles");
+        if (nullptr != texture_files_json) {
+            // get sticker file path list
+            ParseTextureFiles(texture_files_json, stickerv3, resource_root_path);
+        }
+        
+        cJSON* transform_params_json = cJSON_GetObjectItem(parts_value_json, "transformParams");
+        if (nullptr != transform_params_json) {
+            auto* transform = new Transform();
+            cJSON* position_json = cJSON_GetObjectItem(transform_params_json, "position");
+            if (nullptr != position_json) {
+                int position_size = cJSON_GetArraySize(position_json);
+                for (int position_index = 0; position_index < position_size; position_index++) {
+                    auto* position = new Position();
+                    cJSON* position_item_json = cJSON_GetArrayItem(position_json, position_index);
+                    char* position_value = position_item_json->string;
+                    cJSON* position_value_json = cJSON_GetObjectItem(position_json, position_value);
+                    if (nullptr != position_value_json) {
+                        cJSON* anchor_json = cJSON_GetObjectItem(position_value_json, "anchor");
+                        if (nullptr != anchor_json) {
+                            int anchor_size = cJSON_GetArraySize(anchor_json);
+                            for (int anchor_index = 0; anchor_index < anchor_size; anchor_index++) {
+                                cJSON* anchor_item_json = cJSON_GetArrayItem(anchor_json, anchor_index);
+                                if (nullptr != anchor_item_json) {
+                                    position->anchor.push_back(static_cast<float>(anchor_item_json->valuedouble));
+                                }
+                            }
+                        }
+                        
+                        cJSON* point_json = cJSON_GetObjectItem(position_value_json, "point");
+                        if (nullptr != point_json) {
+                            int point_size = cJSON_GetArraySize(point_json);
+                            for (int point_index = 0; point_index < point_size; point_index++) {
+                                cJSON* point_item_json = cJSON_GetArrayItem(point_json, point_index);
+                                auto* point = new Point();
+                                cJSON* idx_json = cJSON_GetObjectItem(point_item_json, "idx");
+                                if (nullptr != idx_json && idx_json->type == cJSON_String) {
+                                    point->idx = CopyValue(idx_json->valuestring);
+                                }
+                                cJSON* relation_ref_json = cJSON_GetObjectItem(point_item_json, "relationRef");
+                                if (nullptr != relation_ref_json && relation_ref_json->type == cJSON_Number) {
+                                    point->relation_ref = relation_ref_json->valueint;
+                                }
+                                cJSON* relation_type_json = cJSON_GetObjectItem(point_item_json, "relationType");
+                                if (nullptr != relation_type_json && relation_type_json->type == cJSON_String) {
+                                    point->relation_type = CopyValue(relation_type_json->valuestring);
+                                }
+                                cJSON* weight_json = cJSON_GetObjectItem(point_item_json, "weight");
+                                if (nullptr != weight_json) {
+                                    point->weight = static_cast<float>(weight_json->valuedouble);
+                                }
+                                position->points.push_back(point);
+                            }
+                        }
+                    }
+                    transform->positions.push_back(position);
+                }
+            }
+            cJSON* relation_json = cJSON_GetObjectItem(transform_params_json, "relation");
+            if (nullptr != relation_json) {
+                cJSON* foreground_json = cJSON_GetObjectItem(relation_json, "foreground");
+                if (nullptr != foreground_json && foreground_json->type == cJSON_Number) {
+                    auto* relation = new Relation();
+                    relation->forground = foreground_json->valueint;
+                    transform->relation = relation;
+                }
+            }
+            cJSON* relation_index_json = cJSON_GetObjectItem(transform_params_json, "relationIndex");
+            if (nullptr != relation_index_json) {
+                int relation_size = cJSON_GetArraySize(relation_index_json);
+                for (int relation_index = 0; relation_index < relation_size; relation_index++) {
+                    cJSON* relation_item_json = cJSON_GetArrayItem(relation_index_json, relation_index);
+                    if (nullptr != relation_item_json && relation_item_json->type == cJSON_Number) {
+                        transform->relation_index.push_back(relation_item_json->valueint);
+                    }
+                }
+            }
+            cJSON* relation_ref_order_json = cJSON_GetObjectItem(transform_params_json, "relationRefOrder");
+            if (nullptr != relation_ref_order_json && relation_ref_order_json->type == cJSON_Number) {
+                transform->relation_ref_order = relation_ref_order_json->valueint;
+            }
+            cJSON* rotation_type_json = cJSON_GetObjectItem(transform_params_json, "rotationtype");
+            if (nullptr != rotation_type_json && rotation_type_json->type == cJSON_Number) {
+                transform->rotation_type = rotation_type_json->valueint;
+            }
+            cJSON* scale_json = cJSON_GetObjectItem(transform_params_json, "scale");
+            if (nullptr != scale_json) {
+                
+            }
+            stickerv3->transform = transform;
+            sub_effects_.push_back(stickerv3);
+        }
+        printf("");
+    }
+}
+
+void Effect::Parse2DStickerV3(SubEffect* sub_effect, std::string& resource_root_path) {
+    char const* content_name = "content.json";
+    std::string content_path;
+    content_path.append(resource_root_path);
+    content_path.append("/");
+    content_path.append(content_name);
+    char* content_buffer = nullptr;
+    int ret = ReadFile(content_path, &content_buffer);
+    if (ret != 0 || nullptr == content_buffer) {
+        return;
+    }
+    cJSON* content_root_json = cJSON_Parse(content_buffer);
+    if (nullptr == content_root_json) {
+        return;
+    }
+    cJSON* content_json = cJSON_GetObjectItem(content_root_json, "content");
+    if (nullptr == content_json) {
+        return;
+    }
+    cJSON* path_json = cJSON_GetObjectItem(content_json, "path");
+    if (nullptr == path_json) {
+        return;
+    }
+    char* path_value = path_json->valuestring;
+    std::string clip_path;
+    clip_path.append(resource_root_path);
+    clip_path.append("/");
+    clip_path.append(path_value);
+    char* clip_buffer = nullptr;
+    ret = ReadFile(clip_path, &clip_buffer);
+    if (ret != 0 || nullptr == clip_buffer) {
+        return;
+    }
+    cJSON* clip_root_json = cJSON_Parse(clip_buffer);
+    if (nullptr == clip_root_json) {
+        return;
+    }
+    // convert sticker config
+    ParsePartsItem(clip_root_json, resource_root_path);
+    printf("");
 }
 
 void Effect::ParseUniform(SubEffect *sub_effect, char *config_path, cJSON *uniforms_json, ShaderUniformType type) {

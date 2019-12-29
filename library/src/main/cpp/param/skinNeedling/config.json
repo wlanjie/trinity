@@ -5,6 +5,7 @@
     },
     "effect": [
         {
+            "type": "generalEffect",
             "name": "毛刺",
             "vertexShader": "resource/vshader.vs",
             "vertexUniforms": [],
