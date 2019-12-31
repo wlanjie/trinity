@@ -99,7 +99,7 @@ Blend::~Blend() {
     }
 }
 
-int Blend::OnDrawFrame(int texture_id, int sticker_texture_id, GLfloat* matrix) {
+int Blend::OnDrawFrame(int texture_id, int sticker_texture_id, GLfloat* matrix, float alpha_factor) {
     glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_id_);
     glViewport(0, 0, 720, 1280);
     glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
@@ -116,7 +116,7 @@ int Blend::OnDrawFrame(int texture_id, int sticker_texture_id, GLfloat* matrix) 
     glUniform1i(input_image_texture2_location, 3);
     
     auto alpha_factor_location = glGetUniformLocation(program_, "alphaFactor");
-    glUniform1f(alpha_factor_location, 1.f);
+    glUniform1f(alpha_factor_location, alpha_factor);
     
 //    auto matrix_location = glGetUniformLocation(program_, "matrix");
     // 设置矩阵

@@ -21,38 +21,6 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "BCEDE35E-D755-4957-BF65-70CB4AD41B98"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "opengl/effect.cc"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "300"
-            endingLineNumber = "300"
-            landmarkName = "Effect::ParseConfig(config_path)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "09D4D7C1-47BA-4E94-B3E7-BCE097B8DFB8"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "opengl/effect.cc"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "123"
-            endingLineNumber = "123"
-            landmarkName = "Effect::OnDrawFrame(texture_id, current_time)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
             uuid = "FAD46344-25DA-486B-A903-EA7CFDA0900F"
             shouldBeEnabled = "No"
             ignoreCount = "0"
@@ -62,7 +30,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "106"
             endingLineNumber = "106"
-            landmarkName = "Blend::OnDrawFrame(texture_id, sticker_texture_id, matrix)"
+            landmarkName = "Blend::OnDrawFrame(texture_id, sticker_texture_id, matrix, alpha_factor)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

@@ -59,6 +59,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode
 
 int main() {
     glfwInit();
+    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     GLFWwindow* window = glfwCreateWindow(512, 512, "OpenGL", nullptr, nullptr);
     if(!window) {
         glfwTerminate();
@@ -66,7 +67,12 @@ int main() {
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, keyCallback);
 
-    trinity::OpenGL render_screen(512, 512, DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
+
+    int window_width;
+    int window_height;
+    glfwGetFramebufferSize(window, &window_width, &window_height);
+    
+    trinity::OpenGL render_screen(window_width, window_height, DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
 
     int nrChannels;
     stbi_set_flip_vertically_on_load(true);
@@ -90,10 +96,11 @@ int main() {
 
     clock_t start = clock();
     ImageProcess image_process;
-    image_process.OnAction("param/zoomInOut", 0);
+    char* name = "param/countDown";
+    image_process.OnAction(name, 0);
     while(!glfwWindowShouldClose(window)) {
         glfwPollEvents();
-        uint64_t current_time = (uint64_t) ((double) (clock() - start) / CLOCKS_PER_SEC * 1000) * 10;
+        uint64_t current_time = (uint64_t) ((double) (clock() - start) / CLOCKS_PER_SEC * 1000) * 30;
 //        printf("current_time: %lld\n", current_time);
         if (current_time == 200) {
 //            image_process.OnUpdateAction(0, 300, 0);

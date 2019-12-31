@@ -6,6 +6,32 @@
 
 namespace trinity {
 
+GeneralSubEffect::GeneralSubEffect() {
+
+}
+
+GeneralSubEffect::~GeneralSubEffect() {
+    printf("~GeneralSubEffect\n");
+}
+
+int GeneralSubEffect::OnDrawFrame(std::list<SubEffect*> sub_effects, int texture_id, uint64_t current_time) {
+    ProcessBuffer* process_buffer = GetProcessBuffer();
+    if (nullptr == process_buffer) {
+        return texture_id;
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, process_buffer->GetFrameBufferId());
+    process_buffer->SetOutput(720, 1280);
+    process_buffer->ActiveProgram();
+    process_buffer->Clear();
+    process_buffer->ActiveAttribute();
+    SetUniform(sub_effects, process_buffer, fragment_uniforms, texture_id, current_time);
+    SetUniform(sub_effects, process_buffer, vertex_uniforms, texture_id, current_time);
+    process_buffer->DrawArrays();
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    return process_buffer->GetTextureId();
+}
+
 void Transform::Center(float aspect) {
     
 }
@@ -14,11 +40,25 @@ void Transform::ScaleSize(float aspect) {
     
 }
 
-StickerSubEffect::StickerSubEffect() {
+// StickerSubEffect
+StickerSubEffect::StickerSubEffect() 
+    : blendmode(-1)
+    , width(0)
+    , height(0)
+    , fps(0)
+    , alpha_factor(1.0F)
+    , zorder(0)
+    , pic_index(0)
+    , face_detect(false)
+    , has_face(false)
+    , input_aspect(1.0F)
+    , blend(nullptr)
+    , begin_frame_time(0) {
 
 }
 
 StickerSubEffect::~StickerSubEffect() {
+    printf("~StickerSubEffect\n");
     sticker_idxs.clear();
     for (auto& path : sticker_paths) {
         delete[] path;
@@ -30,10 +70,14 @@ StickerSubEffect::~StickerSubEffect() {
         image_buffer_iterator++;
     }
     image_buffers.clear();
+    if (nullptr != blend) {
+        delete blend;
+        blend = nullptr;
+    }
 }
 
-void StickerSubEffect::SetUniform() {
-    
+int StickerSubEffect::OnDrawFrame(std::list<SubEffect *> sub_effects, int texture_id, uint64_t current_time) {
+    return texture_id;
 }
 
 ImageBuffer* StickerSubEffect::StickerBufferAtFrameTime(float time) {
@@ -70,6 +114,29 @@ ImageBuffer* StickerSubEffect::StickerBufferAtFrameTime(float time) {
     return nullptr;
 }
 
+// StickerV3
+StickerV3SubEffect::StickerV3SubEffect() : transform(nullptr) {
+
+}
+
+StickerV3SubEffect::~StickerV3SubEffect() {
+    printf("~StickerV3SubEffect\n");
+    if (nullptr != transform) {
+        delete transform;
+        transform = nullptr;
+    }
+}
+
+int StickerV3SubEffect::OnDrawFrame(std::list<SubEffect *> sub_effects, int texture_id, uint64_t current_time) {
+    if (nullptr != blend) {
+        ImageBuffer* image_buffer = StickerBufferAtFrameTime(current_time);
+        if (nullptr != image_buffer) {
+            return blend->OnDrawFrame(texture_id, image_buffer->GetTextureId(), nullptr, alpha_factor);
+        }
+    }
+    return texture_id;
+}
+
 void StickerV3SubEffect::VertexMatrix(Matrix4x4 **matrix) {
     if (width == 0 || height == 0) {
         return;
@@ -79,133 +146,94 @@ void StickerV3SubEffect::VertexMatrix(Matrix4x4 **matrix) {
     if (nullptr == transform) {
         return;
     }
-    
 }
 
-Effect::Effect()
-    : start_time_(0)
-    , end_time_(INT32_MAX) {
+// SubEffect
+SubEffect::SubEffect() : process_buffer_(nullptr) {
 
 }
 
-Effect::~Effect() {
-    for (auto& sub_effect : sub_effects_) {
-        delete[] sub_effect->name;
-        for (auto& fragment_uniform : sub_effect->fragment_uniforms) {
+SubEffect::~SubEffect() {
+    if (nullptr != type) {
+        delete[] type;
+        type = nullptr;
+    }
+    if (nullptr != name) {
+        delete[] name;
+        name = nullptr;
+    }
+    for (auto& fragment_uniform : fragment_uniforms) {
             delete[] fragment_uniform->name;
             for (auto& image_buffer : fragment_uniform->image_buffer_values) {
                 delete image_buffer;
             }
             fragment_uniform->image_buffer_values.clear();
             fragment_uniform->float_values.clear();
-        }
-        sub_effect->fragment_uniforms.clear();
-
-        for (auto& input_effect : sub_effect->input_effect) {
-            delete[] input_effect;
-        }
-        sub_effect->input_effect.clear();
-        delete sub_effect;
     }
-    sub_effects_.clear();
-    if (!process_buffers_.empty()) {
-        auto process_buffer_iterator = process_buffers_.begin();
-        while (process_buffer_iterator != process_buffers_.end()) {
-//            delete[] process_buffer_iterator->first;
-            delete process_buffer_iterator->second;
-            process_buffer_iterator++;
-        }
+    fragment_uniforms.clear();
+    for (auto& vertex_uniform : vertex_uniforms) {
+            delete[] vertex_uniform->name;
+            for (auto& image_buffer : vertex_uniform->image_buffer_values) {
+                delete image_buffer;
+            }
+            vertex_uniform->image_buffer_values.clear();
+            vertex_uniform->float_values.clear();
     }
-    process_buffers_.clear();
+    vertex_uniforms.clear();
+    for (auto& input_effect : input_effect) {
+        delete[] input_effect;
+    }
+    input_effect.clear();
+    if (nullptr != process_buffer_) {
+        delete process_buffer_;
+        process_buffer_ = nullptr;
+    }
+    printf("~SubEffect\n");
 }
 
-int Effect::OnDrawFrame(GLuint texture_id, uint64_t current_time) {
-    if (process_buffers_.empty()) {
-        return texture_id;
-    }
-    int texture = texture_id;
-    for (auto iterator = sub_effects_.begin(); iterator != sub_effects_.end(); iterator++) {
-        SubEffect* sub_effect = *iterator;
-//        if (!sub_effect->enable) {
-//            continue;
-//        }
-
-        if (sub_effect->type != nullptr) {
-             if (strcmp(sub_effect->type, "2DStickerV3") == 0) {
-                 StickerV3SubEffect* sticker_v3_sub_effect = reinterpret_cast<StickerV3SubEffect*>(sub_effect);
-                 if (nullptr != sticker_v3_sub_effect->blend) {
-                     ImageBuffer* image_buffer = sticker_v3_sub_effect->StickerBufferAtFrameTime(current_time);
-                     if (nullptr != image_buffer) {
-                        texture = sticker_v3_sub_effect->blend->OnDrawFrame(texture, image_buffer->GetTextureId(), nullptr);
-                     }
-                 }
-             } else if (strcmp(sub_effect->type, "generalEffect") == 0) {
-                    ProcessBuffer* process_buffer = nullptr;
-                    auto process_buffer_iterator = process_buffers_.find(sub_effect->name);
-                    if (process_buffer_iterator == process_buffers_.end()) {
-                        return texture_id;
-                    } else {
-                        process_buffer = process_buffer_iterator->second;
-                    }
-                    if (nullptr == process_buffer) {
-                        continue;
-                    }
-
-                    glBindFramebuffer(GL_FRAMEBUFFER, process_buffer->GetFrameBufferId());
-                    process_buffer->SetOutput(720, 1280);
-                    process_buffer->ActiveProgram();
-                    process_buffer->Clear();
-                    process_buffer->ActiveAttribute();
-                    SetUniform(sub_effect, process_buffer, sub_effect->fragment_uniforms, texture_id, current_time);
-                    SetUniform(sub_effect, process_buffer, sub_effect->vertex_uniforms, texture_id, current_time);
-                    process_buffer->DrawArrays();
-                    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-                    texture = process_buffer->GetTextureId();
-                    process_buffers_.insert(std::pair<char*, ProcessBuffer*>(sub_effect->name, process_buffer));
-             }
-         } 
-    }
-    return texture;
+void SubEffect::InitProcessBuffer(char *vertex_shader, char *fragment_shader) {
+    process_buffer_ = new ProcessBuffer();
+    process_buffer_->Init(vertex_shader, fragment_shader);
 }
 
-void Effect::Update(int start_time, int end_time) {
-    start_time_ = start_time;
-    end_time_ = end_time;
-}
-
-void Effect::SetFloat(ShaderUniforms *fragment_uniform, ProcessBuffer *process_buffer) {
-    int index = fragment_uniform->data_index % fragment_uniform->float_values.size();
-    float value = fragment_uniform->float_values.at(index);
-    fragment_uniform->data_index++;
-    process_buffer->SetFloat(fragment_uniform->name, value);
-}
-
-void Effect::SetSample2D(ShaderUniforms *fragment_uniform, ProcessBuffer *process_buffer) {
-    if (fragment_uniform->image_buffer_values.empty()) {
+void SubEffect::SetFloat(ShaderUniforms *uniform, ProcessBuffer *process_buffer) {
+    if (nullptr == process_buffer) {
         return;
     }
-    int index = fragment_uniform->data_index % fragment_uniform->image_buffer_values.size();
-    ImageBuffer* image_buffer = fragment_uniform->image_buffer_values.at(index);
-    SetTextureUnit(fragment_uniform, process_buffer, image_buffer->GetTextureId());
+    int index = uniform->data_index % uniform->float_values.size();
+    float value = uniform->float_values.at(index);
+    uniform->data_index++;
+    process_buffer->SetFloat(uniform->name, value);
 }
 
-void Effect::SetTextureUnit(ShaderUniforms* fragment_uniform, ProcessBuffer* process_buffer, GLuint texture) {
-    GLenum target = GL_TEXTURE3 + fragment_uniform->texture_unit_index;
+void SubEffect::SetSample2D(ShaderUniforms *uniform, ProcessBuffer *process_buffer) {
+    if (nullptr == process_buffer) {
+        return;
+    }
+    if (uniform->image_buffer_values.empty()) {
+        return;
+    }
+    int index = uniform->data_index % uniform->image_buffer_values.size();
+    ImageBuffer* image_buffer = uniform->image_buffer_values.at(index);
+    SetTextureUnit(uniform, process_buffer, image_buffer->GetTextureId());
+}
+
+void SubEffect::SetTextureUnit(ShaderUniforms *uniform, ProcessBuffer *process_buffer, GLuint texture) {
+    if (nullptr == process_buffer) {
+        return;
+    }
+    GLenum target = GL_TEXTURE3 + uniform->texture_unit_index;
     glActiveTexture(target);
     glBindTexture(GL_TEXTURE_2D, texture);
-//    printf("name: %s index: %d texture: %d\n", fragment_uniform->name, fragment_uniform->texture_unit_index + 3, texture);
-    process_buffer->SetInt(fragment_uniform->name, fragment_uniform->texture_unit_index + 3);
+    process_buffer->SetInt(uniform->name, uniform->texture_unit_index + 3);
 }
 
-bool Effect::NeedTextureUnit(ShaderUniforms *fragment_uniform) {
-    int type = fragment_uniform->type;
-    return type == UniformTypeSample2D || type == UniformTypeInputTexture || type == UniformTypeInputTextureLast || type == UniformTypeRenderCacheKey || type == UniformTypeMattingTexture || type == UniformTypeInputEffectIndex;
-}
-
-void Effect::SetUniform(SubEffect* sub_effect, ProcessBuffer* process_buffer, std::vector<ShaderUniforms*> uniforms, int texture_id, uint64_t current_time) {
+void SubEffect::SetUniform(std::list<SubEffect*> sub_effects, ProcessBuffer *process_buffer, std::vector<ShaderUniforms*> uniforms, int texture_id, uint64_t current_time) {
     int texture_unit_index = 0;
     for (auto& fragment_uniform : uniforms) {
-        if (NeedTextureUnit(fragment_uniform)) {
+        int type = fragment_uniform->type;
+        bool need_texture_unit = type == UniformTypeSample2D || type == UniformTypeInputTexture || type == UniformTypeInputTextureLast || type == UniformTypeRenderCacheKey || type == UniformTypeMattingTexture || type == UniformTypeInputEffectIndex;
+        if (need_texture_unit) {
             fragment_uniform->texture_unit_index = texture_unit_index;
             texture_unit_index += 1;
         }
@@ -220,17 +248,16 @@ void Effect::SetUniform(SubEffect* sub_effect, ProcessBuffer* process_buffer, st
                 break;
             
             case UniformTypeInputEffectIndex: {
-                if (!sub_effect->input_effect.empty()) {
-                    char* name = sub_effect->input_effect.at(fragment_uniform->input_effect_index);
-                    auto input_effect_iterator = process_buffers_.begin();
-                    while (input_effect_iterator != process_buffers_.end()) {
-                        auto key = input_effect_iterator->first;
-                        if (strcmp(key, name) == 0) {
-                            printf("key: %s\n", key);
-                            ProcessBuffer* input_effect_buffer = input_effect_iterator->second;
-                            SetTextureUnit(fragment_uniform, process_buffer, input_effect_buffer->GetTextureId());
+                if (!input_effect.empty()) {
+                    char* name = input_effect.at(fragment_uniform->input_effect_index);
+                    for (auto iterator = sub_effects.begin(); iterator != sub_effects.end(); iterator++) {
+                        SubEffect* sub_effect = *iterator;
+                        if (nullptr != sub_effect->name) {
+                            ProcessBuffer* process_buffer = sub_effect->GetProcessBuffer();
+                            if (strcmp(sub_effect->name, name) == 0 && nullptr != process_buffer) {
+                                SetTextureUnit(fragment_uniform, process_buffer_, process_buffer->GetTextureId());
+                            }
                         }
-                        input_effect_iterator++;
                     }
                 }
                 break;
@@ -276,6 +303,37 @@ void Effect::SetUniform(SubEffect* sub_effect, ProcessBuffer* process_buffer, st
     }
 }
 
+// Effect
+Effect::Effect()
+    : start_time_(0)
+    , end_time_(INT32_MAX) {
+
+}
+
+Effect::~Effect() {
+    for (auto& sub_effect : sub_effects_) {
+        delete sub_effect;
+    }
+    sub_effects_.clear();
+}
+
+int Effect::OnDrawFrame(GLuint texture_id, uint64_t current_time) {
+    int texture = texture_id;
+    for (auto iterator = sub_effects_.begin(); iterator != sub_effects_.end(); iterator++) {
+        SubEffect* sub_effect = *iterator;
+//        if (!sub_effect->enable) {
+//            continue;
+//        }
+        texture = sub_effect->OnDrawFrame(sub_effects_, texture_id, current_time);
+    }
+    return texture;
+}
+
+void Effect::Update(int start_time, int end_time) {
+    start_time_ = start_time;
+    end_time_ = end_time;
+}
+
 void Effect::ParseConfig(char *config_path) {
     char const* config_name = "config.json";
     std::string config;
@@ -313,13 +371,15 @@ void Effect::ParseConfig(char *config_path) {
         auto* sub_effect = new SubEffect();
         cJSON *effect_item_json = cJSON_GetArrayItem(effect_json, i);
         cJSON* type_json = cJSON_GetObjectItem(effect_item_json, "type");
+        char* type = nullptr;
         if (nullptr != type_json) {
             char* value = type_json->valuestring;
-            sub_effect->type = CopyValue(value);
+            type = CopyValue(value);
         }
+        sub_effect->type = type;
         // TODO delete sub_effect
-        if (nullptr != sub_effect->type) {
-            if (strcmp(sub_effect->type, "2DStickerV3") == 0) {
+        if (nullptr != type) {
+            if (strcmp(type, "2DStickerV3") == 0) {
                 cJSON* path_json = cJSON_GetObjectItem(effect_item_json, "path");
                 if (nullptr == path_json) {
                     return;
@@ -330,9 +390,11 @@ void Effect::ParseConfig(char *config_path) {
                 path.append("/");
                 path.append(path_value);
                 Parse2DStickerV3(sub_effect, path);
-            } else if (strcmp(sub_effect->type, "generalEffect") == 0) {
-                ConvertGeneralConfig(effect_item_json, config_path, sub_effect);
-                sub_effects_.push_back(sub_effect);
+            } else if (strcmp(type, "generalEffect") == 0) {
+                auto* general_sub_effect = new GeneralSubEffect();
+                ConvertGeneralConfig(effect_item_json, config_path, general_sub_effect);
+                general_sub_effect->type = type;
+                sub_effects_.push_back(general_sub_effect);
             }
         }
     }
@@ -379,7 +441,7 @@ void Effect::ConvertStickerConfig(cJSON *effect_item_json, char *resource_root_p
     
 }
 
-void Effect::ConvertGeneralConfig(cJSON *effect_item_json, char* resource_root_path, SubEffect* sub_effect) {
+void Effect::ConvertGeneralConfig(cJSON *effect_item_json, char* resource_root_path, GeneralSubEffect* general_sub_effect) {
     int ret = 0;
     cJSON *vertex_shader_json = cJSON_GetObjectItem(effect_item_json, "vertexShader");
     cJSON *fragment_shader_json = cJSON_GetObjectItem(effect_item_json, "fragmentShader");
@@ -388,11 +450,11 @@ void Effect::ConvertGeneralConfig(cJSON *effect_item_json, char* resource_root_p
     cJSON* name_json = cJSON_GetObjectItem(effect_item_json, "name");
     if (nullptr != name_json) {
         char* value = name_json->valuestring;
-        sub_effect->name = CopyValue(value);
+        general_sub_effect->name = CopyValue(value);
     }
     cJSON* zorder_json = cJSON_GetObjectItem(effect_item_json, "zorder");
     if (nullptr != zorder_json) {
-        sub_effect->zorder = zorder_json->valueint;
+        general_sub_effect->zorder = zorder_json->valueint;
     }
     cJSON* input_effect_json = cJSON_GetObjectItem(effect_item_json, "inputEffect");
     if (nullptr != input_effect_json) {
@@ -401,7 +463,7 @@ void Effect::ConvertGeneralConfig(cJSON *effect_item_json, char* resource_root_p
             cJSON* input_effect_value = cJSON_GetArrayItem(input_effect_json, input_effect_index);
             if (input_effect_value->type == cJSON_String) {
                 char* value = input_effect_value->valuestring;
-                sub_effect->input_effect.push_back(CopyValue(value));
+                general_sub_effect->input_effect.push_back(CopyValue(value));
             }
         }
     }
@@ -428,18 +490,16 @@ void Effect::ConvertGeneralConfig(cJSON *effect_item_json, char* resource_root_p
         printf("fragment ret: %d\n", ret);
         
         if (vertex_shader_buffer != nullptr && fragment_shader_buffer != nullptr) {
-            auto* process_buffer = new ProcessBuffer();
-            process_buffer->Init(vertex_shader_buffer, fragment_shader_buffer);
-            process_buffers_.insert(std::pair<char*, ProcessBuffer*>(sub_effect->name, process_buffer));
+            general_sub_effect->InitProcessBuffer(vertex_shader_buffer, fragment_shader_buffer);
             delete[] vertex_shader_buffer;
             delete[] fragment_shader_buffer;
         }
     }
     if (nullptr != fragment_uniforms_json) {
-        ParseUniform(sub_effect, resource_root_path, fragment_uniforms_json, Fragment);
+        ParseUniform(general_sub_effect, resource_root_path, fragment_uniforms_json, Fragment);
     }
     if (nullptr != vertex_uniforms_json) {
-        ParseUniform(sub_effect, resource_root_path, vertex_uniforms_json, Vertex);
+        ParseUniform(general_sub_effect, resource_root_path, vertex_uniforms_json, Vertex);
     }
 }
 
@@ -475,7 +535,7 @@ std::string& Effect::ReplaceAllDistince(std::string &str, const std::string &old
     return str;
 }
 
-void Effect::ParsePartsItem(cJSON* clip_root_json, std::string& resource_root_path) {
+void Effect::ParsePartsItem(cJSON* clip_root_json, std::string& resource_root_path, std::string& type) {
     cJSON* parts_json = cJSON_GetObjectItem(clip_root_json, "parts");
     if (nullptr == parts_json) {
         return;
@@ -512,7 +572,7 @@ void Effect::ParsePartsItem(cJSON* clip_root_json, std::string& resource_root_pa
         auto* stickerv3 = new StickerV3SubEffect();
         stickerv3->name = CopyValue(const_cast<char*>(key.c_str()));
         stickerv3->face_detect = false;
-        stickerv3->type = "2DStickerV3";
+        stickerv3->type = CopyValue(const_cast<char*>(type.c_str()));
         stickerv3->blend = new Blend();
         
         cJSON* alpha_factor_json = cJSON_GetObjectItem(parts_value_json, "alphaFactor");
@@ -686,6 +746,11 @@ void Effect::Parse2DStickerV3(SubEffect* sub_effect, std::string& resource_root_
     if (nullptr == path_json) {
         return;
     }
+    std::string type_string;
+    cJSON* type_json = cJSON_GetObjectItem(content_json, "type");
+    if (nullptr != type_json) {
+        type_string.append(type_json->valuestring);
+    }
     char* path_value = path_json->valuestring;
     std::string clip_path;
     clip_path.append(resource_root_path);
@@ -701,7 +766,7 @@ void Effect::Parse2DStickerV3(SubEffect* sub_effect, std::string& resource_root_
         return;
     }
     // convert sticker config
-    ParsePartsItem(clip_root_json, resource_root_path);
+    ParsePartsItem(clip_root_json, resource_root_path, type_string);
     printf("");
 }
 
