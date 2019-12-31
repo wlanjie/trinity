@@ -15,7 +15,7 @@ static const char* BLEND_VERTEX_SHADER =
         "varying vec2 textureCoordinate2;                                                       \n"
         "uniform mat4 matrix;                                                                   \n"
         "void main() {                                                                          \n"
-        "    vec4 p = vec4(position, 1.);                                              \n"
+        "    vec4 p = vec4(position, 1.);                                                       \n"
         "    textureCoordinate = inputTextureCoordinate;                                        \n"
         "    textureCoordinate2 = p.xy * 0.5 + 0.5;                                             \n"
         "    gl_Position = p;                                                                   \n"
@@ -46,7 +46,7 @@ class Blend {
     Blend();
     ~Blend();
     
-    int OnDrawFrame(int texture_id, int sticker_texture_id, GLfloat* matrix);
+    int OnDrawFrame(int texture_id, int sticker_texture_id, GLfloat* matrix, float alpha_factor);
  private:
     int CreateProgram(const char* vertex, const char* fragment);
     void CompileShader(const char* shader_string, GLuint shader);

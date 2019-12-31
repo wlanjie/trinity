@@ -1,0 +1,33 @@
+language: android
+jdk: oraclejdk8
+dist: precise
+sudo: required
+android:
+  components:
+  - tools
+  - platform-tools
+  - build-tools-27.0.1
+  - android-28
+  - extra-google-google_play_services
+  - extra-google-m2repository
+  - extra-android-m2repository
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -rf $HOME/.gradle/caches/*/plugin-resolution/
+cache:
+  directories:
+  - "$HOME/.gradle/caches/"
+  - "$HOME/.gradle/wrapper/"
+  - "$HOME/.android/build-cache"
+before_install:
+  - sudo chmod +x gradlew
+  - wget https://dl.google.com/android/repository/android-ndk-r20b-linux-x86_64.zip
+  - unzip android-ndk-r20b-linux-x86_64.zip -d $HOME
+  - export ANDROID_NDK_HOME=$HOME/android-ndk-r20b
+  - export PATH=$PATH:$ANDROID_NDK_HOME
+  - mkdir "$ANDROID_HOME/licenses" || true		
+  - echo -e "\n8933bad161af4178b1185d1a37fbf41ea5269c55" > "$ANDROID_HOME/licenses/android-sdk-license"		
+  - echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > "$ANDROID_HOME/licenses/android-sdk-preview-license"	
+before_script:
+  - travis_wait 5 ./.cit_tools/setup_dependencies.sh
+  - ./gradlew clean
