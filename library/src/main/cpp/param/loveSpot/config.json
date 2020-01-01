@@ -1,0 +1,10 @@
+{
+    "effect": [
+        {
+            "type": "2DStickerV3",
+            "path": "resource/2DStickerV3",
+            "zorder": 5105
+        }
+    ],
+    "version": 1.0
+}
