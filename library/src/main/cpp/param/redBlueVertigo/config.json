@@ -5,6 +5,7 @@
     },
     "effect": [
         {
+            "type": "generalEffect",
             "name": "RedBlueVertigo",
             "vertexShader": "resource/vshader.vs",
             "vertexUniforms": [],

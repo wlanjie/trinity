@@ -5,6 +5,7 @@
     },
     "effect": [
         {
+            "type": "generalEffect",
             "name": "oldMovie",
             "vertexShader": "resource/vshader.vs",
             "vertexUniforms": [

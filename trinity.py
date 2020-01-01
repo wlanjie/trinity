@@ -47,7 +47,9 @@ class TrinityTestCase(unittest.TestCase):
 
     def runTest(self):
         for index in range(0, 100):
+            d.app_start(self.package_name)
             self.runApp()
+            d.app_stop(self.package_name)
 
     def runApp(self):
         # 录制20段视频,每段2秒
@@ -102,11 +104,11 @@ class TrinityTestCase(unittest.TestCase):
         time.sleep(40)
         d.press("back")
         d.press("back")
-        for index in range(0, 40):
-            try:
-                d(resourceId="com.trinity.sample:id/delete", className="android.widget.ImageView").click()
-            except Exception:
-                print('delete exception')
+        # for index in range(0, 40):
+        #     try:
+        #         d(resourceId="com.trinity.sample:id/delete", className="android.widget.ImageView").click()
+        #     except Exception:
+        #         print('delete exception')
 
     def tearDown(self):
         d.set_fastinput_ime(False)

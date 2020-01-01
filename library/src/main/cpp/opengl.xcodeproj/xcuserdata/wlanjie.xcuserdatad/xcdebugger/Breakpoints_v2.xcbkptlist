@@ -21,32 +21,16 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "14BD672E-E73D-43CB-88A6-2DF8E0274F91"
+            uuid = "FAD46344-25DA-486B-A903-EA7CFDA0900F"
             shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "opengl/effect.cc"
+            filePath = "opengl/blend.cc"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "113"
-            endingLineNumber = "113"
-            landmarkName = "Effect::NeedTextureUnit(fragment_uniform)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "BA0D50A1-4DD2-4290-889D-A1054397FC08"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "opengl/effect.cc"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "72"
-            endingLineNumber = "72"
-            landmarkName = "Effect::OnDrawFrame(texture_id, current_time)"
+            startingLineNumber = "106"
+            endingLineNumber = "106"
+            landmarkName = "Blend::OnDrawFrame(texture_id, sticker_texture_id, matrix, alpha_factor)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

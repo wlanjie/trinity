@@ -1,16 +1,11 @@
 
-
-
-
 # trinity
 
 ![icon~](https://github.com/wlanjie/trinity/blob/master/trinity@2x.png)
 
-<!-- [![Build Status](https://travis-ci.org/LaiFengiOS/LFLiveKit.svg)](https://travis-ci.org/LaiFengiOS/LFLiveKit)&nbsp;
-![Version](https://img.shields.io/badge/version-v1.0-blue.svg)&nbsp;
-![platform](https://img.shields.io/badge/platform-Android-orange.svg)&nbsp; -->
-<!-- [![License MIT](https://img.shields.io/badge/license-MIT-green.svg?style=flat)](https://raw.githubusercontent.com/chenliming777/LFLiveKit/master/LICENSE)&nbsp; -->
-
+[ ![Download](https://api.bintray.com/packages/wlanjie/maven/trinity/images/download.svg?version=0.2.2) ](https://bintray.com/wlanjie/maven/trinity/0.2.2/link)
+![platform](https://img.shields.io/badge/platform-Android-orange.svg)&nbsp;
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 **trinity是一个开源的拍摄和短视频处理工具，用kotlin和c++编写，实现了大部分短视频编辑软件热门功能。**
 
@@ -198,9 +193,29 @@ brew install glfw
 image_process.OnAction("param/blurScreen", 0);
 ```
 
+## 自动化测试
+- 自动化测试使用[uiautomator2](https://github.com/openatx/uiautomator2)具体使用请参考文档
+使用方式如下:  
+``` python
+cd trinity
+python trinity.py
+```
+然后使用
+```
+adb devices
+```
+在终端输入设备名即可
+
 ## 使用
 
 <font color=red>注意: SDK中不做权限判断,使用时需要由调用方申请好权限, SDK中涉及到的时间均为毫秒</font>
+
+### 添加jcenter依赖
+``` gradle
+dependencies {
+    implementation 'com.github.wlanjie:trinity:0.2.2'
+}
+```
 
 ### 权限要求
 ``` xml
