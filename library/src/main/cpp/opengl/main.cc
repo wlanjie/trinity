@@ -80,7 +80,7 @@ int main() {
     int height;
     GLuint texture_id;
 
-    unsigned char *data = stbi_load("test_image/lenna.png", &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load("app/src/main/assets/lenna.png", &width, &height, &nrChannels, 0);
     printf("width = %d height = %d\n", width, height);
 
     glGenTextures(1, &texture_id);
@@ -96,7 +96,7 @@ int main() {
 
     clock_t start = clock();
     ImageProcess image_process;
-    char* name = "param/countDown";
+    char* name = "app/src/main/assets/effect/zoomInOut";
     image_process.OnAction(name, 0);
     while(!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -106,7 +106,6 @@ int main() {
 //            image_process.OnUpdateAction(0, 300, 0);
         }
         int process_id = image_process.Process(texture_id, current_time, width, height, 0, 0);
-        
         render_screen.ActiveProgram();
         render_screen.ProcessImage(process_id);
         glfwSwapBuffers(window);

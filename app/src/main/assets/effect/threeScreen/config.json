@@ -5,6 +5,7 @@
     },
     "effect": [
         {
+            "type": "generalEffect",
             "name": "三屏",
             "vertexShader": "resource/vshader.vs",
             "vertexUniforms": [],

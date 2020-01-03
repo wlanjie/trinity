@@ -170,7 +170,6 @@ class StickerSubEffect : public SubEffect {
     int height;
     int fps;
     float alpha_factor;
-    int zorder;
     std::vector<int> sticker_idxs;
     std::vector<char*> sticker_paths;
     std::map<int, ImageBuffer*> image_buffers;

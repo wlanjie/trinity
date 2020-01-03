@@ -61,4 +61,20 @@
     <td>skinNeedling</td>
     <td align="center">毛刺</td>
   </tr>
+  <tr>
+    <td>70s</td>
+    <td align="center">70s</td>
+  </tr>
+  <tr>
+    <td>x-signal</td>
+    <td align="center">x-singal</td>
+  </tr>
+  <tr>
+    <td>countDown</td>
+    <td align="center">倒计时</td>
+  </tr>
+  <tr>
+    <td>loveSpot</td>
+    <td align="center">爱心光斑</td>
+  </tr>
 </table>

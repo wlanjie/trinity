@@ -47,7 +47,6 @@ StickerSubEffect::StickerSubEffect()
     , height(0)
     , fps(0)
     , alpha_factor(1.0F)
-    , zorder(0)
     , pic_index(0)
     , face_detect(false)
     , has_face(false)
@@ -324,7 +323,7 @@ int Effect::OnDrawFrame(GLuint texture_id, uint64_t current_time) {
 //        if (!sub_effect->enable) {
 //            continue;
 //        }
-        texture = sub_effect->OnDrawFrame(sub_effects_, texture_id, current_time);
+        texture = sub_effect->OnDrawFrame(sub_effects_, texture, current_time);
     }
     return texture;
 }
@@ -332,6 +331,10 @@ int Effect::OnDrawFrame(GLuint texture_id, uint64_t current_time) {
 void Effect::Update(int start_time, int end_time) {
     start_time_ = start_time;
     end_time_ = end_time;
+}
+
+bool SortSubEffect(SubEffect* s1, SubEffect* s2) {
+    return s1->zorder < s2->zorder;
 }
 
 void Effect::ParseConfig(char *config_path) {
@@ -398,6 +401,7 @@ void Effect::ParseConfig(char *config_path) {
             }
         }
     }
+    sub_effects_.sort(SortSubEffect);
 }
 
 char* Effect::CopyValue(char* src) {
@@ -573,7 +577,6 @@ void Effect::ParsePartsItem(cJSON* clip_root_json, std::string& resource_root_pa
         stickerv3->name = CopyValue(const_cast<char*>(key.c_str()));
         stickerv3->face_detect = false;
         stickerv3->type = CopyValue(const_cast<char*>(type.c_str()));
-        stickerv3->blend = new Blend();
         
         cJSON* alpha_factor_json = cJSON_GetObjectItem(parts_value_json, "alphaFactor");
         if (nullptr != alpha_factor_json) {
@@ -585,6 +588,7 @@ void Effect::ParsePartsItem(cJSON* clip_root_json, std::string& resource_root_pa
             int blend_mode = blend_mode_json->valueint;
             stickerv3->blendmode = blend_mode;
         }
+        stickerv3->blend = BlendFactory::CreateBlend(stickerv3->blendmode);
         cJSON* fps_json = cJSON_GetObjectItem(parts_value_json, "fps");
         if (nullptr != fps_json) {
             int fps = fps_json->valueint;
@@ -714,7 +718,20 @@ void Effect::ParsePartsItem(cJSON* clip_root_json, std::string& resource_root_pa
             }
             cJSON* scale_json = cJSON_GetObjectItem(transform_params_json, "scale");
             if (nullptr != scale_json) {
-                
+                cJSON* scale_y_json = cJSON_GetObjectItem(scale_json, "scaleY");
+                if (nullptr != scale_y_json) {
+                    cJSON* factor_json = cJSON_GetObjectItem(scale_y_json, "factor");
+                    if (nullptr != factor_json) {
+                        factor_json->valuedouble;
+                    }
+                }
+                cJSON* scale_x_json = cJSON_GetObjectItem(scale_json, "scaleX");
+                if (nullptr != scale_x_json) {
+                    cJSON* factor_json = cJSON_GetObjectItem(scale_x_json, "factor");
+                    if (nullptr != scale_x_json) {
+                        factor_json->valuedouble;
+                    }
+                }
             }
             stickerv3->transform = transform;
             sub_effects_.push_back(stickerv3);
