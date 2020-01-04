@@ -1,33 +1,34 @@
 language: android
 jdk: oraclejdk8
-dist: precise
-sudo: required
+sudo: true
+
+os:
+  - linux
+addons:
+  apt_packages:
+    - pandoc
+before_install:
+  - mkdir -p $ANDROID_HOME/licenses
+  - echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > $ANDROID_HOME/licenses/android-sdk-license
+  - echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> $ANDROID_HOME/licenses/android-sdk-license
+install:
+  - echo y | sdkmanager "ndk-bundle"
+  - echo y | sdkmanager "cmake;3.6.4111459"
+  - echo y | sdkmanager "cmake;3.10.2.4988404"
+  - echo y | sdkmanager "lldb;3.1"
 android:
   components:
-  - tools
-  - platform-tools
-  - build-tools-28.0.3
-  - android-28
-  - extra-google-google_play_services
-  - extra-google-m2repository
-  - extra-android-m2repository
-before_cache:
-  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
-  - rm -rf $HOME/.gradle/caches/*/plugin-resolution/
-cache:
-  directories:
-  - "$HOME/.gradle/caches/"
-  - "$HOME/.gradle/wrapper/"
-  - "$HOME/.android/build-cache"
-before_install:
-  - sudo chmod +x gradlew
-  - wget https://dl.google.com/android/repository/android-ndk-r20b-linux-x86_64.zip
-  - unzip android-ndk-r20b-linux-x86_64.zip -d $HOME
-  - export ANDROID_NDK_HOME=$HOME/android-ndk-r20b
-  - export PATH=$PATH:$ANDROID_NDK_HOME
-  - mkdir "$ANDROID_HOME/licenses" || true
-  - echo -e "\n8933bad161af4178b1185d1a37fbf41ea5269c55" > "$ANDROID_HOME/licenses/android-sdk-license"
-  - echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
-before_script:
-  - travis_wait 5 ./.ci_tools/setup_dependencies.sh
-  - ./gradlew clean
+    - tools
+    - platform-tools
+    - tools
+    - build-tools-28.0.3
+    - android-28
+  licenses:
+    - android-sdk-preview-license-.+
+    - android-sdk-license-.+
+    - google-gdk-license-.+
+
+script:
+  - ./gradlew clean check --profile
+  - pandoc `ls -1rt build/reports/profile/profile-*.html | tail -n1` -t plain
+  - ./gradlew dependencyUpdates

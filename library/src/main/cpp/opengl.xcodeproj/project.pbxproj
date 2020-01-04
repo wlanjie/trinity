@@ -50,12 +50,6 @@
 		702B75BC2313E4E40089082D /* yuv_render.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = yuv_render.cc; sourceTree = "<group>"; };
 		702B75C22314005D0089082D /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		702B75C4231400770089082D /* libglfw.3.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libglfw.3.2.dylib; path = ../../../../../../../../usr/local/Cellar/glfw/3.2.1/lib/libglfw.3.2.dylib; sourceTree = "<group>"; };
-		702B75C623140B870089082D /* libavcodec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavcodec.a; path = ../../../../../../../../usr/local/Cellar/ffmpeg/4.1.3_1/lib/libavcodec.a; sourceTree = "<group>"; };
-		702B75C723140B870089082D /* libavformat.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavformat.a; path = ../../../../../../../../usr/local/Cellar/ffmpeg/4.1.3_1/lib/libavformat.a; sourceTree = "<group>"; };
-		702B75C823140B870089082D /* libavresample.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavresample.a; path = ../../../../../../../../usr/local/Cellar/ffmpeg/4.1.3_1/lib/libavresample.a; sourceTree = "<group>"; };
-		702B75C923140B870089082D /* libavutil.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavutil.a; path = ../../../../../../../../usr/local/Cellar/ffmpeg/4.1.3_1/lib/libavutil.a; sourceTree = "<group>"; };
-		702B75CA23140B870089082D /* libswresample.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libswresample.a; path = ../../../../../../../../usr/local/Cellar/ffmpeg/4.1.3_1/lib/libswresample.a; sourceTree = "<group>"; };
-		702B75CB23140B870089082D /* libavfilter.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavfilter.a; path = ../../../../../../../../usr/local/Cellar/ffmpeg/4.1.3_1/lib/libavfilter.a; sourceTree = "<group>"; };
 		702B75D22314C9950089082D /* matrix.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = matrix.cc; path = util/matrix.cc; sourceTree = "<group>"; };
 		7048204B231A668B00FCE038 /* blur_split_screen.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = blur_split_screen.h; sourceTree = "<group>"; };
 		705552712314CCEA007D98BB /* gl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gl.h; sourceTree = "<group>"; };
@@ -63,18 +57,6 @@
 		7064C9E52318EEF700F5D22B /* gaussian_blur.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = gaussian_blur.cc; sourceTree = "<group>"; };
 		7091C9D223A3D2B900E3D958 /* image_process.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = image_process.h; sourceTree = "<group>"; };
 		7091C9D323A3D2B900E3D958 /* image_process.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = image_process.cc; sourceTree = "<group>"; };
-		7091C9DA23A4E53300E3D958 /* config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = config.json; sourceTree = "<group>"; };
-		7091C9DC23A4E53300E3D958 /* fshader.fsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = fshader.fsh; sourceTree = "<group>"; };
-		7091C9DD23A4E53300E3D958 /* vshader.vsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = vshader.vsh; sourceTree = "<group>"; };
-		7091C9E123A5204400E3D958 /* config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = config.json; sourceTree = "<group>"; };
-		7091C9E323A5204400E3D958 /* fshader.fsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = fshader.fsh; sourceTree = "<group>"; };
-		7091C9E423A5204400E3D958 /* vshader.vsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = vshader.vsh; sourceTree = "<group>"; };
-		7091C9E723A52AD900E3D958 /* config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = config.json; sourceTree = "<group>"; };
-		7091C9E923A52AD900E3D958 /* fshader.fsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = fshader.fsh; sourceTree = "<group>"; };
-		7091C9EA23A52AD900E3D958 /* vshader.vsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = vshader.vsh; sourceTree = "<group>"; };
-		7091C9EC23A5337400E3D958 /* config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = config.json; sourceTree = "<group>"; };
-		7091C9EE23A5337400E3D958 /* fshader.fsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = fshader.fsh; sourceTree = "<group>"; };
-		7091C9EF23A5337400E3D958 /* vshader.vsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = vshader.vsh; sourceTree = "<group>"; };
 		70AA611023AB45D200F84CFD /* process_buffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = process_buffer.h; sourceTree = "<group>"; };
 		70AA611123AB45D200F84CFD /* process_buffer.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = process_buffer.cc; sourceTree = "<group>"; };
 		70AA611323ACCE2B00F84CFD /* effect.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = effect.cc; sourceTree = "<group>"; };
@@ -90,11 +72,8 @@
 		70D8854A2362F1BF004E5C33 /* cJSON_Utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cJSON_Utils.h; sourceTree = "<group>"; };
 		70D8854B2362F1BF004E5C33 /* cJSON.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cJSON.c; sourceTree = "<group>"; };
 		70D8854C2362F1BF004E5C33 /* cJSON_Utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cJSON_Utils.c; sourceTree = "<group>"; };
-		70D885502362FB64004E5C33 /* skin_needling.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = skin_needling.json; sourceTree = "<group>"; };
 		70D8855123641FC1004E5C33 /* seventy_second.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = seventy_second.h; sourceTree = "<group>"; };
 		70D8855323644E0A004E5C33 /* hallucination.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hallucination.h; sourceTree = "<group>"; };
-		70D8855423647EEA004E5C33 /* lookup_vertigo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = lookup_vertigo.png; sourceTree = "<group>"; };
-		70D8855523647EEA004E5C33 /* hallucination.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = hallucination.json; sourceTree = "<group>"; };
 		70F802B1233F743100798389 /* scale.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = scale.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -114,7 +93,6 @@
 		702B759A2313E2390089082D = {
 			isa = PBXGroup;
 			children = (
-				70D8854F2362FB64004E5C33 /* param */,
 				70D885482362F1BF004E5C33 /* json */,
 				702B75D22314C9950089082D /* matrix.cc */,
 				702B75A52313E2390089082D /* opengl */,
@@ -172,88 +150,10 @@
 		702B75C12314005D0089082D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				702B75C623140B870089082D /* libavcodec.a */,
-				702B75CB23140B870089082D /* libavfilter.a */,
-				702B75C723140B870089082D /* libavformat.a */,
-				702B75C823140B870089082D /* libavresample.a */,
-				702B75C923140B870089082D /* libavutil.a */,
-				702B75CA23140B870089082D /* libswresample.a */,
 				702B75C4231400770089082D /* libglfw.3.2.dylib */,
 				702B75C22314005D0089082D /* OpenGL.framework */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		7091C9D923A4E53300E3D958 /* zoomInOut */ = {
-			isa = PBXGroup;
-			children = (
-				7091C9DA23A4E53300E3D958 /* config.json */,
-				7091C9DB23A4E53300E3D958 /* resource */,
-			);
-			path = zoomInOut;
-			sourceTree = "<group>";
-		};
-		7091C9DB23A4E53300E3D958 /* resource */ = {
-			isa = PBXGroup;
-			children = (
-				7091C9DC23A4E53300E3D958 /* fshader.fsh */,
-				7091C9DD23A4E53300E3D958 /* vshader.vsh */,
-			);
-			path = resource;
-			sourceTree = "<group>";
-		};
-		7091C9E023A5204400E3D958 /* threeScreen */ = {
-			isa = PBXGroup;
-			children = (
-				7091C9E123A5204400E3D958 /* config.json */,
-				7091C9E223A5204400E3D958 /* resource */,
-			);
-			path = threeScreen;
-			sourceTree = "<group>";
-		};
-		7091C9E223A5204400E3D958 /* resource */ = {
-			isa = PBXGroup;
-			children = (
-				7091C9E323A5204400E3D958 /* fshader.fsh */,
-				7091C9E423A5204400E3D958 /* vshader.vsh */,
-			);
-			path = resource;
-			sourceTree = "<group>";
-		};
-		7091C9E623A52AD900E3D958 /* twoScreen */ = {
-			isa = PBXGroup;
-			children = (
-				7091C9E723A52AD900E3D958 /* config.json */,
-				7091C9E823A52AD900E3D958 /* resource */,
-			);
-			path = twoScreen;
-			sourceTree = "<group>";
-		};
-		7091C9E823A52AD900E3D958 /* resource */ = {
-			isa = PBXGroup;
-			children = (
-				7091C9E923A52AD900E3D958 /* fshader.fsh */,
-				7091C9EA23A52AD900E3D958 /* vshader.vsh */,
-			);
-			path = resource;
-			sourceTree = "<group>";
-		};
-		7091C9EB23A5337400E3D958 /* fourScreen */ = {
-			isa = PBXGroup;
-			children = (
-				7091C9EC23A5337400E3D958 /* config.json */,
-				7091C9ED23A5337400E3D958 /* resource */,
-			);
-			path = fourScreen;
-			sourceTree = "<group>";
-		};
-		7091C9ED23A5337400E3D958 /* resource */ = {
-			isa = PBXGroup;
-			children = (
-				7091C9EE23A5337400E3D958 /* fshader.fsh */,
-				7091C9EF23A5337400E3D958 /* vshader.vsh */,
-			);
-			path = resource;
 			sourceTree = "<group>";
 		};
 		70D885482362F1BF004E5C33 /* json */ = {
@@ -265,20 +165,6 @@
 				70D8854C2362F1BF004E5C33 /* cJSON_Utils.c */,
 			);
 			path = json;
-			sourceTree = "<group>";
-		};
-		70D8854F2362FB64004E5C33 /* param */ = {
-			isa = PBXGroup;
-			children = (
-				7091C9EB23A5337400E3D958 /* fourScreen */,
-				7091C9E623A52AD900E3D958 /* twoScreen */,
-				7091C9E023A5204400E3D958 /* threeScreen */,
-				7091C9D923A4E53300E3D958 /* zoomInOut */,
-				70D8855523647EEA004E5C33 /* hallucination.json */,
-				70D8855423647EEA004E5C33 /* lookup_vertigo.png */,
-				70D885502362FB64004E5C33 /* skin_needling.json */,
-			);
-			path = param;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

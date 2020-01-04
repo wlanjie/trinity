@@ -96,7 +96,7 @@ int main() {
 
     clock_t start = clock();
     ImageProcess image_process;
-    char* name = "app/src/main/assets/effect/zoomInOut";
+    char* name = "app/src/main/assets/effect/loveSpot";
     image_process.OnAction(name, 0);
     while(!glfwWindowShouldClose(window)) {
         glfwPollEvents();
