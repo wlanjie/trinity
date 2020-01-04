@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 //
 // Created by wlanjie on 2019-12-26.
 //
@@ -20,8 +37,8 @@
 #define SCREEN_BLEND      1021
 #define SOFT_LIGHT_BLEND  1022
 
-static const char* BLEND_VERTEX_SHADER = 
-        "attribute vec3 position;                                                               \n"        
+static const char* BLEND_VERTEX_SHADER =
+        "attribute vec3 position;                                                               \n"
         "attribute vec2 inputTextureCoordinate;                                                 \n"
         "varying vec2 textureCoordinate;                                                        \n"
         "varying vec2 textureCoordinate2;                                                       \n"
@@ -50,7 +67,7 @@ static const char* BLEND_FRAGMENT_SHADER =
         "    fgColor = fgColor * alphaFactor;                                                   \n"
         "    gl_FragColor = fgColor;                                                            \n"
         "}                                                                                      \n";
-        
+
 static const char* ADD_BLEND_FRAGMENT_SHADER =
         "#ifdef GL_ES                                                                           \n"
         "precision mediump float;                                                               \n"
@@ -137,7 +154,7 @@ static const char* COLOR_DODGE_BLEND_FRAGMENT_SHADER =
         "   return (blend == 1.0) ? blend : min(base / (1.0 - blend), 1.0);                     \n"
         "}                                                                                      \n"
         "vec3 blendColorDodge(vec3 base, vec3 blend) {                                          \n"
-        "   return vec3(blendColorDodge(base.r,blend.r),blendColorDodge(base.g,blend.g),blendColorDodge(base.b,blend.b));\n"
+        "   return vec3(blendColorDodge(base.r,blend.r),blendColorDodge(base.g,blend.g),blendColorDodge(base.b,blend.b));\n" // NOLINT
         "}                                                                                      \n"
         "vec3 blendFunc(vec3 base, vec3 blend, float opacity) {                                 \n"
         "   return (blendColorDodge(base, blend) * opacity + base * (1.0 - opacity));           \n"
@@ -170,7 +187,7 @@ static const char* HARD_LIGHT_BLEND_FRAGMENT_SHADER =
         "   return blend < 0.5 ? (2.0 * base * blend) : (1.0 - 2.0 * (1.0 - base) * (1.0 - blend));\n"
         "}                                                                                      \n"
         "vec3 blendHardLight(vec3 base, vec3 blend) {                                           \n"
-        "   return vec3(blendHardLight(base.r,blend.r),blendHardLight(base.g,blend.g),blendHardLight(base.b,blend.b));\n"
+        "   return vec3(blendHardLight(base.r,blend.r),blendHardLight(base.g,blend.g),blendHardLight(base.b,blend.b));\n" // NOLINT
         "}                                                                                      \n"
         "vec3 blendFunc(vec3 base, vec3 blend, float opacity) {                                 \n"
         "   return (blendHardLight(base, blend) * opacity + base * (1.0 - opacity));            \n"
@@ -204,7 +221,7 @@ static const char* MULTIPLY_BLEND_FRAGMENT_SHADER =
         "}                                                                                      \n"
         "vec3 blendFunc(vec3 base, vec3 blend, float opacity) {                                 \n"
         "   return (blendMultiply(base, blend) * opacity + base * (1.0 - opacity));             \n"
-        "}                                                                                      \n" 
+        "}                                                                                      \n"  // NOLINT
         "void main() {                                                                          \n"
         "   vec4 fgColor = texture2D(inputImageTexture2, textureCoordinate);                    \n"
         "   fgColor = fgColor * alphaFactor;                                                    \n"
@@ -213,7 +230,7 @@ static const char* MULTIPLY_BLEND_FRAGMENT_SHADER =
         "       gl_FragColor = bgColor;                                                         \n"
         "       return;                                                                         \n"
         "   }                                                                                   \n"
-        "   vec3 color = blendFunc(bgColor.rgb, clamp(fgColor.rgb * (1.0 / fgColor.a), 0.0, 1.0), 1.0 );\n"
+        "   vec3 color = blendFunc(bgColor.rgb, clamp(fgColor.rgb * (1.0 / fgColor.a), 0.0, 1.0), 1.0 );\n" // NOLINT
         "   gl_FragColor = vec4(bgColor.rgb * (1.0 - fgColor.a) + color.rgb * fgColor.a, 1.0);  \n"
         "}                                                                                      \n";
 
@@ -234,7 +251,7 @@ static const char* PIN_LIGHT_BLEND_FRAGMENT_SHADER =
         "}                                                                                      \n"
         "float blendLighten(float base, float blend) {                                          \n"
         "   return max(blend, base);                                                            \n"
-        "}                                                                                      \n" 
+        "}                                                                                      \n" // NOLINT
         "float blendPinLight(float base, float blend) {                                         \n"
         "   return (blend<0.5)?blendDarken(base,(2.0*blend)):blendLighten(base,(2.0*(blend-0.5)));\n"
         "}                                                                                      \n"
@@ -272,11 +289,11 @@ static const char* SCREEN_BLEND_FRAGMENT_SHADER =
         "   return 1.0 - ((1.0 - base) * (1.0 - blend));                                        \n"
         "}                                                                                      \n"
         "vec3 blendScreen(vec3 base, vec3 blend) {                                              \n"
-        "   return vec3(blendScreen(base.r,blend.r),blendScreen(base.g,blend.g),blendScreen(base.b,blend.b));\n"
+        "   return vec3(blendScreen(base.r,blend.r),blendScreen(base.g,blend.g),blendScreen(base.b,blend.b));\n" // NOLINT
         "}                                                                                      \n"
         "vec3 blendFunc(vec3 base, vec3 blend, float opacity) {                                 \n"
         "   return (blendScreen(base, blend) * opacity + base * (1.0 - opacity));               \n"
-        "}                                                                                      \n" 
+        "}                                                                                      \n" // NOLINT
         "void main() {                                                                          \n"
         "   vec4 fgColor = texture2D(inputImageTexture2, textureCoordinate);                    \n"
         "   fgColor = fgColor * alphaFactor;                                                    \n"
@@ -302,14 +319,14 @@ static const char* SOFT_LIGHT_BLEND_FRAGMENT_SHADER =
         "uniform sampler2D inputImageTexture2;                                                  \n"
         "uniform float alphaFactor;                                                             \n"
         "float blendSoftLight(float base, float blend) {                                        \n"
-        "   return (blend<0.5)?(base+(2.0*blend-1.0)*(base-base*base)):(base+(2.0*blend-1.0)*(sqrt(base)-base));\n"
+        "   return (blend<0.5)?(base+(2.0*blend-1.0)*(base-base*base)):(base+(2.0*blend-1.0)*(sqrt(base)-base));\n" // NOLINT
         "}                                                                                      \n"
         "vec3 blendSoftLight(vec3 base, vec3 blend) {                                           \n"
-        "   return vec3(blendSoftLight(base.r,blend.r),blendSoftLight(base.g,blend.g),blendSoftLight(base.b,blend.b));\n"
+        "   return vec3(blendSoftLight(base.r,blend.r),blendSoftLight(base.g,blend.g),blendSoftLight(base.b,blend.b));\n" // NOLINT
         "}                                                                                      \n"
         "vec3 blendFunc(vec3 base, vec3 blend, float opacity) {                                 \n"
         "   return (blendSoftLight(base, blend) * opacity + base * (1.0 - opacity));            \n"
-        "}                                                                                      \n" 
+        "}                                                                                      \n" // NOLINT
         "void main() {                                                                          \n"
         "   vec4 fgColor = texture2D(inputImageTexture2, textureCoordinate);                    \n"
         "   fgColor = fgColor * alphaFactor;                                                    \n"
@@ -326,9 +343,8 @@ namespace trinity {
 
 class Blend {
  public:
-    Blend(const char* fragment_shader);
+    explicit Blend(const char* fragment_shader);
     virtual ~Blend();
-    
     int OnDrawFrame(int texture_id, int sticker_texture_id, GLfloat* matrix, float alpha_factor);
  private:
     int CreateProgram(const char* vertex, const char* fragment);
@@ -346,65 +362,47 @@ class Blend {
 
 class NormalBlend : public Blend {
  public:
-    NormalBlend() : Blend(BLEND_FRAGMENT_SHADER) {
-    
-    }
+    NormalBlend() : Blend(BLEND_FRAGMENT_SHADER) {}
 };
 
 class AddBlend : public Blend {
  public:
-    AddBlend() : Blend(ADD_BLEND_FRAGMENT_SHADER) {
-    
-    }
+    AddBlend() : Blend(ADD_BLEND_FRAGMENT_SHADER) {}
 };
 
 class OverlayBlend : public Blend {
  public:
-    OverlayBlend() : Blend(OVERLAY_BLEND_FRAGMENT_SHADER) {
-    
-    }
+    OverlayBlend() : Blend(OVERLAY_BLEND_FRAGMENT_SHADER) {}
 };
 
 class ColorDodgeBlend : public Blend {
  public:
-    ColorDodgeBlend() : Blend(COLOR_DODGE_BLEND_FRAGMENT_SHADER) {
-    
-    }
+    ColorDodgeBlend() : Blend(COLOR_DODGE_BLEND_FRAGMENT_SHADER) {}
 };
 
 class HardLightBlend : public Blend {
  public:
-    HardLightBlend() : Blend(HARD_LIGHT_BLEND_FRAGMENT_SHADER) {
-    
-    }
+    HardLightBlend() : Blend(HARD_LIGHT_BLEND_FRAGMENT_SHADER) {}
 };
 
 class MultiplyBlend : public Blend {
  public:
-    MultiplyBlend() : Blend(MULTIPLY_BLEND_FRAGMENT_SHADER) {
-    
-    }
+    MultiplyBlend() : Blend(MULTIPLY_BLEND_FRAGMENT_SHADER) {}
 };
 
 class PinLightBlend : public Blend {
  public:
-    PinLightBlend() : Blend(PIN_LIGHT_BLEND_FRAGMENT_SHADER) {
-    
-    }
+    PinLightBlend() : Blend(PIN_LIGHT_BLEND_FRAGMENT_SHADER) {}
 };
 
 class ScreenBlend : public Blend {
  public:
-    ScreenBlend() : Blend(SCREEN_BLEND_FRAGMENT_SHADER) {
-    
-    }
+    ScreenBlend() : Blend(SCREEN_BLEND_FRAGMENT_SHADER) {}
 };
 
 class SoftLightBlend : public Blend {
  public:
-    SoftLightBlend() : Blend(SOFT_LIGHT_BLEND_FRAGMENT_SHADER) {
-    
-    }
+    SoftLightBlend() : Blend(SOFT_LIGHT_BLEND_FRAGMENT_SHADER) {}
 };
 
 class BlendFactory {
@@ -438,6 +436,6 @@ class BlendFactory {
     }
 };
 
-}
+}  // namespace trinity
 
 #endif  // TRINITY_BLEND_H

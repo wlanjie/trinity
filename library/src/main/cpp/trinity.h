@@ -31,4 +31,4 @@ typedef struct {
     int64_t end_time;
 } MediaClip;
 
-#endif //TRINITY_TRINITY_H
+#endif  // TRINITY_TRINITY_H

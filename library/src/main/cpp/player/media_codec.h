@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 //
 //  media_codec.h
 //  player
@@ -13,36 +30,36 @@
 #include "endian.h"
 
 /* Inspired by libavcodec/hevc.c */
-static int convert_hevc_nal_units(const uint8_t *p_buf,size_t i_buf_size,
-                           uint8_t *p_out_buf,size_t i_out_buf_size,
-                           size_t *p_sps_pps_size,size_t *p_nal_size) {
+static int convert_hevc_nal_units(const uint8_t *p_buf, size_t i_buf_size,
+                           uint8_t *p_out_buf, size_t i_out_buf_size,
+                           size_t *p_sps_pps_size, size_t *p_nal_size) {
     int i, num_arrays;
     const uint8_t *p_end = p_buf + i_buf_size;
     uint32_t i_sps_pps_size = 0;
 
-    if( i_buf_size <= 3 || ( !p_buf[0] && !p_buf[1] && p_buf[2] <= 1 ) )
+    if (i_buf_size <= 3 || (!p_buf[0] && !p_buf[1] && p_buf[2] <= 1)) {
         return -1;
+    }
 
-    if( p_end - p_buf < 23 ) {
-        LOGE( "Input Metadata too small" );
+    if (p_end - p_buf < 23) {
+        LOGE("Input Metadata too small");
         return -1;
     }
 
     p_buf += 21;
 
-    if( p_nal_size )
+    if (p_nal_size) {
         *p_nal_size = (size_t) ((*p_buf & 0x03) + 1);
+    }
     p_buf++;
 
     num_arrays = *p_buf++;
 
-    for( i = 0; i < num_arrays; i++ )
-    {
+    for (i = 0; i < num_arrays; i++) {
         int type, cnt, j;
 
-        if( p_end - p_buf < 3 )
-        {
-            LOGE( "Input Metadata too small" );
+        if (p_end - p_buf < 3) {
+            LOGE("Input Metadata too small");
             return -1;
         }
         type = *(p_buf++) & 0x3f;
@@ -51,28 +68,24 @@ static int convert_hevc_nal_units(const uint8_t *p_buf,size_t i_buf_size,
         cnt = p_buf[0] << 8 | p_buf[1];
         p_buf += 2;
 
-        for( j = 0; j < cnt; j++ )
-        {
+        for (j = 0; j < cnt; j++) {
             int i_nal_size;
 
-            if( p_end - p_buf < 2 )
-            {
-                LOGE( "Input Metadata too small" );
+            if (p_end - p_buf < 2) {
+                LOGE("Input Metadata too small");
                 return -1;
             }
 
             i_nal_size = p_buf[0] << 8 | p_buf[1];
             p_buf += 2;
 
-            if( i_nal_size < 0 || p_end - p_buf < i_nal_size )
-            {
-                LOGE( "NAL unit size does not match Input Metadata size" );
+            if (i_nal_size < 0 || p_end - p_buf < i_nal_size) {
+                LOGE("NAL unit size does not match Input Metadata size");
                 return -1;
             }
 
-            if( i_sps_pps_size + 4 + i_nal_size > i_out_buf_size )
-            {
-                LOGE( "Output buffer too small" );
+            if (i_sps_pps_size + 4 + i_nal_size > i_out_buf_size) {
+                LOGE("Output buffer too small");
                 return -1;
             }
 
@@ -199,7 +212,7 @@ static int convert_sps_pps2(const uint8_t *p_buf, size_t i_buf_size,
                             size_t *p_nal_size
 ) {
     // int i_profile;
-    uint32_t i_data_size = (uint32_t) i_buf_size, i_nal_size ;
+    uint32_t i_data_size = (uint32_t) i_buf_size, i_nal_size;
     unsigned int i_loop_end;
 
     /* */
@@ -253,14 +266,14 @@ static int convert_sps_pps2(const uint8_t *p_buf, size_t i_buf_size,
 //
 //            memcpy(p_out_buf + i_sps_pps_size, p_buf, i_nal_size);
 //            i_sps_pps_size += i_nal_size;
-            if(j == 0){
+            if (j == 0) {
                 out_sps_buf[0] = 0;
                 out_sps_buf[1] = 0;
                 out_sps_buf[2] = 0;
                 out_sps_buf[3] = 1;
                 memcpy(out_sps_buf + 4, p_buf, i_nal_size);
                 * out_sps_buf_size = i_nal_size + 4;
-            }else{
+            } else {
                 out_pps_buf[0] = 0;
                 out_pps_buf[1] = 0;
                 out_pps_buf[2] = 0;
@@ -284,37 +297,35 @@ typedef struct H264ConvertState {
     uint32_t nal_pos;
 } H264ConvertState;
 
-static void convert_h264_to_annexb( uint8_t *p_buf, size_t i_len,
+static void convert_h264_to_annexb(uint8_t *p_buf, size_t i_len,
                                     size_t i_nal_size,
-                                    H264ConvertState *state )
-{
-    if( i_nal_size < 3 || i_nal_size > 4 )
+                                    H264ConvertState *state ) {
+    if (i_nal_size < 3 || i_nal_size > 4) {
         return;
+    }
 
     /* This only works for NAL sizes 3-4 */
-    while( i_len > 0 )
-    {
-        if( state->nal_pos < i_nal_size ) {
+    while (i_len > 0) {
+        if (state->nal_pos < i_nal_size) {
             unsigned int i;
-            for( i = 0; state->nal_pos < i_nal_size && i < i_len; i++, state->nal_pos++ ) {
+            for (i = 0; state->nal_pos < i_nal_size && i < i_len; i++, state->nal_pos++) {
                 state->nal_len = (state->nal_len << 8) | p_buf[i];
                 p_buf[i] = 0;
             }
-            if( state->nal_pos < i_nal_size )
+            if (state->nal_pos < i_nal_size) {
                 return;
+            }
             p_buf[i - 1] = 1;
             p_buf += i;
             i_len -= i;
         }
-        if( state->nal_len > INT_MAX )
-            return;
-        if( state->nal_len > i_len )
-        {
-            state->nal_len -= i_len;
+        if (state->nal_len > INT_MAX) {
             return;
         }
-        else
-        {
+        if (state->nal_len > i_len) {
+            state->nal_len -= i_len;
+            return;
+        } else {
             p_buf += state->nal_len;
             i_len -= state->nal_len;
             state->nal_len = 0;

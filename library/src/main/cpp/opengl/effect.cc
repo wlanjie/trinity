@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 //
 // Created by wlanjie on 2019-12-20.
 //
@@ -6,9 +23,7 @@
 
 namespace trinity {
 
-GeneralSubEffect::GeneralSubEffect() {
-
-}
+GeneralSubEffect::GeneralSubEffect() {}
 
 GeneralSubEffect::~GeneralSubEffect() {
     printf("~GeneralSubEffect\n");
@@ -32,16 +47,12 @@ int GeneralSubEffect::OnDrawFrame(std::list<SubEffect*> sub_effects, int texture
     return process_buffer->GetTextureId();
 }
 
-void Transform::Center(float aspect) {
-    
-}
+void Transform::Center(float aspect) {}
 
-void Transform::ScaleSize(float aspect) {
-    
-}
+void Transform::ScaleSize(float aspect) {}
 
 // StickerSubEffect
-StickerSubEffect::StickerSubEffect() 
+StickerSubEffect::StickerSubEffect()
     : blendmode(-1)
     , width(0)
     , height(0)
@@ -52,9 +63,7 @@ StickerSubEffect::StickerSubEffect()
     , has_face(false)
     , input_aspect(1.0F)
     , blend(nullptr)
-    , begin_frame_time(0) {
-
-}
+    , begin_frame_time(0) {}
 
 StickerSubEffect::~StickerSubEffect() {
     printf("~StickerSubEffect\n");
@@ -92,7 +101,7 @@ ImageBuffer* StickerSubEffect::StickerBufferAtFrameTime(float time) {
         } else {
             duration = (time - begin_frame_time) * 1.0F / 1000;
         }
-        index = (int) (duration * fps) % count;
+        index = static_cast<int>(duration * fps) % count;
     }
     int final_index = sticker_idxs.at(index);
     auto image_buffer_iterator = image_buffers.find(final_index);
@@ -103,7 +112,8 @@ ImageBuffer* StickerSubEffect::StickerBufferAtFrameTime(float time) {
     int sample_texture_width = 0;
     int sample_texture_height = 0;
     int channels = 0;
-    unsigned char* sample_texture_buffer = stbi_load(image_path, &sample_texture_width, &sample_texture_height, &channels, STBI_rgb_alpha);
+    unsigned char* sample_texture_buffer = stbi_load(image_path,
+            &sample_texture_width, &sample_texture_height, &channels, STBI_rgb_alpha);
     if (nullptr != sample_texture_buffer && sample_texture_width > 0 && sample_texture_height > 0) {
         auto* image_buffer = new ImageBuffer(sample_texture_width, sample_texture_height, sample_texture_buffer);
         stbi_image_free(sample_texture_buffer);
@@ -114,9 +124,7 @@ ImageBuffer* StickerSubEffect::StickerBufferAtFrameTime(float time) {
 }
 
 // StickerV3
-StickerV3SubEffect::StickerV3SubEffect() : transform(nullptr) {
-
-}
+StickerV3SubEffect::StickerV3SubEffect() : transform(nullptr) {}
 
 StickerV3SubEffect::~StickerV3SubEffect() {
     printf("~StickerV3SubEffect\n");
@@ -148,9 +156,12 @@ void StickerV3SubEffect::VertexMatrix(Matrix4x4 **matrix) {
 }
 
 // SubEffect
-SubEffect::SubEffect() : process_buffer_(nullptr) {
-
-}
+SubEffect::SubEffect()
+    : process_buffer_(nullptr)
+    , enable(false)
+    , name(nullptr)
+    , type(nullptr)
+    , zorder(0) {}
 
 SubEffect::~SubEffect() {
     if (nullptr != type) {
@@ -227,11 +238,14 @@ void SubEffect::SetTextureUnit(ShaderUniforms *uniform, ProcessBuffer *process_b
     process_buffer->SetInt(uniform->name, uniform->texture_unit_index + 3);
 }
 
-void SubEffect::SetUniform(std::list<SubEffect*> sub_effects, ProcessBuffer *process_buffer, std::vector<ShaderUniforms*> uniforms, int texture_id, uint64_t current_time) {
+void SubEffect::SetUniform(std::list<SubEffect*> sub_effects, ProcessBuffer *process_buffer,
+        std::vector<ShaderUniforms*> uniforms, int texture_id, uint64_t current_time) {
     int texture_unit_index = 0;
     for (auto& fragment_uniform : uniforms) {
         int type = fragment_uniform->type;
-        bool need_texture_unit = type == UniformTypeSample2D || type == UniformTypeInputTexture || type == UniformTypeInputTextureLast || type == UniformTypeRenderCacheKey || type == UniformTypeMattingTexture || type == UniformTypeInputEffectIndex;
+        bool need_texture_unit = type == UniformTypeSample2D || type == UniformTypeInputTexture
+                || type == UniformTypeInputTextureLast || type == UniformTypeRenderCacheKey
+                || type == UniformTypeMattingTexture || type == UniformTypeInputEffectIndex;
         if (need_texture_unit) {
             fragment_uniform->texture_unit_index = texture_unit_index;
             texture_unit_index += 1;
@@ -240,12 +254,9 @@ void SubEffect::SetUniform(std::list<SubEffect*> sub_effects, ProcessBuffer *pro
             case UniformTypeInputTexture:
                 SetTextureUnit(fragment_uniform, process_buffer, texture_id);
                 break;
-            
             case UniformTypeMattingTexture:
             case UniformTypeInputTextureLast:
-                
                 break;
-            
             case UniformTypeInputEffectIndex: {
                 if (!input_effect.empty()) {
                     char* name = input_effect.at(fragment_uniform->input_effect_index);
@@ -261,7 +272,6 @@ void SubEffect::SetUniform(std::list<SubEffect*> sub_effects, ProcessBuffer *pro
                 }
                 break;
             }
-            
             case UniformTypeRenderCacheKey:
                 break;
             case UniformTypeSample2D:
@@ -305,9 +315,7 @@ void SubEffect::SetUniform(std::list<SubEffect*> sub_effects, ProcessBuffer *pro
 // Effect
 Effect::Effect()
     : start_time_(0)
-    , end_time_(INT32_MAX) {
-
-}
+    , end_time_(INT32_MAX) {}
 
 Effect::~Effect() {
     for (auto& sub_effect : sub_effects_) {
@@ -343,7 +351,6 @@ void Effect::ParseConfig(char *config_path) {
     config.append(config_path);
     config.append("/");
     config.append(config_name);
-    
     char* buffer = nullptr;
     int ret = ReadFile(config, &buffer);
     if (ret != 0 || buffer == nullptr) {
@@ -369,7 +376,6 @@ void Effect::ParseConfig(char *config_path) {
         return;
     }
     int effect_size = cJSON_GetArraySize(effect_json);
-
     for (int i = 0; i < effect_size; ++i) {
         auto* sub_effect = new SubEffect();
         cJSON *effect_item_json = cJSON_GetArrayItem(effect_json, i);
@@ -409,11 +415,11 @@ char* Effect::CopyValue(char* src) {
     char* value = new char[len + 1];
     memset(value, 0, len * sizeof(char));
     sprintf(value, "%s", src);
-    value[len] = '\0';   
+    value[len] = '\0';
     return value;
 }
 
-int Effect::ReadFile(std::string& path, char **buffer) {
+int Effect::ReadFile(const std::string& path, char **buffer) {
     FILE *file = fopen(path.c_str(), "r");
     printf("path: %s\n", path.c_str());
     if (file == nullptr) {
@@ -438,14 +444,13 @@ int Effect::ReadFile(std::string& path, char **buffer) {
     fclose(file);
     printf("%s\n", data);
     *buffer = data;
-    return 0;    
+    return 0;
 }
 
-void Effect::ConvertStickerConfig(cJSON *effect_item_json, char *resource_root_path, SubEffect *sub_effect) {
-    
-}
+void Effect::ConvertStickerConfig(cJSON *effect_item_json, char *resource_root_path, SubEffect *sub_effect) {}
 
-void Effect::ConvertGeneralConfig(cJSON *effect_item_json, char* resource_root_path, GeneralSubEffect* general_sub_effect) {
+void Effect::ConvertGeneralConfig(cJSON *effect_item_json, char* resource_root_path,
+        GeneralSubEffect* general_sub_effect) {
     int ret = 0;
     cJSON *vertex_shader_json = cJSON_GetObjectItem(effect_item_json, "vertexShader");
     cJSON *fragment_shader_json = cJSON_GetObjectItem(effect_item_json, "fragmentShader");
@@ -471,28 +476,23 @@ void Effect::ConvertGeneralConfig(cJSON *effect_item_json, char* resource_root_p
             }
         }
     }
-    
     if (nullptr != vertex_shader_json && nullptr != fragment_shader_json) {
         char* vertex_shader = vertex_shader_json->valuestring;
         char* fragment_shader = fragment_shader_json->valuestring;
-        
         std::string vertex_shader_path;
         vertex_shader_path.append(resource_root_path);
         vertex_shader_path.append("/");
         vertex_shader_path.append(vertex_shader);
-        
         std::string fragment_shader_path;
         fragment_shader_path.append(resource_root_path);
         fragment_shader_path.append("/");
         fragment_shader_path.append(fragment_shader);
-        
         char* vertex_shader_buffer = nullptr;
         ret = ReadFile(vertex_shader_path, &vertex_shader_buffer);
         printf("vertex ret: %d\n", ret);
         char* fragment_shader_buffer = nullptr;
         ret = ReadFile(fragment_shader_path, &fragment_shader_buffer);
         printf("fragment ret: %d\n", ret);
-        
         if (vertex_shader_buffer != nullptr && fragment_shader_buffer != nullptr) {
             general_sub_effect->InitProcessBuffer(vertex_shader_buffer, fragment_shader_buffer);
             delete[] vertex_shader_buffer;
@@ -507,11 +507,10 @@ void Effect::ConvertGeneralConfig(cJSON *effect_item_json, char* resource_root_p
     }
 }
 
-void Effect::VertexMatrix(SubEffect* sub_effect, Matrix4x4 **matrix) {
-    
-}
+void Effect::VertexMatrix(SubEffect* sub_effect, Matrix4x4 **matrix) {}
 
-void Effect::ParseTextureFiles(cJSON *texture_files, StickerSubEffect* sub_effect, std::string& resource_root_path) {
+void Effect::ParseTextureFiles(cJSON *texture_files, StickerSubEffect* sub_effect,
+        const std::string& resource_root_path) {
     int texture_file_size = cJSON_GetArraySize(texture_files);
     for (int i = 0; i < texture_file_size; i++) {
         cJSON* texture_file_item = cJSON_GetArrayItem(texture_files, i);
@@ -528,7 +527,8 @@ void Effect::ParseTextureFiles(cJSON *texture_files, StickerSubEffect* sub_effec
     }
 }
 
-std::string& Effect::ReplaceAllDistince(std::string &str, const std::string &old_value, const std::string &new_value) {
+std::string& Effect::ReplaceAllDistince(std::string &str, const std::string &old_value,
+        const std::string &new_value) {
     for (std::string::size_type pos(0); pos != std::string::npos; pos += new_value.length()) {
         if ((pos = str.find(old_value, pos)) != std::string::npos) {
             str.replace(pos, old_value.length(), new_value);
@@ -539,7 +539,7 @@ std::string& Effect::ReplaceAllDistince(std::string &str, const std::string &old
     return str;
 }
 
-void Effect::ParsePartsItem(cJSON* clip_root_json, std::string& resource_root_path, std::string& type) {
+void Effect::ParsePartsItem(cJSON* clip_root_json, const std::string& resource_root_path, const std::string& type) {
     cJSON* parts_json = cJSON_GetObjectItem(clip_root_json, "parts");
     if (nullptr == parts_json) {
         return;
@@ -555,7 +555,6 @@ void Effect::ParsePartsItem(cJSON* clip_root_json, std::string& resource_root_pa
         std::string key_value(parts_item_value);
         std::string value_names[3] = { "_widthAlign", "_heightAlign", "_Vertical" };
         std::string key = key_value;
-        
         for (int value_index = 0; value_index < 3; value_index++) {
             std::string value = value_names[value_index];
             auto find = key_value.find(value);
@@ -563,12 +562,10 @@ void Effect::ParsePartsItem(cJSON* clip_root_json, std::string& resource_root_pa
                 key = ReplaceAllDistince(key_value, value, "");
             }
         }
-        
         if (std::find(used_keys.begin(), used_keys.end(), key) != used_keys.end()) {
             continue;
         }
         used_keys.push_back(key_value);
-        
         cJSON* parts_value_json = cJSON_GetObjectItem(parts_json, parts_item_value);
         if (nullptr == parts_value_json) {
             return;
@@ -577,7 +574,6 @@ void Effect::ParsePartsItem(cJSON* clip_root_json, std::string& resource_root_pa
         stickerv3->name = CopyValue(const_cast<char*>(key.c_str()));
         stickerv3->face_detect = false;
         stickerv3->type = CopyValue(const_cast<char*>(type.c_str()));
-        
         cJSON* alpha_factor_json = cJSON_GetObjectItem(parts_value_json, "alphaFactor");
         if (nullptr != alpha_factor_json) {
             double alpha_factor = alpha_factor_json->valuedouble;
@@ -630,13 +626,11 @@ void Effect::ParsePartsItem(cJSON* clip_root_json, std::string& resource_root_pa
 //                texture_idx->type = CopyValue(type_json->valuestring);
 //            }
         }
-        
         cJSON* texture_files_json = cJSON_GetObjectItem(clip_root_json, "texturefiles");
         if (nullptr != texture_files_json) {
             // get sticker file path list
             ParseTextureFiles(texture_files_json, stickerv3, resource_root_path);
         }
-        
         cJSON* transform_params_json = cJSON_GetObjectItem(parts_value_json, "transformParams");
         if (nullptr != transform_params_json) {
             auto* transform = new Transform();
@@ -659,7 +653,6 @@ void Effect::ParsePartsItem(cJSON* clip_root_json, std::string& resource_root_pa
                                 }
                             }
                         }
-                        
                         cJSON* point_json = cJSON_GetObjectItem(position_value_json, "point");
                         if (nullptr != point_json) {
                             int point_size = cJSON_GetArraySize(point_json);
@@ -740,7 +733,7 @@ void Effect::ParsePartsItem(cJSON* clip_root_json, std::string& resource_root_pa
     }
 }
 
-void Effect::Parse2DStickerV3(SubEffect* sub_effect, std::string& resource_root_path) {
+void Effect::Parse2DStickerV3(SubEffect* sub_effect, const std::string& resource_root_path) {
     char const* content_name = "content.json";
     std::string content_path;
     content_path.append(resource_root_path);
@@ -838,7 +831,7 @@ void Effect::ParseUniform(SubEffect *sub_effect, char *config_path, cJSON *unifo
                     break;
 
                 case UniformTypeSample2D: {
-                    //TODO 这里一次创建多个图片texture会不会卡顿?
+                    // TODO 这里一次创建多个图片texture会不会卡顿?
                     for (int data_index = 0; data_index < fragment_uniform_data_size; data_index++) {
                         cJSON* data_item_json = cJSON_GetArrayItem(fragment_uniform_data_json, data_index);
                         char* relative_path = data_item_json->valuestring;
@@ -847,10 +840,12 @@ void Effect::ParseUniform(SubEffect *sub_effect, char *config_path, cJSON *unifo
                         int sample_texture_width = 0;
                         int sample_texture_height = 0;
                         int channels = 0;
-                        unsigned char* sample_texture_buffer = stbi_load(sample_texture_path, &sample_texture_width, &sample_texture_height, &channels, STBI_rgb_alpha);
+                        unsigned char* sample_texture_buffer = stbi_load(sample_texture_path, &sample_texture_width,
+                                &sample_texture_height, &channels, STBI_rgb_alpha);
                         delete[] sample_texture_path;
                         if (nullptr != sample_texture_buffer && sample_texture_width > 0 && sample_texture_height > 0) {
-                            auto* image_buffer = new ImageBuffer(sample_texture_width, sample_texture_height, sample_texture_buffer);
+                            auto* image_buffer = new ImageBuffer(sample_texture_width, sample_texture_height,
+                                    sample_texture_buffer);
                             stbi_image_free(sample_texture_buffer);
                             fragment_uniform->image_buffer_values.push_back(image_buffer);
                         }
@@ -903,5 +898,5 @@ void Effect::ParseUniform(SubEffect *sub_effect, char *config_path, cJSON *unifo
         }
     }
 }
-  
-}
+
+}  // namespace trinity

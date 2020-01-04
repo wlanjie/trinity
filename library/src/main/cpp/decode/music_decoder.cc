@@ -303,7 +303,7 @@ int MusicDecoder::ReadFrame() {
                             // TODO error
                             swr_buffer_ = realloc(swr_buffer_, swr_buffer_size_);
                         }
-                        uint8_t *outbuf[2] = { (uint8_t*) swr_buffer_, NULL };
+                        uint8_t *outbuf[2] = {reinterpret_cast<uint8_t*>(swr_buffer_), NULL };
                         numFrames = swr_convert(swr_context_, outbuf,
                                                 audio_frame_->nb_samples * ratio,
                                                 (const uint8_t **) audio_frame_->data,
@@ -337,7 +337,7 @@ int MusicDecoder::ReadFrame() {
                         seek_success_read_frame_success_ = true;
                     }
                     audio_buffer_size_ = numFrames * numChannels;
-                    audio_buffer_ = (short*) audioData;
+                    audio_buffer_ = reinterpret_cast<short*>(audioData);
                     audio_buffer_cursor_ = 0;
                     break;
                 }

@@ -113,7 +113,7 @@ void SoftEncoderAdapter::Encode(int timeMills) {
     }
 
     // need drop frames
-    int expectedFrameCount = (int) ((getCurrentTime() - fps_change_time_) / 1000.0f * frame_rate_ + 0.5f);
+    int expectedFrameCount = static_cast<int>((getCurrentTime() - fps_change_time_) / 1000.0f * frame_rate_ + 0.5f);
 //    if (expectedFrameCount < encode_frame_count_) {
 //        LOGE("expectedFrameCount is %d while encoded_frame_count_ is %d", expectedFrameCount,
 //             encode_frame_count_);
@@ -218,7 +218,7 @@ bool SoftEncoderAdapter::Initialize() {
     renderer_ = new OpenGL(video_width_, video_height_);
     encode_render_ = new EncodeRender();
     glGenFramebuffers(1, &fbo_);
-    //初始化outputTexId
+    // 初始化outputTexId
     glGenTextures(1, &output_texture_id_);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
     glBindTexture(GL_TEXTURE_2D, output_texture_id_);

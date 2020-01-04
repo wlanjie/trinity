@@ -18,6 +18,8 @@
 ```
 125218305
 ```
+## git commit 规范
+- 遵循[git cz](https://github.com/commitizen/cz-cli)
 
 ## 代码规范
 - kotlin缩进使用2空格缩进

@@ -1,7 +1,29 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+//
+// Created by wlanjie on 2019/4/13.
+//
+
 #include "matrix.h"
 
 #define PI 3.1415926f
-#define normalize(x, y, z)                  \
+#define normalize(x, y, z)                      \
 {                                               \
         float norm = 1.0f / sqrt(x*x+y*y+z*z);  \
         x *= norm; y *= norm; z *= norm;        \
@@ -9,17 +31,15 @@
 
 #define I(_i, _j) ((_j)+4*(_i))
 
-void matrixSetIdentityM(float *m)
-{
-        memset((void*)m, 0, 16*sizeof(float));
-        m[0] = m[5] = m[10] = m[15] = 1.0f;
+void matrixSetIdentityM(float *m) {
+     memset(reinterpret_cast<void*>(m), 0, 16*sizeof(float));
+     m[0] = m[5] = m[10] = m[15] = 1.0f;
 }
 
-void matrixSetRotateM(float *m, float a, float x, float y, float z)
-{
+void matrixSetRotateM(float *m, float a, float x, float y, float z) {
         float s, c;
 
-        memset((void*)m, 0, 15*sizeof(float));
+        memset(reinterpret_cast<void*>(m), 0, 15*sizeof(float));
         m[15] = 1.0f;
 
         a *= PI/180.0f;
@@ -59,56 +79,49 @@ void matrixSetRotateM(float *m, float a, float x, float y, float z)
         }
 }
 
-void matrixMultiplyMM(float *m, float *lhs, float *rhs)
-{
+void matrixMultiplyMM(float *m, float *lhs, float *rhs) {
         float t[16];
         for (int i = 0; i < 4; i++) {
                 register const float rhs_i0 = rhs[I(i, 0)];
-                register float ri0 = lhs[ I(0,0) ] * rhs_i0;
-                register float ri1 = lhs[ I(0,1) ] * rhs_i0;
-                register float ri2 = lhs[ I(0,2) ] * rhs_i0;
-                register float ri3 = lhs[ I(0,3) ] * rhs_i0;
+                register float ri0 = lhs[ I(0, 0) ] * rhs_i0;
+                register float ri1 = lhs[ I(0, 1) ] * rhs_i0;
+                register float ri2 = lhs[ I(0, 2) ] * rhs_i0;
+                register float ri3 = lhs[ I(0, 3) ] * rhs_i0;
                 for (int j = 1; j < 4; j++) {
-                        register const float rhs_ij = rhs[ I(i,j) ];
-                        ri0 += lhs[ I(j,0) ] * rhs_ij;
-                        ri1 += lhs[ I(j,1) ] * rhs_ij;
-                        ri2 += lhs[ I(j,2) ] * rhs_ij;
-                        ri3 += lhs[ I(j,3) ] * rhs_ij;
+                        register const float rhs_ij = rhs[ I(i, j) ];
+                        ri0 += lhs[ I(j, 0) ] * rhs_ij;
+                        ri1 += lhs[ I(j, 1) ] * rhs_ij;
+                        ri2 += lhs[ I(j, 2) ] * rhs_ij;
+                        ri3 += lhs[ I(j, 3) ] * rhs_ij;
                 }
-                t[ I(i,0) ] = ri0;
-                t[ I(i,1) ] = ri1;
-                t[ I(i,2) ] = ri2;
-                t[ I(i,3) ] = ri3;
+                t[ I(i, 0) ] = ri0;
+                t[ I(i, 1) ] = ri1;
+                t[ I(i, 2) ] = ri2;
+                t[ I(i, 3) ] = ri3;
         }
         memcpy(m, t, sizeof(t));
 }
 
-void matrixScaleM(float *m, float x, float y, float z)
-{
-        for (int i = 0; i < 4; i++)
-        {
-                m[i] *= x; m[4+i] *=y; m[8+i] *= z;
-        }
+void matrixScaleM(float *m, float x, float y, float z) {
+    for (int i = 0; i < 4; i++) {
+        m[i] *= x; m[4+i] *=y; m[8+i] *= z;
+    }
 }
 
-void matrixTranslateM(float *m, float x, float y, float z)
-{
-        for (int i = 0; i < 4; i++)
-        {
-                m[12+i] += m[i]*x + m[4+i]*y + m[8+i]*z;
-        }
+void matrixTranslateM(float *m, float x, float y, float z) {
+    for (int i = 0; i < 4; i++) {
+        m[12+i] += m[i]*x + m[4+i]*y + m[8+i]*z;
+    }
 }
 
 void getTranslateMatrix(float *m, float x, float y, float z) {
-	matrixSetIdentityM(m);
-
-	m[3] = x;
-	m[7] = y;
-	m[11] = z;
+    matrixSetIdentityM(m);
+    m[3] = x;
+    m[7] = y;
+    m[11] = z;
 }
 
-void matrixRotateM(float *m, float a, float x, float y, float z)
-{
+void matrixRotateM(float *m, float a, float x, float y, float z) {
         float rot[16], res[16];
         matrixSetRotateM(rot, a, x, y, z);
         matrixMultiplyMM(res, m, rot);
@@ -118,8 +131,7 @@ void matrixRotateM(float *m, float a, float x, float y, float z)
 void matrixLookAtM(float *m,
                 float eyeX, float eyeY, float eyeZ,
                 float cenX, float cenY, float cenZ,
-                float  upX, float  upY, float  upZ)
-{
+                float  upX, float  upY, float  upZ) {
         float fx = cenX - eyeX;
         float fy = cenY - eyeY;
         float fz = cenZ - eyeZ;
@@ -151,8 +163,7 @@ void matrixLookAtM(float *m,
         matrixTranslateM(m, -eyeX, -eyeY, -eyeZ);
 }
 
-void matrixFrustumM(float *m, float left, float right, float bottom, float top, float near, float far)
-{
+void matrixFrustumM(float *m, float left, float right, float bottom, float top, float near, float far) {
         float r_width  = 1.0f / (right - left);
         float r_height = 1.0f / (top - bottom);
         float r_depth  = 1.0f / (near - far);
@@ -163,7 +174,7 @@ void matrixFrustumM(float *m, float left, float right, float bottom, float top, 
         float C = (far + near) * r_depth;
         float D = 2.0f * (far * near * r_depth);
 
-        memset((void*)m, 0, 16*sizeof(float));
+        memset(reinterpret_cast<void*>(m), 0, 16*sizeof(float));
         m[ 0] = x;
         m[ 5] = y;
         m[ 8] = A;

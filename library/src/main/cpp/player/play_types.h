@@ -220,7 +220,7 @@ typedef struct AVPlayContext {
     // play background
     bool just_audio;
 
-    //end of file
+    // end of file
     bool eof;
 
     bool abort_request;

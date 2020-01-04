@@ -123,7 +123,8 @@ void RecordProcessor::Destroy() {
     LOGI("leave %s", __FUNCTION__);
 }
 
-bool RecordProcessor::DetectNeedCorrect(int64_t data_present_time_mills, int64_t recording_time_mills, int *correct_time_mills) {
+bool RecordProcessor::DetectNeedCorrect(int64_t data_present_time_mills,
+                int64_t recording_time_mills, int *correct_time_mills) {
     bool ret = false;
     (*correct_time_mills) = 0;
     if (data_present_time_mills <= (recording_time_mills - MAX_DIFF_TIME_MILLS)) {
@@ -144,7 +145,7 @@ int RecordProcessor::CorrectRecordBuffer(int correct_time_mills) {
     int correctBufferSize = static_cast<int>((correct_time_mills / 1000.0f) * audio_sample_rate_);
     AudioPacket * audioPacket = GetSilentDataPacket(correctBufferSize);
     packet_pool_->PushAudioPacketToQueue(audioPacket);
-    // TODO 混音
+    // 混音
 //    AudioPacket * accompanyPacket = GetSilentDataPacket(correctBufferSize);
 //    packet_pool_->pushAccompanyPacketToQueue(accompanyPacket);
 //    data_accumulate_time_mills_ += correct_time_mills;

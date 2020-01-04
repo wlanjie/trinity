@@ -44,7 +44,7 @@ namespace trinity {
 
 class YuvRender {
  public:
-    YuvRender(int degree);
+    explicit YuvRender(int degree);
 
     ~YuvRender();
 

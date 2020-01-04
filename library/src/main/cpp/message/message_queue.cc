@@ -33,7 +33,7 @@ MessageQueue::MessageQueue()
     , packet_size_(0)
     , abort_request_(false)
     , lock_()
-    , condition_(){
+    , condition_() {
     Init();
 }
 
@@ -44,7 +44,7 @@ MessageQueue::MessageQueue(const char* queueNameParam)
     , packet_size_(0)
     , abort_request_(false)
     , lock_()
-    , condition_(){
+    , condition_() {
     Init();
 }
 

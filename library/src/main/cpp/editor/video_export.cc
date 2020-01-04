@@ -122,7 +122,7 @@ VideoExport::~VideoExport() {
     audio_samples_ = nullptr;
     if (nullptr != object_ && nullptr != vm_) {
         JNIEnv *env = nullptr;
-        if ((vm_)->GetEnv((void **) &env, JNI_VERSION_1_6) == JNI_OK) {
+        if ((vm_)->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) == JNI_OK) {
             env->DeleteGlobalRef(object_);
             object_ = nullptr;
         }
@@ -277,7 +277,7 @@ void VideoExport::OnMusics() {
                             if (vocal_sample_rate_ != accompany_sample_rate_) {
 
                             }
-                            trinity::Resample* resample = new trinity::Resample();
+                            auto* resample = new trinity::Resample();
                             float ratio = accompany_sample_rate_ * 1.0f / vocal_sample_rate_;
                             actualAccompanyPacketBufferSize = ratio * accompany_packet_buffer_size_;
                             ret = resample->Init(accompany_sample_rate_, vocal_sample_rate_, actualAccompanyPacketBufferSize / 2, 2);
@@ -357,8 +357,8 @@ int VideoExport::Export(const char *export_config, const char *path, int width, 
     AudioPacketPool::GetInstance()->InitAudioPacketQueue();
     packet_thread_->StartAsync();
 
-    video_width_ = (int) (floor(width / 16.0F)) * 16;
-    video_height_ = (int) (floor(height / 16.0F)) * 16;
+    video_width_ = static_cast<int>((floor(width / 16.0F)) * 16);
+    video_height_ = static_cast<int>((floor(height / 16.0F)) * 16);
 
     for (int i = 0; i < clip_size; i++) {
         cJSON* path_item = cJSON_GetObjectItem(item, "path");

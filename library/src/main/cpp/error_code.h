@@ -27,4 +27,4 @@
 
 #define EXPORT_CONFIG -4001
 
-#endif //TRINITY_ERROR_CODE_H
+#endif  // TRINITY_ERROR_CODE_H

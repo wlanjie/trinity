@@ -32,7 +32,7 @@
 #endif
 
 #define MAX_STRING_SIZE     4096
-#define M_PI                3.14159265358979323846264338327950288
+// #define M_PI                3.14159265358979323846264338327950288
 #define MIN(x,y)            ( (x) < (y) ? (x) : (y) )
 
 namespace trinity {

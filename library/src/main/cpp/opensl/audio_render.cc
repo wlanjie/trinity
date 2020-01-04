@@ -137,7 +137,7 @@ SLresult AudioRender::Init(int channels, int accompanySampleRate, AudioPlayerCal
     OpenSLContext* openSLESContext = OpenSLContext::GetInstance();
     engine_ = openSLESContext->GetEngine();
 
-    if (engine_ == nullptr){
+    if (engine_ == nullptr) {
         return result;
     }
 
@@ -236,7 +236,8 @@ void AudioRender::DestroyContext() {
 
 /** 以下是私有方法的实现 **/
 SLresult AudioRender::RealizeObject(SLObjectItf object) {
-    return (*object)->Realize(object, SL_BOOLEAN_FALSE); // No async, blocking call
+    // No async, blocking call
+    return (*object)->Realize(object, SL_BOOLEAN_FALSE);
 }
 
 void AudioRender::DestroyObject(SLObjectItf& object) {
@@ -248,9 +249,10 @@ void AudioRender::DestroyObject(SLObjectItf& object) {
 
 SLresult AudioRender::CreateOutputMix() {
     // Create output mix object
-    return (*engine_)->CreateOutputMix(engine_, &output_mix_object_, 0, // no interfaces
-                                            0, // no interfaces
-                                            0); // no required
+    // no interfaces
+    return (*engine_)->CreateOutputMix(engine_, &output_mix_object_, 0,
+                                            0,
+                                            0);
 }
 
 void AudioRender::InitPlayerBuffer() {
@@ -266,28 +268,28 @@ SLresult AudioRender::CreateAudioPlayer(int channels, int accompanySampleRate) {
     };
     int samplesPerSec = OpenSLSampleRate(accompanySampleRate);
     int channelMask = GetChannelMask(channels);
-    SLDataFormat_PCM dataSourceFormat = { SL_DATAFORMAT_PCM, // format type
-                                          (SLuint32)channels, // channel count
-                                          (SLuint32)samplesPerSec, // samples per second in millihertz
-                                          SL_PCMSAMPLEFORMAT_FIXED_16, // bits per sample
-                                          SL_PCMSAMPLEFORMAT_FIXED_16, // container size
-                                          (SLuint32)channelMask, // channel mask
-                                          SL_BYTEORDER_LITTLEENDIAN // endianness
+    SLDataFormat_PCM dataSourceFormat = { SL_DATAFORMAT_PCM,
+                                          (SLuint32)channels,
+                                          (SLuint32)samplesPerSec,
+                                          SL_PCMSAMPLEFORMAT_FIXED_16,
+                                          SL_PCMSAMPLEFORMAT_FIXED_16,
+                                          (SLuint32)channelMask,
+                                          SL_BYTEORDER_LITTLEENDIAN
     };
 
     // Data source is a simple buffer queue with PCM format
-    SLDataSource dataSource = { &dataSourceLocator, // data locator
-                                &dataSourceFormat // data format
+    SLDataSource dataSource = { &dataSourceLocator,
+                                &dataSourceFormat
     };
 
     // Output mix locator for data sink
-    SLDataLocator_OutputMix dataSinkLocator = { SL_DATALOCATOR_OUTPUTMIX, // locator type
-                                                output_mix_object_ // output mix
+    SLDataLocator_OutputMix dataSinkLocator = { SL_DATALOCATOR_OUTPUTMIX,
+                                                output_mix_object_
     };
 
     // Data sink is an output mix
-    SLDataSink dataSink = { &dataSinkLocator, // locator
-                            0 // format
+    SLDataSink dataSink = { &dataSinkLocator,
+                            0
     };
 
     // Interfaces that are requested
@@ -295,11 +297,12 @@ SLresult AudioRender::CreateAudioPlayer(int channels, int accompanySampleRate) {
 
     // Required interfaces. If the required interfaces
     // are not available the request will fail
-    SLboolean requiredInterfaces[] = { SL_BOOLEAN_TRUE // for SL_IID_BUFFERQUEUE
+    SLboolean requiredInterfaces[] = { SL_BOOLEAN_TRUE
     };
 
     // Create audio player object
-    return (*engine_)->CreateAudioPlayer(engine_, &audio_player_object_, &dataSource, &dataSink, ARRAY_LEN(interfaceIds), interfaceIds, requiredInterfaces);
+    return (*engine_)->CreateAudioPlayer(engine_, &audio_player_object_, &dataSource,
+                 &dataSink, ARRAY_LEN(interfaceIds), interfaceIds, requiredInterfaces);
 }
 
 SLresult AudioRender::GetAudioPlayerBufferQueueInterface() {

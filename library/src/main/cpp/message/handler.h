@@ -33,7 +33,7 @@ class Handler {
     MessageQueue* queue_;
 
  public:
-    explicit Handler();
+    Handler();
     explicit Handler(MessageQueue* mQueue);
     ~Handler();
 

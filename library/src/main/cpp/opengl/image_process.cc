@@ -27,15 +27,13 @@
 #include "android_xlog.h"
 #elif __APPLE__
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#define LOGI
-#define LOGE 
+#define LOGI // NOLINT
+#define LOGE // NOLINT
 #endif
 
 namespace trinity {
 
-ImageProcess::ImageProcess() : action_id_(-1) {
-
-};
+ImageProcess::ImageProcess() : action_id_(-1) {}
 
 ImageProcess::~ImageProcess() {
     ClearAction();
@@ -57,7 +55,6 @@ int ImageProcess::OnProcess(int texture_id, uint64_t current_time, int width, in
         int process_texture = f->OnDrawFrame(texture, current_time);
         texture = process_texture;
     }
-    
     if (action_id_ == -1) {
         for (auto& effect : effects_) {
             texture = effect.second->OnDrawFrame(texture, current_time);

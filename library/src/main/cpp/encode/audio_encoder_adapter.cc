@@ -40,7 +40,6 @@ AudioEncoderAdapter::AudioEncoderAdapter() {
 }
 
 AudioEncoderAdapter::~AudioEncoderAdapter() {
-
 }
 
 void AudioEncoderAdapter::Init(PacketPool *pool, int audio_sample_rate, int audio_channels, int audio_bit_rate,
@@ -66,7 +65,8 @@ void AudioEncoderAdapter::Init(PacketPool *pool, int audio_sample_rate, int audi
     LOGE("leave %s", __func__);
 }
 
-int AudioEncoderAdapter::GetAudioFrame(int16_t *samples, int frame_size, int nb_channels, double *presentation_time_mills) {
+int AudioEncoderAdapter::GetAudioFrame(int16_t *samples, int frame_size,
+        int nb_channels, double *presentation_time_mills) {
     int size = frame_size * nb_channels * 2;
     int sample_cursor = 0;
     while (true) {
@@ -132,7 +132,8 @@ static int PCMFrameCallback(int16_t *samples, int frame_size, int nb_channels, d
 
 void AudioEncoderAdapter::StartEncode() {
     audio_encoder_ = new AudioEncoder();
-    audio_encoder_->Init(audio_bit_rate_, audio_channels_, audio_sample_rate_, audio_codec_name_, PCMFrameCallback, this);
+    audio_encoder_->Init(audio_bit_rate_, audio_channels_,
+            audio_sample_rate_, audio_codec_name_, PCMFrameCallback, this);
     while (encoding_) {
         AudioPacket* packet = nullptr;
         int ret = audio_encoder_->Encode(&packet);
@@ -145,7 +146,8 @@ void AudioEncoderAdapter::StartEncode() {
 int AudioEncoderAdapter::CopyToSamples(int16_t *samples, int sample_cursor, int buffer_size,
                                        double *presentation_time_mills) {
     if (0 == sample_cursor) {
-        double packet_buffer_cursor_duration = (double) packet_buffer_cursor_ * 1000.0f / (double) (audio_sample_rate_ * 2.0);
+        double packet_buffer_cursor_duration = static_cast<double>(packet_buffer_cursor_)
+            * 1000.0f / static_cast<double>((audio_sample_rate_ * 2.0));
         (*presentation_time_mills) = packet_buffer_presentation_time_mills_ + packet_buffer_cursor_duration;
     }
     memcpy(samples + sample_cursor, packet_buffer_ + packet_buffer_cursor_, buffer_size * sizeof(short));
@@ -171,7 +173,7 @@ int AudioEncoderAdapter::GetAudioPacket() {
      * 在Android平台 录制是单声道的 经过音效处理之后是双声道 channelRatio 2
      * 在iOS平台 录制的是双声道的 是已经处理音效过后的 channelRatio 1
      */
-    packet_buffer_size_ = (int) (audioPacket->size * 1.0);
+    packet_buffer_size_ = static_cast<int>((audioPacket->size * 1.0));
     memcpy(packet_buffer_, audioPacket->buffer, audioPacket->size * sizeof(short));
 //    int actualSize = this->ProcessAudio();
 //    if (actualSize > 0 && actualSize < packet_buffer_size_) {

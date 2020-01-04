@@ -54,7 +54,8 @@ int AudioEncoder::Init(int bit_rate, int channels, int sample_rate, const char *
 
 int AudioEncoder::Encode(AudioPacket **packet) {
     double presentation_time_mills = -1;
-    int sample_size = pcm_frame_callback_((int16_t*) audio_samples_data_[0], audio_nb_frames_, channels_, &presentation_time_mills, pcm_frame_context_);
+    int sample_size = pcm_frame_callback_(reinterpret_cast<int16_t*>(audio_samples_data_[0]),
+            audio_nb_frames_, channels_, &presentation_time_mills, pcm_frame_context_);
     if (sample_size <= 0) {
         LOGE("audio_frame_callback failed return size: %d", sample_size);
         return -1;
@@ -68,7 +69,8 @@ int AudioEncoder::Encode(AudioPacket **packet) {
     pkt.duration = AV_NOPTS_VALUE;
     pkt.pts = pkt.dts = 0;
     encode_frame_->nb_samples = frame_num;
-    avcodec_fill_audio_frame(encode_frame_, codec_context_->channels, codec_context_->sample_fmt, audio_samples_data_[0], audio_sample_size, 0);
+    avcodec_fill_audio_frame(encode_frame_, codec_context_->channels,
+        codec_context_->sample_fmt, audio_samples_data_[0], audio_sample_size, 0);
     encode_frame_->pts = audio_next_pts_;
     audio_next_pts_ += encode_frame_->nb_samples;
     int got_packet;
@@ -84,7 +86,7 @@ int AudioEncoder::Encode(AudioPacket **packet) {
         (*packet)->data = new uint8_t[pkt.size];
         memcpy((*packet)->data, pkt.data, pkt.size);
         (*packet)->size = pkt.size;
-        (*packet)->position = (float) (pkt.pts * av_q2d(time_base) * 1000.0f);
+        (*packet)->position = static_cast<float>((pkt.pts * av_q2d(time_base) * 1000.0f));
     }
     av_free_packet(&pkt);
     return ret;
@@ -122,14 +124,17 @@ int AudioEncoder::AllocFrame() {
       * 但是在我们后续的sox处理的时候就会有问题，这里一定要注意注意 所以改成了10240
       */
 
-    audio_nb_frames_ = codec_context_->codec->capabilities & CODEC_CAP_VARIABLE_FRAME_SIZE ? 10240 : codec_context_->frame_size;
+    audio_nb_frames_ = codec_context_->codec->capabilities & CODEC_CAP_VARIABLE_FRAME_SIZE
+                        ? 10240 : codec_context_->frame_size;
     int src_sample_line_size;
-    int ret = av_samples_alloc_array_and_samples(&audio_samples_data_, &src_sample_line_size, codec_context_->channels, audio_nb_frames_, codec_context_->sample_fmt, 0);
+    int ret = av_samples_alloc_array_and_samples(&audio_samples_data_, &src_sample_line_size,
+            codec_context_->channels, audio_nb_frames_, codec_context_->sample_fmt, 0);
     if (ret < 0) {
         LOGE("alloc source samples error: %s", av_err2str(ret));
         return -2;
     }
-    audio_samples_size_ = av_samples_get_buffer_size(nullptr, codec_context_->channels, audio_nb_frames_, codec_context_->sample_fmt, 0);
+    audio_samples_size_ = av_samples_get_buffer_size(nullptr,
+        codec_context_->channels, audio_nb_frames_, codec_context_->sample_fmt, 0);
     return ret;
 }
 

@@ -30,7 +30,6 @@
 #endif
 #include "opengl.h"
 #include "matrix.h"
-#include "size.h"
 #include "gl.h"
 
 namespace trinity {

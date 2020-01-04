@@ -25,14 +25,14 @@
 #include "android_xlog.h"
 #elif __APPLE__
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#define LOGI 
+#define LOGI // NOLINT
 #endif
 
 namespace trinity {
 
 FrameBuffer::FrameBuffer(int width, int height, const char *vertex, const char *fragment) : OpenGL(width, height, vertex, fragment) {
     start_time_ = 0;
-    end_time_ = INT64_MAX;
+    end_time_ = INT32_MAX;
     CompileFrameBuffer(width, height);
 }
 

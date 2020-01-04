@@ -30,7 +30,7 @@ android {
         maxProcessCount 8
     }
     lintOptions {
-        abortOnError false
+        abortOnError true
     }
 }
 

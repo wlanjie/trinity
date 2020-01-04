@@ -174,7 +174,8 @@ static void Android_JNI_destroyEGLContext(JNIEnv *env, jobject object, jlong id)
 }
 
 static void
-Android_JNI_record_start(JNIEnv *env, jobject object, jlong handle, jstring path, jint width, jint height, jint video_bit_rate,
+Android_JNI_record_start(JNIEnv *env, jobject object, jlong handle, 
+                         jstring path, jint width, jint height, jint video_bit_rate,
                          jint frame_rate, jboolean use_hard_encode,
                          jint audio_sample_rate, jint audio_channel, jint audio_bit_rate) {
     if (handle <= 0) {
@@ -312,7 +313,8 @@ Android_JNI_video_editor_surfaceCreated(JNIEnv *env, jobject object, jlong handl
     editor->OnSurfaceCreated(surface);
 }
 
-static void Android_JNI_video_editor_surfaceChanged(JNIEnv* env, jobject object, jlong handle, jint width, jint height) {
+static void Android_JNI_video_editor_surfaceChanged(JNIEnv* env, jobject object, 
+                jlong handle, jint width, jint height) {
     if (handle <= 0) {
         return;
     }
@@ -392,7 +394,8 @@ static int Android_JNI_video_editor_insertClip(JNIEnv* env, jobject object, jlon
     return result;
 }
 
-static int Android_JNI_video_editor_insertClipWithIndex(JNIEnv* env, jobject object, jlong handle, jint index, jobject clip) {
+static int Android_JNI_video_editor_insertClipWithIndex(JNIEnv* env, jobject object,
+                jlong handle, jint index, jobject clip) {
     if (handle <= 0) {
         return 0;
     }
@@ -432,7 +435,8 @@ static jobject Android_JNI_video_editor_getClipTimeRange(JNIEnv* env, jobject ob
     return nullptr;
 }
 
-static jlong Android_JNI_video_editor_getVideoTime(JNIEnv* env, jobject object, jlong handle, jint index, jlong clip_time) {
+static jlong Android_JNI_video_editor_getVideoTime(JNIEnv* env, jobject object,
+                jlong handle, jint index, jlong clip_time) {
     if (handle <= 0) {
         return 0;
     }
@@ -440,7 +444,8 @@ static jlong Android_JNI_video_editor_getVideoTime(JNIEnv* env, jobject object, 
     return editor->GetVideoTime(index, clip_time);
 }
 
-static jlong Android_JNI_video_editor_getClipTime(JNIEnv* env, jobject object, jlong handle, jint index, jlong video_time) {
+static jlong Android_JNI_video_editor_getClipTime(JNIEnv* env, jobject object,
+                jlong handle, jint index, jlong video_time) {
     if (handle <= 0) {
         return 0;
     }
@@ -467,7 +472,9 @@ static jint Android_JNI_video_editor_addFilter(JNIEnv* env, jobject object, jlon
     return action_id;
 }
 
-static void Android_JNI_video_editor_updateFilter(JNIEnv* env, jobject object, jlong handle, jstring config, jint start_time, jint end_time, jint action_id) {
+static void Android_JNI_video_editor_updateFilter(JNIEnv* env, jobject object,
+                jlong handle, jstring config, jint start_time,
+                jint end_time, jint action_id) {
     if (handle <= 0) {
         return;
     }
@@ -496,7 +503,8 @@ static jint Android_JNI_video_editor_addMusic(JNIEnv* env, jobject object, jlong
     return result;
 }
 
-static void Android_JNI_video_editor_updateMusic(JNIEnv* env, jobject object, jlong handle, jstring music_config, jint action_id) {
+static void Android_JNI_video_editor_updateMusic(JNIEnv* env, jobject object,
+                jlong handle, jstring music_config, jint action_id) {
     if (handle <= 0) {
         return;
     }
@@ -525,7 +533,8 @@ static int Android_JNI_video_editor_addAction(JNIEnv* env, jobject object, jlong
     return actionId;
 }
 
-static void Android_JNI_video_editor_updateAction(JNIEnv* env, jobject object, jlong handle, jint start_time, jint end_time, jint action_id) {
+static void Android_JNI_video_editor_updateAction(JNIEnv* env, jobject object,
+                jlong handle, jint start_time, jint end_time, jint action_id) {
     if (handle <= 0) {
         return;
     }
@@ -595,8 +604,10 @@ static jlong Android_JNI_video_export_create(JNIEnv* env, jobject object, jstrin
     return reinterpret_cast<jlong>(video_export);
 }
 
-static jint Android_JNI_video_export_export(JNIEnv* env, jobject object, jlong handle, jstring export_config,
-                                            jstring export_path, jint width, jint height, jint frame_rate, jint video_bit_rate,
+static jint Android_JNI_video_export_export(JNIEnv* env, jobject object,
+                                            jlong handle, jstring export_config,
+                                            jstring export_path, jint width, jint height,
+                                            jint frame_rate, jint video_bit_rate,
                                             jint sample_rate, jint channel_count, jint audio_bit_rate) {
     if (handle <= 0) {
         return 0;
@@ -604,7 +615,8 @@ static jint Android_JNI_video_export_export(JNIEnv* env, jobject object, jlong h
     auto* video_export = reinterpret_cast<VideoExport*>(handle);
     const char* config = env->GetStringUTFChars(export_config, JNI_FALSE);
     const char* path = env->GetStringUTFChars(export_path, JNI_FALSE);
-    int result = video_export->Export(config, path, width, height, frame_rate, video_bit_rate, sample_rate, channel_count, audio_bit_rate);
+    int result = video_export->Export(config, path, width, height,
+        frame_rate, video_bit_rate, sample_rate, channel_count, audio_bit_rate);
     env->ReleaseStringUTFChars(export_path, path);
     env->ReleaseStringUTFChars(export_config, config);
     return result;
@@ -615,7 +627,6 @@ static void Android_JNI_video_export_cancel(JNIEnv* env, jobject object, jlong h
         return;
     }
     VideoExport* video_export = reinterpret_cast<VideoExport*>(handle);
-
 }
 
 static void Android_JNI_video_export_release(JNIEnv* env, jobject object, jlong handle) {

@@ -28,7 +28,7 @@ namespace trinity {
 
 CameraRecord::CameraRecord(JNIEnv* env) : Handler()
     , start_time_(0)
-    , start_recording(false){
+    , start_recording(false) {
     window_ = nullptr;
     env_ = env;
     vm_ = nullptr;
@@ -547,13 +547,14 @@ void CameraRecord::StartEncoding(const char* path,
         delete encoder_;
         encoder_ = nullptr;
     }
-    int video_width = (int) (floor(width / 16.0f)) * 16;
-    int video_height = (int) (floor(height / 16.0f)) * 16;
+    int video_width = static_cast<int>((floor(width / 16.0f)) * 16);
+    int video_height = static_cast<int>((floor(height / 16.0f)) * 16);
     if (nullptr != packet_thread_) {
         PacketPool::GetInstance()->InitRecordingVideoPacketQueue();
         PacketPool::GetInstance()->InitAudioPacketQueue(44100);
         AudioPacketPool::GetInstance()->InitAudioPacketQueue();
-        int ret = packet_thread_->Init(path, video_width, video_height, frame_rate, video_bit_rate * 1000, audio_sample_rate, audio_channel, audio_bit_rate * 1000, "libfdk_aac");
+        int ret = packet_thread_->Init(path, video_width, video_height, frame_rate,
+             video_bit_rate * 1000, audio_sample_rate, audio_channel, audio_bit_rate * 1000, "libfdk_aac");
         if (ret >= 0) {
             packet_thread_->StartAsync();
         }

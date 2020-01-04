@@ -73,9 +73,7 @@ void EditorResource::RemoveClip(int index) {
     }
 }
 
-void EditorResource::ReplaceClip(int index, MediaClip *clip) {
-
-}
+void EditorResource::ReplaceClip(int index, MediaClip *clip) {}
 
 void EditorResource::AddAction(const char *config, int action_id) {
     fseek(resource_file_, 0, SEEK_SET);

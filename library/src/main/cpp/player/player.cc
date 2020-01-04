@@ -132,7 +132,7 @@ Player::~Player() {
         texture_coordinate_ = nullptr;
     }
     JNIEnv* env = nullptr;
-    if ((vm_)->GetEnv((void**) &env, JNI_VERSION_1_6) == JNI_OK) {
+    if ((vm_)->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) == JNI_OK) {
         env->DeleteGlobalRef(object_);
     }
     pthread_mutex_destroy(&mutex_);
@@ -401,7 +401,7 @@ void Player::OnUpdateFilter(char* config, int action_id, int start_time, int end
     if (nullptr == image_process_) {
         return;
     }
-    LOGI("enter %s config: %s action_id: %d start_time: %d end_time: %d", __func__, config, action_id, start_time, end_time);
+    LOGI("enter %s config: %s action_id: %d start_time: %d end_time: %d", __func__, config, action_id, start_time, end_time); // NOLINT
     image_process_->OnFilter(config, action_id, start_time, end_time);
     delete[] config;
     LOGI("leave %s", __func__);
@@ -443,7 +443,7 @@ int Player::GetAudioFrame() {
     // get next frame
     while (context->audio_frame == &context->audio_frame_queue->flush_frame) {
         // 如果没有视频流  就从这里重置seek标记
-        if((context->av_track_flags & VIDEO_FLAG) == 0){
+        if ((context->av_track_flags & VIDEO_FLAG) == 0) {
             context->seeking = 0;
         }
         return GetAudioFrame();
@@ -456,7 +456,7 @@ int Player::GetAudioFrame() {
     int64_t time_stamp = av_rescale_q(context->audio_frame->pkt_dts,
                                       context->format_context->streams[context->audio_index]->time_base,
                                       AV_TIME_BASE_Q);
-    if(audio_buffer_size_ < frame_size){
+    if (audio_buffer_size_ < frame_size) {
         audio_buffer_size_ = frame_size;
         if (audio_buffer_ == nullptr) {
             audio_buffer_ = reinterpret_cast<uint8_t *>(malloc((size_t) audio_buffer_size_));
@@ -535,10 +535,11 @@ void Player::HandleMessage(Message *msg) {
             av_play_play(file_name, msg->GetArg1(), av_play_context_);
             if (nullptr != audio_render_) {
                 delete audio_render_;
-            };
+            }
 
             if (av_play_context_->av_track_flags & AUDIO_FLAG) {
-                int channels = av_play_context_->audio_codec_context->channels <= 2 ? av_play_context_->audio_codec_context->channels : 2;
+                int channels = av_play_context_->audio_codec_context->channels <= 2
+                        ? av_play_context_->audio_codec_context->channels : 2;
                 audio_render_ = new AudioRender();
                 audio_render_->Init(channels, av_play_context_->sample_rate, AudioCallback, this);
                 audio_render_->Start();
@@ -640,8 +641,9 @@ void Player::HandleMessage(Message *msg) {
     }
 }
 
-void Player::SetFrame(int source_width, int source_height, int target_width, int target_height, RenderFrame frame_type) {
-    LOGE("SetFrame source_width: %d source_height: %d target_width: %d target_height: %d", source_width, source_height, target_width, target_height);
+void Player::SetFrame(int source_width, int source_height,
+        int target_width, int target_height, RenderFrame frame_type) {
+    LOGE("SetFrame source_width: %d source_height: %d target_width: %d target_height: %d", source_width, source_height, target_width, target_height); // NOLINT
     float target_ratio = target_width * 1.0F / target_height;
     float scale_width = 1.0F;
     float scale_height = 1.0F;
@@ -779,7 +781,8 @@ int Player::DrawVideoFrame() {
                 if (nullptr != media_codec_render_) {
                     delete media_codec_render_;
                 }
-                media_codec_render_ = new FrameBuffer(frame_width_, frame_height_, DEFAULT_VERTEX_SHADER, DEFAULT_OES_FRAGMENT_SHADER);
+                media_codec_render_ = new FrameBuffer(frame_width_, frame_height_,
+                        DEFAULT_VERTEX_SHADER, DEFAULT_OES_FRAGMENT_SHADER);
                 media_codec_render_->SetTextureType(TEXTURE_OES);
             }
             if (surface_width_ != 0 && surface_height_ != 0) {
@@ -829,7 +832,8 @@ void Player::Draw(int texture_id) {
     }
     int texture = OnDrawFrame(texture_id, frame_width_, frame_height_);
     render_screen_->ActiveProgram();
-    render_screen_->ProcessImage(static_cast<GLuint>(texture > 0 ? texture : texture_id), vertex_coordinate_, texture_coordinate_);
+    render_screen_->ProcessImage(static_cast<GLuint>(texture > 0 ? texture : texture_id),
+            vertex_coordinate_, texture_coordinate_);
     if (!core_->SwapBuffers(render_surface_)) {
         LOGE("eglSwapBuffers error: %d", eglGetError());
     }
@@ -970,4 +974,4 @@ void Player::OnGLDestroy() {
     LOGI("leave %s", __func__);
 }
 
-}
+}  // namespace trinity

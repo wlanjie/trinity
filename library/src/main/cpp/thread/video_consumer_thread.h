@@ -32,7 +32,7 @@
 namespace trinity {
 
 class VideoConsumerThread {
-public:
+ public:
     VideoConsumerThread();
     ~VideoConsumerThread();
 
@@ -50,13 +50,13 @@ public:
 
     int GetAudioPacket(AudioPacket** packet);
 
-protected:
+ protected:
     virtual void HandleRun(void* context);
     static void* StartThread(void* context);
     void Init();
     void Release();
 
-protected:
+ protected:
     pthread_t thread_;
     pthread_mutex_t lock_;
     pthread_cond_t condition_;
@@ -68,6 +68,6 @@ protected:
     Mp4Muxer* mp4_muxer_;
 };
 
-}
+}  // namespace trinity
 
-#endif //TRINITY_VIDEO_CONSUMER_THREAD_H
+#endif  // TRINITY_VIDEO_CONSUMER_THREAD_H

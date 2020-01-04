@@ -95,7 +95,7 @@ void MediaEncodeAdapter::CreateEncoder(EGLCore *core, int texture_id) {
     texture_id_ = texture_id;
     bool need_attach = false;
     JNIEnv* env;
-    int status = vm_->GetEnv((void **) (&env), JNI_VERSION_1_6);
+    int status = vm_->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     if (status < 0) {
         if (vm_->AttachCurrentThread(&env, nullptr) != JNI_OK) {
             LOGE("AttachCurrentThread failed.");
@@ -126,7 +126,7 @@ void MediaEncodeAdapter::DestroyEncoder() {
     JNIEnv *env;
     int status = 0;
     bool needAttach = false;
-    status = vm_->GetEnv((void **) (&env), JNI_VERSION_1_4);
+    status = vm_->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_4);
     if (status < 0) {
         if (vm_->AttachCurrentThread(&env, NULL) != JNI_OK) {
             LOGE("%s: AttachCurrentThread() failed", __FUNCTION__);
@@ -149,20 +149,22 @@ void MediaEncodeAdapter::DestroyEncoder() {
 }
 
 void MediaEncodeAdapter::Encode(int timeMills) {
-    if (start_time_ == 0)
+    if (start_time_ == 0) {
         start_time_ = getCurrentTime();
+    }
 
-    if (fps_change_time_ == -1){
+    if (fps_change_time_ == -1) {
         fps_change_time_ = getCurrentTime();
     }
 
     if (GetQueueSize() > MAX_ENCODER_Q_SIZE) {
-        LOGE("HWEncoderAdapter:dropped frame_, encoder_ queue_ full");// See webrtc bug 2887.
+        // See webrtc bug 2887.
+        LOGE("HWEncoderAdapter:dropped frame_, encoder_ queue_ full");
         return;
     }
     int64_t curTime = getCurrentTime() - start_time_;
     // need drop frames
-    int expectedFrameCount = (int) ((getCurrentTime() - fps_change_time_) / 1000.0f * frame_rate_ + 0.5f);
+    int expectedFrameCount = static_cast<int>((getCurrentTime() - fps_change_time_) / 1000.0F * frame_rate_ + 0.5F);
     if (expectedFrameCount < encode_frame_count_) {
         LOGE("drop frame encode_count: %d frame_count: %d", encode_frame_count_, expectedFrameCount);
         return;
@@ -183,7 +185,7 @@ void MediaEncodeAdapter::DrainEncodeData() {
     JNIEnv *env;
     int status = 0;
     bool needAttach = false;
-    status = vm_->GetEnv((void **) (&env), JNI_VERSION_1_4);
+    status = vm_->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_4);
     if (status < 0) {
         if (vm_->AttachCurrentThread(&env, nullptr) != JNI_OK) {
             LOGE("%s: AttachCurrentThread() failed", __FUNCTION__);
@@ -194,22 +196,23 @@ void MediaEncodeAdapter::DrainEncodeData() {
     jclass clazz = env->GetObjectClass(object_);
     jmethodID drainEncoderFunc = env->GetMethodID(clazz, "pullH264StreamFromDrainEncoderFromNative", "([B)J");
     long bufferSize = (long) env->CallLongMethod(object_, drainEncoderFunc, output_buffer_);
-    auto *outputData = (uint8_t *) env->GetByteArrayElements(output_buffer_, 0);    // Get data
-    int size = (int) bufferSize;
+    auto *outputData = reinterpret_cast<uint8_t *>(env->GetByteArrayElements(output_buffer_, 0));
+    int size = static_cast<int>(bufferSize);
     jmethodID getLastPresentationTimeUsFunc = env->GetMethodID(clazz, "getLastPresentationTimeUsFromNative", "()J");
     auto lastPresentationTimeUs = (long long) env->CallLongMethod(object_, getLastPresentationTimeUsFunc);
-    int timeMills = (int) (lastPresentationTimeUs / 1000.0f);
+    int timeMills = static_cast<int>(lastPresentationTimeUs / 1000.0f);
 
     // push to queue_
     int nalu_type = (outputData[4] & 0x1F);
     if (H264_NALU_TYPE_SEQUENCE_PARAMETER_SET == nalu_type) {
-        auto* units = new vector<NALUnit*>();
+        auto* units = new std::vector<NALUnit*>();
         parseH264SpsPps(outputData, size, units);
         int unitSize = units->size();
-        if(unitSize > 2) {
-            //证明是sps和pps后边有I帧
+        if (unitSize > 2) {
+            // 证明是sps和pps后边有I帧
             const char bytesHeader[] = "\x00\x00\x00\x01";
-            size_t headerLength = 4; //string literals have implicit trailing '\0'
+            // string literals have implicit trailing '\0'
+            size_t headerLength = 4;
             NALUnit* idrUnit = units->at(2);
             int idrSize = idrUnit->naluSize + headerLength;
             auto *videoPacket = new VideoPacket();
@@ -218,8 +221,9 @@ void MediaEncodeAdapter::DrainEncodeData() {
             memcpy(videoPacket->buffer + headerLength, idrUnit->naluBody, idrUnit->naluSize);
             videoPacket->size = idrSize;
             videoPacket->timeMills = timeMills;
-            if (videoPacket->size > 0)
+            if (videoPacket->size > 0) {
                 packet_pool_->PushRecordingVideoPacketToQueue(videoPacket);
+            }
         }
         if (sps_write_flag_) {
             auto *videoPacket = new VideoPacket();
@@ -227,21 +231,22 @@ void MediaEncodeAdapter::DrainEncodeData() {
             memcpy(videoPacket->buffer, outputData, size);
             videoPacket->size = size;
             videoPacket->timeMills = timeMills;
-            if (videoPacket->size > 0)
+            if (videoPacket->size > 0) {
                 packet_pool_->PushRecordingVideoPacketToQueue(videoPacket);
+            }
             sps_write_flag_ = false;
         }
-    } else  if (size > 0){
-        //为了兼容有一些设备的MediaCodec编码出来的每一帧有多个Slice的问题(华为荣耀6，华为P9)
+    } else if (size > 0) {
+        // 为了兼容有一些设备的MediaCodec编码出来的每一帧有多个Slice的问题(华为荣耀6，华为P9)
         int frameBufferSize = 0;
         size_t headerLength = 4;
         uint8_t* frameBuffer;
         const char bytesHeader[] = "\x00\x00\x00\x01";
 
-        auto* units = new vector<NALUnit*>();
+        auto* units = new std::vector<NALUnit*>();
 
         parseH264SpsPps(outputData, size, units);
-        vector<NALUnit*>::iterator i;
+        std::vector<NALUnit*>::iterator i;
         for (i = units->begin(); i != units->end(); ++i) {
             NALUnit* unit = *i;
             int frameLen = unit->naluSize;
@@ -273,14 +278,14 @@ void MediaEncodeAdapter::DrainEncodeData() {
         if (videoPacket->size > 0)
             packet_pool_->PushRecordingVideoPacketToQueue(videoPacket);
     }
-    env->ReleaseByteArrayElements(output_buffer_, (jbyte *) outputData, 0);
+    env->ReleaseByteArrayElements(output_buffer_, reinterpret_cast<jbyte*>(outputData), 0);
     if (needAttach) {
         if (vm_->DetachCurrentThread() != JNI_OK) {
             LOGE("%s: DetachCurrentThread() failed", __FUNCTION__);
         }
     }
 
-    if (start_encode_time_ == 0){
+    if (start_encode_time_ == 0) {
         start_encode_time_ = getCurrentTimeSeconds();
     }
 }
@@ -304,7 +309,7 @@ void MediaEncodeAdapter::CreateMediaEncoder(JNIEnv *env) {
                                                                     "createMediaCodecSurfaceEncoderFromNative",
                                                                     "(IIII)V");
     env->CallVoidMethod(object_, createMediaCodecSurfaceEncoderFunc, video_width_, video_height_,
-                        video_bit_rate_, (int) frame_rate_);
+                        video_bit_rate_, static_cast<int>(frame_rate_));
     jmethodID getEncodeSurfaceFromNativeFunc = env->GetMethodID(clazz,
                                                                 "getEncodeSurfaceFromNative",
                                                                 "()Landroid/view/Surface;");
@@ -327,7 +332,7 @@ void MediaEncodeAdapter::DestroyMediaEncoder(JNIEnv *env) {
         encoder_surface_ = EGL_NO_SURFACE;
     }
 
-    //Release window
+    // Release window
     if (nullptr != encoder_window_) {
         ANativeWindow_release(encoder_window_);
         encoder_window_ = nullptr;

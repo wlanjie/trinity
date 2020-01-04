@@ -25,7 +25,6 @@
 namespace trinity {
 
 Handler::Handler() : queue_(nullptr) {
-
 }
 
 Handler::Handler(MessageQueue* queue) {

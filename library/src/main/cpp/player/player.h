@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 //
 //  player.h
 //  player
@@ -27,7 +44,7 @@ extern "C" {
 namespace trinity {
 
 class Player : public Handler {
-public:
+ public:
     Player(JNIEnv* env, jobject object);
     ~Player();
 
@@ -53,7 +70,7 @@ public:
     void UpdateAction(int start_time, int end_time, int action_id);
     void DeleteAction(int action_id);
 
-private:
+ private:
     void OnAddAction(char* config, int action_id);
     void OnUpdateAction(int start_time, int end_time, int action_id);
     void OnDeleteAction(int action_id);
@@ -84,7 +101,8 @@ private:
     void OnRenderVideoFrame();
     void OnGLWindowDestroy();
     void OnGLDestroy();
-private:
+
+ private:
     pthread_t message_queue_thread_;
     AVPlayContext* av_play_context_;
     MessageQueue* message_queue_;
@@ -119,6 +137,6 @@ private:
     uint8_t* audio_buffer_;
 };
 
-}
+}  // namespace trinity
 
 #endif /* player_h */

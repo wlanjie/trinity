@@ -55,7 +55,7 @@ VideoEditor::~VideoEditor() {
         editor_resource_ = nullptr;
     }
     JNIEnv* env = nullptr;
-    if ((vm_)->GetEnv((void**) &env, JNI_VERSION_1_6) == JNI_OK) {
+    if ((vm_)->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) == JNI_OK) {
         env->DeleteGlobalRef(video_editor_object_);
     }
 }
@@ -80,7 +80,7 @@ void VideoEditor::OnSurfaceCreated(jobject surface) {
         window_ = nullptr;
     }
     JNIEnv* env = nullptr;
-    if ((vm_)->GetEnv((void**) &env, JNI_VERSION_1_6) != JNI_OK) {
+    if ((vm_)->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
         return;
     }
     window_ = ANativeWindow_fromSurface(env, surface);

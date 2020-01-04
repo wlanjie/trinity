@@ -21,9 +21,6 @@
 #ifndef TRINITY_IMAGE_PROCESS_H
 #define TRINITY_IMAGE_PROCESS_H
 
-//#define STB_IMAGE_IMPLEMENTATION
-//#include "stb_image.h"
-
 #include <cstdint>
 #include <vector>
 #include <map>
@@ -84,6 +81,7 @@ class ImageProcess {
      * @return
      */
     int OnProcess(int texture_id, uint64_t current_time, int width, int height);
+
  private:
     std::map<int, Filter*> filters_;
     std::map<int, Effect*> effects_;

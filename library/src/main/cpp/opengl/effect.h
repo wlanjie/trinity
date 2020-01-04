@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2019 Trinity. All rights reserved.
+ * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 //
 // Created by wlanjie on 2019-12-20.
 //
@@ -61,7 +78,7 @@ enum UniformType {
 
 class ShaderUniforms {
  public:
-   char* name;
+    char* name;
     int type;
     int data_size;
     std::vector<float> float_values;
@@ -84,7 +101,6 @@ class Position {
  public:
     std::vector<float> anchor;
     std::vector<Point*> points;
-    
 };
 
 class Relation {
@@ -94,7 +110,6 @@ class Relation {
 
 class Scale {
  public:
-    
 };
 
 class Transform {
@@ -123,14 +138,14 @@ class SubEffect {
     virtual ~SubEffect();
 
  public:
-   char* type;
-   char* name;
-   int zorder;
-   bool enable;
-   std::vector<ShaderUniforms*> fragment_uniforms;
-   std::vector<ShaderUniforms*> vertex_uniforms;
-   std::vector<char*> input_effect;
-   
+    char* type;
+    char* name;
+    int zorder;
+    bool enable;
+    std::vector<ShaderUniforms*> fragment_uniforms;
+    std::vector<ShaderUniforms*> vertex_uniforms;
+    std::vector<char*> input_effect;
+
  public:
     ProcessBuffer* GetProcessBuffer() {
         return process_buffer_;
@@ -139,11 +154,12 @@ class SubEffect {
     void SetFloat(ShaderUniforms* uniform, ProcessBuffer* process_buffer);
     void SetSample2D(ShaderUniforms* uniform, ProcessBuffer* process_buffer);
     void SetTextureUnit(ShaderUniforms* uniform, ProcessBuffer* process_buffer, GLuint texture);
-    void SetUniform(std::list<SubEffect*> sub_effects, ProcessBuffer* process_buffer, std::vector<ShaderUniforms*> uniforms, int texture_id, uint64_t current_time);
+    void SetUniform(std::list<SubEffect*> sub_effects, ProcessBuffer* process_buffer,
+            std::vector<ShaderUniforms*> uniforms, int texture_id, uint64_t current_time);
     virtual int OnDrawFrame(std::list<SubEffect*> sub_effects, int texture_id, uint64_t current_time) {
         return texture_id;
     }
-    
+
  private:
     ProcessBuffer* process_buffer_;
 };
@@ -153,7 +169,7 @@ class GeneralSubEffect : public SubEffect {
  public:
     GeneralSubEffect();
     ~GeneralSubEffect();
-    virtual int OnDrawFrame(std::list<SubEffect*> sub_effects, int texture_id, uint64_t current_time) override;
+    virtual int OnDrawFrame(std::list<SubEffect*> sub_effects, int texture_id, uint64_t current_time);
 };
 
 // Sticker
@@ -162,7 +178,7 @@ class StickerSubEffect : public SubEffect {
     StickerSubEffect();
     ~StickerSubEffect();
 
-    virtual int OnDrawFrame(std::list<SubEffect*> sub_effects, int texture_id, uint64_t current_time) override;
+    int OnDrawFrame(std::list<SubEffect*> sub_effects, int texture_id, uint64_t current_time) override;
     ImageBuffer* StickerBufferAtFrameTime(float time);
  public:
     int blendmode;
@@ -189,32 +205,31 @@ class StickerV3SubEffect : public StickerSubEffect {
     StickerV3SubEffect();
     ~StickerV3SubEffect();
 
-    virtual int OnDrawFrame(std::list<SubEffect*> sub_effects, int texture_id, uint64_t current_time) override;
+    int OnDrawFrame(std::list<SubEffect*> sub_effects, int texture_id, uint64_t current_time) override;
  public:
     Transform* transform;
-    
+
  protected:
-    void VertexMatrix(Matrix4x4** matrix); 
+    void VertexMatrix(Matrix4x4** matrix);
 };
 
 class Effect {
  public:
     Effect();
     ~Effect();
-    
     void ParseConfig(char* config_path);
     int OnDrawFrame(GLuint texture_id, uint64_t current_time);
     void Update(int start_time, int end_time);
  private:
     char* CopyValue(char* src);
-    int ReadFile(std::string& path, char** buffer);
+    int ReadFile(const std::string& path, char** buffer);
     void ConvertStickerConfig(cJSON* effect_item_json, char* resource_root_path, SubEffect* sub_effect);
     void ConvertGeneralConfig(cJSON* effect_item_json, char* resource_root_path, GeneralSubEffect* general_sub_effect);
     void VertexMatrix(SubEffect* sub_effect, Matrix4x4** matrix);
-    void ParseTextureFiles(cJSON* texture_files, StickerSubEffect* sub_effect, std::string& resource_root_path);
+    void ParseTextureFiles(cJSON* texture_files, StickerSubEffect* sub_effect, const std::string& resource_root_path);
     std::string& ReplaceAllDistince(std::string& str, const std::string& old_value, const std::string& new_value);
-    void ParsePartsItem(cJSON* clip_root_json, std::string& resource_root_path, std::string& type);
-    void Parse2DStickerV3(SubEffect* sub_effect, std::string& resource_root_path);
+    void ParsePartsItem(cJSON* clip_root_json, const std::string& resource_root_path, const std::string& type);
+    void Parse2DStickerV3(SubEffect* sub_effect, const std::string& resource_root_path);
     void ParseUniform(SubEffect *sub_effect, char *config_path, cJSON *uniforms_json, ShaderUniformType type);
  private:
     std::list<SubEffect*> sub_effects_;
@@ -224,6 +239,6 @@ class Effect {
     int end_time_;
 };
 
-}
+}  // namespace trinity
 
 #endif  // TRINITY_EFFECT_H
