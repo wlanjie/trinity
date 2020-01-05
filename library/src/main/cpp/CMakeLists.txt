@@ -63,6 +63,12 @@ include_directories(${FDKAAC_HEADER})
 set(XLOG_HEADER ${CMAKE_CURRENT_LIST_DIR}/../../../../extra/xlogger/include)
 include_directories(${XLOG_HEADER})
 
+#include glm
+set(GLM_HEADER ${CMAKE_CURRENT_LIST_DIR}/../../../../extra/glm/glm)
+include_directories(${GLM_HEADER})
+include_directories(${GLM_HEADER}/gtc)
+include_directories(${GLM_HEADER}/gtx)
+
 file(GLOB FILES "${PATH_TO_MEDIACORE}/*.cc")
 file(GLOB FILES_C "${PATH_TO_MEDIACORE}/*.c")
 file(GLOB FILES_CAMERA "${PATH_TO_MEDIACORE}/camera/*.cc")
