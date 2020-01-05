@@ -331,7 +331,9 @@ int Effect::OnDrawFrame(GLuint texture_id, uint64_t current_time) {
 //        if (!sub_effect->enable) {
 //            continue;
 //        }
-        texture = sub_effect->OnDrawFrame(sub_effects_, texture, current_time);
+        if (current_time >= start_time_ && current_time <= end_time_) {
+            texture = sub_effect->OnDrawFrame(sub_effects_, texture, current_time);
+        }
     }
     return texture;
 }
