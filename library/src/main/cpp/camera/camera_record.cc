@@ -98,7 +98,7 @@ void CameraRecord::PrepareEGLContext(
     queue_ = new MessageQueue("CameraRecord message queue");
     InitMessageQueue(queue_);
     PostMessage(new Message(MSG_EGL_THREAD_CREATE));
-    pthread_create(&thread_id_, 0, ThreadStartCallback, this);
+    pthread_create(&thread_id_, nullptr, ThreadStartCallback, this);
     LOGI("leave PrepareEGLContext");
 }
 

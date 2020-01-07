@@ -155,7 +155,7 @@ void PacketPool::AbortDecoderAccompanyPacketQueue() {
     }
 }
 
-void PacketPool::DestoryDecoderAccompanyPacketQueue() {
+void PacketPool::DestroyDecoderAccompanyPacketQueue() {
     if (nullptr != decoder_packet_queue_) {
         delete decoder_packet_queue_;
         decoder_packet_queue_ = nullptr;

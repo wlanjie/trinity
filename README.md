@@ -129,7 +129,7 @@
       <td align="center">√</td>
   </tr>
   <tr>
-      <td rowspan="14">特效<br/>
+      <td rowspan="16">特效<br/>
   </tr>
   <tr>
       <td>滤镜</td>
@@ -181,6 +181,14 @@
   </tr>
   <tr>
     <td>70s</td>
+    <td align="center">√</td>
+  </tr>
+  <tr>
+    <td>倒计时</td>
+    <td align="center">√</td>
+  </tr>
+  <tr>
+    <td>爱心光斑</td>
     <td align="center">√</td>
   </tr>
 </table>

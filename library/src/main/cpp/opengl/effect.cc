@@ -20,6 +20,8 @@
 //
 
 #include "effect.h"
+#include "common.hpp"
+#include "vec2.hpp"
 
 namespace trinity {
 
@@ -29,7 +31,7 @@ GeneralSubEffect::~GeneralSubEffect() {
     printf("~GeneralSubEffect\n");
 }
 
-int GeneralSubEffect::OnDrawFrame(std::list<SubEffect*> sub_effects, int texture_id, uint64_t current_time) {
+int GeneralSubEffect::OnDrawFrame(std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id, uint64_t current_time) {
     ProcessBuffer* process_buffer = GetProcessBuffer();
     if (nullptr == process_buffer) {
         return texture_id;
@@ -39,17 +41,32 @@ int GeneralSubEffect::OnDrawFrame(std::list<SubEffect*> sub_effects, int texture
     process_buffer->ActiveProgram();
     process_buffer->Clear();
     process_buffer->ActiveAttribute();
-    SetUniform(sub_effects, process_buffer, fragment_uniforms, texture_id, current_time);
-    SetUniform(sub_effects, process_buffer, vertex_uniforms, texture_id, current_time);
+    SetUniform(sub_effects, process_buffer, fragment_uniforms, origin_texture_id, texture_id, current_time);
+    SetUniform(sub_effects, process_buffer, vertex_uniforms, origin_texture_id, texture_id, current_time);
     process_buffer->DrawArrays();
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     return process_buffer->GetTextureId();
 }
 
-void Transform::Center(float aspect) {}
+void Transform::Center(float aspect) {
+    if (isFaceDetect) {
+        float scale_x = 1.F;
+        if (nullptr != scale) {
+            scale_x = scale->x;
+        }
+        // landmark point
+    } else {
+        glm::vec2(1.f, 1 / aspect);
+    }
+}
 
-void Transform::ScaleSize(float aspect) {}
+void Transform::ScaleSize(float aspect) {
+    if (isFaceDetect) {
+        
+    } else {
+        glm::vec2(0.f, 0.f);
+    }
+}
 
 // StickerSubEffect
 StickerSubEffect::StickerSubEffect()
@@ -84,7 +101,7 @@ StickerSubEffect::~StickerSubEffect() {
     }
 }
 
-int StickerSubEffect::OnDrawFrame(std::list<SubEffect *> sub_effects, int texture_id, uint64_t current_time) {
+int StickerSubEffect::OnDrawFrame(std::list<SubEffect *> sub_effects, int origin_texture_id, int texture_id, uint64_t current_time) {
     return texture_id;
 }
 
@@ -134,7 +151,7 @@ StickerV3SubEffect::~StickerV3SubEffect() {
     }
 }
 
-int StickerV3SubEffect::OnDrawFrame(std::list<SubEffect *> sub_effects, int texture_id, uint64_t current_time) {
+int StickerV3SubEffect::OnDrawFrame(std::list<SubEffect *> sub_effects, int origin_texture_id, int texture_id, uint64_t current_time) {
     if (nullptr != blend) {
         ImageBuffer* image_buffer = StickerBufferAtFrameTime(current_time);
         if (nullptr != image_buffer) {
@@ -239,7 +256,7 @@ void SubEffect::SetTextureUnit(ShaderUniforms *uniform, ProcessBuffer *process_b
 }
 
 void SubEffect::SetUniform(std::list<SubEffect*> sub_effects, ProcessBuffer *process_buffer,
-        std::vector<ShaderUniforms*> uniforms, int texture_id, uint64_t current_time) {
+        std::vector<ShaderUniforms*> uniforms, int origin_texture_id, int texture_id, uint64_t current_time) {
     int texture_unit_index = 0;
     for (auto& fragment_uniform : uniforms) {
         int type = fragment_uniform->type;
@@ -252,7 +269,7 @@ void SubEffect::SetUniform(std::list<SubEffect*> sub_effects, ProcessBuffer *pro
         }
         switch (fragment_uniform->type) {
             case UniformTypeInputTexture:
-                SetTextureUnit(fragment_uniform, process_buffer, texture_id);
+                SetTextureUnit(fragment_uniform, process_buffer, origin_texture_id);
                 break;
             case UniformTypeMattingTexture:
             case UniformTypeInputTextureLast:
@@ -325,6 +342,7 @@ Effect::~Effect() {
 }
 
 int Effect::OnDrawFrame(GLuint texture_id, uint64_t current_time) {
+    int origin_texture_id = texture_id;
     int texture = texture_id;
     for (auto iterator = sub_effects_.begin(); iterator != sub_effects_.end(); iterator++) {
         SubEffect* sub_effect = *iterator;
@@ -332,7 +350,7 @@ int Effect::OnDrawFrame(GLuint texture_id, uint64_t current_time) {
 //            continue;
 //        }
         if (current_time >= start_time_ && current_time <= end_time_) {
-            texture = sub_effect->OnDrawFrame(sub_effects_, texture, current_time);
+            texture = sub_effect->OnDrawFrame(sub_effects_, origin_texture_id, texture, current_time);
         }
     }
     return texture;
@@ -691,6 +709,10 @@ void Effect::ParsePartsItem(cJSON* clip_root_json, const std::string& resource_r
                     auto* relation = new Relation();
                     relation->forground = foreground_json->valueint;
                     transform->relation = relation;
+                }
+                cJSON* face106_json = cJSON_GetObjectItem(relation_json, "face106");
+                if (nullptr != face106_json) {
+                    transform->isFaceDetect = face106_json->valueint;
                 }
             }
             cJSON* relation_index_json = cJSON_GetObjectItem(transform_params_json, "relationIndex");

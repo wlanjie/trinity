@@ -21,6 +21,7 @@
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
             android:name=".TrinityApplication"
+            android:requestLegacyExternalStorage="true"
             android:networkSecurityConfig="@xml/network_security_config"
             android:theme="@style/AppTheme" tools:ignore="GoogleAppIndexingWarning">
         <activity android:name=".RecordActivity">

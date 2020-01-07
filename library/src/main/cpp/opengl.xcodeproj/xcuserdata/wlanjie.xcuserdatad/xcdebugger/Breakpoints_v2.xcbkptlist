@@ -28,9 +28,9 @@
             filePath = "opengl/effect.cc"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "544"
-            endingLineNumber = "544"
-            landmarkName = "Effect::ParsePartsItem(clip_root_json, resource_root_path, type)"
+            startingLineNumber = "543"
+            endingLineNumber = "543"
+            landmarkName = "Effect::ParseTextureFiles(texture_files, sub_effect, resource_root_path)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -44,8 +44,8 @@
             filePath = "opengl/effect.cc"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "634"
-            endingLineNumber = "634"
+            startingLineNumber = "633"
+            endingLineNumber = "633"
             landmarkName = "Effect::ParsePartsItem(clip_root_json, resource_root_path, type)"
             landmarkType = "7">
          </BreakpointContent>
@@ -76,9 +76,9 @@
             filePath = "opengl/effect.cc"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "359"
-            endingLineNumber = "359"
-            landmarkName = "Effect::ParseConfig(config_path)"
+            startingLineNumber = "358"
+            endingLineNumber = "358"
+            landmarkName = "Effect::Update(start_time, end_time)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

@@ -139,7 +139,7 @@ class VideoEditor : public Handler, public PlayerEventObserver {
     // 是否循环播放
     bool repeat_;
     // 当前播放的文件位置
-    int play_index;
+    int play_index_;
     Player* player_;
     EditorResource* editor_resource_;
 };

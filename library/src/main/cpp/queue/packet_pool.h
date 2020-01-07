@@ -79,7 +79,7 @@ class PacketPool {
     /** 解码出来的伴奏的queue的所有操作 **/
     virtual void InitDecoderAccompanyPacketQueue();
     virtual void AbortDecoderAccompanyPacketQueue();
-    virtual void DestoryDecoderAccompanyPacketQueue();
+    virtual void DestroyDecoderAccompanyPacketQueue();
     virtual int GetDecoderAccompanyPacket(AudioPacket **audioPacket, bool block);
     virtual void PushDecoderAccompanyPacketToQueue(AudioPacket *audioPacket);
     virtual void ClearDecoderAccompanyPacketToQueue();

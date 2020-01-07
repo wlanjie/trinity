@@ -66,6 +66,7 @@ class MusicDecoderController {
     void DestroyRender();
     void PushPacketToQueue(AudioPacket* packet);
     int BuildSamples(short* samples);
+    static int AudioCallback(uint8_t** buffer, int* buffer_size, void* context);
 
  public:
     bool running_;
@@ -77,6 +78,8 @@ class MusicDecoderController {
     pthread_cond_t suspend_condition_;
 
  private:
+    uint8_t* buffer_;
+    int buffer_size_;
     PacketPool* packet_pool_;
     MusicDecoder* decoder_;
     Resample* resample_;

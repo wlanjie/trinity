@@ -67,6 +67,7 @@ Player::Player(JNIEnv* env, jobject object) : Handler()
     , window_created_(false)
     , file_name_(nullptr)
     , start_time_(0)
+    , video_count_duration_(0)
     , end_time_(INT_MAX)
     , audio_render_(nullptr)
     , audio_buffer_size_(0)
@@ -182,7 +183,7 @@ void Player::OnComplete(AVPlayContext *context) {
     LOGI("leave %s", __func__);
 }
 
-int Player::Start(const char *file_name, int start_time, int end_time) {
+int Player::Start(const char *file_name, int start_time, int end_time, int video_count_duration) {
     LOGE("enter %s file_name: %s start_time: %d end_time: %d", __func__, file_name, start_time, end_time);
     if (nullptr != file_name_) {
         delete[] file_name_;
@@ -191,6 +192,9 @@ int Player::Start(const char *file_name, int start_time, int end_time) {
     file_name_ = new char[len];
     memset(file_name_, 0, len);
     memcpy(file_name_, file_name, len);
+    start_time_ = start_time;
+    end_time_ = end_time;
+    video_count_duration_ = video_count_duration;
     if (window_created_) {
         PostMessage(new Message(kPlayerStart, start_time, end_time, (void *) file_name));
     }
@@ -808,7 +812,7 @@ int Player::DrawVideoFrame() {
 
         if (nullptr != image_process_) {
             int progressTextureId = image_process_->Process(texture_id,
-                                                            static_cast<uint64_t>(GetCurrentPosition()),
+                                                            static_cast<uint64_t>(GetCurrentPosition() - start_time_ + video_count_duration_),
                                                             frame_width_, frame_height_, 0, 0);
             if (progressTextureId != 0) {
                 texture_id = progressTextureId;

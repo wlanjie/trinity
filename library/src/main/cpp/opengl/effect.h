@@ -110,6 +110,8 @@ class Relation {
 
 class Scale {
  public:
+    float x;
+    float y;
 };
 
 class Transform {
@@ -120,6 +122,7 @@ class Transform {
     int relation_ref_order;
     int rotation_type;
     Scale* scale;
+    int isFaceDetect;
  public:
     void Center(float aspect);
     void ScaleSize(float aspect);
@@ -155,8 +158,8 @@ class SubEffect {
     void SetSample2D(ShaderUniforms* uniform, ProcessBuffer* process_buffer);
     void SetTextureUnit(ShaderUniforms* uniform, ProcessBuffer* process_buffer, GLuint texture);
     void SetUniform(std::list<SubEffect*> sub_effects, ProcessBuffer* process_buffer,
-            std::vector<ShaderUniforms*> uniforms, int texture_id, uint64_t current_time);
-    virtual int OnDrawFrame(std::list<SubEffect*> sub_effects, int texture_id, uint64_t current_time) {
+            std::vector<ShaderUniforms*> uniforms, int origin_texture_id, int texture_id, uint64_t current_time);
+    virtual int OnDrawFrame(std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id, uint64_t current_time) {
         return texture_id;
     }
 
@@ -169,7 +172,7 @@ class GeneralSubEffect : public SubEffect {
  public:
     GeneralSubEffect();
     ~GeneralSubEffect();
-    virtual int OnDrawFrame(std::list<SubEffect*> sub_effects, int texture_id, uint64_t current_time);
+    virtual int OnDrawFrame(std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id, uint64_t current_time);
 };
 
 // Sticker
@@ -178,7 +181,7 @@ class StickerSubEffect : public SubEffect {
     StickerSubEffect();
     ~StickerSubEffect();
 
-    int OnDrawFrame(std::list<SubEffect*> sub_effects, int texture_id, uint64_t current_time) override;
+    int OnDrawFrame(std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id, uint64_t current_time) override;
     ImageBuffer* StickerBufferAtFrameTime(float time);
  public:
     int blendmode;
@@ -205,7 +208,7 @@ class StickerV3SubEffect : public StickerSubEffect {
     StickerV3SubEffect();
     ~StickerV3SubEffect();
 
-    int OnDrawFrame(std::list<SubEffect*> sub_effects, int texture_id, uint64_t current_time) override;
+    int OnDrawFrame(std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id, uint64_t current_time) override;
  public:
     Transform* transform;
 

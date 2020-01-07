@@ -361,6 +361,7 @@
 					/usr/local/Cellar/ffmpeg/4.2.1_1/include/,
 					/usr/local/Cellar/glfw/3.2.1/include/GLFW,
 					"${PROJECT_DIR}/stb",
+					"${PROJECT_DIR}/../../../../extra/glm/glm",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -383,6 +384,7 @@
 					/usr/local/Cellar/ffmpeg/4.2.1_1/include/,
 					/usr/local/Cellar/glfw/3.2.1/include/GLFW,
 					"${PROJECT_DIR}/stb",
+					"${PROJECT_DIR}/../../../../extra/glm/glm",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",

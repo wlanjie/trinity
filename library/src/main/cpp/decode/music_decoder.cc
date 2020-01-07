@@ -68,7 +68,7 @@ int MusicDecoder::Init(const char *path, int packet_buffer_size) {
 
 int MusicDecoder::Init(const char *path) {
     audio_buffer_ = nullptr;
-    position_ = -1.0f;
+    position_ = -1.0F;
     audio_buffer_cursor_ = 0;
     audio_buffer_size_ = 0;
     swr_context_ = nullptr;
@@ -188,25 +188,25 @@ void MusicDecoder::Destroy() {
     }
     if (nullptr != swr_buffer_) {
         free(swr_buffer_);
-        swr_buffer_ = NULL;
+        swr_buffer_ = nullptr;
         swr_buffer_size_ = 0;
     }
     if (nullptr != swr_context_) {
         swr_free(&swr_context_);
-        swr_context_ = NULL;
+        swr_context_ = nullptr;
     }
     if (nullptr != audio_frame_) {
         av_free(audio_frame_);
-        audio_frame_ = NULL;
+        audio_frame_ = nullptr;
     }
     if (nullptr != codec_context_) {
         avcodec_close(codec_context_);
-        codec_context_ = NULL;
+        codec_context_ = nullptr;
     }
     if (nullptr != format_context_) {
         LOGI("leave LiveReceiver::Destroy");
         avformat_close_input(&format_context_);
-        format_context_ = NULL;
+        format_context_ = nullptr;
     }
 }
 

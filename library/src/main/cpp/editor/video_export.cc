@@ -649,6 +649,7 @@ void VideoExport::ProcessAudioExport() {
         if (audio_size > 0) {
             // TODO buffer池
             auto *packet = new AudioPacket();
+            // TODO delete
             auto *samples = new short[audio_size / sizeof(short)];
             memcpy(samples, audio_buffer_, audio_size);
             if (music_packet != nullptr && nullptr != music_packet->buffer) {

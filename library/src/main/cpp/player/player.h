@@ -52,7 +52,7 @@ class Player : public Handler {
     void OnSurfaceCreated(ANativeWindow* window);
     void OnSurfaceChanged(int width, int height);
     void OnSurfaceDestroy();
-    int Start(const char* file_name, int start_time, int end_time);
+    int Start(const char* file_name, int start_time, int end_time, int video_count_duration = 0);
     void Seek(int start_time, int end_time);
     void Resume();
     void Pause();
@@ -132,6 +132,8 @@ class Player : public Handler {
     char* file_name_;
     int start_time_;
     int end_time_;
+    // 前几个视频的时间总和
+    int video_count_duration_;
     AudioRender* audio_render_;
     int audio_buffer_size_;
     uint8_t* audio_buffer_;

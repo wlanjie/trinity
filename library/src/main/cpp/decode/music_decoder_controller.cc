@@ -27,37 +27,54 @@
 namespace trinity {
 
 MusicDecoderController::MusicDecoderController()
-        : running_(false),
-          accompany_type_(-1),
-          suspend_flag_(false),
-          packet_pool_(nullptr),
-          decoder_(nullptr),
-          resample_(nullptr),
-          need_resample_(false),
-          audio_render_(nullptr),
-          accompany_sample_rate_(0),
-          silent_samples_(nullptr),
-          accompany_packet_buffer_size_(0),
-          vocal_sample_rate_(0),
-          volume_(1.0f),
-          volume_max_(1.0f),
-          buffer_queue_size_(0),
-          buffer_queue_cursor_(0),
-          buffer_queue_(nullptr) {
+    : running_(false)
+    , lock_()
+    , condition_()
+    , suspend_lock_()
+    , suspend_condition_()
+    , buffer_(nullptr)
+    , buffer_size_(0)
+    , accompany_type_(-1)
+    , suspend_flag_(false)
+    , packet_pool_(nullptr)
+    , decoder_(nullptr)
+    , resample_(nullptr)
+    , need_resample_(false)
+    , audio_render_(nullptr)
+    , accompany_sample_rate_(0)
+    , silent_samples_(nullptr)
+    , accompany_packet_buffer_size_(0)
+    , vocal_sample_rate_(0)
+    , volume_(1.0F)
+    , volume_max_(1.0F)
+    , decoder_thread_()
+    , buffer_queue_size_(0)
+    , buffer_queue_cursor_(0)
+    , buffer_queue_(nullptr) {
+    buffer_size_ = 2048;
+    buffer_ = new uint8_t[buffer_size_];
 }
 
-MusicDecoderController::~MusicDecoderController() {}
+MusicDecoderController::~MusicDecoderController() {
+    delete[] buffer_;
+    buffer_ = nullptr;
+}
 
-static int AudioCallback(uint8_t** buffer, int* buffer_size, void* context) {
+int MusicDecoderController::AudioCallback(uint8_t** buffer, int* buffer_size, void* context) {
     auto* controller = reinterpret_cast<MusicDecoderController*>(context);
-//    return controller->ReadSamples(buffer, 2048) * 2;
+    int ret = controller->ReadSamples(controller->buffer_, controller->buffer_size_);
+    if (ret < 0) {
+        return ret;
+    }
+    *buffer = controller->buffer_;
+    *buffer_size = ret;
     return 0;
 }
 
 void MusicDecoderController::Init(float packet_buffer_time_percent, int vocal_sample_rate) {
     LOGI("enter packet_buffer_time_percent: %f vocal_sample_rate: %d", packet_buffer_time_percent, vocal_sample_rate);
-    volume_ = 1.0f;
-    volume_max_ = 1.0f;
+    volume_ = 1.0F;
+    volume_max_ = 1.0F;
     vocal_sample_rate_ = vocal_sample_rate;
     accompany_packet_buffer_size_ = 2048;
     buffer_queue_cursor_ = 0;
@@ -125,10 +142,10 @@ int MusicDecoderController::ReadSamples(uint8_t* samples, int size) {
             // copy the raw data to samples
             adjustSamplesVolume(accompanyPacket->buffer, samplePacketSize, volume_ / volume_max_);
             // TODO crash
-            memcpy(samples, accompanyPacket->buffer, samplePacketSize * 2);
+            memcpy(samples, accompanyPacket->buffer, samplePacketSize * sizeof(short));
             // push accompany packet_ to accompany queue_
             PushPacketToQueue(accompanyPacket);
-            ret = samplePacketSize;
+            ret = samplePacketSize * sizeof(short);
         } else if (-1 == samplePacketSize) {
             LOGI("decode eof");
             // 解码到最后了
@@ -199,7 +216,7 @@ void MusicDecoderController::Destroy() {
     DestroyDecoderThread();
     LOGI("after DestroyDecoderThread");
     packet_pool_->AbortDecoderAccompanyPacketQueue();
-    packet_pool_->DestoryDecoderAccompanyPacketQueue();
+    packet_pool_->DestroyDecoderAccompanyPacketQueue();
     DestroyResample();
     DestroyDecoder();
     DestroyRender();
@@ -228,7 +245,7 @@ int MusicDecoderController::InitDecoder(const char *path) {
         if (vocal_sample_rate_ != accompany_sample_rate_) {
             need_resample_ = true;
             resample_ = new Resample();
-            float ratio = accompany_sample_rate_ * 1.0f / vocal_sample_rate_;
+            float ratio = accompany_sample_rate_ * 1.0F / vocal_sample_rate_;
             actualAccompanyPacketBufferSize = ratio * accompany_packet_buffer_size_;
             ret = resample_->Init(accompany_sample_rate_, vocal_sample_rate_, actualAccompanyPacketBufferSize / 2, 2, 2);
             if (ret < 0) {
@@ -238,12 +255,19 @@ int MusicDecoderController::InitDecoder(const char *path) {
             need_resample_ = false;
         }
         decoder_->SetPacketBufferSize(actualAccompanyPacketBufferSize);
+    } else {
+        decoder_->Destroy();
+        delete decoder_;
+        decoder_ = nullptr;
     }
     LOGI("leave");
     return ret;
 }
 
 int MusicDecoderController::InitRender() {
+    if (nullptr == decoder_) {
+        return -1;
+    }
     DestroyRender();
     audio_render_ = new AudioRender();
     int sample_rate = decoder_->GetSampleRate();
@@ -284,14 +308,17 @@ void MusicDecoderController::InitDecoderThread() {
 }
 
 void MusicDecoderController::DecodePacket() {
+    if (nullptr == decoder_) {
+        return;
+    }
     AudioPacket* accompanyPacket = decoder_->DecodePacket();
     // 是否需要重采样
-    if (need_resample_ && NULL != resample_) {
+    if (need_resample_ && nullptr != resample_) {
         short* stereoSamples = accompanyPacket->buffer;
         int stereoSampleSize = accompanyPacket->size;
         if (stereoSampleSize > 0) {
             int monoSampleSize = stereoSampleSize / 2;
-            short** samples = new short*[2];
+            auto** samples = new short*[2];
             samples[0] = new short[monoSampleSize];
             samples[1] = new short[monoSampleSize];
             for (int i = 0; i < monoSampleSize; i++) {
@@ -308,7 +335,7 @@ void MusicDecoderController::DecodePacket() {
             delete[] stereoSamples;
             if (out_nb_bytes > 0) {
                 accompanySampleSize = out_nb_bytes / 2;
-                short* accompanySamples = new short[accompanySampleSize];
+                auto* accompanySamples = new short[accompanySampleSize];
                 convertShortArrayFromByteArray(out_data, out_nb_bytes, accompanySamples, 1.0);
                 accompanyPacket->buffer = accompanySamples;
                 accompanyPacket->size = accompanySampleSize;
@@ -359,7 +386,7 @@ void MusicDecoderController::DestroyResample() {
     if (nullptr != resample_) {
         resample_->Destroy();
         delete resample_;
-        resample_ = NULL;
+        resample_ = nullptr;
     }
 }
 
@@ -367,7 +394,7 @@ void MusicDecoderController::DestroyDecoder() {
     if (nullptr != decoder_) {
         decoder_->Destroy();
         delete decoder_;
-        decoder_ = NULL;
+        decoder_ = nullptr;
     }
 }
 
@@ -385,12 +412,12 @@ void MusicDecoderController::PushPacketToQueue(AudioPacket *packet) {
     float position = packet->position;
     delete packet;
     while (buffer_queue_cursor_ >= accompany_packet_buffer_size_) {
-        short* buffer = new short[accompany_packet_buffer_size_];
+        auto* buffer = new short[accompany_packet_buffer_size_];
         memcpy(buffer, buffer_queue_, accompany_packet_buffer_size_ * sizeof(short));
         int protectedSampleSize = buffer_queue_cursor_ - accompany_packet_buffer_size_;
         memmove(buffer_queue_, buffer_queue_ + accompany_packet_buffer_size_, protectedSampleSize * sizeof(short));
         buffer_queue_cursor_ -= accompany_packet_buffer_size_;
-        AudioPacket* actualPacket = new AudioPacket();
+        auto* actualPacket = new AudioPacket();
         actualPacket->size = accompany_packet_buffer_size_;
         actualPacket->buffer = buffer;
         actualPacket->position = position;
@@ -404,7 +431,7 @@ void MusicDecoderController::PushPacketToQueue(AudioPacket *packet) {
 }
 
 int MusicDecoderController::BuildSamples(short *samples) {
-    AudioPacket* accompanyPacket = new AudioPacket();
+    auto* accompanyPacket = new AudioPacket();
     int samplePacketSize = accompany_packet_buffer_size_;
     accompanyPacket->size = samplePacketSize;
     accompanyPacket->buffer = new short[samplePacketSize];

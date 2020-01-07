@@ -29,14 +29,13 @@ VideoEditor::VideoEditor(JNIEnv* env, jobject object, const char* resource_path)
     , window_(nullptr)
     , video_editor_object_()
     , repeat_(false)
-    , play_index(0)
+    , play_index_(0)
     , editor_resource_()
     , vm_()
     , queue_mutex_()
     , queue_cond_() {
     window_ = nullptr;
     repeat_ = false;
-    play_index = 0;
     player_ = new Player(env, object);
     player_->AddObserver(this);
     editor_resource_ = new EditorResource(resource_path);
@@ -116,7 +115,14 @@ int64_t VideoEditor::GetVideoDuration() const {
 
 int64_t VideoEditor::GetCurrentPosition() const {
     if (nullptr != player_) {
-        return player_->GetCurrentPosition();
+        int duration = 0;
+        for (int i = 0; i < clip_deque_.size(); i++) {
+            if (i < play_index_) {
+                MediaClip* clip = clip_deque_.at(i);
+                duration += clip->end_time - clip->start_time;
+            }
+        }
+        return duration + player_->GetCurrentPosition();
     }
     return 0;
 }
@@ -281,20 +287,28 @@ void VideoEditor::DeleteAction(int action_id) {
 void VideoEditor::OnComplete() {
     LOGE("enter %s", __func__);
     if (clip_deque_.size() == 1) {
-        play_index = repeat_ ? 0 : -1;
+        play_index_ = repeat_ ? 0 : -1;
     } else {
-        play_index++;
-        if (play_index >= clip_deque_.size()) {
-            play_index = repeat_ ? 0 : -1;
+        play_index_++;
+        if (play_index_ >= clip_deque_.size()) {
+            play_index_ = repeat_ ? 0 : -1;
         }
     }
-    if (play_index == -1) {
+    if (play_index_ == -1) {
         return;
     }
 
-    MediaClip* clip = clip_deque_.at(play_index);
+    int video_count_duration = 0;
+    for (int i = 0; i < clip_deque_.size(); i++) {
+        if (i < play_index_) {
+            auto* clip = clip_deque_.at(static_cast<unsigned int>(i));
+            video_count_duration += (clip->end_time - clip->start_time);
+        }
+    }
+
+    MediaClip* clip = clip_deque_.at(static_cast<unsigned int>(play_index_));
     if (nullptr != player_) {
-        player_->Start(clip->file_name, clip->start_time, clip->end_time);
+        player_->Start(clip->file_name, clip->start_time, clip->end_time, video_count_duration);
     }
     LOGE("leave %s", __func__);
 }
