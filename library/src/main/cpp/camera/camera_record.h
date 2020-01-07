@@ -133,7 +133,6 @@ class CameraRecord : public Handler {
     virtual void HandleMessage(Message* msg);
  private:
     ANativeWindow *window_;
-    JNIEnv* env_;
     JavaVM *vm_;
     jobject obj_;
     int screen_width_;
@@ -157,7 +156,7 @@ class CameraRecord : public Handler {
     VideoConsumerThread* packet_thread_;
     int64_t start_time_;
     float speed_;
-    int render_type_;
+    int frame_type_;
     int frame_count_;
     int64_t pre_fps_count_time_;
     float fps_;

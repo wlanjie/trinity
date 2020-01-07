@@ -27,39 +27,38 @@
 namespace trinity {
 
 CameraRecord::CameraRecord(JNIEnv* env) : Handler()
+    , window_(nullptr)
+    , vm_(nullptr)
+    , obj_(nullptr)
+    , screen_width_(0)
+    , screen_height_(0)
+    , camera_width_(0)
+    , camera_height_(0)
+    , camera_size_change_(false)
+    , vertex_coordinate_(nullptr)
+    , texture_coordinate_(nullptr)
+    , egl_core_(nullptr)
+    , preview_surface_(EGL_NO_SURFACE)
+    , frame_buffer_(nullptr)
+    , render_screen_(nullptr)
+    , queue_(nullptr)
+    , thread_id_()
+    , oes_texture_id_(0)
+    , texture_matrix_(nullptr)
+    , encoder_(nullptr)
+    , encoding_(false)
+    , packet_thread_(nullptr)
     , start_time_(0)
+    , speed_(1.0F)
+    , frame_type_(-1)
+    , frame_count_(0)
+    , pre_fps_count_time_(0)
+    , fps_(1.0F)
     , start_recording(false) {
-    window_ = nullptr;
-    env_ = env;
-    vm_ = nullptr;
     env->GetJavaVM(&vm_);
-    screen_height_ = 0;
-    screen_width_ = 0;
-    camera_width_ = 0;
-    camera_height_ = 0;
-    camera_size_change_ = false;
-    queue_ = nullptr;
-    egl_core_ = nullptr;
-    render_screen_ = nullptr;
-    preview_surface_ = EGL_NO_SURFACE;
-    texture_matrix_ = nullptr;
-    frame_buffer_ = nullptr;
-    render_screen_ = nullptr;
-    oes_texture_id_ = 0;
-    encoder_ = nullptr;
-    encoding_ = false;
-    packet_thread_ = nullptr;
-    start_time_ = 0;
-    speed_ = 1.0f;
-    render_type_ = CROP;
-    vertex_coordinate_ = nullptr;
-    texture_coordinate_ = nullptr;
-    frame_count_ = 0;
-    pre_fps_count_time_ = 0;
-    fps_ = 0.0F;
 }
 
-CameraRecord::~CameraRecord() {}
+CameraRecord::~CameraRecord() = default;
 
 void CameraRecord::PrepareEGLContext(
         jobject object, jobject surface,
@@ -71,27 +70,31 @@ void CameraRecord::PrepareEGLContext(
     // 从而保证从glReadPixels读取的数据不是上下颠倒的,而是正确的
     vertex_coordinate_ = new GLfloat[8];
     texture_coordinate_ = new GLfloat[8];
-    vertex_coordinate_[0] = -1.0f;
-    vertex_coordinate_[1] = -1.0f;
-    vertex_coordinate_[2] = 1.0f;
-    vertex_coordinate_[3] = -1.0f;
+    vertex_coordinate_[0] = -1.0F;
+    vertex_coordinate_[1] = -1.0F;
+    vertex_coordinate_[2] = 1.0F;
+    vertex_coordinate_[3] = -1.0F;
 
-    vertex_coordinate_[4] = -1.0f;
-    vertex_coordinate_[5] = 1.0f;
-    vertex_coordinate_[6] = 1.0f;
-    vertex_coordinate_[7] = 1.0f;
+    vertex_coordinate_[4] = -1.0F;
+    vertex_coordinate_[5] = 1.0F;
+    vertex_coordinate_[6] = 1.0F;
+    vertex_coordinate_[7] = 1.0F;
 
-    texture_coordinate_[0] = 0.0f;
-    texture_coordinate_[1] = 1.0f;
-    texture_coordinate_[2] = 1.0f;
-    texture_coordinate_[3] = 1.0f;
+    texture_coordinate_[0] = 0.0F;
+    texture_coordinate_[1] = 1.0F;
+    texture_coordinate_[2] = 1.0F;
+    texture_coordinate_[3] = 1.0F;
 
-    texture_coordinate_[4] = 0.0f;
-    texture_coordinate_[5] = 0.0f;
-    texture_coordinate_[6] = 1.0f;
-    texture_coordinate_[7] = 0.0f;
-    this->obj_ = env_->NewGlobalRef(object);
-    this->window_ = ANativeWindow_fromSurface(env_, surface);
+    texture_coordinate_[4] = 0.0F;
+    texture_coordinate_[5] = 0.0F;
+    texture_coordinate_[6] = 1.0F;
+    texture_coordinate_[7] = 0.0F;
+    JNIEnv* env = nullptr;
+    if (vm_->AttachCurrentThread(&env, nullptr) != JNI_OK) {
+        return;
+    }
+    this->obj_ = env->NewGlobalRef(object);
+    this->window_ = ANativeWindow_fromSurface(env, surface);
     this->screen_width_ = screen_width;
     this->screen_height_ = screen_height;
     packet_thread_ = new VideoConsumerThread();
@@ -116,7 +119,6 @@ void CameraRecord::SetRenderType(int type) {
     if (nullptr != frame_buffer_) {
 //        frame_buffer_->SetRenderType(type);
     }
-    render_type_ = type;
 }
 
 void CameraRecord::SetFrame(int frame) {
@@ -149,8 +151,11 @@ void CameraRecord::DestroyEGLContext() {
         packet_thread_ = nullptr;
     }
     if (nullptr != obj_) {
-        env_->DeleteGlobalRef(obj_);
-        obj_ = nullptr;
+        JNIEnv* env = nullptr;
+        if (vm_->AttachCurrentThread(&env, nullptr) == JNI_OK) {
+            env->DeleteGlobalRef(obj_);
+            obj_ = nullptr;
+        }
     }
     if (nullptr != vertex_coordinate_) {
         delete[] vertex_coordinate_;
@@ -181,6 +186,18 @@ void CameraRecord::Draw() {
         frame_buffer_ = new FrameBuffer(MIN(camera_width_, camera_height_),
                                         MAX(camera_width_, camera_height_),
                                         DEFAULT_VERTEX_MATRIX_SHADER, DEFAULT_OES_FRAGMENT_SHADER);
+
+        enum RenderFrame frame_type = FIT;
+        if (frame_type_ == 0) {
+            frame_type = SQUARE;
+        } else if (frame_type_ == 1) {
+            frame_type = FIT;
+        } else if (frame_type_ == 2) {
+            frame_type = CROP;
+        }
+        render_screen_->SetFrame(MIN(camera_width_, camera_height_),
+                                 MAX(camera_width_, camera_height_),
+                                 screen_width_, screen_height_, frame_type);
     }
     if (start_recording) {
         start_recording = false;
@@ -206,16 +223,16 @@ void CameraRecord::Draw() {
 void CameraRecord::ConfigCamera() {
     LOGI("enter ConfigCamera");
     JNIEnv *env;
-    if (vm_->AttachCurrentThread(&env, NULL) != JNI_OK) {
+    if (vm_->AttachCurrentThread(&env, nullptr) != JNI_OK) {
         LOGE("%s: AttachCurrentThread() failed", __FUNCTION__);
         return;
     }
-    if (env == NULL) {
+    if (env == nullptr) {
         LOGE("getJNIEnv failed");
         return;
     }
     jclass clazz = env->GetObjectClass(obj_);
-    if (NULL != clazz) {
+    if (nullptr != clazz) {
         jmethodID preview_width = env->GetMethodID(clazz, "getCameraWidth", "()I");
         if (nullptr != preview_width) {
             int width = env->CallIntMethod(obj_, preview_width);
@@ -398,7 +415,7 @@ void CameraRecord::ReleaseCamera() {
     jclass clazz = env->GetObjectClass(obj_);
     if (nullptr != clazz) {
         jmethodID releaseCameraCallback = env->GetMethodID(clazz, "releaseCameraFromNative", "()V");
-        if (NULL != releaseCameraCallback) {
+        if (nullptr != releaseCameraCallback) {
             env->CallVoidMethod(obj_, releaseCameraCallback);
         }
     }
@@ -470,10 +487,6 @@ void CameraRecord::Destroy() {
     }
 
     DestroyPreviewSurface();
-    if (nullptr != render_screen_) {
-        delete render_screen_;
-        render_screen_ = nullptr;
-    }
     ReleaseCamera();
     if (nullptr != egl_core_) {
         LOGI("destroy context: %p", egl_core_->GetContext());
@@ -614,17 +627,7 @@ void CameraRecord::RenderFrame() {
 }
 
 void CameraRecord::SetFrameType(int frame) {
-    enum RenderFrame frame_type = FIT;
-    if (frame == 0) {
-        frame_type = SQUARE;
-    } else if (frame == 1) {
-        frame_type = FIT;
-    } else if (frame == 2) {
-        frame_type = CROP;
-    }
-    render_screen_->SetFrame(MIN(camera_width_, camera_height_),
-            MAX(camera_width_, camera_height_),
-            screen_width_, screen_height_, frame_type);
+    frame_type_ = frame;
 }
 
 void CameraRecord::FPS() {
