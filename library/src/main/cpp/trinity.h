@@ -31,4 +31,16 @@ typedef struct {
     int64_t end_time;
 } MediaClip;
 
+typedef enum {
+    kEffect             = 100,
+    kEffectUpdate       = 101,
+    kEffectDelete       = 102,
+    kMusic              = 103,
+    kMusicUpdate        = 104,
+    kMusicDelete        = 105,
+    kFilter             = 106,
+    kFilterUpdate       = 107,
+    kFilterDelete       = 108
+} EffectMessage;
+
 #endif  // TRINITY_TRINITY_H

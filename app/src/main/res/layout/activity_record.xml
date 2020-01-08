@@ -83,6 +83,18 @@
                 android:src="@mipmap/ic_flash_off"/>
 
         <ImageView
+            android:id="@+id/filter"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginRight="16dp"
+            android:layout_alignParentRight="true"
+            android:layout_below="@id/flash"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/flash"
+            android:src="@mipmap/ic_filter"/>
+
+        <ImageView
                 android:id="@+id/done"
                 android:layout_width="36dp"
                 android:layout_height="36dp"

@@ -18,11 +18,13 @@
 // Created by wlanjie on 2019/4/13.
 //
 
+#include <string>
 #include "gl.h"
 #include "camera_record.h"
 #include "media_encode_adapter.h"
 #include "tools.h"
 #include "android_xlog.h"
+#include "trinity.h"
 
 namespace trinity {
 
@@ -54,7 +56,10 @@ CameraRecord::CameraRecord(JNIEnv* env) : Handler()
     , frame_count_(0)
     , pre_fps_count_time_(0)
     , fps_(1.0F)
-    , start_recording(false) {
+    , start_recording(false)
+    , current_action_id_(0)
+    , image_process_(nullptr)
+    , render_time_(0) {
     env->GetJavaVM(&vm_);
 }
 
@@ -165,6 +170,7 @@ void CameraRecord::DestroyEGLContext() {
         delete[] texture_coordinate_;
         texture_coordinate_ = nullptr;
     }
+    render_time_ = 0;
     LOGI("%s leave", __FUNCTION__);
 }
 
@@ -208,11 +214,23 @@ void CameraRecord::Draw() {
     render_screen_->SetOutput(screen_width_, screen_height_);
     frame_buffer_->SetOutput(MIN(camera_width_, camera_height_),
             MAX(camera_width_, camera_height_));
-    int texture_id = OnDrawFrame(oes_texture_id_,
-            camera_width_, camera_height_);
-    frame_buffer_->SetTextureType(texture_id > 0 ? TEXTURE_2D : TEXTURE_OES);
+    frame_buffer_->SetTextureType(TEXTURE_OES);
     frame_buffer_->ActiveProgram();
-    texture_id = frame_buffer_->OnDrawFrame(texture_id > 0 ? texture_id : oes_texture_id_, texture_matrix_);
+    int texture_id = frame_buffer_->OnDrawFrame(oes_texture_id_, texture_matrix_);
+    if (nullptr != image_process_) {
+        if (render_time_ == 0) {
+            render_time_ = getCurrentTime();
+        }
+        auto current_time = getCurrentTime() - render_time_;
+        texture_id = image_process_->Process(texture_id, current_time,
+                MIN(camera_width_, camera_height_),
+                MAX(camera_width_, camera_height_), 0, 0);
+    }
+    int third_party_id = OnDrawFrame(texture_id,
+                                 camera_width_, camera_height_);
+    if (third_party_id > 0) {
+        texture_id = third_party_id;
+    }
     render_screen_->ActiveProgram();
     render_screen_->ProcessImage(texture_id);
     if (!egl_core_->SwapBuffers(preview_surface_)) {
@@ -464,6 +482,11 @@ bool CameraRecord::Initialize() {
     glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glBindTexture(GL_TEXTURE_EXTERNAL_OES, 0);
 
+    if (nullptr != image_process_) {
+        delete image_process_;
+    }
+    image_process_ = new ImageProcess();
+
     StartCameraPreview();
     ConfigCamera();
     render_screen_ = new OpenGL(DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
@@ -484,6 +507,10 @@ void CameraRecord::Destroy() {
     if (nullptr != render_screen_) {
         delete render_screen_;
         render_screen_ = nullptr;
+    }
+    if (nullptr != image_process_) {
+        delete image_process_;
+        image_process_ = nullptr;
     }
 
     DestroyPreviewSurface();
@@ -645,6 +672,71 @@ void CameraRecord::FPS() {
 //    LOGD("fps: %f", fps_);
 }
 
+int CameraRecord::AddFilter(const char *config_path) {
+    int action_id = current_action_id_++;
+    size_t len = strlen(config_path) + 1;
+    char* path = new char[len];
+    memcpy(path, config_path, len);
+    auto* message = new Message(kFilter, action_id, 0, path);
+    PostMessage(message);
+    return action_id;
+}
+
+void CameraRecord::UpdateFilter(const char *config_path, int start_time, int end_time, int action_id) {
+    size_t len = strlen(config_path) + 1;
+    char* path = new char[len];
+    memcpy(path, config_path, len);
+    auto* message = new Message(kFilterUpdate, action_id, start_time, end_time, path);
+    PostMessage(message);
+}
+
+void CameraRecord::DeleteFilter(int action_id) {
+    auto* message = new Message(kFilterDelete, action_id, 0);
+    PostMessage(message);
+}
+
+int CameraRecord::AddAction(const char *effect_config) {
+
+}
+
+void CameraRecord::UpdateAction(int start_time, int end_time, int action_id) {
+
+}
+
+void CameraRecord::DeleteAction(int action_id) {
+
+}
+
+void CameraRecord::OnAddFilter(char* config_path, int action_id) {
+    if (nullptr == image_process_) {
+        return;
+    }
+    LOGI("enter %s id: %d config: %s", __func__, action_id, config_path);
+    image_process_->OnFilter(config_path, action_id);
+    delete[] config_path;
+    LOGI("leave %s", __func__);
+}
+
+void CameraRecord::OnUpdateFilter(char *config_path, int action_id,
+        int start_time, int end_time) {
+    if (nullptr == image_process_) {
+        return;
+    }
+    LOGI("enter %s config_path: %s action_id: %d start_time: %d end_time: %d", __func__, config_path, action_id, start_time, end_time); // NOLINT
+    image_process_->OnFilter(config_path, action_id, start_time, end_time);
+    delete[] config_path;
+    LOGI("leave %s", __func__);
+}
+
+void CameraRecord::OnDeleteFilter(int action_id) {
+    if (nullptr == image_process_) {
+        return;
+    }
+    LOGI("enter %s action_id: %d", __func__, action_id);
+    image_process_->OnDeleteFilter(action_id);
+    LOGI("leave %s", __func__);
+}
+
 void CameraRecord::HandleMessage(trinity::Message *msg) {
     int what = msg->GetWhat();
     switch (what) {
@@ -674,6 +766,15 @@ void CameraRecord::HandleMessage(trinity::Message *msg) {
             break;
         case MSG_SET_FRAME:
             SetFrameType(msg->GetArg1());
+            break;
+        case kFilter:
+            OnAddFilter(reinterpret_cast<char*>(msg->GetObj()), msg->GetArg1());
+            break;
+        case kFilterUpdate:
+            OnUpdateFilter(reinterpret_cast<char*>(msg->GetObj()), msg->GetArg1(), msg->GetArg2(), msg->GetArg3());
+            break;
+        case kFilterDelete:
+            OnDeleteFilter(msg->GetArg1());
             break;
         default:
             break;

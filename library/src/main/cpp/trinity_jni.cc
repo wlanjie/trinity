@@ -199,6 +199,38 @@ static void Android_JNI_record_stop(JNIEnv *env, jobject object, jlong handle) {
     preview_controller->StopEncoding();
 }
 
+static jint Android_JNI_record_addFilter(JNIEnv* env, jobject object, jlong handle, jstring config_path) {
+    if (handle <= 0) {
+        return -1;
+    }
+    auto* camera_record = reinterpret_cast<CameraRecord*>(handle);
+    const char* filter_config = env->GetStringUTFChars(config_path, JNI_FALSE);
+    int action_id = camera_record->AddFilter(filter_config);
+    env->ReleaseStringUTFChars(config_path, filter_config);
+    return action_id;
+}
+
+static void Android_JNI_record_updateFilter(JNIEnv* env, jobject object,
+        jlong handle, jstring config_path,
+        jint start_time, jint end_time, jint action_id) {
+    if (handle <= 0) {
+        return;
+    }
+    auto* camera_record = reinterpret_cast<CameraRecord*>(handle);
+    const char* filter_config = env->GetStringUTFChars(config_path, JNI_FALSE);
+    camera_record->UpdateFilter(filter_config, start_time, end_time, action_id);
+    env->ReleaseStringUTFChars(config_path, filter_config);
+}
+
+static void Android_JNI_record_deleteFilter(JNIEnv* env, jobject object,
+        jlong handle, jint action_id) {
+    if (handle <= 0) {
+        return;
+    }
+    auto* camera_record = reinterpret_cast<CameraRecord*>(handle);
+    camera_record->DeleteFilter(action_id);
+}
+
 static void Android_JNI_releaseNative(JNIEnv *env, jobject object, jlong id) {
     if (id <= 0) {
         return;
@@ -652,6 +684,9 @@ static JNINativeMethod recordMethods[] = {
         {"destroyEGLContext",    "(J)V",                            (void **) Android_JNI_destroyEGLContext},
         {"startEncode",          "(JLjava/lang/String;IIIIZIII)V",  (void **) Android_JNI_record_start},
         {"stopEncode",           "(J)V",                            (void **) Android_JNI_record_stop},
+        {"addFilter",            "(JLjava/lang/String;)I",          (void **) Android_JNI_record_addFilter},
+        {"updateFilter",         "(JLjava/lang/String;III)V",       (void **) Android_JNI_record_updateFilter },
+        {"deleteFilter",         "(JI)V",                           (void **) Android_JNI_record_deleteFilter },
         {"release",              "(J)V",                            (void **) Android_JNI_releaseNative}
 };
 

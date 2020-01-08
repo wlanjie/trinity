@@ -337,6 +337,51 @@ class TrinityRecord(
     return false
   }
 
+
+  /**
+   * 添加滤镜
+   * 如: content.json的绝对路径为 /sdcard/Android/com.trinity.sample/cache/filters/config.json
+   * 传入的路径只需要 /sdcard/Android/com.trinity.sample/cache/filters 即可
+   * 如果当前路径不包含config.json则添加失败
+   * 具体json内容如下:
+   * {
+   *  "type": 0,
+   *  "intensity": 1.0,
+   *  "lut": "lut_124/lut_124.png"
+   * }
+   *
+   * json 参数解释:
+   * type: 保留字段, 目前暂无作用
+   * intensity: 滤镜透明度, 0.0时和摄像头采集的无差别
+   * lut: 滤镜颜色表的地址, 必须为本地地址, 而且为相对路径
+   *      sdk内部会进行路径拼接
+   * @param configPath 滤镜config.json的父目录
+   * @return 返回当前滤镜的唯一id
+   */
+  fun addFilter(configPath: String): Int {
+    return addFilter(mHandle, configPath)
+  }
+
+  /**
+   * 更新滤镜
+   * @param configPath config.json的路径, 目前对称addFilter说明
+   * @param startTime 滤镜的开始时间
+   * @param endTime 滤镜的结束时间
+   * @param actionId 需要更新哪个滤镜, 必须为addFilter返回的actionId
+   */
+  @Suppress("unused")
+  fun updateFilter(configPath: String, startTime: Int, endTime: Int, actionId: Int) {
+    updateFilter(mHandle, configPath, startTime, endTime, actionId)
+  }
+
+  /**
+   * 删除滤镜
+   * @param actionId 需要删除哪个滤镜, 必须为addFilter时返回的actionId
+   */
+  fun deleteFilter(actionId: Int) {
+    deleteFilter(mHandle, actionId)
+  }
+
   /**
    * 添加一个特效, 包含普通滤镜等
    * @param config json 内容, 底层根据解析json来判断添加什么效果
@@ -525,15 +570,15 @@ class TrinityRecord(
 
   /**
    * texture回调
-   * 可以做特效处理, textureId为OES类型
-   * @param textureId 相机textureId OES类型
+   * 可以做特效处理, textureId为TEXTURE_2D类型
+   * @param textureId 相机textureId
    * @param width texture宽
    * @param height texture高
    * @return 返回处理过的textureId, 必须为TEXTURE_2D类型
    */
   @Suppress("unused")
   private fun onDrawFrame(textureId: Int, width: Int, height: Int): Int {
-    return mOnRenderListener?.onDrawFrame(textureId, width, height, mTextureMatrix) ?: 0
+    return mOnRenderListener?.onDrawFrame(textureId, width, height, mTextureMatrix) ?: -1
   }
 
   /**
@@ -746,6 +791,31 @@ class TrinityRecord(
   private external fun destroyEGLContext(handle: Long)
 
   private external fun switchCamera(handle: Long)
+
+  /**
+   * 添加一个滤镜
+   * @param handle Long c++ 对象地址
+   * @param configPath String 滤镜配置地址
+   * @return Int 返回当前滤镜的唯一id
+   */
+  private external fun addFilter(handle: Long, configPath: String): Int
+
+  /**
+   * 更新一个滤镜
+   * @param handle Long c++对象地址
+   * @param configPath String 滤镜配置地址
+   * @param startTime Int 滤镜开始时间
+   * @param endTime Int 滤镜结束时间, 如果一直显示,可以传入Int.MAX
+   * @param actionId Int 需要更新哪个滤镜, 必须为addFilter返回的actionId
+   */
+  private external fun updateFilter(handle: Long, configPath: String, startTime: Int, endTime: Int, actionId: Int)
+
+  /**
+   * 删除一个滤镜
+   * @param handle Long c++对象地址
+   * @param actionId Int 需要更新哪个滤镜, 必须为addFilter返回的actionId
+   */
+  private external fun deleteFilter(handle: Long, actionId: Int)
 
   /**
    * 删除c++对象

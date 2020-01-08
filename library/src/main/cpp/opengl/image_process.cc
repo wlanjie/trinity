@@ -150,7 +150,7 @@ void ImageProcess::ClearAction() {
     filters_.clear();
 }
 
-void ImageProcess::OnFilter(char* config_path, int action_id, int start_time, int end_time) {
+void ImageProcess::OnFilter(const char* config_path, int action_id, int start_time, int end_time) {
     char const* config_name = "/config.json";
     auto* config = new char[strlen(config_path) + strlen(config_name)];
     sprintf(config, "%s%s", config_path, config_name);

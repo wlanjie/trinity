@@ -30,6 +30,7 @@
 #include "video_encoder_adapter.h"
 #include "video_consumer_thread.h"
 #include "soft_encoder_adapter.h"
+#include "image_process.h"
 
 namespace trinity {
 
@@ -87,6 +88,17 @@ class CameraRecord : public Handler {
 
     void StopEncoding();
 
+    int AddFilter(const char* config_path);
+
+    void UpdateFilter(const char* config_path, int start_time, int end_time, int action_id);
+
+    void DeleteFilter(int action_id);
+
+    int AddAction(const char* effect_config);
+
+    void UpdateAction(int start_time, int end_time, int action_id);
+
+    void DeleteAction(int action_id);
  private:
     virtual bool Initialize();
 
@@ -130,6 +142,13 @@ class CameraRecord : public Handler {
 
     void FPS();
 
+    void OnAddFilter(char* config_path, int action_id);
+
+    void OnUpdateFilter(char* config_path, int action_id,
+            int start_time, int end_time);
+
+    void OnDeleteFilter(int action_id);
+
     virtual void HandleMessage(Message* msg);
  private:
     ANativeWindow *window_;
@@ -161,6 +180,9 @@ class CameraRecord : public Handler {
     int64_t pre_fps_count_time_;
     float fps_;
     bool start_recording;
+    int current_action_id_;
+    ImageProcess* image_process_;
+    int64_t render_time_;
 };
 
 }  // namespace trinity

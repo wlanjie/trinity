@@ -59,7 +59,7 @@ class ImageProcess {
     void RemoveAction(int action_id);
     void ClearAction();
 
-    void OnFilter(char* config_path, int action_id, int start_time = 0, int end_time = INT32_MAX);
+    void OnFilter(const char* config_path, int action_id, int start_time = 0, int end_time = INT32_MAX);
     void OnDeleteFilter(int action_id);
 
  private:

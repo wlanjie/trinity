@@ -26,18 +26,6 @@ enum VideoRenderMessage {
     kPlayAudio
 };
 
-typedef enum {
-    kEffect             = 100,
-    kEffectUpdate       = 101,
-    kEffectDelete       = 102,
-    kMusic              = 103,
-    kMusicUpdate        = 104,
-    kMusicDelete        = 105,
-    kFilter             = 106,
-    kFilterUpdate       = 107,
-    kFilterDelete       = 108
-} EffectMessage;
-
 Player::Player(JNIEnv* env, jobject object) : Handler()
     , message_queue_thread_()
     , message_queue_()

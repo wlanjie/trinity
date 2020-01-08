@@ -28,7 +28,9 @@ import com.trinity.listener.OnRenderListener
 import com.trinity.record.PreviewResolution
 import com.trinity.record.Speed
 import com.trinity.record.TrinityRecord
+import com.trinity.sample.entity.Filter
 import com.trinity.sample.entity.MediaItem
+import com.trinity.sample.fragment.FilterFragment
 import com.trinity.sample.fragment.MediaFragment
 import com.trinity.sample.fragment.MusicFragment
 import com.trinity.sample.fragment.SettingFragment
@@ -52,6 +54,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     private const val SETTING_TAG = "setting_tag"
     private const val MUSIC_TAG = "music_tag"
     private const val MEDIA_TAG = "media_tag"
+    private const val FILTER_TAG = "filter_tag"
   }
 
   private lateinit var mRecord: TrinityRecord
@@ -77,6 +80,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
   private var mRecordDuration = 60 * 1000
   private var mAutoFocusMarker = DefaultAutoFocusMarker()
   private var mPermissionDenied = false
+  private var mFilterId = -1
 
   @SuppressLint("ClickableViewAccessibility")
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -109,6 +113,11 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
         showMusic()
       }
 
+    findViewById<View>(R.id.filter)
+        .setOnClickListener {
+          showFilter()
+        }
+
     mInsideBottomSheet = findViewById(R.id.frame_container)
     findViewById<View>(R.id.setting)
       .setOnClickListener {
@@ -130,6 +139,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
           showMedia()
         }
     preview.setOnTouchListener { v, event ->
+      closeBottomSheet()
       mRecord.focus(PointF(event.x, event.y))
       true
     }
@@ -163,6 +173,33 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
       mRecordDurations.add(it.duration)
       mLineView.addProgress(it.duration * 1.0f / mRecordDuration)
       mMedias.add(it)
+    }
+  }
+
+  private fun showFilter() {
+    var filterFragment = supportFragmentManager.findFragmentByTag(FILTER_TAG)
+    if (filterFragment == null) {
+      filterFragment = FilterFragment()
+      supportFragmentManager.transaction {
+        replace(R.id.frame_container, filterFragment, FILTER_TAG)
+      }
+    }
+    if (filterFragment is FilterFragment) {
+      filterFragment.setCallback(object: FilterFragment.Callback {
+        override fun onFilterSelect(filter: Filter) {
+          if (mFilterId != -1) {
+            mRecord.deleteFilter(mFilterId)
+          }
+          mFilterId = mRecord.addFilter(externalCacheDir?.absolutePath + "/filter/${filter.config}")
+        }
+
+      })
+    }
+    val behavior = BottomSheetBehavior.from(mInsideBottomSheet)
+    if (behavior.state != BottomSheetBehavior.STATE_EXPANDED) {
+      behavior.state = BottomSheetBehavior.STATE_EXPANDED
+    } else {
+      behavior.state = BottomSheetBehavior.STATE_HIDDEN
     }
   }
 
