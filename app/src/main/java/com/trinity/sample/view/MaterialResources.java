@@ -97,23 +97,6 @@ public class MaterialResources {
   }
 
   /**
-   * Returns a TextAppearanceSpan object from the given attributes.
-   *
-   * <p>You only need this if you are drawing text manually. Normally, TextView takes care of this.
-   */
-  @Nullable
-  public static TextAppearance getTextAppearance(
-      Context context, TypedArray attributes, @StyleableRes int index) {
-    if (attributes.hasValue(index)) {
-      int resourceId = attributes.getResourceId(index, 0);
-      if (resourceId != 0) {
-        return new TextAppearance(context, resourceId);
-      }
-    }
-    return null;
-  }
-
-  /**
    * Retrieve a dimensional unit attribute at <var>index</var> for use as a size in raw pixels. A
    * size conversion involves rounding the base value, and ensuring that a non-zero base value is at
    * least one pixel in size.

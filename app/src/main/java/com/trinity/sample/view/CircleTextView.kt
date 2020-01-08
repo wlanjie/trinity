@@ -4,10 +4,10 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.util.AttributeSet
-import android.widget.TextView
+import androidx.appcompat.widget.AppCompatTextView
 import com.trinity.sample.R
 
-class CircleTextView  : TextView {
+class CircleTextView  : AppCompatTextView {
   private var mPaint: Paint? = null
   private var defaultColor: Int = 0
 

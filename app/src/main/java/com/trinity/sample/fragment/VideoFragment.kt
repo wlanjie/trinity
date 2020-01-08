@@ -1,5 +1,6 @@
 package com.trinity.sample.fragment
 
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -62,7 +63,14 @@ class VideoFragment : Fragment() {
       while (cursor?.moveToNext() == true) {
         val id = cursor.getLong(cursor.getColumnIndexOrThrow(PROJECTION[0]))
         val path = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-          QUERY_URI.buildUpon().appendPath(id.toString()).build().toString()
+          val uri = QUERY_URI.buildUpon().appendPath(id.toString()).build().toString()
+          val filePathColumn = arrayOf(MediaStore.MediaColumns.DATA)
+          val pathCursor = it.contentResolver.query(Uri.parse(uri), filePathColumn, null, null, null)
+          pathCursor?.moveToFirst()
+          val columnIndex = pathCursor?.getColumnIndex(filePathColumn[0]) ?: 0
+          val filePath = pathCursor?.getString(columnIndex) ?: ""
+          pathCursor?.close()
+          filePath
         } else {
           cursor.getString(cursor.getColumnIndexOrThrow(PROJECTION[1]))
         }

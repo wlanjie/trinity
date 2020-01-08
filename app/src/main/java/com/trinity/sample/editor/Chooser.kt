@@ -71,7 +71,7 @@ abstract class Chooser : FrameLayout {
       it.removeAllViews()
       it.addView(bar)
 //      bar.showOverlay(getEditorPage())
-      bar.setBackgroundResource(Color.TRANSPARENT)
+      bar.setBackgroundResource(android.R.color.transparent)
       bar.show()
       mThumbLineBar = bar
     }

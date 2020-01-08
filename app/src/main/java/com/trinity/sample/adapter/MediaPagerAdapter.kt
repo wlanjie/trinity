@@ -6,7 +6,7 @@ import androidx.fragment.app.FragmentPagerAdapter
 import com.trinity.sample.fragment.PictureFragment
 import com.trinity.sample.fragment.VideoFragment
 
-class MediaPagerAdapter(fm: FragmentManager?) : FragmentPagerAdapter(fm) {
+class MediaPagerAdapter(fm: FragmentManager) : FragmentPagerAdapter(fm) {
 
   private val mItems = mutableListOf<Fragment>()
 
