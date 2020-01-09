@@ -94,7 +94,7 @@ class CameraRecord : public Handler {
 
     void DeleteFilter(int action_id);
 
-    int AddAction(const char* effect_config);
+    int AddAction(const char* config_path);
 
     void UpdateAction(int start_time, int end_time, int action_id);
 
@@ -148,6 +148,12 @@ class CameraRecord : public Handler {
             int start_time, int end_time);
 
     void OnDeleteFilter(int action_id);
+
+    void OnAddAction(char* config_path, int action_id);
+
+    void OnUpdateAction(int start_time, int end_time, int action_id);
+
+    void OnDeleteAction(int action_id);
 
     virtual void HandleMessage(Message* msg);
  private:

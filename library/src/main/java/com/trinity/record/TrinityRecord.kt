@@ -383,30 +383,50 @@ class TrinityRecord(
   }
 
   /**
-   * 添加一个特效, 包含普通滤镜等
-   * @param config json 内容, 底层根据解析json来判断添加什么效果
-   * @return Int 返回当前特效的id, 在更新和删除一个特效时必须传入
+   * 添加特效
+   * 如: content.json的绝对路径为 /sdcard/Android/com.trinity.sample/cache/effects/config.json
+   * 传入的路径只需要 /sdcard/Android/com.trinity.sample/cache/effects 即可
+   * 如果当前路径不包含config.json则添加失败
+   * @param configPath 滤镜config.json的父目录
+   * @return 返回当前特效的唯一id
    */
-  fun addAction(config: String): Int {
-    return 0
+  fun addAction(configPath: String): Int {
+    if (mHandle <= 0) {
+      return -1
+    }
+    return addAction(mHandle, configPath)
   }
+
+  private external fun addAction(handle: Long, config: String): Int
 
   /**
-   * 更新一个特效
-   * @param config 更新的json内容,底层根据解析json来判断更新什么效果
-   * @param actionId Int 创建action时返回的id
+   * 更新指定特效
+   * @param startTime 特效的开始时间
+   * @param endTime 特效的结束时间
+   * @param actionId 需要更新哪个特效, 必须为addAction返回的actionId
    */
-  fun updateAction(config: String, actionId: Int) {
-
+  fun updateAction(startTime: Int, endTime: Int, actionId: Int) {
+    if (mHandle <= 0) {
+      return
+    }
+    updateAction(mHandle, startTime, endTime, actionId)
   }
+
+  private external fun updateAction(handle: Long, startTime: Int, endTime: Int, actionId: Int)
 
   /**
    * 删除一个特效
-   * @param actionId 创建action时返回的id
+   * @param actionId 需要删除哪个特效, 必须为addAction返回的actionId
    */
   fun deleteAction(actionId: Int) {
-
+    if (mHandle <= 0) {
+      return
+    }
+    deleteAction(mHandle, actionId)
   }
+
+  private external fun deleteAction(handle: Long, actionId: Int)
+
 
   /**
    * 设置录制角度

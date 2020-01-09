@@ -231,6 +231,34 @@ static void Android_JNI_record_deleteFilter(JNIEnv* env, jobject object,
     camera_record->DeleteFilter(action_id);
 }
 
+static int Android_JNI_record_addAction(JNIEnv* env, jobject object, jlong handle, jstring config) {
+    if (handle <= 0) {
+        return -1;
+    }
+    const char* config_buffer = env->GetStringUTFChars(config, JNI_FALSE);
+    auto* camera_record = reinterpret_cast<CameraRecord*>(handle);
+    int actionId = camera_record->AddAction(config_buffer);
+    env->ReleaseStringUTFChars(config, config_buffer);
+    return actionId;
+}
+
+static void Android_JNI_record_updateAction(JNIEnv* env, jobject object,
+                                                  jlong handle, jint start_time, jint end_time, jint action_id) {
+    if (handle <= 0) {
+        return;
+    }
+    auto camera_record = reinterpret_cast<CameraRecord*>(handle);
+    camera_record->UpdateAction(start_time, end_time, action_id);
+}
+
+static void Android_JNI_record_deleteAction(JNIEnv* env, jobject object, jlong handle, jint action_id) {
+    if (handle <= 0) {
+        return;
+    }
+    auto* camera_record = reinterpret_cast<CameraRecord*>(handle);
+    camera_record->DeleteAction(action_id);
+}
+
 static void Android_JNI_releaseNative(JNIEnv *env, jobject object, jlong id) {
     if (id <= 0) {
         return;
@@ -687,6 +715,9 @@ static JNINativeMethod recordMethods[] = {
         {"addFilter",            "(JLjava/lang/String;)I",          (void **) Android_JNI_record_addFilter},
         {"updateFilter",         "(JLjava/lang/String;III)V",       (void **) Android_JNI_record_updateFilter },
         {"deleteFilter",         "(JI)V",                           (void **) Android_JNI_record_deleteFilter },
+        {"addAction",            "(JLjava/lang/String;)I",          (void **) Android_JNI_record_addAction },
+        {"updateAction",         "(JIII)V",                         (void **) Android_JNI_record_updateAction },
+        {"deleteAction",         "(JI)V",                           (void **) Android_JNI_record_deleteAction },
         {"release",              "(J)V",                            (void **) Android_JNI_releaseNative}
 };
 

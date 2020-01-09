@@ -695,16 +695,24 @@ void CameraRecord::DeleteFilter(int action_id) {
     PostMessage(message);
 }
 
-int CameraRecord::AddAction(const char *effect_config) {
-
+int CameraRecord::AddAction(const char *config_path) {
+    int action_id = current_action_id_++;
+    size_t len = strlen(config_path) + 1;
+    char* path = new char[len];
+    memcpy(path, config_path, len);
+    auto* message = new Message(kEffect, action_id, 0, path);
+    PostMessage(message);
+    return action_id;
 }
 
 void CameraRecord::UpdateAction(int start_time, int end_time, int action_id) {
-
+    auto* message = new Message(kEffectUpdate, start_time, end_time, action_id);
+    PostMessage(message);
 }
 
 void CameraRecord::DeleteAction(int action_id) {
-
+    auto* message = new Message(kEffectDelete, action_id, 0);
+    PostMessage(message);
 }
 
 void CameraRecord::OnAddFilter(char* config_path, int action_id) {
@@ -734,6 +742,34 @@ void CameraRecord::OnDeleteFilter(int action_id) {
     }
     LOGI("enter %s action_id: %d", __func__, action_id);
     image_process_->OnDeleteFilter(action_id);
+    LOGI("leave %s", __func__);
+}
+
+void CameraRecord::OnAddAction(char *config_path, int action_id) {
+    if (nullptr == image_process_) {
+        return;
+    }
+    LOGI("enter %s config_path: %s action_id: %d", __func__, config_path, action_id);
+    image_process_->OnAction(config_path, action_id);
+    delete[] config_path;
+    LOGI("leave %s", __func__);
+}
+
+void CameraRecord::OnUpdateAction(int start_time, int end_time, int action_id) {
+    if (nullptr == image_process_) {
+        return;
+    }
+    LOGI("enter %s start_time: %d end_time: %d action_id: %d", __func__, start_time, end_time, action_id);
+    image_process_->OnUpdateAction(start_time, end_time, action_id);
+    LOGI("leave %s", __func__);
+}
+
+void CameraRecord::OnDeleteAction(int action_id) {
+    if (nullptr == image_process_) {
+        return;
+    }
+    LOGI("enter %s action_id: %d", __func__, action_id);
+    image_process_->RemoveAction(action_id);
     LOGI("leave %s", __func__);
 }
 
@@ -775,6 +811,15 @@ void CameraRecord::HandleMessage(trinity::Message *msg) {
             break;
         case kFilterDelete:
             OnDeleteFilter(msg->GetArg1());
+            break;
+        case kEffect:
+            OnAddAction(static_cast<char *>(msg->GetObj()), msg->GetArg1());
+            break;
+        case kEffectUpdate:
+            OnUpdateAction(msg->GetArg1(), msg->GetArg2(), msg->GetArg3());
+            break;
+        case kEffectDelete:
+            OnDeleteAction(msg->GetArg1());
             break;
         default:
             break;
