@@ -88,7 +88,7 @@
   </tr>
   <tr>
       <td>磨皮</td>
-      <td align="center">x</td>
+      <td align="center">√</td>
   </tr>
   <tr>
       <td>自定义分辨率及码率</td>

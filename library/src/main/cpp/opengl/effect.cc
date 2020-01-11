@@ -192,6 +192,10 @@ SubEffect::~SubEffect() {
         delete[] name;
         name = nullptr;
     }
+    if (nullptr != param_name) {
+        delete[] param_name;
+        param_name = nullptr;
+    }
     for (auto& fragment_uniform : fragment_uniforms) {
             delete[] fragment_uniform->name;
             for (auto& image_buffer : fragment_uniform->image_buffer_values) {

@@ -32,7 +32,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "553"
             endingLineNumber = "553"
-            landmarkName = "Effect::ParseTextureFiles(texture_files, sub_effect, resource_root_path)"
+            landmarkName = "Effect::ConvertGeneralConfig(effect_item_json, resource_root_path, general_sub_effect)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -80,8 +80,8 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "361"
             endingLineNumber = "361"
-            landmarkName = "unknown"
-            landmarkType = "0">
+            landmarkName = "Effect::OnDrawFrame(texture_id, current_time)"
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy

@@ -1,34 +1,40 @@
 language: android
 jdk: oraclejdk8
 sudo: true
-
 os:
-  - linux
+- linux
 addons:
   apt_packages:
-    - pandoc
+  - pandoc
 before_install:
-  - mkdir -p $ANDROID_HOME/licenses
-  - echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > $ANDROID_HOME/licenses/android-sdk-license
-  - echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> $ANDROID_HOME/licenses/android-sdk-license
+- mkdir -p $ANDROID_HOME/licenses
+- echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > $ANDROID_HOME/licenses/android-sdk-license
+- echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> $ANDROID_HOME/licenses/android-sdk-license
 install:
-  - echo y | sdkmanager "ndk-bundle"
-  - echo y | sdkmanager "cmake;3.6.4111459"
-  - echo y | sdkmanager "cmake;3.10.2.4988404"
-  - echo y | sdkmanager "lldb;3.1"
+- echo y | sdkmanager "ndk-bundle"
+- echo y | sdkmanager "cmake;3.6.4111459"
+- echo y | sdkmanager "cmake;3.10.2.4988404"
+- echo y | sdkmanager "lldb;3.1"
 android:
   components:
-    - tools
-    - platform-tools
-    - tools
-    - build-tools-28.0.3
-    - android-28
+  - tools
+  - platform-tools
+  - tools
+  - build-tools-28.0.3
+  - android-28
   licenses:
-    - android-sdk-preview-license-.+
-    - android-sdk-license-.+
-    - google-gdk-license-.+
-
+  - android-sdk-preview-license-.+
+  - android-sdk-license-.+
+  - google-gdk-license-.+
 script:
-  - ./gradlew clean check --profile
-  - pandoc `ls -1rt build/reports/profile/profile-*.html | tail -n1` -t plain
-  - ./gradlew dependencyUpdates
+- "./gradlew clean check --profile"
+- pandoc `ls -1rt build/reports/profile/profile-*.html | tail -n1` -t plain
+- "./gradlew assembleDebug"
+deploy:
+  provider: releases
+  api_key:
+    secure: LVucWOlicQQGOCzz5lLQl55UL3oZ/LD5MBO412YU/pdSKRGV2pazspce0Y1Xunp+RjIW704F/8EqErXcIQ3E6ikw/+GTbDeNCC+Zt3KKxeFuPYepW60jJ3IzQ/JCPNt6BacPa8rvZb4U37nG6FU8kHwPG729OBwCVMLuiMCO2RNCfVQS0zpMYUmdfdVDg+tFfRUXCiHJuKOML6kjoJBOj+uJqquWxKjEXYW5ixoVI4hH+bSKFJG4AgogJImGqjhfxjZRfDaoxumxuk5lYveAJ/XKgaEZSeE+CmKjUgzfXiSkr0PweseYx+AVikgCVzxExogXzLjHaurB05INRS+5WvMSZziMO7Tf8PTctzT6w7u5LQm2eZbrCWqNlktnWRdF7O7kYtllMYh0mJf6tXbeXJL70YnexhUfpNDP+e+T6LJKqB7qPby5x9FoSOS1D4QL3ME/Jg8pmST8GoPgIyRqlD52RP7pHflHkgaUFJTkwmed7R1fyeh6CBylxzt3BpzymI0G81xM1y8djc+kDMWKnb18NDmR5uKBtXaBEERTezMr4SrGC8FVKbfrBy2kMxbhJlqpNsMcOi+GVA5VzBU8JHdfrBW1FTAniOmwNdmW+u5FmI8TcYrcidK4m8gsRb0X02Hks3QNW8nheYwvDs/iFM5CQbJ+mY5CpFEuWvIzje0=
+  file: app/build/outputs/apk/debug/app-debug.apk
+  on:
+    repo: wlanjie/trinity
+    tags: true
