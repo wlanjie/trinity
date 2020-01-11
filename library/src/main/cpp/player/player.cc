@@ -309,20 +309,19 @@ void Player::DeleteAction(int action_id) {
 }
 
 void Player::OnAddAction(char *config, int action_id) {
-    if (nullptr == image_process_) {
-        return;
+    if (nullptr != image_process_) {
+        LOGI("add action id: %d config: %s", action_id, config);
+        image_process_->OnAction(config, action_id);
     }
-    LOGI("add action id: %d config: %s", action_id, config);
-    image_process_->OnAction(config, action_id);
     delete[] config;
 }
 
-void Player::OnUpdateAction(int start_time, int end_time, int action_id) {
+void Player::OnUpdateActionTime(int start_time, int end_time, int action_id) {
     if (nullptr == image_process_) {
         return;
     }
     LOGI("update action id: %d start_time: %d end_time: %d", action_id, start_time, end_time);
-    image_process_->OnUpdateAction(start_time, end_time, action_id);
+    image_process_->OnUpdateActionTime(start_time, end_time, action_id);
 }
 
 void Player::OnDeleteAction(int action_id) {
@@ -380,23 +379,21 @@ void Player::FreeMusicPlayer() {
 }
 
 void Player::OnAddFilter(char* config, int action_id) {
-    if (nullptr == image_process_) {
-        return;
+    if (nullptr != image_process_) {
+        LOGI("enter %s id: %d config: %s", __func__, action_id, config);
+        image_process_->OnFilter(config, action_id);
+        LOGI("leave %s", __func__);
     }
-    LOGI("enter %s id: %d config: %s", __func__, action_id, config);
-    image_process_->OnFilter(config, action_id);
     delete[] config;
-    LOGI("leave %s", __func__);
 }
 
 void Player::OnUpdateFilter(char* config, int action_id, int start_time, int end_time) {
-    if (nullptr == image_process_) {
-        return;
+    if (nullptr != image_process_) {
+        LOGI("enter %s config: %s action_id: %d start_time: %d end_time: %d", __func__, config, action_id, start_time, end_time); // NOLINT
+        image_process_->OnFilter(config, action_id, start_time, end_time);
+        LOGI("leave %s", __func__);
     }
-    LOGI("enter %s config: %s action_id: %d start_time: %d end_time: %d", __func__, config, action_id, start_time, end_time); // NOLINT
-    image_process_->OnFilter(config, action_id, start_time, end_time);
     delete[] config;
-    LOGI("leave %s", __func__);
 }
 
 void Player::OnDeleteFilter(int action_id) {
@@ -598,7 +595,7 @@ void Player::HandleMessage(Message *msg) {
             break;
 
         case kEffectUpdate:
-            OnUpdateAction(msg->GetArg1(), msg->GetArg2(), msg->GetArg3());
+            OnUpdateActionTime(msg->GetArg1(), msg->GetArg2(), msg->GetArg3());
             break;
 
         case kEffectDelete:

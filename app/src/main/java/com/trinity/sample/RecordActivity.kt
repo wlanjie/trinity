@@ -30,10 +30,7 @@ import com.trinity.record.Speed
 import com.trinity.record.TrinityRecord
 import com.trinity.sample.entity.Filter
 import com.trinity.sample.entity.MediaItem
-import com.trinity.sample.fragment.FilterFragment
-import com.trinity.sample.fragment.MediaFragment
-import com.trinity.sample.fragment.MusicFragment
-import com.trinity.sample.fragment.SettingFragment
+import com.trinity.sample.fragment.*
 import com.trinity.sample.view.LineProgressView
 import com.trinity.sample.view.RecordButton
 import com.trinity.sample.view.foucs.AutoFocusTrigger
@@ -55,6 +52,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     private const val MUSIC_TAG = "music_tag"
     private const val MEDIA_TAG = "media_tag"
     private const val FILTER_TAG = "filter_tag"
+    private const val BEAUTY_TAG = "beauty_tag"
   }
 
   private lateinit var mRecord: TrinityRecord
@@ -81,6 +79,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
   private var mAutoFocusMarker = DefaultAutoFocusMarker()
   private var mPermissionDenied = false
   private var mFilterId = -1
+  private var mBeautyId = -1
 
   @SuppressLint("ClickableViewAccessibility")
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -118,6 +117,11 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
           showFilter()
         }
 
+    findViewById<View>(R.id.beauty)
+        .setOnClickListener {
+          showBeauty()
+        }
+
     mInsideBottomSheet = findViewById(R.id.frame_container)
     findViewById<View>(R.id.setting)
       .setOnClickListener {
@@ -138,8 +142,8 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
         .setOnClickListener {
           showMedia()
         }
-    preview.setOnTouchListener { v, event ->
-      closeBottomSheet()
+    preview.setOnTouchListener { _, event ->
+//      closeBottomSheet()
       mRecord.focus(PointF(event.x, event.y))
       true
     }
@@ -173,6 +177,33 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
       mRecordDurations.add(it.duration)
       mLineView.addProgress(it.duration * 1.0f / mRecordDuration)
       mMedias.add(it)
+    }
+  }
+
+  private fun showBeauty() {
+    var beautyFragment = supportFragmentManager.findFragmentByTag(BEAUTY_TAG)
+    if (beautyFragment == null) {
+      beautyFragment = BeautyFragment()
+      supportFragmentManager.transaction {
+        replace(R.id.frame_container, beautyFragment, BEAUTY_TAG)
+      }
+    }
+    if (beautyFragment is BeautyFragment) {
+      beautyFragment.setCallback(object: BeautyFragment.Callback {
+        override fun onBeautyParam(value: Int, position: Int) {
+          if (mBeautyId == -1) {
+            mBeautyId = mRecord.addAction(externalCacheDir?.absolutePath + "/effect/beauty")
+          } else {
+            mRecord.updateActionParam(mBeautyId, "smoother", "intensity", value * 1.0F / 100)
+          }
+        }
+      })
+    }
+    val behavior = BottomSheetBehavior.from(mInsideBottomSheet)
+    if (behavior.state != BottomSheetBehavior.STATE_EXPANDED) {
+      behavior.state = BottomSheetBehavior.STATE_EXPANDED
+    } else {
+      behavior.state = BottomSheetBehavior.STATE_HIDDEN
     }
   }
 

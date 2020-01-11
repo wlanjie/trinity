@@ -54,6 +54,7 @@ dependencies {
     implementation 'com.yarolegovich:mp:1.0.9'
     implementation 'de.hdodenhof:circleimageview:3.0.0'
     implementation 'com.timqi.sectorprogressview:library:2.0.1'
+    implementation 'com.github.warkiz.widget:indicatorseekbar:2.1.2'
 
     implementation 'com.tencent.bugly:crashreport:3.1.0'
     implementation 'com.tencent.bugly:nativecrashreport:3.7.1'

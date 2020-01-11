@@ -60,4 +60,5 @@
     <string name="transition">转场</string>
     <string name="paint">涂鸦</string>
     <string name="cover">封面</string>
+    <string name="smoother">磨皮</string>
 </resources>

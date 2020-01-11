@@ -24,6 +24,7 @@
 
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
+#include <trinity.h>
 #include "egl_core.h"
 #include "handler.h"
 #include "frame_buffer.h"
@@ -96,7 +97,9 @@ class CameraRecord : public Handler {
 
     int AddAction(const char* config_path);
 
-    void UpdateAction(int start_time, int end_time, int action_id);
+    void UpdateActionTime(int start_time, int end_time, int action_id);
+
+    void UpdateActionParam(int action_id, const char* effect_name, const char* param_name, float value);
 
     void DeleteAction(int action_id);
  private:
@@ -151,7 +154,9 @@ class CameraRecord : public Handler {
 
     void OnAddAction(char* config_path, int action_id);
 
-    void OnUpdateAction(int start_time, int end_time, int action_id);
+    void OnUpdateActionTime(int start_time, int end_time, int action_id);
+
+    void OnUpdateActionParam(EffectParam* param);
 
     void OnDeleteAction(int action_id);
 

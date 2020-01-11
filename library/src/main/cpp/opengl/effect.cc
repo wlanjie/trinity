@@ -41,6 +41,9 @@ int GeneralSubEffect::OnDrawFrame(std::list<SubEffect*> sub_effects, int origin_
     process_buffer->ActiveProgram();
     process_buffer->Clear();
     process_buffer->ActiveAttribute();
+    if (nullptr != param_name) {
+        process_buffer->SetFloat(param_name, param_value);
+    }
     SetUniform(sub_effects, process_buffer, fragment_uniforms, origin_texture_id, texture_id, current_time);
     SetUniform(sub_effects, process_buffer, vertex_uniforms, origin_texture_id, texture_id, current_time);
     process_buffer->DrawArrays();
@@ -175,7 +178,7 @@ void StickerV3SubEffect::VertexMatrix(Matrix4x4 **matrix) {
 // SubEffect
 SubEffect::SubEffect()
     : process_buffer_(nullptr)
-    , enable(false)
+    , enable(true)
     , name(nullptr)
     , type(nullptr)
     , zorder(0) {}
@@ -225,6 +228,9 @@ void SubEffect::InitProcessBuffer(char *vertex_shader, char *fragment_shader) {
 
 void SubEffect::SetFloat(ShaderUniforms *uniform, ProcessBuffer *process_buffer) {
     if (nullptr == process_buffer) {
+        return;
+    }
+    if (uniform->float_values.empty()) {
         return;
     }
     int index = uniform->data_index % uniform->float_values.size();
@@ -313,11 +319,11 @@ void SubEffect::SetUniform(std::list<SubEffect*> sub_effects, ProcessBuffer *pro
                 break;
             case UniformTypeTexelWidthOffset:
                 printf("UniformTypeTexelWidthOffset name; %s\n", fragment_uniform->name);
-                process_buffer->SetFloat(fragment_uniform->name, 1.0F / 720);
+                process_buffer->SetFloat(fragment_uniform->name, 1.0F / 360);
                 break;
             case UniformTypeTexelHeightOffset:
                 printf("UniformTypeTexelHeightOffset name; %s\n", fragment_uniform->name);
-                process_buffer->SetFloat(fragment_uniform->name, 1.0F / 1280);
+                process_buffer->SetFloat(fragment_uniform->name, 1.0F / 640);
                 break;
             case UniformTypeFrameTime:
                 printf("UniformTypeFrameTime name: %s time: %f\n", fragment_uniform->name, 1.0F * current_time / 1000);
@@ -346,9 +352,9 @@ int Effect::OnDrawFrame(GLuint texture_id, uint64_t current_time) {
     int texture = texture_id;
     for (auto iterator = sub_effects_.begin(); iterator != sub_effects_.end(); iterator++) {
         SubEffect* sub_effect = *iterator;
-//        if (!sub_effect->enable) {
-//            continue;
-//        }
+        if (!sub_effect->enable) {
+            continue;
+        }
         if (current_time >= start_time_ && current_time <= end_time_) {
             texture = sub_effect->OnDrawFrame(sub_effects_, origin_texture_id, texture, current_time);
         }
@@ -356,9 +362,28 @@ int Effect::OnDrawFrame(GLuint texture_id, uint64_t current_time) {
     return texture;
 }
 
-void Effect::Update(int start_time, int end_time) {
+void Effect::UpdateTime(int start_time, int end_time) {
     start_time_ = start_time;
     end_time_ = end_time;
+}
+
+void Effect::UpdateParam(const char *effect_name, const char *param_name, float value) {
+    for (auto iterator = sub_effects_.begin(); iterator != sub_effects_.end(); iterator++) {
+        SubEffect* sub_effect = *iterator;
+        if (strcmp(effect_name, sub_effect->name) == 0) {
+            if (nullptr != sub_effect->param_name) {
+                delete[] sub_effect->param_name;
+            }
+            size_t len = strlen(param_name) + 1;
+            sub_effect->param_name = new char[len];
+            memcpy(sub_effect->param_name, param_name, len);
+            sub_effect->param_value = value;
+//            ProcessBuffer* process_buffer = sub_effect->GetProcessBuffer();
+//            if (nullptr != process_buffer) {
+//                process_buffer->SetFloat(param_name, value);
+//            }
+        }
+    }
 }
 
 bool SortSubEffect(SubEffect* s1, SubEffect* s2) {
@@ -405,6 +430,12 @@ void Effect::ParseConfig(char *config_path) {
             char* value = type_json->valuestring;
             type = CopyValue(value);
         }
+        bool enable = true;
+        cJSON* enable_json = cJSON_GetObjectItem(effect_item_json, "enable");
+        if (nullptr != enable_json) {
+            enable = enable_json->valueint;
+        }
+//        sub_effect->enable = enable;
         sub_effect->type = type;
         // TODO delete sub_effect
         if (nullptr != type) {
@@ -423,6 +454,7 @@ void Effect::ParseConfig(char *config_path) {
                 auto* general_sub_effect = new GeneralSubEffect();
                 ConvertGeneralConfig(effect_item_json, config_path, general_sub_effect);
                 general_sub_effect->type = type;
+                general_sub_effect->enable = enable;
                 sub_effects_.push_back(general_sub_effect);
             }
         }

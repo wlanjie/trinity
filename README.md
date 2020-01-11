@@ -4,6 +4,7 @@
 ![icon~](https://github.com/wlanjie/trinity/blob/master/trinity@2x.png)
 
 [![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-trinity-brightgreen.svg?style=flat)](https://android-arsenal.com/details/1/8010)
+[![Build Status](https://api.travis-ci.org/wlanjie/trinity.svg?branch=master)](https://travis-ci.org/wlanjie/trinity/)
 [![Download](https://api.bintray.com/packages/wlanjie/maven/trinity/images/download.svg?version=0.2.3)](https://bintray.com/wlanjie/maven/trinity/0.2.3/link)
 ![platform](https://img.shields.io/badge/platform-Android-orange.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)

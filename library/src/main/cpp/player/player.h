@@ -72,7 +72,7 @@ class Player : public Handler {
 
  private:
     void OnAddAction(char* config, int action_id);
-    void OnUpdateAction(int start_time, int end_time, int action_id);
+    void OnUpdateActionTime(int start_time, int end_time, int action_id);
     void OnDeleteAction(int action_id);
     void OnAddMusic(char* config, int action_id);
     void OnUpdateMusic(char* config, int action_id);

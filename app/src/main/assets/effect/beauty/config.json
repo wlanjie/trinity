@@ -1,0 +1,176 @@
+{
+    "requirement": {
+        "faceDetect": false,
+        "matting": false
+    },
+    "effect": [
+        {
+            "type": "generalEffect",
+            "name": "gx",
+            "vertexShader": "resource/beauty_blur.vs",
+            "vertexUniforms": [
+                {
+                    "name": "texelWidthOffset",
+                    "type": 300
+                },
+                {
+                    "name": "texelHeightOffset",
+                    "type": 3,
+                    "data": [
+                        0
+                    ]
+                }
+            ],
+            "fragmentShader": "resource/beauty_blur.fs",
+            "fragmentUniforms": [
+                {
+                    "name": "inputImageTexture",
+                    "type": 100
+                }
+            ]
+        },
+        {
+            "type": "generalEffect",
+            "name": "gy",
+            "inputEffect": [
+                "gx"
+            ],
+            "vertexShader": "resource/beauty_blur.vs",
+            "vertexUniforms": [
+                {
+                    "name": "texelWidthOffset",
+                    "type": 3,
+                    "data": [
+                        0
+                    ]
+                },
+                {
+                    "name": "texelHeightOffset",
+                    "type": 301,
+                    "data": [
+                        0
+                    ]
+                }
+            ],
+            "fragmentShader": "resource/beauty_blur.fs",
+            "fragmentUniforms": [
+                {
+                    "name": "inputImageTexture",
+                    "type": 1000,
+                    "inputEffectIndex": 0
+                }
+            ]
+        },
+        {
+            "type": "generalEffect",
+            "name": "highPass",
+            "inputEffect": [
+                "gy"
+            ],
+            "vertexShader": "resource/high_pass.vs",
+            "vertexUniforms": [],
+            "fragmentShader": "resource/high_pass.fs",
+            "fragmentUniforms": [
+                {
+                    "name": "inputImageTexture",
+                    "type": 100
+                },
+                {
+                    "name": "blurTexture",
+                    "type": 1000,
+                    "inputEffectIndex": 0
+                }
+            ]
+        },
+        {
+            "type": "generalEffect",
+            "name": "highBlurWidth",
+            "inputEffect": [
+                "highPass"
+            ],
+            "vertexShader": "resource/gaussian_pass.vs",
+            "vertexUniforms": [
+                {
+                    "name": "texelWidthOffset",
+                    "type": 300
+                },
+                {
+                    "name": "texelHeightOffset",
+                    "type": 3,
+                    "data": [
+                        0
+                    ]
+                }
+            ],
+            "fragmentShader": "resource/gaussian_pass.fs",
+            "fragmentUniforms": [
+                {
+                    "name": "inputImageTexture",
+                    "type": 1000,
+                    "inputEffectIndex": 0
+                }
+            ]
+        },
+        {
+            "type": "generalEffect",
+            "name": "highBlurHeight",
+            "inputEffect": [
+                "highBlurWidth"
+            ],
+            "vertexShader": "resource/gaussian_pass.vs",
+            "vertexUniforms": [
+                {
+                    "name": "texelWidthOffset",
+                    "type": 3,
+                    "data": [
+                        0
+                    ]
+                },
+                {
+                    "name": "texelHeightOffset",
+                    "type": 301
+                }
+            ],
+            "fragmentShader": "resource/gaussian_pass.fs",
+            "fragmentUniforms": [
+                {
+                    "name": "inputImageTexture",
+                    "type": 1000,
+                    "inputEffectIndex": 0
+                }
+            ]
+        },
+        {
+            "type": "generalEffect",
+            "name": "smoother",
+            "inputEffect":[
+                "gy",
+                "highBlurHeight"
+            ],
+            "vertexShader": "resource/beauty_adjust.vs",
+            "vertexUniforms": [],
+            "fragmentShader": "resource/beauty_adjust.fs",
+            "fragmentUniforms": [
+                {
+                    "name": "blurTexture",
+                    "type": 1000,
+                    "inputEffectIndex": 0
+                },
+                {
+                    "name": "highPassBlurTexture",
+                    "type": 1000,
+                    "inputEffectIndex": 1
+                },
+                {
+                    "name": "inputImageTexture",
+                    "type": 100
+                },
+                {
+                    "name": "intensity",
+                    "type": 3
+                }
+            ]
+        }
+    ],
+    "version": 1.0
+}

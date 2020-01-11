@@ -76,16 +76,25 @@ void ImageProcess::OnAction(char* config_path, int action_id) {
     action_id_ = action_id;
 }
 
-void ImageProcess::OnUpdateAction(int start_time, int end_time, int action_id) {
+void ImageProcess::OnUpdateActionTime(int start_time, int end_time, int action_id) {
     LOGI("enter %s start_time: %d end_time: %d action_id: %d", __func__, start_time, end_time, action_id);
     if (!effects_.empty() && action_id != -1) {
         auto effect_iterator = effects_.find(action_id);
         if (effect_iterator != effects_.end()) {
-            effect_iterator->second->Update(start_time, end_time);
+            effect_iterator->second->UpdateTime(start_time, end_time);
         }
     }
     action_id_ = -1;
     LOGI("leave %s", __func__);
+}
+
+void ImageProcess::OnUpdateEffectParam(int action_id, const char *effect_name, const char *param_name, float value) {
+    if (!effects_.empty() && action_id != -1) {
+        auto effect_iterator = effects_.find(action_id);
+        if (effect_iterator != effects_.end()) {
+            effect_iterator->second->UpdateParam(effect_name, param_name, value);
+        }
+    }
 }
 
 int ImageProcess::ReadFile(char *path, char **buffer) {

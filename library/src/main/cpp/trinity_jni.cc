@@ -242,13 +242,27 @@ static int Android_JNI_record_addAction(JNIEnv* env, jobject object, jlong handl
     return actionId;
 }
 
-static void Android_JNI_record_updateAction(JNIEnv* env, jobject object,
-                                                  jlong handle, jint start_time, jint end_time, jint action_id) {
+static void Android_JNI_record_updateActionTime(JNIEnv* env, jobject object,
+        jlong handle, jint start_time, jint end_time, jint action_id) {
     if (handle <= 0) {
         return;
     }
     auto camera_record = reinterpret_cast<CameraRecord*>(handle);
-    camera_record->UpdateAction(start_time, end_time, action_id);
+    camera_record->UpdateActionTime(start_time, end_time, action_id);
+}
+
+static void Android_JNI_record_updateActionParam(JNIEnv* env, jobject object,
+        jlong handle, jint action_id, jstring effect_name,
+        jstring param_name, jfloat value) {
+    if (handle <= 0) {
+        return;
+    }
+    auto camera_record = reinterpret_cast<CameraRecord*>(handle);
+    const char* effect_name_char = env->GetStringUTFChars(effect_name, JNI_FALSE);
+    const char* param_name_char = env->GetStringUTFChars(param_name, JNI_FALSE);
+    camera_record->UpdateActionParam(action_id, effect_name_char, param_name_char, value);
+    env->ReleaseStringUTFChars(param_name, param_name_char);
+    env->ReleaseStringUTFChars(effect_name, effect_name_char);
 }
 
 static void Android_JNI_record_deleteAction(JNIEnv* env, jobject object, jlong handle, jint action_id) {
@@ -716,7 +730,8 @@ static JNINativeMethod recordMethods[] = {
         {"updateFilter",         "(JLjava/lang/String;III)V",       (void **) Android_JNI_record_updateFilter },
         {"deleteFilter",         "(JI)V",                           (void **) Android_JNI_record_deleteFilter },
         {"addAction",            "(JLjava/lang/String;)I",          (void **) Android_JNI_record_addAction },
-        {"updateAction",         "(JIII)V",                         (void **) Android_JNI_record_updateAction },
+        {"updateActionTime",     "(JIII)V",                         (void **) Android_JNI_record_updateActionTime },
+        {"updateActionParam",    "(JILjava/lang/String;Ljava/lang/String;F)V", (void **) Android_JNI_record_updateActionParam},
         {"deleteAction",         "(JI)V",                           (void **) Android_JNI_record_deleteAction },
         {"release",              "(J)V",                            (void **) Android_JNI_releaseNative}
 };

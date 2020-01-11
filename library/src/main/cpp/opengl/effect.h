@@ -148,6 +148,8 @@ class SubEffect {
     std::vector<ShaderUniforms*> fragment_uniforms;
     std::vector<ShaderUniforms*> vertex_uniforms;
     std::vector<char*> input_effect;
+    char* param_name;
+    float param_value;
 
  public:
     ProcessBuffer* GetProcessBuffer() {
@@ -222,7 +224,8 @@ class Effect {
     ~Effect();
     void ParseConfig(char* config_path);
     int OnDrawFrame(GLuint texture_id, uint64_t current_time);
-    void Update(int start_time, int end_time);
+    void UpdateTime(int start_time, int end_time);
+    void UpdateParam(const char* effect_name, const char* param_name, float value);
  private:
     char* CopyValue(char* src);
     int ReadFile(const std::string& path, char** buffer);
@@ -236,8 +239,6 @@ class Effect {
     void ParseUniform(SubEffect *sub_effect, char *config_path, cJSON *uniforms_json, ShaderUniformType type);
  private:
     std::list<SubEffect*> sub_effects_;
-    std::map<char*, ProcessBuffer*> process_buffers_;
-    std::map<char*, FrameBuffer*> frame_buffers_;
     int start_time_;
     int end_time_;
 };

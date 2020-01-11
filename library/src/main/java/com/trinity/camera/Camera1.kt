@@ -25,6 +25,7 @@ import android.graphics.SurfaceTexture
 import android.os.Handler
 import com.tencent.mars.xlog.Log
 import com.trinity.record.PreviewResolution
+import java.lang.Exception
 import kotlin.math.max
 import kotlin.math.min
 
@@ -376,6 +377,9 @@ class Camera1(
   }
 
   override fun focus(viewWidth: Int, viewHeight: Int, point: PointF) {
+    if (mFacing == Facing.FRONT) {
+      return
+    }
     mHandler.post {
       val p = PointF(point.x, point.y) // copy.
       val offset = mAngles.offset(Reference.SENSOR, Reference.VIEW, Axis.ABSOLUTE)
@@ -389,7 +393,11 @@ class Camera1(
         if (maxAF > 0) it.focusAreas = if (maxAF > 1) meteringAreas2 else meteringAreas1
         if (maxAE > 0) it.meteringAreas = if (maxAE > 1) meteringAreas2 else meteringAreas1
         it.focusMode = android.hardware.Camera.Parameters.FOCUS_MODE_AUTO
-        mCamera?.parameters = it
+        try {
+          mCamera?.parameters = it
+        } catch (e: Exception) {
+          e.printStackTrace()
+        }
       }
       mCameraCallback.dispatchOnFocusStart(p)
 

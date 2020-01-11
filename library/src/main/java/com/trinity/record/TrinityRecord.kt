@@ -405,14 +405,27 @@ class TrinityRecord(
    * @param endTime 特效的结束时间
    * @param actionId 需要更新哪个特效, 必须为addAction返回的actionId
    */
-  fun updateAction(startTime: Int, endTime: Int, actionId: Int) {
+  fun updateActionTime(startTime: Int, endTime: Int, actionId: Int) {
     if (mHandle <= 0) {
       return
     }
-    updateAction(mHandle, startTime, endTime, actionId)
+    updateActionTime(mHandle, startTime, endTime, actionId)
   }
 
-  private external fun updateAction(handle: Long, startTime: Int, endTime: Int, actionId: Int)
+  private external fun updateActionTime(handle: Long, startTime: Int, endTime: Int, actionId: Int)
+
+  /**
+   * 更新指定特效的参数
+   * @param actionId Int 需要更新哪个特效, 必须为addAction返回的actionId
+   * @param effectName String 需要更新特效的名字, 这个是在json中定好的
+   * @param paramName String 更新OpenGL shader中的参数值
+   * @param value Float 具体的参数值 0.0 ~ 1.0
+   */
+  fun updateActionParam(actionId: Int, effectName: String, paramName: String, value: Float) {
+    updateActionParam(mHandle, actionId, effectName, paramName, value)
+  }
+
+  private external fun updateActionParam(handle: Long, actionId: Int, effectName: String, paramName: String, value: Float)
 
   /**
    * 删除一个特效

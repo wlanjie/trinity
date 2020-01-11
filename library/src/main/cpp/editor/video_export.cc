@@ -245,7 +245,7 @@ void VideoExport::OnEffect() {
                     if (nullptr != config_json) {
                         char* config = config_json->valuestring;
                         image_process_->OnAction(config, action_id);
-                        image_process_->OnUpdateAction(start_time, end_time, action_id);
+                        image_process_->OnUpdateActionTime(start_time, end_time, action_id);
                     }
                 }
             }
