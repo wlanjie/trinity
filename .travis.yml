@@ -35,6 +35,7 @@ deploy:
   api_key:
     secure: LVucWOlicQQGOCzz5lLQl55UL3oZ/LD5MBO412YU/pdSKRGV2pazspce0Y1Xunp+RjIW704F/8EqErXcIQ3E6ikw/+GTbDeNCC+Zt3KKxeFuPYepW60jJ3IzQ/JCPNt6BacPa8rvZb4U37nG6FU8kHwPG729OBwCVMLuiMCO2RNCfVQS0zpMYUmdfdVDg+tFfRUXCiHJuKOML6kjoJBOj+uJqquWxKjEXYW5ixoVI4hH+bSKFJG4AgogJImGqjhfxjZRfDaoxumxuk5lYveAJ/XKgaEZSeE+CmKjUgzfXiSkr0PweseYx+AVikgCVzxExogXzLjHaurB05INRS+5WvMSZziMO7Tf8PTctzT6w7u5LQm2eZbrCWqNlktnWRdF7O7kYtllMYh0mJf6tXbeXJL70YnexhUfpNDP+e+T6LJKqB7qPby5x9FoSOS1D4QL3ME/Jg8pmST8GoPgIyRqlD52RP7pHflHkgaUFJTkwmed7R1fyeh6CBylxzt3BpzymI0G81xM1y8djc+kDMWKnb18NDmR5uKBtXaBEERTezMr4SrGC8FVKbfrBy2kMxbhJlqpNsMcOi+GVA5VzBU8JHdfrBW1FTAniOmwNdmW+u5FmI8TcYrcidK4m8gsRb0X02Hks3QNW8nheYwvDs/iFM5CQbJ+mY5CpFEuWvIzje0=
   file: app/build/outputs/apk/debug/app-debug.apk
+  skip_cleanup: true
   on:
     repo: wlanjie/trinity
     tags: true
