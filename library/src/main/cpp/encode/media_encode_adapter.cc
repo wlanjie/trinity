@@ -164,7 +164,7 @@ void MediaEncodeAdapter::Encode(int timeMills) {
     }
     int64_t curTime = getCurrentTime() - start_time_;
     // need drop frames
-    int expectedFrameCount = static_cast<int>((getCurrentTime() - fps_change_time_) / 1000.0F * frame_rate_ + 0.5F);
+    int expectedFrameCount = static_cast<int>(timeMills / 1000.0F * frame_rate_ + 0.5F);
     if (expectedFrameCount < encode_frame_count_) {
         LOGE("drop frame encode_count: %d frame_count: %d", encode_frame_count_, expectedFrameCount);
         return;
@@ -173,7 +173,7 @@ void MediaEncodeAdapter::Encode(int timeMills) {
     if (EGL_NO_SURFACE != encoder_surface_) {
         core_->MakeCurrent(encoder_surface_);
         render_->ProcessImage(texture_id_);
-        core_->SetPresentationTime(encoder_surface_, ((khronos_stime_nanoseconds_t) curTime) * 1000000);
+        core_->SetPresentationTime(encoder_surface_, ((khronos_stime_nanoseconds_t) timeMills) * 1000000);
         PostMessage(new Message(FRAME_AVAILABLE));
         if (!core_->SwapBuffers(encoder_surface_)) {
             LOGE("eglSwapBuffers(encoder_surface_) returned error %d", eglGetError());

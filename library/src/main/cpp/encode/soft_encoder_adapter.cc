@@ -113,12 +113,13 @@ void SoftEncoderAdapter::Encode(int timeMills) {
     }
 
     // need drop frames
-    int expectedFrameCount = static_cast<int>((getCurrentTime() - fps_change_time_) / 1000.0f * frame_rate_ + 0.5f);
-//    if (expectedFrameCount < encode_frame_count_) {
-//        LOGE("expectedFrameCount is %d while encoded_frame_count_ is %d", expectedFrameCount,
-//             encode_frame_count_);
-//        return;
-//    }
+//    int expectedFrameCount = static_cast<int>((getCurrentTime() - fps_change_time_) / 1000.0f * frame_rate_ + 0.5f);
+    int expectedFrameCount = static_cast<int>(timeMills / 1000.0F * frame_rate_ + 0.5F);
+    if (expectedFrameCount < encode_frame_count_) {
+        LOGE("expectedFrameCount is %d while encoded_frame_count_ is %d", expectedFrameCount,
+             encode_frame_count_);
+        return;
+    }
     time_mills_ = timeMills;
     encode_frame_count_++;
     pthread_mutex_lock(&lock_);

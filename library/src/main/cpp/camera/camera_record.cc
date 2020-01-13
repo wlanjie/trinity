@@ -668,7 +668,7 @@ void CameraRecord::FPS() {
         frame_count_ = 0;
     }
     frame_count_++;
-    LOGD("fps: %f", fps_);
+//    LOGD("fps: %f", fps_);
 }
 
 int CameraRecord::AddFilter(const char *config_path) {
