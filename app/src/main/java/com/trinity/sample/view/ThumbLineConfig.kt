@@ -7,18 +7,12 @@ import android.graphics.Point
  */
 class ThumbLineConfig {
 
-  var thumbnailFetcher: ThumbnailFetcher? = null
   var thumbnailCount = 10
   var thumbnailPoint: Point? = null
   var screenWidth: Int = 0
 
   class Builder {
     private val mConfig = ThumbLineConfig()
-
-    fun thumbnailFetcher(thumbnailFetcher: ThumbnailFetcher?): Builder {
-      mConfig.thumbnailFetcher = thumbnailFetcher
-      return this
-    }
 
     fun thumbPoint(point: Point): Builder {
       mConfig.thumbnailPoint = point

@@ -181,7 +181,9 @@ SubEffect::SubEffect()
     , enable(true)
     , name(nullptr)
     , type(nullptr)
-    , zorder(0) {}
+    , zorder(0)
+    , param_name(nullptr)
+    , param_value(0) {}
 
 SubEffect::~SubEffect() {
     if (nullptr != type) {

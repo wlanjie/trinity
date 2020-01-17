@@ -30,9 +30,14 @@
 
 namespace trinity {
 
-FrameBuffer::FrameBuffer(int width, int height, const char *vertex, const char *fragment) : OpenGL(width, height, vertex, fragment) {
-    start_time_ = 0;
-    end_time_ = INT32_MAX;
+FrameBuffer::FrameBuffer(int width, int height, const char *vertex, const char *fragment)
+    : OpenGL(width, height, vertex, fragment)
+    , texture_id_(0)
+    , frameBuffer_id_(0)
+    , vertex_coordinate_(nullptr)
+    , texture_coordinate_(nullptr)
+    , start_time_(0)
+    , end_time_(INT32_MAX) {
     CompileFrameBuffer(width, height);
 }
 
@@ -59,23 +64,23 @@ void FrameBuffer::CompileFrameBuffer(int camera_width, int camera_height) {
 
     vertex_coordinate_ = new GLfloat[8];
     texture_coordinate_ = new GLfloat[8];
-    vertex_coordinate_[0] = -1.0f;
-    vertex_coordinate_[1] = -1.0f;
-    vertex_coordinate_[2] = 1.0f;
-    vertex_coordinate_[3] = -1.0f;
-    vertex_coordinate_[4] = -1.0f;
-    vertex_coordinate_[5] = 1.0f;
-    vertex_coordinate_[6] = 1.0f;
-    vertex_coordinate_[7] = 1.0f;
+    vertex_coordinate_[0] = -1.0F;
+    vertex_coordinate_[1] = -1.0F;
+    vertex_coordinate_[2] = 1.0F;
+    vertex_coordinate_[3] = -1.0F;
+    vertex_coordinate_[4] = -1.0F;
+    vertex_coordinate_[5] = 1.0F;
+    vertex_coordinate_[6] = 1.0F;
+    vertex_coordinate_[7] = 1.0F;
 
-    texture_coordinate_[0] = 0.0f;
-    texture_coordinate_[1] = 0.0f;
-    texture_coordinate_[2] = 1.0f;
-    texture_coordinate_[3] = 0.0f;
-    texture_coordinate_[4] = 0.0f;
-    texture_coordinate_[5] = 1.0f;
-    texture_coordinate_[6] = 1.0f;
-    texture_coordinate_[7] = 1.0f;
+    texture_coordinate_[0] = 0.0F;
+    texture_coordinate_[1] = 0.0F;
+    texture_coordinate_[2] = 1.0F;
+    texture_coordinate_[3] = 0.0F;
+    texture_coordinate_[4] = 0.0F;
+    texture_coordinate_[5] = 1.0F;
+    texture_coordinate_[6] = 1.0F;
+    texture_coordinate_[7] = 1.0F;
 }
 
 

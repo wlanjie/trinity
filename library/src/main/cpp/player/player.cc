@@ -18,6 +18,7 @@ enum VideoRenderMessage {
     kEGLDestroy,
     kEGLWindowCreate,
     kEGLWindowDestroy,
+    kSurfaceChanged,
     kPlayerStart,
     kPlayerResume,
     kPlayerPause,
@@ -59,7 +60,8 @@ Player::Player(JNIEnv* env, jobject object) : Handler()
     , end_time_(INT_MAX)
     , audio_render_(nullptr)
     , audio_buffer_size_(0)
-    , audio_buffer_(nullptr) {
+    , audio_buffer_(nullptr)
+    , draw_texture_id_(0) {
     pthread_mutex_init(&mutex_, nullptr);
     pthread_cond_init(&cond_, nullptr);
     message_queue_ = new MessageQueue("Player Message Queue");
@@ -155,6 +157,7 @@ void Player::OnSurfaceChanged(int width, int height) {
     if (frame_width_ != 0 && frame_height_ != 0) {
         SetFrame(frame_width_, frame_height_, surface_width_, surface_height_);
     }
+    PostMessage(new Message(kSurfaceChanged));
 }
 
 void Player::OnSurfaceDestroy() {
@@ -173,9 +176,7 @@ void Player::OnComplete(AVPlayContext *context) {
 
 int Player::Start(const char *file_name, int start_time, int end_time, int video_count_duration) {
     LOGE("enter %s file_name: %s start_time: %d end_time: %d", __func__, file_name, start_time, end_time);
-    if (nullptr != file_name_) {
-        delete[] file_name_;
-    }
+    delete[] file_name_;
     size_t len = strlen(file_name) + 1;
     file_name_ = new char[len];
     memset(file_name_, 0, len);
@@ -514,6 +515,10 @@ void Player::HandleMessage(Message *msg) {
             OnGLWindowDestroy();
             break;
 
+        case kSurfaceChanged:
+            Draw(draw_texture_id_);
+            break;
+
         case kEGLDestroy:
             OnGLDestroy();
             break;
@@ -632,7 +637,6 @@ void Player::HandleMessage(Message *msg) {
 
 void Player::SetFrame(int source_width, int source_height,
         int target_width, int target_height, RenderFrame frame_type) {
-    LOGE("SetFrame source_width: %d source_height: %d target_width: %d target_height: %d", source_width, source_height, target_width, target_height); // NOLINT
     float target_ratio = target_width * 1.0F / target_height;
     float scale_width = 1.0F;
     float scale_height = 1.0F;
@@ -663,6 +667,8 @@ void Player::SetFrame(int source_width, int source_height,
     vertex_coordinate_[5] = scale_height;
     vertex_coordinate_[6] = scale_width;
     vertex_coordinate_[7] = scale_height;
+    LOGI("SetFrame source_width: %d source_height: %d target_width: %d target_height: %d scale_width; %f scale_height: %f",
+            source_width, source_height, target_width, target_height, scale_width, scale_height); // NOLINT
 }
 
 int Player::OnDrawFrame(int texture_id, int width, int height) {
@@ -779,32 +785,30 @@ int Player::DrawVideoFrame() {
             }
         }
         if (diff > 0) {
-            LOGI("usleep(%lld)", diff);
             usleep(diff);
         }
-        int texture_id = -1;
         if (av_play_context_->is_sw_decode) {
-            texture_id = yuv_render_->DrawFrame(av_play_context_->video_frame);
+            draw_texture_id_ = yuv_render_->DrawFrame(av_play_context_->video_frame);
         } else {
             media_codec_render_->ActiveProgram();
-            texture_id = media_codec_render_->OnDrawFrame(oes_texture_);
+            draw_texture_id_ = media_codec_render_->OnDrawFrame(oes_texture_);
         }
         ReleaseVideoFrame();
 
-        if (texture_id == -1) {
+        if (draw_texture_id_ == -1) {
             return -1;
         }
 
         if (nullptr != image_process_) {
-            int progressTextureId = image_process_->Process(texture_id,
+            int progressTextureId = image_process_->Process(draw_texture_id_,
                                                             static_cast<uint64_t>(GetCurrentPosition() - start_time_ + video_count_duration_),
                                                             frame_width_, frame_height_, 0, 0);
             if (progressTextureId != 0) {
-                texture_id = progressTextureId;
+                draw_texture_id_ = progressTextureId;
             }
         }
 
-        Draw(texture_id);
+        Draw(draw_texture_id_);
         clock_set(av_play_context_->video_clock, time_stamp);
     }
     return 0;

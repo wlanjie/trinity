@@ -565,7 +565,6 @@ void VideoExport::OnExportProgress(uint64_t current_time) {
     if (nullptr != clazz) {
         jmethodID  export_progress_id = env->GetMethodID(clazz, "onExportProgress", "(F)V");
         if (nullptr != export_progress_id) {
-            LOGE("current_time: %lld video_duration: %lld", current_time, video_duration_);
             env->CallVoidMethod(object_, export_progress_id, current_time * 1.0f / video_duration_);
         }
     }

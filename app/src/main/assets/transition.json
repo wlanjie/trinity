@@ -1,0 +1,9 @@
+[
+  {
+    "id": 1,
+    "name": "倒计时",
+    "color": "#CCEA0000",
+    "effect": "effect/countDown",
+    "effectName": "countDown"
+  }
+]

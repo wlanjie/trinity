@@ -57,10 +57,7 @@ class OverlayThumbLineBar (
       startTime = 0
     }
     view.container.tag = uiEditorPage
-
-    if (mLinePlayer != null) {
-      mDuration = mLinePlayer.getDuration()
-    }
+    mDuration = mLinePlayer?.getDuration() ?: 0
     val overlay = ThumbLineOverlay(this, startTime, duration, view, mDuration, minDuration, isInvert, listener)
     overlay.uiEditorPage = uiEditorPage
     mOverlayList.add(overlay)
@@ -129,8 +126,8 @@ class OverlayThumbLineBar (
    * @return 尺寸 pixel
    */
   internal fun duration2Distance(duration: Long): Int {
-    val lenth = timelineBarViewWidth * duration.toFloat() * 1.0f / mDuration
-    return Math.round(lenth)
+    val length = timelineBarViewWidth * duration.toFloat() * 1.0f / mDuration
+    return Math.round(length)
   }
 
   /**

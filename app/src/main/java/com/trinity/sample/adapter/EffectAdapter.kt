@@ -57,15 +57,9 @@ class EffectAdapter(context: Context, effects: List<Effect>) : RecyclerView.Adap
 
   override fun onBindViewHolder(holder: ViewHolder, position: Int) {
     val effect = mEffects[position]
-    if (effect.id == 0) {
-      holder.image.visibility = View.VISIBLE
-      holder.effectName.visibility = View.GONE
-      holder.image.setImageResource(R.drawable.bg_undo)
-    } else {
-      holder.image.visibility = View.GONE
-      holder.effectName.visibility = View.VISIBLE
-      holder.image.setImageResource(R.mipmap.ic_launcher_round)
-    }
+    holder.image.visibility = View.GONE
+    holder.effectName.visibility = View.VISIBLE
+    holder.image.setImageResource(R.mipmap.ic_launcher_round)
     holder.effectName.text = effect.name
     holder.effectName.setColor(Color.parseColor(effect.color))
     holder.itemView.setOnTouchListener(this)
@@ -110,7 +104,7 @@ class EffectAdapter(context: Context, effects: List<Effect>) : RecyclerView.Adap
     return true
   }
 
-  fun setOnTouchListener(l: OnItemTouchListener) {
+  fun setOnTouchListener(l: OnItemTouchListener?) {
     mTouchListener = l
   }
 

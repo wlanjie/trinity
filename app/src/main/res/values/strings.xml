@@ -61,4 +61,8 @@
     <string name="paint">涂鸦</string>
     <string name="cover">封面</string>
     <string name="smoother">磨皮</string>
+    <string name="effect_tip">选择位置后, 按住使用效果</string>
+    <string name="undo">撤消</string>
+    <string name="split_screen">分屏</string>
+    <string name="dream">梦幻</string>
 </resources>

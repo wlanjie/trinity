@@ -210,29 +210,25 @@ class ThumbLineOverlay(
 
     }
 
-    fun invalidate() {
-        //首先根据duration 计算middleView 的宽度
+    private fun invalidate() {
+        // 首先根据duration 计算middleView 的宽度
         mDistance = mOverlayThumbLineBar.duration2Distance(mDuration)
-        val layoutParams = mSelectedMiddleView!!.layoutParams
-        layoutParams.width = mDistance
-        mSelectedMiddleView!!.layoutParams = layoutParams
+        val layoutParams = mSelectedMiddleView?.layoutParams
+        layoutParams?.width = mDistance
+        mSelectedMiddleView?.layoutParams = layoutParams
         when (mState) {
-            STATE_ACTIVE//显示HeadView和TailView
-            -> {
-                mTailView!!.active()
-                mHeadView!!.active()
+            STATE_ACTIVE-> {
+                mTailView?.active()
+                mHeadView?.active()
                 if (middleViewColor != 0) {
                     mSelectedMiddleView?.setBackgroundColor(middleViewColor)
                 } else {
-                    mSelectedMiddleView!!.setBackgroundColor(
-                        mContext!!.resources
-                            .getColor(R.color.timeline_bar_active_overlay)
-                    )
+                    mSelectedMiddleView?.setBackgroundColor( mContext?.resources?.getColor(R.color.timeline_bar_active_overlay) ?: 0)
                 }
             }
             STATE_FIX -> {
-                mTailView!!.fix()
-                mHeadView!!.fix()
+                mTailView?.fix()
+                mHeadView?.fix()
                 if (middleViewColor != 0) {
                     mSelectedMiddleView?.setBackgroundColor(middleViewColor)
                 } else {
@@ -297,6 +293,7 @@ class ThumbLineOverlay(
     }
 
     fun updateDuration(duration: Long) {
+        println("updateDuration: $duration")
         mDuration = duration
         invalidate()
         requestLayout()

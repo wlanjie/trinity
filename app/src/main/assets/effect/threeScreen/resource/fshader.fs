@@ -1,4 +1,5 @@
 #ifdef GL_ES
+precision highp float;
 uniform sampler2D inputImageTexture;
 varying highp vec2 textureCoordinate;
 void main() {

@@ -1,0 +1,51 @@
+[
+  {
+    "id": 1,
+    "name": "两屏",
+    "color": "#cce77e86",
+    "effect": "effect/twoScreen",
+    "effectName": "SplitScreen"
+  },
+  {
+    "id": 2,
+    "name": "三屏",
+    "color": "#ccdc424e",
+    "effect": "effect/threeScreen",
+    "effectName": "SplitScreen"
+  },
+  {
+    "id": 3,
+    "name": "四屏",
+    "color": "#ccc12430",
+    "effect": "effect/fourScreen",
+    "effectName": "SplitScreen"
+  },
+  {
+    "id": 4,
+    "name": "六屏",
+    "color": "#ccef2f3e",
+    "effect": "effect/sixScreen",
+    "effectName": "SplitScreen"
+  },
+  {
+    "id": 5,
+    "name": "九屏",
+    "color": "#ccdc143c",
+    "effect": "effect/nineScreen",
+    "effectName": "SplitScreen"
+  },
+  {
+    "id": 6,
+    "name": "黑白分屏",
+    "color": "#ccdc143c",
+    "effect": "effect/blackWhiteScreen",
+    "effectName": "blackWhiteScreen"
+  },
+  {
+    "id": 7,
+    "name": "模糊分屏",
+    "color": "#CCEA0000",
+    "effect": "effect/blurScreen",
+    "effectName": "SplitScreen"
+  }
+]

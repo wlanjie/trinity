@@ -2,7 +2,6 @@ package com.trinity.sample
 
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.graphics.BitmapFactory
 import android.graphics.Point
 import android.os.Bundle
 import android.util.TypedValue
@@ -13,9 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.fragment.app.transaction
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.gson.JsonObject
 import com.trinity.core.TrinityCore
-import com.trinity.editor.EffectType
 import com.trinity.editor.MediaClip
 import com.trinity.editor.TimeRange
 import com.trinity.editor.TrinityVideoEditor
@@ -28,9 +25,7 @@ import com.trinity.sample.entity.MediaItem
 import com.trinity.sample.fragment.MusicFragment
 import com.trinity.sample.listener.OnEffectTouchListener
 import com.trinity.sample.view.*
-import org.json.JSONArray
 import org.json.JSONObject
-import java.nio.charset.Charset
 import java.util.*
 
 /**
@@ -60,7 +55,6 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
   private var mUseInvert = false
   private var mCanAddAnimation = true
   private var mThumbLineOverlayView: ThumbLineOverlay.ThumbLineOverlayView ?= null
-  private var mThumbnailFetcher: ThumbnailFetcher ?= null
   private lateinit var mEffectController: EffectController
 //  private val mEffects = LinkedHashMap<String, EffectInfo>()
   private val mEffects =  LinkedList<EffectInfo>()
@@ -68,6 +62,7 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
   private val mActionIds = mutableMapOf<String, Int>()
   private var mFilterId = -1
   private var mMusicId = -1
+  private var mVideoDuration = 0L
 
   @SuppressLint("ClickableViewAccessibility")
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -89,7 +84,6 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
     mActionBar = findViewById(R.id.action_bar)
     mActionBar.setBackgroundDrawable(null)
     mThumbLineBar = findViewById(R.id.thumb_line_bar)
-    initThumbLineBar()
 
     val rootView = findViewById<RelativeLayout>(R.id.root_view)
     mViewOperator = ViewOperator(rootView, mActionBar, mSurfaceView, mTabLayout, mPasterContainer, mPlayImage)
@@ -111,46 +105,27 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
     medias.forEach {
       val clip = MediaClip(it.path, TimeRange(0, it.duration.toLong()))
       mVideoEditor.insertClip(clip)
+      mVideoDuration += it.duration
     }
     val result = mVideoEditor.play(true)
     if (result != 0) {
       Toast.makeText(this, "播放失败: $result", Toast.LENGTH_SHORT).show()
     }
 
+    initThumbLineBar(medias)
     findViewById<View>(R.id.next)
         .setOnClickListener {
           startActivity(Intent(this, VideoExportActivity::class.java))
         }
   }
 
-  private fun initThumbLineBar() {
+  private fun initThumbLineBar(medias: Array<MediaItem>) {
+    if (medias.isEmpty()) {
+      return
+    }
     val thumbnailSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 32f, resources.displayMetrics).toInt()
     val thumbnailPoint = Point(thumbnailSize, thumbnailSize)
-
-    if (mThumbnailFetcher == null) {
-      mThumbnailFetcher = object: ThumbnailFetcher {
-        override fun addVideoSource(path: String) {
-        }
-
-        override fun requestThumbnailImage(times: LongArray, l: ThumbnailFetcher.OnThumbnailCompletionListener) {
-          val bitmap = BitmapFactory.decodeResource(resources, R.drawable.ic_launcher)
-          l.onThumbnail(bitmap, 0)
-        }
-
-        override fun getTotalDuration(): Long {
-          return mVideoEditor.getVideoDuration()
-        }
-
-        override fun release() {
-        }
-      }
-    } else {
-      mThumbnailFetcher?.release()
-      mThumbnailFetcher?.addVideoSource("/sdcard/test.mp4")
-    }
-
     val config = ThumbLineConfig.Builder()
-        .thumbnailFetcher(mThumbnailFetcher)
         .screenWidth(windowManager.defaultDisplay.width)
         .thumbPoint(thumbnailPoint)
         .thumbnailCount(10)
@@ -168,7 +143,7 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
         get() = rootView.findViewById(R.id.middle_view)
 
     }
-    mThumbLineBar.setup(config, this, this)
+    mThumbLineBar.setup(medias, config, this, this)
     mEffectController.setThumbLineBar(mThumbLineBar)
   }
 
@@ -225,8 +200,8 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
         .setIcon(R.mipmap.ic_gif), false)
     mTabLayout.addTab(mTabLayout.newTab().setText(R.string.subtitle)
         .setIcon(R.mipmap.ic_subtitle), false)
-    mTabLayout.addTab(mTabLayout.newTab().setText(R.string.transition)
-        .setIcon(R.mipmap.ic_transition), false)
+//    mTabLayout.addTab(mTabLayout.newTab().setText(R.string.transition)
+//        .setIcon(R.mipmap.ic_transition), false)
     mTabLayout.addTab(mTabLayout.newTab().setText(R.string.paint)
         .setIcon(R.mipmap.ic_paint), false)
     mTabLayout.addTab(mTabLayout.newTab().setText(R.string.cover)
@@ -255,6 +230,7 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
   }
 
   private fun setActiveIndex(page: EditorPage) {
+    val fragmentManager = supportFragmentManager
     mBottomSheetLayout.visibility = View.GONE
     when (page) {
       EditorPage.FILTER -> {
@@ -269,8 +245,9 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
         }
       }
       EditorPage.FILTER_EFFECT -> {
+        mVideoEditor.pause()
         if (mEffect == null) {
-          mEffect = EffectChooser(this)
+          mEffect = EffectChooser(this, fragmentManager)
           mEffect?.setOnEffectTouchListener(this)
         }
         mEffect?.addThumbView(mThumbLineBar)
@@ -337,7 +314,7 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
   }
 
   override fun onShowAnimationEnd() {
-    mVideoEditor.pause()
+//    mVideoEditor.pause()
   }
 
   override fun onHideAnimationEnd() {

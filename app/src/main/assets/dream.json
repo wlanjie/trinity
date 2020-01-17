@@ -1,0 +1,10 @@
+
+[
+  {
+    "id": 1,
+    "name": "爱心光斑",
+    "color": "#CCEA0000",
+    "effect": "effect/loveSpot",
+    "effectName": "loveSpot"
+  }
+]

@@ -137,6 +137,7 @@ class Player : public Handler {
     AudioRender* audio_render_;
     int audio_buffer_size_;
     uint8_t* audio_buffer_;
+    int draw_texture_id_;
 };
 
 }  // namespace trinity

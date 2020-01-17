@@ -1,0 +1,51 @@
+[
+  {
+    "id": 1,
+    "name": "闪白",
+    "color": "#cc23bdb1",
+    "effect": "effect/flashWhite",
+    "effectName": "FlashWhite"
+  },
+  {
+    "id": 2,
+    "name": "灵魂出窍",
+    "color": "#EA0000",
+    "effect": "effect/soulScale",
+    "effectName": "effect/SoulScale"
+  },
+  {
+    "id": 3,
+    "name": "抖动",
+    "color": "#CCEA0000",
+    "effect": "effect/shake",
+    "effectName": "Shake"
+  },
+  {
+    "id": 4,
+    "name": "毛刺",
+    "color": "#CCEA0000",
+    "effect": "effect/skinNeedling",
+    "effectName": "SkinNeedling"
+  },
+  {
+    "id": 5,
+    "name": "缩放",
+    "color": "#CCEA0000",
+    "effect": "effect/zoomInOut",
+    "effectName": "zoomInOut"
+  },
+  {
+    "id": 6,
+    "name": "70s",
+    "color": "#CCEA0000",
+    "effect": "effect/70s",
+    "effectName": "70s"
+  },
+  {
+    "id": 7,
+    "name": "x-signal",
+    "color": "#CCEA0000",
+    "effect": "effect/x-signal",
+    "effectName": "x-signal"
+  }
+]

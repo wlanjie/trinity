@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="215dp"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:background="@color/chooser_pager_bg">
 
@@ -12,17 +13,58 @@
         android:layout_marginTop="10dp"/>
 
     <TextView
+        android:id="@+id/effect_tip_text"
         android:layout_width="wrap_content"
         android:layout_height="30dp"
-        android:text="长按可添加效果"
+        android:text="@string/effect_tip"
         android:textColor="@android:color/white"
         android:gravity="center_vertical"
         android:layout_marginLeft="10dp"
+        android:layout_below="@id/thumbnail_container"
         android:textSize="12sp"/>
+
+    <TextView
+        android:id="@+id/undo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="16dp"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:text="@string/undo"
+        android:textColor="@android:color/white"
+        android:layout_below="@id/thumbnail_container"
+        android:background="@drawable/background_undo" />
+
+    <androidx.viewpager.widget.ViewPager
+        android:id="@+id/view_pager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/undo"
+        android:layout_above="@id/tab_layout" />
+
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tab_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        app:tabTextColor="@android:color/white"
+        app:tabSelectedTextColor="@color/colorAccent"/>
+
+    <FrameLayout
+        android:id="@+id/container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:layout_below="@id/undo"
+        android:layout_above="@id/tab_layout"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/effect_recycler_view"
         android:layout_width="wrap_content"
         android:layout_height="100dp"
-        android:overScrollMode="never" />
-</LinearLayout>
+        android:overScrollMode="never"
+        android:visibility="gone"/>
+</RelativeLayout>
