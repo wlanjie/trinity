@@ -42,7 +42,9 @@
 
 namespace trinity {
 
-Blend::Blend(const char* fragment_shader) {
+Blend::Blend(const char* fragment_shader) :
+    frame_buffer_texture_id_(0)
+    , frame_buffer_id_(0) {
     default_vertex_coordinates_ = new GLfloat[8];
     default_texture_coordinates_ = new GLfloat[8];
     default_vertex_coordinates_[0] = -1.0F;
@@ -115,7 +117,7 @@ Blend::~Blend() {
 }
 
 int Blend::OnDrawFrame(int texture_id, int sticker_texture_id, GLfloat* matrix, float alpha_factor) {
-    printf("texture_id: %d sticker_texture_id: %d\n", texture_id, sticker_texture_id);
+    LOGE("texture_id: %d sticker_texture_id: %d\n", texture_id, sticker_texture_id);
     glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_id_);
     glViewport(0, 0, 720, 1280);
     glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
@@ -132,9 +134,9 @@ int Blend::OnDrawFrame(int texture_id, int sticker_texture_id, GLfloat* matrix, 
     glUniform1i(input_image_texture2_location, 3);
     auto alpha_factor_location = glGetUniformLocation(program_, "alphaFactor");
     glUniform1f(alpha_factor_location, alpha_factor);
-    // auto matrix_location = glGetUniformLocation(program_, "matrix");
+    auto matrix_location = glGetUniformLocation(program_, "matrix");
     // 设置矩阵
-    // glUniformMatrix4fv(matrix_location, 1, GL_FALSE, matrix);
+    glUniformMatrix4fv(matrix_location, 1, GL_FALSE, matrix);
     auto position_location = glGetAttribLocation(program_, "position");
     glEnableVertexAttribArray(position_location);
     glVertexAttribPointer(position_location, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), default_vertex_coordinates_);
@@ -150,9 +152,9 @@ int Blend::OnDrawFrame(int texture_id, int sticker_texture_id, GLfloat* matrix, 
     glBindTexture(GL_TEXTURE_2D, texture_id);
     auto blend_input_image_texture_location = glGetUniformLocation(second_program_, "inputImageTexture");
     glUniform1i(blend_input_image_texture_location, 2);
-    auto position2_locaiton = glGetAttribLocation(second_program_, "position");
-    glEnableVertexAttribArray(position2_locaiton);
-    glVertexAttribPointer(position2_locaiton, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), default_vertex_coordinates_);
+    auto position2_location = glGetAttribLocation(second_program_, "position");
+    glEnableVertexAttribArray(position2_location);
+    glVertexAttribPointer(position2_location, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), default_vertex_coordinates_);
     auto input_texture_coordinate2_locaiton = glGetAttribLocation(second_program_, "inputTextureCoordinate");
     glEnableVertexAttribArray(input_texture_coordinate2_locaiton);
     glVertexAttribPointer(input_texture_coordinate2_locaiton, 2, GL_FLOAT, GL_FALSE,

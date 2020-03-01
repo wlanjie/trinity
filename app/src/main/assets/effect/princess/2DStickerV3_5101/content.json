@@ -1,0 +1,10 @@
+{
+    "content": {
+        "path": "clip.json"
+    },
+    "requirement": {
+        "faceDetect": true
+    },
+    "tag": "2DStickerV3E5316D3937B54C76A67ED21402BA1284",
+    "version": "2.9.1"
+}

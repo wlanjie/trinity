@@ -48,8 +48,18 @@ android {
     publishNonDefault true
 }
 
+repositories {
+    maven { url "https://oss.jfrog.org/artifactory/oss-snapshot-local" }
+
+}
+
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'com.alibaba.android.mnnkit:core:0.0.2'
+    implementation 'com.alibaba.android:mnn:0.0.2'
+    implementation 'com.alibaba.android.mnnkit:facedetection:0.0.2'
+    implementation 'com.alibaba.android.mnnkit:handgesturedetection:0.0.2'
+    implementation 'com.alibaba.android.mnnkit:portraitsegmentation:0.0.2'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'

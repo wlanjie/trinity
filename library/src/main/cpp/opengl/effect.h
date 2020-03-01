@@ -31,26 +31,23 @@
 #include "frame_buffer.h"
 #include "stb_image.h"
 #include "blend.h"
+#include "face_markup_render.h"
+#include "face_detection.h"
+
+// glm
+#include "gtx/norm.hpp"
+#include "ext.hpp"
+#include "geometric.hpp"
+#include "trigonometric.hpp"
+#include "ext/vector_float2.hpp"
+#include "common.hpp"
+#include "vec2.hpp"
 
 extern "C" {
 #include "cJSON.h"
 };
 
 namespace trinity {
-
-typedef struct Vector4 {
-    GLfloat one;
-    GLfloat two;
-    GLfloat three;
-    GLfloat four;
-} Vector4;
-
-typedef struct Matrix4x4 {
-    Vector4 one;
-    Vector4 two;
-    Vector4 three;
-    Vector4 four;
-} Matrix4x4;
 
 enum ShaderUniformType {
     Fragment = 1,
@@ -91,7 +88,7 @@ class ShaderUniforms {
 
 class Point {
  public:
-    char* idx;
+    int idx;
     int relation_ref;
     char* relation_type;
     float weight;
@@ -108,24 +105,106 @@ class Relation {
     int forground;
 };
 
+class ScaleParams {
+ public:
+    ScaleParams()
+        : start_idx(nullptr)
+        , start_relation_ref(0)
+        , start_relation_type(nullptr)
+        , end_idx(nullptr)
+        , end_relation_ref(0)
+        , end_relation_type(nullptr)
+        , factor(0) {}
+
+    ~ScaleParams() {
+        if (nullptr != start_idx) {
+            delete[] start_idx;
+            start_idx = nullptr;
+        }
+        if (nullptr != start_relation_type) {
+            delete[] start_relation_type;
+            start_relation_type = nullptr;
+        }
+        if (nullptr != end_idx) {
+            delete[] end_idx;
+            end_idx = nullptr;
+        }
+        if (nullptr != end_relation_type) {
+            delete[] end_relation_type;
+            end_relation_type = nullptr;
+        }
+    }
+    char* start_idx;
+    int start_relation_ref;
+    char* start_relation_type;
+    char* end_idx;
+    int end_relation_ref;
+    char* end_relation_type;
+    double factor;
+};
+
 class Scale {
  public:
-    float x;
-    float y;
+    Scale() : scale_x(nullptr), scale_y(nullptr) {}
+    ~Scale() {
+        if (nullptr != scale_x) {
+            delete scale_x;
+            scale_x = nullptr;
+        }
+        if (nullptr != scale_y) {
+            delete scale_y;
+            scale_y = nullptr;
+        }
+    }
+    ScaleParams* scale_x;
+    ScaleParams* scale_y;
 };
 
 class Transform {
  public:
+    Transform()
+        : relation(nullptr)
+        , scale(nullptr)
+        , relation_ref_order(0)
+        , rotation_type(0)
+        , face_detect(false) {}
+
+    ~Transform() {
+
+    }
     std::vector<Position*> positions;
     Relation* relation;
     std::vector<int> relation_index;
     int relation_ref_order;
     int rotation_type;
     Scale* scale;
-    int isFaceDetect;
+    bool face_detect;
  public:
-    void Center(float aspect);
-    void ScaleSize(float aspect);
+    glm::vec2 Center(float aspect, FaceDetectionReport* face_detection);
+    glm::vec2 ScaleSize(float aspect, FaceDetectionReport* face_detection);
+};
+
+class FaceMakeupV2Filter {
+ public:
+    int image_count;
+    double image_interval;
+    int blend_mode;
+    char* filter_type;
+    double intensity;
+    double x;
+    double y;
+    double width;
+    double height;
+    ImageBuffer* image_buffer;
+    int z_position;
+};
+
+class FaceMakeupV2 {
+ public:
+    std::vector<int> face_ids;
+    std::vector<FaceMakeupV2Filter*> filters;
+    int standard_face_width;
+    int standard_face_height;
 };
 
 class TextureIdx {
@@ -161,7 +240,7 @@ class SubEffect {
     void SetTextureUnit(ShaderUniforms* uniform, ProcessBuffer* process_buffer, GLuint texture);
     void SetUniform(std::list<SubEffect*> sub_effects, ProcessBuffer* process_buffer,
             std::vector<ShaderUniforms*> uniforms, int origin_texture_id, int texture_id, uint64_t current_time);
-    virtual int OnDrawFrame(std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id, uint64_t current_time) {
+    virtual int OnDrawFrame(FaceDetection* face_detection, std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id, uint64_t current_time) {
         return texture_id;
     }
 
@@ -174,7 +253,7 @@ class GeneralSubEffect : public SubEffect {
  public:
     GeneralSubEffect();
     ~GeneralSubEffect();
-    virtual int OnDrawFrame(std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id, uint64_t current_time);
+    virtual int OnDrawFrame(FaceDetection* face_detection, std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id, uint64_t current_time);
 };
 
 // Sticker
@@ -183,7 +262,9 @@ class StickerSubEffect : public SubEffect {
     StickerSubEffect();
     ~StickerSubEffect();
 
-    int OnDrawFrame(std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id, uint64_t current_time) override;
+    int OnDrawFrame(FaceDetection* face_detection,
+            std::list<SubEffect*> sub_effects,
+            int origin_texture_id, int texture_id, uint64_t current_time) override;
     ImageBuffer* StickerBufferAtFrameTime(float time);
  public:
     int blendmode;
@@ -201,7 +282,7 @@ class StickerSubEffect : public SubEffect {
     Blend* blend;
     int begin_frame_time;
  protected:
-    void VertexMatrix(Matrix4x4** matrix);
+    virtual glm::mat4 VertexMatrix(FaceDetectionReport* face_detection);
 };
 
 // StickerV3
@@ -210,18 +291,33 @@ class StickerV3SubEffect : public StickerSubEffect {
     StickerV3SubEffect();
     ~StickerV3SubEffect();
 
-    int OnDrawFrame(std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id, uint64_t current_time) override;
+    int OnDrawFrame(FaceDetection* face_detection, std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id, uint64_t current_time) override;
  public:
     Transform* transform;
 
  protected:
-    void VertexMatrix(Matrix4x4** matrix);
+    glm::mat4 VertexMatrix(FaceDetectionReport* face_detection);
+};
+
+// faceMakeupV2
+class FaceMakeupV2SubEffect : public StickerSubEffect {
+ public:
+    FaceMakeupV2SubEffect();
+    ~FaceMakeupV2SubEffect();
+    int OnDrawFrame(FaceDetection* face_detection, std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id, uint64_t current_time) override;
+ protected:
+    glm::mat4 VertexMatrix();
+ public:
+    FaceMakeupV2* face_makeup_v2_;
+    FaceMarkupRender* face_markup_render_;
+    NormalBlend* blend;
 };
 
 class Effect {
  public:
     Effect();
     ~Effect();
+    void SetFaceDetection(FaceDetection* face_detection);
     void ParseConfig(char* config_path);
     int OnDrawFrame(GLuint texture_id, uint64_t current_time);
     void UpdateTime(int start_time, int end_time);
@@ -231,13 +327,16 @@ class Effect {
     int ReadFile(const std::string& path, char** buffer);
     void ConvertStickerConfig(cJSON* effect_item_json, char* resource_root_path, SubEffect* sub_effect);
     void ConvertGeneralConfig(cJSON* effect_item_json, char* resource_root_path, GeneralSubEffect* general_sub_effect);
-    void VertexMatrix(SubEffect* sub_effect, Matrix4x4** matrix);
+    void ParseFaceMakeupV2(cJSON* makeup_root_json, const std::string& resource_root_path, FaceMakeupV2* face_makeup_v2);
+    void ConvertFaceMakeupV2(cJSON* effect_item_json, char* resource_root_path, FaceMakeupV2SubEffect* face_makeup_v2_sub_effect);
+    glm::mat4 VertexMatrix(SubEffect* sub_effect);
     void ParseTextureFiles(cJSON* texture_files, StickerSubEffect* sub_effect, const std::string& resource_root_path);
     std::string& ReplaceAllDistince(std::string& str, const std::string& old_value, const std::string& new_value);
     void ParsePartsItem(cJSON* clip_root_json, const std::string& resource_root_path, const std::string& type);
     void Parse2DStickerV3(SubEffect* sub_effect, const std::string& resource_root_path);
     void ParseUniform(SubEffect *sub_effect, char *config_path, cJSON *uniforms_json, ShaderUniformType type);
  private:
+    FaceDetection* face_detection_;
     std::list<SubEffect*> sub_effects_;
     int start_time_;
     int end_time_;

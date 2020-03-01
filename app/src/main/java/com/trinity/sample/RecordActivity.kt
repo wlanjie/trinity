@@ -20,10 +20,13 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.tencent.mars.xlog.Log
 import com.trinity.OnRecordingListener
 import com.trinity.camera.CameraCallback
+import com.trinity.camera.Facing
 import com.trinity.camera.Flash
 import com.trinity.camera.TrinityPreviewView
 import com.trinity.core.Frame
 import com.trinity.core.MusicInfo
+import com.trinity.face.FaceDetection
+import com.trinity.face.MnnFaceDetection
 import com.trinity.listener.OnRenderListener
 import com.trinity.record.PreviewResolution
 import com.trinity.record.Speed
@@ -93,10 +96,13 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     val preview = findViewById<TrinityPreviewView>(R.id.preview)
     mLineView = findViewById(R.id.line_view)
 
-    mRecord = TrinityRecord(preview)
+    mRecord = TrinityRecord(this, preview)
     mRecord.setOnRenderListener(this)
     mRecord.setOnRecordingListener(this)
     mRecord.setCameraCallback(this)
+    mRecord.setCameraFacing(Facing.FRONT)
+    val faceDetection = MnnFaceDetection()
+    mRecord.setFaceDetection(faceDetection)
     val recordButton = findViewById<RecordButton>(R.id.record_button)
     recordButton.setOnGestureListener(this)
     mSwitchCamera = findViewById(R.id.switch_camera)
@@ -160,6 +166,9 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     runOnUiThread {
       mAutoFocusMarker.onAutoFocusEnd(AutoFocusTrigger.GESTURE, success, where)
     }
+  }
+
+  override fun dispatchOnPreviewCallback(data: ByteArray, width: Int, height: Int, orientation: Int) {
   }
 
   private fun setFrame() {
@@ -442,6 +451,10 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     }
     setPreviewResolution(preferences.getString("preview_resolution", "720P"))
 //    mLineView.setMaxDuration(mRecordDuration)
+
+    mLineView.postDelayed({
+      mRecord.addAction(externalCacheDir?.absolutePath + "/effect/roseEyeMakeup")
+    }, 3000)
   }
 
   override fun onPause() {

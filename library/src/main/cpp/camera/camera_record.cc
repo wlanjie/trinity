@@ -59,7 +59,8 @@ CameraRecord::CameraRecord(JNIEnv* env) : Handler()
     , start_recording(false)
     , current_action_id_(0)
     , image_process_(nullptr)
-    , render_time_(0) {
+    , render_time_(0)
+    , face_point_(nullptr) {
     env->GetJavaVM(&vm_);
 }
 
@@ -233,6 +234,13 @@ void CameraRecord::Draw() {
     }
     render_screen_->ActiveProgram();
     render_screen_->ProcessImage(texture_id);
+
+    std::vector<FaceDetectionReport*> face_detection_reports;
+    GetFaceDetectionReports(face_detection_reports);
+    face_point_->SetSourceSize(camera_width_, camera_height_);
+    face_point_->SetTargetSize(screen_width_, screen_height_);
+    face_point_->OnDrawFrame(face_detection_reports);
+
     if (!egl_core_->SwapBuffers(preview_surface_)) {
         LOGE("eglSwapBuffers(preview_surface_) returned error %d", eglGetError());
     }
@@ -408,7 +416,7 @@ void CameraRecord::GetTextureMatrix() {
     if (nullptr != clazz) {
         jmethodID getTextureMatrix = env->GetMethodID(clazz, "getTextureMatrix", "()[F");
         if (nullptr != getTextureMatrix) {
-            jfloatArray matrix = static_cast<jfloatArray>(env->CallObjectMethod(obj_, getTextureMatrix));
+            auto matrix = reinterpret_cast<jfloatArray>(env->CallObjectMethod(obj_, getTextureMatrix));
             float* texture_matrix = env->GetFloatArrayElements(matrix, JNI_FALSE);
             memcpy(texture_matrix_, texture_matrix, sizeof(float) * 16);
             env->ReleaseFloatArrayElements(matrix, texture_matrix, 0);
@@ -482,11 +490,11 @@ bool CameraRecord::Initialize() {
     glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glBindTexture(GL_TEXTURE_EXTERNAL_OES, 0);
 
-    if (nullptr != image_process_) {
-        delete image_process_;
-    }
+    delete image_process_;
     image_process_ = new ImageProcess();
 
+    delete face_point_;
+    face_point_ = new FacePoint();
     StartCameraPreview();
     ConfigCamera();
     render_screen_ = new OpenGL(DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
@@ -729,6 +737,10 @@ void CameraRecord::DeleteAction(int action_id) {
     PostMessage(message);
 }
 
+void CameraRecord::FaceDetector(std::vector<trinity::FaceDetectionReport*>& face_detection) {
+    GetFaceDetectionReports(face_detection);
+}
+
 void CameraRecord::OnAddFilter(char* config_path, int action_id) {
     if (nullptr != image_process_) {
         LOGI("enter %s id: %d config: %s", __func__, action_id, config_path);
@@ -759,7 +771,7 @@ void CameraRecord::OnDeleteFilter(int action_id) {
 void CameraRecord::OnAddAction(char *config_path, int action_id) {
     if (nullptr != image_process_) {
         LOGI("enter %s config_path: %s action_id: %d", __func__, config_path, action_id);
-        image_process_->OnAction(config_path, action_id);
+        image_process_->OnAction(config_path, action_id, this);
         LOGI("leave %s", __func__);
     }
     delete[] config_path;
@@ -792,6 +804,81 @@ void CameraRecord::OnDeleteAction(int action_id) {
     LOGI("enter %s action_id: %d", __func__, action_id);
     image_process_->RemoveAction(action_id);
     LOGI("leave %s", __func__);
+}
+
+void CameraRecord::GetFaceDetectionReports(std::vector<FaceDetectionReport*>& face_detection_reports) {
+    JNIEnv *env = nullptr;
+    if (vm_->AttachCurrentThread(&env, nullptr) != JNI_OK) {
+        LOGE("%s: AttachCurrentThread() failed", __FUNCTION__);
+        return;
+    }
+    if (nullptr == env) {
+        LOGI("getJNIEnv failed");
+        return;
+    }
+    jclass clazz = env->GetObjectClass(obj_);
+    if (nullptr != clazz) {
+        jmethodID face_detection_report_method_id = env->GetMethodID(clazz,
+                "getFaceDetectionReports",
+                "()[Lcom/trinity/face/FaceDetectionReport;");
+        if (nullptr != face_detection_report_method_id) {
+            auto object_array = reinterpret_cast<jobjectArray>(
+                    env->CallObjectMethod(obj_, face_detection_report_method_id));
+            if (nullptr == object_array) {
+                return;
+            }
+            int length = env->GetArrayLength(object_array);
+            for (int i = 0; i < length; ++i) {
+                jobject face_report_element = env->GetObjectArrayElement(object_array, i);
+                jclass face_report_element_class = env->GetObjectClass(face_report_element);
+                jint left = env->CallIntMethod(face_report_element, env->GetMethodID(face_report_element_class, "getLeft", "()I"));
+                jint right = env->CallIntMethod(face_report_element, env->GetMethodID(face_report_element_class, "getRight", "()I"));
+                jint top = env->CallIntMethod(face_report_element, env->GetMethodID(face_report_element_class, "getTop", "()I"));
+                jint bottom = env->CallIntMethod(face_report_element, env->GetMethodID(face_report_element_class, "getBottom", "()I"));
+                jint face_id = env->CallIntMethod(face_report_element, env->GetMethodID(face_report_element_class, "getFaceId", "()I"));
+                auto key_point_array = reinterpret_cast<jfloatArray>(env->CallObjectMethod(face_report_element,
+                        env->GetMethodID(face_report_element_class, "getKeyPoints", "()[F")));
+                jint key_point_length = env->GetArrayLength(key_point_array);
+                auto visibilities_array = reinterpret_cast<jfloatArray>(env->CallObjectMethod(face_report_element,
+                        env->GetMethodID(face_report_element_class, "getVisibilities", "()[F")));
+                jint visibilities_length = env->GetArrayLength(visibilities_array);
+                jfloat score = env->CallFloatMethod(face_report_element, env->GetMethodID(face_report_element_class, "getScore", "()F"));
+                jfloat yaw = env->CallFloatMethod(face_report_element, env->GetMethodID(face_report_element_class, "getYaw", "()F"));
+                jfloat pitch = env->CallFloatMethod(face_report_element, env->GetMethodID(face_report_element_class, "getPitch", "()F"));
+                jfloat roll = env->CallFloatMethod(face_report_element, env->GetMethodID(face_report_element_class, "getRoll", "()F"));
+                jlong face_action = env->CallLongMethod(face_report_element, env->GetMethodID(face_report_element_class, "getFaceAction", "()J"));
+
+                auto* face_detection_report = new FaceDetectionReport();
+                face_detection_report->left = left;
+                face_detection_report->right = right;
+                face_detection_report->top = top;
+                face_detection_report->bottom = bottom;
+                face_detection_report->face_id = face_id;
+//                face_detection_report->key_point_size = key_point_length;
+                //TODO delete
+//                face_detection_report->key_points = new float[key_point_length];
+                jfloat* key_point = env->GetFloatArrayElements(key_point_array, JNI_FALSE);
+                face_detection_report->SetLandMarks(key_point, key_point_length);
+//                memcpy(face_detection_report->key_points, key_point, key_point_length * sizeof(float));
+                env->ReleaseFloatArrayElements(key_point_array, key_point, 0);
+                face_detection_report->visibilities_size = visibilities_length;
+                face_detection_report->visibilities = new float[visibilities_length];
+                jfloat* visibilities = env->GetFloatArrayElements(visibilities_array, JNI_FALSE);
+                memcpy(face_detection_report->visibilities, visibilities, visibilities_length *
+                        sizeof(float));
+                env->ReleaseFloatArrayElements(visibilities_array, visibilities, JNI_FALSE);
+                face_detection_report->score = score;
+                face_detection_report->yaw = yaw;
+                face_detection_report->pitch = pitch;
+                face_detection_report->roll = roll;
+                face_detection_report->face_action = face_action;
+                face_detection_reports.push_back(face_detection_report);
+            }
+        }
+    }
+    if (vm_->DetachCurrentThread() != JNI_OK) {
+        LOGE("%s: DetachCurrentThread() failed", __FUNCTION__);
+    }
 }
 
 void CameraRecord::HandleMessage(trinity::Message *msg) {

@@ -23,4 +23,5 @@ import android.graphics.PointF
 interface CameraCallback {
   fun dispatchOnFocusStart(where: PointF)
   fun dispatchOnFocusEnd(success: Boolean, where: PointF)
+  fun dispatchOnPreviewCallback(data: ByteArray, width: Int, height: Int, orientation: Int)
 }

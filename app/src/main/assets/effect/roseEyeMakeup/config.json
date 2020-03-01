@@ -1,0 +1,21 @@
+{
+    "effect": [
+        {
+            "path": "FaceMakeupV2_2999/",
+            "type": "faceMakeupV2",
+            "zorder": 2999
+        }
+    ],
+    "exclusiveScene": [
+        {
+            "sceneKey": "FaceMakeup*",
+            "tagName": [
+                "FaceMakeupV2_2999/",
+                "FaceMakeupV2_2997/"
+            ],
+            "priority": 9999
+        }
+    ],
+    "name": "4.0.0MAC606D7A864938asasA3B68D842313",
+    "version": "4.2.0"
+}

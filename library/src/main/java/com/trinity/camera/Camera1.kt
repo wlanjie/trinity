@@ -19,6 +19,7 @@
 package com.trinity.camera
 
 import android.content.Context
+import android.graphics.ImageFormat
 import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.SurfaceTexture
@@ -245,6 +246,7 @@ class Camera1(
     params?.supportedPreviewSizes?.forEach {
       mPreviewSize.add(Size(it.width, it.height))
     }
+    params?.previewFormat = ImageFormat.NV21
     params?.let {
       applyFocusMode(it)
       applyFlash(it)
@@ -258,6 +260,11 @@ class Camera1(
     mCamera?.parameters = params
     mCameraParameters = params
     mCamera?.setDisplayOrientation(mAngles.offset(Reference.SENSOR, Reference.VIEW, Axis.ABSOLUTE))
+    val cameraInfo = android.hardware.Camera.CameraInfo()
+    android.hardware.Camera.getCameraInfo(mCameraId, cameraInfo)
+    mCamera?.setPreviewCallback { data, _ ->
+      mCameraCallback.dispatchOnPreviewCallback(data, size.width, size.height, cameraInfo.orientation)
+    }
     return 0
   }
 
@@ -285,6 +292,7 @@ class Camera1(
   }
 
   override fun stop() {
+    mCamera?.setPreviewCallback(null)
     mCamera?.stopPreview()
     mShowingPreview = false
     mCamera?.release()
