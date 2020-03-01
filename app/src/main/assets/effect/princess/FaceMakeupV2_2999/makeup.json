@@ -1,0 +1,92 @@
+{
+    "faceID": [
+        0
+    ],
+    "faceSDKType": 2,
+    "filters": [
+        {
+            "2dSequenceResources": {
+                "imageCount": 1,
+                "imageInterval": 0.5,
+                "name": "mask2999_",
+                "path": "mask2999/"
+            },
+            "blendMode": 22,
+            "filterType": "mask",
+            "intensity": 0.6023556472081218,
+            "rect": {
+                "height": 1280.0,
+                "width": 1280.0,
+                "x": 0.0,
+                "y": 0.0
+            },
+            "zPosition": 2999
+        },
+        {
+            "2dSequenceResources": {
+                "imageCount": 1,
+                "imageInterval": 0.05,
+                "name": "mouthPart_res2998_",
+                "path": "mouthPart_res2998/"
+            },
+            "blendMode": 15,
+            "blendResources": {
+                "imageCount": 1,
+                "imageInterval": 0.05,
+                "name": "mouthPart_blend2998_",
+                "path": "mouthPart_blend2998/"
+            },
+            "filterType": "mouth_part",
+            "intensity": 0.7000118972081218,
+            "rect": {
+                "height": 170.0,
+                "width": 267.5,
+                "x": 500.0,
+                "y": 710.0
+            },
+            "zPosition": 2998
+        },
+        {
+            "2dSequenceResources": {
+                "imageCount": 1,
+                "imageInterval": 0.5,
+                "name": "eyepart2997_",
+                "path": "eyepart2997/"
+            },
+            "blendMode": 15,
+            "filterType": "eye_part",
+            "intensity": 0.796875,
+            "rect": {
+                "height": 202.5,
+                "width": 560.0,
+                "x": 360.0,
+                "y": 422.5
+            },
+            "zPosition": 2997
+        },
+        {
+            "2dSequenceResources": {
+                "imageCount": 1,
+                "imageInterval": 0.5,
+                "name": "mask2996_",
+                "path": "mask2996/"
+            },
+            "blendMode": 15,
+            "filterType": "mask",
+            "intensity": 0.6023556472081218,
+            "rect": {
+                "height": 540.0,
+                "width": 932.5,
+                "x": 175.0,
+                "y": 385.0
+            },
+            "zPosition": 2996
+        }
+    ],
+    "standardFaceKeyPoints": "FaceMakeupV2/texcoord.txt",
+    "standardFaceSize": {
+        "height": 1280,
+        "width": 1280
+    },
+    "version": "2.9.0"
+}

@@ -1,0 +1,31 @@
+{
+    "effect": [
+        {
+            "defaultEnable": false,
+            "path": "Filter_2998/",
+            "type": "Filter",
+            "zorder": 2998
+        },
+        {
+            "path": "FaceMakeupV2_2999/",
+            "type": "faceMakeupV2",
+            "zorder": 2999
+        },
+        {
+            "path": "2DStickerV3_5101/",
+            "type": "2DStickerV3",
+            "zorder": 5101
+        }
+    ],
+    "exclusiveScene": [
+        {
+            "sceneKey": "FaceMakeup*",
+            "tagName": [
+                "FaceMakeupV2_2999/"
+            ],
+            "priority": 9999
+        }
+    ],
+    "name": "3.5.1MAC5BF7B30D3F0A4BasfgaE3A4B786920",
+    "version": "4.2.0"
+}

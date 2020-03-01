@@ -18,9 +18,13 @@
 
 package com.trinity.record
 
+import android.content.Context
 import android.graphics.PointF
 import android.graphics.SurfaceTexture
 import android.hardware.Camera
+import android.provider.Settings
+import android.provider.Settings.SettingNotFoundException
+import android.view.OrientationEventListener
 import android.view.Surface
 import com.tencent.mars.xlog.Log
 import com.trinity.Constants
@@ -31,6 +35,10 @@ import com.trinity.core.Frame
 import com.trinity.core.MusicInfo
 import com.trinity.core.RenderType
 import com.trinity.encoder.MediaCodecSurfaceEncoder
+import com.trinity.face.FaceDetection
+import com.trinity.face.FaceDetectionImageType
+import com.trinity.face.FaceDetectionReport
+import com.trinity.face.FlipType
 import com.trinity.listener.OnRenderListener
 import com.trinity.player.AudioPlayer
 import com.trinity.record.exception.AudioConfigurationException
@@ -45,13 +53,12 @@ import java.io.File
  * Create by wlanjie on 2019/3/14-下午8:45
  */
 class TrinityRecord(
+  val context: Context,
   preview: TrinityPreviewView
 ) : TrinityPreviewView.PreviewViewCallback, Timer.OnTimerListener, CameraCallback {
 
   // c++对象指针地址
   private var mHandle: Long = 0
-  // 前后摄像头id
-  private var mCameraFacingId = Camera.CameraInfo.CAMERA_FACING_FRONT
   // 相机对象
   private var mCamera = Camera1(preview.context, this)
   // 预览宽
@@ -112,9 +119,38 @@ class TrinityRecord(
   // 如果textureId还没创建好时设置为true
   // 在textureId创建成功时,打开摄像头
   private var mRequestPreview = false
+  // 人脸检测实例
+  private var mFaceDetection: FaceDetection ?= null
+  // 设备角度检测
+  private val mOrientationListener: OrientationEventListener
+  // 设备角度
+  private var mRotateDegree = 0
+  // 设备是否自动旋转
+  private var mAutoRotate = false
+  private var mFaceDetectionReports: Array<FaceDetectionReport> ?= null
 
   init {
     preview.setCallback(this)
+    mOrientationListener = object: OrientationEventListener(context) {
+      override fun onOrientationChanged(orientation: Int) {
+        if (orientation == ORIENTATION_UNKNOWN) {
+          return
+        }
+        val o = (orientation + 45) / 90 * 90
+        try {
+          mAutoRotate = 1 == Settings.System.getInt(context.contentResolver, Settings.System.ACCELEROMETER_ROTATION)
+        } catch (e: SettingNotFoundException) {
+          e.printStackTrace()
+        }
+        if (mAutoRotate && o % 360 == 180) {
+          return
+        }
+        mRotateDegree = o % 360
+      }
+    }
+    if (mOrientationListener.canDetectOrientation()) {
+      mOrientationListener.enable()
+    }
   }
 
   fun setCameraCallback(callback: CameraCallback) {
@@ -267,6 +303,14 @@ class TrinityRecord(
   }
 
   /**
+   * 设置当前摄像头id
+   */
+  @Suppress("unused")
+  fun setCameraFacing(facing: Facing) {
+    mCamera.setFacing(facing)
+  }
+
+  /**
    * 获取当前摄像头id
    * @return Facing 返回前后摄像头的枚举定义
    */
@@ -314,12 +358,39 @@ class TrinityRecord(
     mCamera.focus(mViewWidth, mViewHeight, point)
   }
 
+  /**
+   * 设置人脸检测接口
+   * @param faceDetection FaceDetection
+   */
+  fun setFaceDetection(faceDetection: FaceDetection) {
+    faceDetection.releaseDetection()
+    faceDetection.createFaceDetection(context, 0)
+    mFaceDetection = faceDetection
+  }
+
   override fun dispatchOnFocusStart(where: PointF) {
     mCameraCallback?.dispatchOnFocusStart(where)
   }
 
   override fun dispatchOnFocusEnd(success: Boolean, where: PointF) {
     mCameraCallback?.dispatchOnFocusEnd(success, where)
+  }
+
+  override fun dispatchOnPreviewCallback(data: ByteArray, width: Int, height: Int, orientation: Int) {
+    mCameraCallback?.dispatchOnPreviewCallback(data, width, height, orientation)
+    if (mFaceDetection == null) {
+      return
+    }
+    val frontCamera = mCamera.getFacing() == Facing.FRONT
+    val inAngle = if (frontCamera) (orientation + 360 - mRotateDegree) % 360 else (orientation + mRotateDegree) % 360
+    val outAngle = if (!mAutoRotate) {
+      if (frontCamera) (360 - mRotateDegree) % 360 else mRotateDegree % 360
+    } else {
+      0
+    }
+    val flipType = if (frontCamera) FlipType.FLIP_Y else FlipType.FLIP_NONE
+    val result = mFaceDetection?.faceDetection(data, width, height, FaceDetectionImageType.YUV_NV21, inAngle, outAngle, flipType)
+    mFaceDetectionReports = result
   }
 
   override fun update(timer: Timer, elapsedTime: Int) {
@@ -546,8 +617,17 @@ class TrinityRecord(
       mTimer.release()
       mPlayerService?.stopAccompany()
       mPlayerService?.stop()
+      mOrientationListener.disable()
+      mFaceDetection?.releaseDetection()
     }
   }
+
+  /**
+   * 获取人脸信息, 由c++调用
+   * @return Array<FaceDetectionReport>? 人脸信息集合
+   */
+  @Suppress("unused")
+  private fun getFaceDetectionReports() = mFaceDetectionReports
 
   /**
    * 获取预览宽，由c++调用，创建framebuffer

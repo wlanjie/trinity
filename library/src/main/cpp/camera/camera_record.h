@@ -32,6 +32,8 @@
 #include "video_consumer_thread.h"
 #include "soft_encoder_adapter.h"
 #include "image_process.h"
+#include "face_detection.h"
+#include "face_point.h"
 
 namespace trinity {
 
@@ -47,7 +49,7 @@ enum RenderThreadMessage {
     MSG_EGL_THREAD_EXIT
 };
 
-class CameraRecord : public Handler {
+class CameraRecord : public Handler, public FaceDetection {
  public:
     explicit CameraRecord(JNIEnv* env);
     virtual ~CameraRecord();
@@ -102,6 +104,8 @@ class CameraRecord : public Handler {
     void UpdateActionParam(int action_id, const char* effect_name, const char* param_name, float value);
 
     void DeleteAction(int action_id);
+
+    virtual void FaceDetector(std::vector<FaceDetectionReport*>& face_detection);
  private:
     virtual bool Initialize();
 
@@ -160,6 +164,8 @@ class CameraRecord : public Handler {
 
     void OnDeleteAction(int action_id);
 
+    void GetFaceDetectionReports(std::vector<FaceDetectionReport*>& face_detection_reports);
+
     virtual void HandleMessage(Message* msg);
  private:
     ANativeWindow *window_;
@@ -194,6 +200,7 @@ class CameraRecord : public Handler {
     int current_action_id_;
     ImageProcess* image_process_;
     int64_t render_time_;
+    FacePoint* face_point_;
 };
 
 }  // namespace trinity

@@ -32,6 +32,9 @@ android {
     lintOptions {
         abortOnError true
     }
+    packagingOptions {
+        pickFirst 'lib/armeabi-v7a/libc++_shared.so'
+    }
 }
 
 dependencies {

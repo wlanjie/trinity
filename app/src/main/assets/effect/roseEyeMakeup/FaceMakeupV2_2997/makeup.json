@@ -1,0 +1,32 @@
+{
+  "faceID": [
+    0
+  ],
+  "faceSDKType": 2,
+  "filters": [
+    {
+      "2dSequenceResources": {
+        "imageCount": 1,
+        "imageInterval": 0.5,
+        "name": "mask2997_",
+        "path": "mask2997/"
+      },
+      "blendMode": 17,
+      "filterType": "mask",
+      "intensity": 1.0,
+      "rect": {
+        "height": 1278.4,
+        "width": 1278.4,
+        "x": 0.0,
+        "y": 1.6
+      },
+      "zPosition": 2997
+    }
+  ],
+  "standardFaceKeyPoints": "FaceMakeupV2/texcoord.txt",
+  "standardFaceSize": {
+    "height": 1280,
+    "width": 1280
+  },
+  "version": "2.8.0"
+}

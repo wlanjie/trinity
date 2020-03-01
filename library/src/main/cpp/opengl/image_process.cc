@@ -69,8 +69,9 @@ int ImageProcess::OnProcess(int texture_id, uint64_t current_time, int width, in
     return texture;
 }
 
-void ImageProcess::OnAction(char* config_path, int action_id) {
+void ImageProcess::OnAction(char* config_path, int action_id, FaceDetection* face_detection) {
     auto* effect = new Effect();
+    effect->SetFaceDetection(face_detection);
     effect->ParseConfig(config_path);
     effects_.insert(std::pair<int, Effect*>(action_id, effect));
     action_id_ = action_id;

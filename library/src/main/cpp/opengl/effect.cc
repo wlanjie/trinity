@@ -20,8 +20,11 @@
 //
 
 #include "effect.h"
-#include "common.hpp"
-#include "vec2.hpp"
+#ifdef __ANDROID__
+#include "android_xlog.h"
+#else
+#define LOGE(format, ...) fprintf(stdout, format, __VA_ARGS__)
+#endif
 
 namespace trinity {
 
@@ -31,7 +34,9 @@ GeneralSubEffect::~GeneralSubEffect() {
     printf("~GeneralSubEffect\n");
 }
 
-int GeneralSubEffect::OnDrawFrame(std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id, uint64_t current_time) {
+int GeneralSubEffect::OnDrawFrame(FaceDetection* face_detection,
+        std::list<SubEffect*> sub_effects,
+        int origin_texture_id, int texture_id, uint64_t current_time) {
     ProcessBuffer* process_buffer = GetProcessBuffer();
     if (nullptr == process_buffer) {
         return texture_id;
@@ -51,23 +56,53 @@ int GeneralSubEffect::OnDrawFrame(std::list<SubEffect*> sub_effects, int origin_
     return process_buffer->GetTextureId();
 }
 
-void Transform::Center(float aspect) {
-    if (isFaceDetect) {
-        float scale_x = 1.F;
-        if (nullptr != scale) {
-            scale_x = scale->x;
+glm::vec2 Transform::Center(float aspect, FaceDetectionReport* face_detection) {
+    if (face_detect) {
+        glm::vec2 scale = ScaleSize(aspect, face_detection);
+        float* land_marks = face_detection->key_points;
+        int land_mark_size = face_detection->key_point_size;
+        if (nullptr == land_marks || land_mark_size == 0) {
+            return glm::vec2(0, 0);
         }
-        // landmark point
+        if (positions.empty()) {
+            return glm::vec2(0, 0);
+        }
+        Position* position = positions[0];
+        glm::vec2 anchor_point = glm::vec2(position->anchor[0], position->anchor[1]);
+        glm::vec2 anchor_face_point = glm::vec2(0, 0);
+        for (auto point : position->points) {
+            int idx = point->idx;
+            float weight = point->weight;
+            glm::vec2 face_point = glm::vec2(land_marks[idx], land_marks[idx + 1]);
+            anchor_face_point = anchor_face_point + (face_point * weight);
+        }
+        glm::vec2 center = glm::vec2(0.5F, 0.5F);
+        center = glm::vec2(anchor_face_point.x + (center.x - anchor_point.x) * scale.x,
+                anchor_face_point.y + (center.y - anchor_point.y) * scale.y);
+        center = glm::vec2(center.x * 2 - 1, center.y * 2 -1);
+        return center;
     } else {
-        glm::vec2(1.f, 1 / aspect);
+        glm::vec2(0., 0.);
     }
 }
 
-void Transform::ScaleSize(float aspect) {
-    if (isFaceDetect) {
-        
+glm::vec2 Transform::ScaleSize(float aspect, FaceDetectionReport* face_detection) {
+    if (face_detect && nullptr != scale) {
+        if (nullptr != scale->scale_x) {
+            float* land_marks = face_detection->key_points;
+            int land_mark_size = face_detection->key_point_size;
+            if (nullptr == land_marks || land_mark_size == 0) {
+                return glm::vec2(0, 0);
+            }
+            double scale_x = scale->scale_x->factor;
+            glm::vec2 anchor_face_point1 = glm::vec2(land_marks[4], land_marks[5]);
+            glm::vec2 anchor_face_point2 = glm::vec2(land_marks[28], land_marks[29]);
+            float distance = glm::distance(anchor_face_point1, anchor_face_point2);
+            return glm::vec2(scale_x * distance, scale_x * distance / aspect);
+
+        }
     } else {
-        glm::vec2(0.f, 0.f);
+        return glm::vec2(0.F, 0.F);
     }
 }
 
@@ -104,7 +139,9 @@ StickerSubEffect::~StickerSubEffect() {
     }
 }
 
-int StickerSubEffect::OnDrawFrame(std::list<SubEffect *> sub_effects, int origin_texture_id, int texture_id, uint64_t current_time) {
+int StickerSubEffect::OnDrawFrame(FaceDetection* face_detection,
+        std::list<SubEffect *> sub_effects,
+        int origin_texture_id, int texture_id, uint64_t current_time) {
     return texture_id;
 }
 
@@ -143,6 +180,10 @@ ImageBuffer* StickerSubEffect::StickerBufferAtFrameTime(float time) {
     return nullptr;
 }
 
+glm::mat4 StickerSubEffect::VertexMatrix(FaceDetectionReport* face_detection) {
+
+}
+
 // StickerV3
 StickerV3SubEffect::StickerV3SubEffect() : transform(nullptr) {}
 
@@ -154,25 +195,107 @@ StickerV3SubEffect::~StickerV3SubEffect() {
     }
 }
 
-int StickerV3SubEffect::OnDrawFrame(std::list<SubEffect *> sub_effects, int origin_texture_id, int texture_id, uint64_t current_time) {
+int StickerV3SubEffect::OnDrawFrame(FaceDetection* face_detection,
+        std::list<SubEffect *> sub_effects,
+        int origin_texture_id, int texture_id, uint64_t current_time) {
     if (nullptr != blend) {
         ImageBuffer* image_buffer = StickerBufferAtFrameTime(current_time);
         if (nullptr != image_buffer) {
-            return blend->OnDrawFrame(texture_id, image_buffer->GetTextureId(), nullptr, alpha_factor);
+            float* matrix = nullptr;
+            if (face_detect && nullptr != face_detection) {
+                std::vector<FaceDetectionReport*> face_reports;
+                face_detection->FaceDetector(face_reports);
+                if (!face_reports.empty()) {
+                    for (auto& report : face_reports) {
+                        glm::mat4 m = VertexMatrix(report);
+                        matrix = glm::value_ptr(m);
+                        delete report;
+                    }
+                }
+            }
+            return blend->OnDrawFrame(texture_id, image_buffer->GetTextureId(), matrix, alpha_factor);
         }
     }
     return texture_id;
 }
 
-void StickerV3SubEffect::VertexMatrix(Matrix4x4 **matrix) {
+glm::mat4 StickerV3SubEffect::VertexMatrix(FaceDetectionReport* face_detection) {
     if (width == 0 || height == 0) {
-        return;
+        return glm::mat4(1.0F);
     }
     float sticker_aspect = width * 1.0F / height;
-    float input_aspect = input_aspect;
+    float input_aspect = sticker_aspect;
     if (nullptr == transform) {
-        return;
+        return glm::mat4(1.0F);
     }
+    glm::vec2 center = transform->Center(sticker_aspect, face_detection);
+    glm::vec2 scale = transform->ScaleSize(sticker_aspect, face_detection);
+    float roll_angle = 0;
+    glm::vec2 rotation_center = glm::vec2(0, 0);
+    if (face_detect) {
+        float* land_marks = face_detection->key_points;
+        rotation_center = glm::vec2(land_marks[16] * 2 - 1, land_marks[17] * 2 - 1);
+        roll_angle = face_detection->roll;
+    }
+    glm::mat4 projection = glm::ortho(-1.0F, 1.0F, -1.0F / input_aspect, 1.0F / input_aspect, 0.F, 100.F);
+    glm::mat4 model_matrix = glm::mat4(1.0f);
+    model_matrix = glm::translate(model_matrix, glm::vec3(center.x, center.y, 0));
+    float cos = cosf(roll_angle);
+    float sin = sinf(roll_angle);
+    glm::mat4 rotation_z = { cos, sin, 0.0F, 0.0F,
+                    -sin, cos, 0.0F, 0.0F,
+                    0.0F, 0.0F, 1.0F, 0.0F,
+                    0.0F, 0.0F, 0.0F, 1.0F};
+    model_matrix = model_matrix * rotation_z;
+    model_matrix = glm::scale(model_matrix, glm::vec3(scale.x, scale.y, 1.0F));
+    glm::mat4 mvp = projection * model_matrix;
+    return mvp;
+}
+
+FaceMakeupV2SubEffect::FaceMakeupV2SubEffect() :
+    face_makeup_v2_(nullptr)
+    , face_markup_render_(nullptr) {
+    face_markup_render_ = new FaceMarkupRender();
+    blend = new NormalBlend();
+}
+
+FaceMakeupV2SubEffect::~FaceMakeupV2SubEffect() {
+    // TODO delete FaceMakeupV2Filter
+    delete face_makeup_v2_;
+    delete face_markup_render_;
+}
+
+int FaceMakeupV2SubEffect::OnDrawFrame(FaceDetection* face_detection, std::list<trinity::SubEffect *> sub_effects,
+                                       int origin_texture_id, int texture_id,
+                                       uint64_t current_time) {
+    if (nullptr == face_markup_render_) {
+        return origin_texture_id;
+    }
+    std::vector<FaceDetectionReport*> face_reports;
+    face_detection->FaceDetector(face_reports);
+    auto face_markup_filters = face_makeup_v2_->filters;
+    int prop_texture_id = origin_texture_id;
+    for (auto& face_markup_filter : face_markup_filters) {
+        for (auto &face_detection_report : face_reports) {
+            if (face_detection_report->HasFace()) {
+                float *texture_coordinate = face_detection_report->TextureCoordinates(
+                        face_markup_filter->x,
+                        face_markup_filter->y, face_markup_filter->width,
+                        face_markup_filter->height);
+                return face_markup_render_->OnDrawFrame(prop_texture_id,
+                                                        face_markup_filter->image_buffer->GetTextureId(),
+                                                        face_markup_filter->blend_mode,
+                                                        face_markup_filter->intensity,
+                                                        texture_coordinate,
+                                                        face_detection_report);
+            }
+        }
+    }
+    return prop_texture_id;
+}
+
+glm::mat4 FaceMakeupV2SubEffect::VertexMatrix() {
+    return glm::mat4 (1.0F);
 }
 
 // SubEffect
@@ -344,7 +467,8 @@ void SubEffect::SetUniform(std::list<SubEffect*> sub_effects, ProcessBuffer *pro
 // Effect
 Effect::Effect()
     : start_time_(0)
-    , end_time_(INT32_MAX) {}
+    , end_time_(INT32_MAX)
+    , face_detection_(nullptr) {}
 
 Effect::~Effect() {
     for (auto& sub_effect : sub_effects_) {
@@ -353,16 +477,19 @@ Effect::~Effect() {
     sub_effects_.clear();
 }
 
+void Effect::SetFaceDetection(trinity::FaceDetection *face_detection) {
+    face_detection_ = face_detection;
+}
+
 int Effect::OnDrawFrame(GLuint texture_id, uint64_t current_time) {
     int origin_texture_id = texture_id;
     int texture = texture_id;
-    for (auto iterator = sub_effects_.begin(); iterator != sub_effects_.end(); iterator++) {
-        SubEffect* sub_effect = *iterator;
+    for (auto& sub_effect : sub_effects_) {
         if (!sub_effect->enable) {
             continue;
         }
         if (current_time >= start_time_ && current_time <= end_time_) {
-            texture = sub_effect->OnDrawFrame(sub_effects_, origin_texture_id, texture, current_time);
+            texture = sub_effect->OnDrawFrame(face_detection_, sub_effects_, origin_texture_id, texture, current_time);
         }
     }
     return texture;
@@ -402,6 +529,7 @@ void Effect::ParseConfig(char *config_path) {
     config.append(config_path);
     config.append("/");
     config.append(config_name);
+    LOGE("%s config: %s", __func__, config.c_str());
     char* buffer = nullptr;
     int ret = ReadFile(config, &buffer);
     if (ret != 0 || buffer == nullptr) {
@@ -439,11 +567,16 @@ void Effect::ParseConfig(char *config_path) {
         bool enable = true;
         cJSON* enable_json = cJSON_GetObjectItem(effect_item_json, "enable");
         if (nullptr != enable_json) {
-            enable = enable_json->valueint;
+            enable = enable_json->valueint == 1;
         }
-//        sub_effect->enable = enable;
         sub_effect->type = type;
-        // TODO delete sub_effect
+        cJSON* zorder_json = cJSON_GetObjectItem(effect_item_json, "zorder");
+        int zorder = 0;
+        if (nullptr != zorder_json) {
+            sub_effect->zorder = zorder_json->valueint;
+            zorder = zorder_json->valueint;
+        }
+            // TODO delete sub_effect
         if (nullptr != type) {
             if (strcmp(type, "2DStickerV3") == 0) {
                 cJSON* path_json = cJSON_GetObjectItem(effect_item_json, "path");
@@ -462,6 +595,13 @@ void Effect::ParseConfig(char *config_path) {
                 general_sub_effect->type = type;
                 general_sub_effect->enable = enable;
                 sub_effects_.push_back(general_sub_effect);
+            } else if (strcmp(type, "faceMakeupV2") == 0) {
+                auto* face_makeup_v2_effect = new FaceMakeupV2SubEffect();
+                ConvertFaceMakeupV2(effect_item_json, config_path, face_makeup_v2_effect);
+                face_makeup_v2_effect->type = type;
+                face_makeup_v2_effect->enable = enable;
+                face_makeup_v2_effect->zorder = zorder;
+                sub_effects_.push_back(face_makeup_v2_effect);
             }
         }
     }
@@ -565,7 +705,125 @@ void Effect::ConvertGeneralConfig(cJSON *effect_item_json, char* resource_root_p
     }
 }
 
-void Effect::VertexMatrix(SubEffect* sub_effect, Matrix4x4 **matrix) {}
+void Effect::ParseFaceMakeupV2(cJSON *makeup_root_json, const std::string &resource_root_path, FaceMakeupV2* face_makeup) {
+    cJSON* face_id_json = cJSON_GetObjectItem(makeup_root_json, "faceID");
+    int face_id_size = cJSON_GetArraySize(face_id_json);
+    cJSON* filter_json_array = cJSON_GetObjectItem(makeup_root_json, "filters");
+    int filter_size = cJSON_GetArraySize(filter_json_array);
+    for (int i = 0; i < filter_size; ++i) {
+        auto* face_makeup_filter = new FaceMakeupV2Filter;
+        cJSON* filter_item_json = cJSON_GetArrayItem(filter_json_array, i);
+        cJSON* sequence_resource_json = cJSON_GetObjectItem(filter_item_json, "2dSequenceResources");
+        cJSON* image_count_json = cJSON_GetObjectItem(sequence_resource_json, "imageCount");
+        face_makeup_filter->image_count = image_count_json->valueint;
+        cJSON* name_json = cJSON_GetObjectItem(sequence_resource_json, "name");
+        cJSON* path_json = cJSON_GetObjectItem(sequence_resource_json, "path");
+        if (name_json == nullptr || path_json == nullptr) {
+            continue;
+        }
+        cJSON* image_interval_json = cJSON_GetObjectItem(sequence_resource_json, "imageInterval");
+        face_makeup_filter->image_interval = image_interval_json->valuedouble;
+        cJSON* blend_mode_json = cJSON_GetObjectItem(filter_item_json, "blendMode");
+        face_makeup_filter->blend_mode = blend_mode_json->valueint;
+        cJSON* filter_type_json = cJSON_GetObjectItem(filter_item_json, "filterType");
+        face_makeup_filter->filter_type = CopyValue(filter_type_json->valuestring);
+        cJSON* intensity_json = cJSON_GetObjectItem(filter_item_json, "intensity");
+        face_makeup_filter->intensity = intensity_json->valuedouble;
+        cJSON* rect_json = cJSON_GetObjectItem(filter_item_json, "rect");
+        if (nullptr != rect_json) {
+            cJSON* x_json = cJSON_GetObjectItem(rect_json, "x");
+            face_makeup_filter->x = x_json->valuedouble;
+            cJSON* y_json = cJSON_GetObjectItem(rect_json, "y");
+            face_makeup_filter->y = y_json->valuedouble;
+            cJSON* width_json = cJSON_GetObjectItem(rect_json, "width");
+            face_makeup_filter->width = width_json->valuedouble;
+            cJSON* height_json = cJSON_GetObjectItem(rect_json, "height");
+            face_makeup_filter->height = height_json->valuedouble;
+        }
+        std::string image_path_string;
+        image_path_string.append(resource_root_path);
+        image_path_string.append(path_json->valuestring);
+        image_path_string.append(name_json->valuestring);
+        image_path_string.append("000.png");
+
+        int sample_texture_width = 0;
+        int sample_texture_height = 0;
+        int channels = 0;
+        unsigned char* sample_texture_buffer = stbi_load(image_path_string.c_str(), &sample_texture_width,
+                                                         &sample_texture_height, &channels, STBI_rgb_alpha);
+        if (nullptr != sample_texture_buffer && sample_texture_width > 0 && sample_texture_height > 0) {
+            auto* image_buffer = new ImageBuffer(sample_texture_width, sample_texture_height,
+                                                 sample_texture_buffer);
+            stbi_image_free(sample_texture_buffer);
+            face_makeup_filter->image_buffer = image_buffer;
+        }
+
+        cJSON* z_position_json = cJSON_GetObjectItem(filter_item_json, "zPosition");
+        face_makeup_filter->z_position = z_position_json->valueint;
+        face_makeup->filters.push_back(face_makeup_filter);
+    }
+}
+
+void Effect::ConvertFaceMakeupV2(cJSON *effect_item_json, char *resource_root_path, FaceMakeupV2SubEffect* face_makeup_v2_sub_effect) {
+    cJSON* path_json = cJSON_GetObjectItem(effect_item_json, "path");
+    if (nullptr == path_json) {
+        return;
+    }
+    char* path = path_json->valuestring;
+    char const* content_name = "content.json";
+    std::string content_root_path;
+    content_root_path.append(resource_root_path);
+    content_root_path.append("/");
+    content_root_path.append(path);
+
+    std::string content_path;
+    content_path.append(content_root_path);
+    content_path.append(content_name);
+    char* content_buffer = nullptr;
+    LOGE("%s content_path: %s", __func__, content_path.c_str());
+    int ret = ReadFile(content_path, &content_buffer);
+    if (ret != 0 || nullptr == content_buffer) {
+        return;
+    }
+    cJSON* content_root_json = cJSON_Parse(content_buffer);
+    if (nullptr == content_root_json) {
+        return;
+    }
+    cJSON* requirement_json = cJSON_GetObjectItem(content_root_json, "requirement");
+    if (nullptr != requirement_json) {
+        cJSON* face_detect_json = cJSON_GetObjectItem(requirement_json, "faceDetect");
+        face_makeup_v2_sub_effect->face_detect = face_detect_json->valueint == 1;
+    }
+    cJSON* content_json = cJSON_GetObjectItem(content_root_json, "content");
+    if (nullptr == content_json) {
+        return;
+    }
+    cJSON* content_path_json = cJSON_GetObjectItem(content_json, "path");
+    if (nullptr == content_path_json) {
+        return;
+    }
+    char* path_value = content_path_json->valuestring;
+    std::string clip_path;
+    clip_path.append(resource_root_path);
+    clip_path.append("/");
+    clip_path.append(path);
+    clip_path.append(path_value);
+    char* makeup_buffer = nullptr;
+    LOGE("%s clip_path: %s", __func__, clip_path.c_str());
+    ret = ReadFile(clip_path, &makeup_buffer);
+    if (ret != 0 || nullptr == makeup_buffer) {
+        return;
+    }
+    cJSON* makeup_root_json = cJSON_Parse(makeup_buffer);
+    if (nullptr == makeup_root_json) {
+        return;
+    }
+    auto* face_makeup = new FaceMakeupV2();
+    ParseFaceMakeupV2(makeup_root_json, content_root_path, face_makeup);
+    face_makeup_v2_sub_effect->face_makeup_v2_ = face_makeup;
+}
+
+glm::mat4 Effect::VertexMatrix(SubEffect* sub_effect) {}
 
 void Effect::ParseTextureFiles(cJSON *texture_files, StickerSubEffect* sub_effect,
         const std::string& resource_root_path) {
@@ -719,7 +977,7 @@ void Effect::ParsePartsItem(cJSON* clip_root_json, const std::string& resource_r
                                 auto* point = new Point();
                                 cJSON* idx_json = cJSON_GetObjectItem(point_item_json, "idx");
                                 if (nullptr != idx_json && idx_json->type == cJSON_String) {
-                                    point->idx = CopyValue(idx_json->valuestring);
+                                    point->idx = strtol(idx_json->valuestring, nullptr, 10);
                                 }
                                 cJSON* relation_ref_json = cJSON_GetObjectItem(point_item_json, "relationRef");
                                 if (nullptr != relation_ref_json && relation_ref_json->type == cJSON_Number) {
@@ -750,7 +1008,7 @@ void Effect::ParsePartsItem(cJSON* clip_root_json, const std::string& resource_r
                 }
                 cJSON* face106_json = cJSON_GetObjectItem(relation_json, "face106");
                 if (nullptr != face106_json) {
-                    transform->isFaceDetect = face106_json->valueint;
+                    transform->face_detect = face106_json->valueint == 1;
                 }
             }
             cJSON* relation_index_json = cJSON_GetObjectItem(transform_params_json, "relationIndex");
@@ -783,7 +1041,7 @@ void Effect::ParsePartsItem(cJSON* clip_root_json, const std::string& resource_r
                 cJSON* scale_x_json = cJSON_GetObjectItem(scale_json, "scaleX");
                 if (nullptr != scale_x_json) {
                     cJSON* factor_json = cJSON_GetObjectItem(scale_x_json, "factor");
-                    if (nullptr != scale_x_json) {
+                    if (nullptr != factor_json) {
                         factor_json->valuedouble;
                     }
                 }
