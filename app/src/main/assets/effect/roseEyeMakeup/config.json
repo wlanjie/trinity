@@ -1,6 +1,17 @@
 {
     "effect": [
         {
+            "path": "FaceMakeupV2_2997/",
+            "type": "faceMakeupV2",
+            "zorder": 2997
+        },
+        {
+            "defaultEnable": false,
+            "path": "Filter_2998/",
+            "type": "filter",
+            "zorder": 2998
+        },
+        {
             "path": "FaceMakeupV2_2999/",
             "type": "faceMakeupV2",
             "zorder": 2999

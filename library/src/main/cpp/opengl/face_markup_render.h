@@ -42,6 +42,8 @@ class FaceMarkupRender {
     GLuint frame_buffer_id_;
     GLuint program_;
     GLuint prop_program_;
+    GLuint point_program_;
+    GLuint vertex_buffer_;
     GLfloat* default_vertex_coordinates_;
     GLfloat* default_texture_coordinates_;
 };

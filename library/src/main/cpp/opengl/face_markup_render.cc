@@ -23,11 +23,16 @@ const char* FACE_MARKUP_VERTEX =
         "}";
 
 const char* FACE_MARKUP_FRAGMENT =
-        "precision mediump float;"
-        "varying highp vec2 textureCoordinate;"
-        "varying highp vec2 textureCoordinate2;"
-        "uniform sampler2D inputImageTexture;"
-        "uniform sampler2D inputImageTexture2;"
+        "#ifdef GL_ES\n"
+        "precision mediump float;\n"
+        "varying highp vec2 textureCoordinate;\n"
+        "varying highp vec2 textureCoordinate2;\n"
+        "#else\n"
+        "varying vec2 textureCoordinate;\n"
+        "varying vec2 textureCoordinate2;\n"
+        "#endif\n"
+        "uniform sampler2D inputImageTexture;\n"
+        "uniform sampler2D inputImageTexture2;\n"
         "uniform float intensity;"
         "uniform int blendMode;"
         "float blendHardLight(float base, float blend) {"
@@ -73,9 +78,23 @@ const char* FACE_MARKUP_FRAGMENT =
         "        return;"
         "    }"
         "    vec3 color = blendFunc(bgColor.rgb, clamp(fgColor.rgb * (1.0 / fgColor.a), 0.0, 1.0), blendMode);"
-//        "    gl_FragColor = vec4(bgColor.rgb * (1.0 - fgColor.a) + color.rgb * fgColor.a, 1.0);"
-        "   gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);"
+        "    gl_FragColor = vec4(bgColor.rgb * (1.0 - fgColor.a) + color.rgb * fgColor.a, 1.0);"
+//        "   gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);"
         "}";
+        
+static const char* FACE_POINT_VERTEX_SHADER =
+        "attribute vec4 position;"
+        "void main() {"
+        "   gl_Position = position;"
+        "   gl_PointSize = 45.0;"
+        "}";
+
+static const char* FACE_POINT_FRAGMENT_SHADER =
+        "void main() {"
+        "   gl_FragColor = vec4(0.0,1.0,0.0,1.0);"
+        "}";        
+        
+//#define SHOW_LAND_MAKE 0        
 
 namespace trinity {
 
@@ -85,18 +104,20 @@ FaceMarkupRender::FaceMarkupRender() :
     , default_texture_coordinates_(nullptr)
     , default_vertex_coordinates_(nullptr)
     , texture_id_(0)
-    , frame_buffer_id_(0) {
+    , frame_buffer_id_(0)
+    , point_program_(0)
+    , vertex_buffer_(0) {
     default_vertex_coordinates_ = new GLfloat[8];
     default_texture_coordinates_ = new GLfloat[8];
 
     prop_program_ = CreateProgram(FACE_MARKUP_VERTEX, FACE_MARKUP_FRAGMENT);
     program_ = CreateProgram(DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
-//    glUseProgram(program_);
+    point_program_ = CreateProgram(FACE_POINT_VERTEX_SHADER, FACE_POINT_FRAGMENT_SHADER);
     glGenTextures(1, &texture_id_);
     glGenFramebuffers(1, &frame_buffer_id_);
     glBindTexture(GL_TEXTURE_2D, texture_id_);
     glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_id_);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 720, 1280, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WIDTH, HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -111,6 +132,12 @@ FaceMarkupRender::FaceMarkupRender() :
     }
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    
+    int buffer_length_ = 111 * 2 * sizeof(float);
+    glGenBuffers(1, &vertex_buffer_);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_);
+    glBufferData(GL_ARRAY_BUFFER, buffer_length_, &vertex_buffer_, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     InitCoordinates();
 }
@@ -136,13 +163,13 @@ FaceMarkupRender::~FaceMarkupRender() {
         glDeleteFramebuffers(1, &frame_buffer_id_);
         frame_buffer_id_ = 0;
     }
-    if (prop_program_ != 0) {
-        glDeleteProgram(prop_program_);
-        prop_program_ = 0;
-    }
     if (program_ != 0) {
         glDeleteProgram(program_);
         program_ = 0;
+    }
+    if (point_program_ != 0) {
+        glDeleteProgram(point_program_);
+        point_program_ = 0;
     }
 }
 
@@ -157,15 +184,15 @@ int FaceMarkupRender::OnDrawFrame(int origin_texture_id,
     GLuint* indexs = face_detection->ElementIndexs();
     int element_count = face_detection->ElementCount();
 
-    glViewport(0, 0, 720, 1280);
-    glClearColor(1.0F, 0.0F, 0.0F, 1.0F);
+    glViewport(0, 0, WIDTH, HEIGHT);
+    glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
     glClear(GL_COLOR_BUFFER_BIT);
 
     glUseProgram(program_);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, origin_texture_id);
     auto input_image_texture = static_cast<GLuint>(glGetUniformLocation(program_, "inputImageTexture"));
-    glUniform1i(input_image_texture, 2);
+    glUniform1i(input_image_texture, 0);
     auto position = static_cast<GLuint>(glGetAttribLocation(program_, "position"));
     glEnableVertexAttribArray(position);
     glVertexAttribPointer(position, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), default_vertex_coordinates_);
@@ -179,20 +206,20 @@ int FaceMarkupRender::OnDrawFrame(int origin_texture_id,
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     glUseProgram(prop_program_);
-    glActiveTexture(GL_TEXTURE2);
+    glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, origin_texture_id);
     GLint input_image_texture_location = glGetUniformLocation(prop_program_, "inputImageTexture");
-    glUniform1i(input_image_texture_location, 2);
+    glUniform1i(input_image_texture_location, 1);
 
     GLint blend_model_location = glGetUniformLocation(prop_program_, "blendMode");
     glUniform1i(blend_model_location, blend_mode);
     GLint intensity_location = glGetUniformLocation(prop_program_, "intensity");
     glUniform1f(intensity_location, intensity);
 
-    glActiveTexture(GL_TEXTURE3);
+    glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, prop_texture_id);
     GLint input_image_texture_location2 = glGetUniformLocation(prop_program_, "inputImageTexture2");
-    glUniform1i(input_image_texture_location2, 3);
+    glUniform1i(input_image_texture_location2, 2);
 
     auto prop_position = static_cast<GLuint>(glGetAttribLocation(prop_program_, "position"));
     glEnableVertexAttribArray(prop_position);
@@ -202,11 +229,22 @@ int FaceMarkupRender::OnDrawFrame(int origin_texture_id,
                                                                               "inputTextureCoordinate"));
     glEnableVertexAttribArray(prop_input_texture_coordinate);
     glVertexAttribPointer(prop_input_texture_coordinate, 2, GL_FLOAT, 0, 0, texture_coordinate);
-    glLineWidth(8);
-    glDrawElements(GL_LINES, 10, GL_UNSIGNED_INT, indexs);
+    glDrawElements(GL_TRIANGLES, element_count, GL_UNSIGNED_INT, indexs);
     glDisableVertexAttribArray(prop_position);
     glDisableVertexAttribArray(prop_input_texture_coordinate);
     glDisable(GL_BLEND);
+
+    #ifdef SHOW_LAND_MARK
+    glUseProgram(point_program_);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, 111 * 2 * sizeof(float), vertices);
+    GLuint point_position_location_ = static_cast<GLuint>(glGetAttribLocation(point_program_, "position"));
+    glEnableVertexAttribArray(point_position_location_);
+    glVertexAttribPointer(point_position_location_, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glPointSize(5);
+    glDrawArrays(GL_POINTS, 0, 111);
+    #endif
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     return texture_id_;
 }

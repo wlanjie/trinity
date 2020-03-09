@@ -392,6 +392,14 @@ static int lips[] = {
         96, 95, 84,
 };
 
+#if __APPLE__
+#define WIDTH 512
+#define HEIGHT 512
+#elif __ANDROID__
+#define WIDTH 720
+#define HEIGHT 1280
+#endif
+
 class FaceDetectionReport {
  public:
     int left;
@@ -410,29 +418,32 @@ class FaceDetectionReport {
     int64_t face_action;
 
  public:
-    void SetLandMarks(float* land_marks, int land_mark_size) {
+    void SetLandMarks(float* land_mark, int land_mark_size) {
         int size = land_mark_size * sizeof(float);
         key_point_size = land_mark_size + 10;
         key_points = new float[land_mark_size + 10];
-        memcpy(key_points, land_marks, size);
+        memcpy(key_points, land_mark, size);
 
-        key_points[land_mark_size + 0] = (key_points[98] + key_points[102]) / 2;
-        key_points[land_mark_size + 1] = (key_points[19] + key_points[103]) / 2;
+        static float extra_land_mark[10];
+        // 嘴唇中心
+        key_points[212] = (land_mark[98 * 2] + land_mark[102 * 2]) / 2;
+        key_points[213] = (land_mark[98 * 2 + 1] + land_mark[102 * 2 + 1]) / 2;
 
-        key_points[land_mark_size + 2] = (key_points[36] + key_points[66]) / 2;
-        key_points[land_mark_size + 3] = (key_points[37] + key_points[67]) / 2;
+        // 左眉毛中心
+        key_points[214] = (land_mark[35 * 2] + land_mark[65 * 2]) / 2;
+        key_points[215] = (land_mark[35 * 2 + 1] + land_mark[65 * 2 + 1]) / 2;
 
-        key_points[land_mark_size + 4] = (key_points[40] + key_points[70]) / 2;
-        key_points[land_mark_size + 5] = (key_points[41] + key_points[71]) / 2;
+        // 右眉毛中心
+        key_points[216] = (land_mark[40 * 2] + land_mark[70 * 2]) / 2;
+        key_points[217] = (land_mark[40 * 2 + 1] + land_mark[70 * 2 + 1]) / 2;
 
-        key_points[land_mark_size + 6] = (key_points[6] + key_points[80]) / 2;
-        key_points[land_mark_size + 7] = (key_points[7] + key_points[81]) / 2;
+        // 左脸中心
+        key_points[218] = (land_mark[4 * 2] + land_mark[82 * 2]) / 2;
+        key_points[219] = (land_mark[4 * 2 + 1] + land_mark[82 * 2 + 1]) / 2;
 
-        key_points[land_mark_size + 8] = (key_points[28] + key_points[82]) / 2;
-        key_points[land_mark_size + 9] = (key_points[29] + key_points[83]) / 2;
-        for (int i = 0; i < key_point_size / 2;  ++i) {
-            LOGE("land_marks[%d] x: %f y: %f", i, key_points[i * 2], key_points[i * 2 + 1]);
-        }
+        // 右脸中心
+        key_points[220] = (land_mark[28 * 2] + land_mark[83 * 2]) / 2;
+        key_points[221] = (land_mark[28 * 2 + 1] + land_mark[83 * 2 + 1]) / 2;
     }
 
     bool HasFace() {
@@ -464,9 +475,9 @@ class FaceDetectionReport {
 
         static float point[111 * 2];
         for (int i = 0; i < 111; i++) {
-            float x = key_points[i * 2] / 720;
-            float y = 1.0F - key_points[i * 2 + 1] / 1280;
-            point[i * 2] = x * 2 -1;
+            float x = key_points[i * 2] / WIDTH;
+            float y = 1.0F - key_points[i * 2 + 1] / HEIGHT;
+            point[i * 2] = x * 2 - 1;
             point[i * 2 + 1] = y * 2 - 1;
         }
         return point;
@@ -477,7 +488,7 @@ class FaceDetectionReport {
         return sizeof(arr) / sizeof(arr[0]);
     }
 
-    float* TextureCoordinates(double x, double y, double width, double height) {
+    float* TextureCoordinates(double x_offset, double y_offset, double width, double height) {
         if (!HasFace()) {
             static float textureCoordinate[] = {
                     0.0F, 0.0F,
@@ -487,13 +498,24 @@ class FaceDetectionReport {
             };
             return textureCoordinate;
         }
-        static float textureCoordinate[111 * 2];
+        static float texture_coordinate[111 * 2];
         int point_count = GetLength(faceTextureCoordinates) / 2;
         for (int i = 0; i < point_count; i++) {
-            textureCoordinate[i * 2 + 0] = (faceTextureCoordinates[i * 2 + 0] * 1280 - x) / width;
-            textureCoordinate[i * 2 + 1] = (faceTextureCoordinates[i * 2 + 1] * 1280 - y) / height;
+            float x = static_cast<float>((faceTextureCoordinates[i * 2 + 0] * 1280 - x_offset) / width);
+            float y = static_cast<float>((faceTextureCoordinates[i * 2 + 1] * 1280 - y_offset) / height);
+//            x = x < 0 ? 0 : x;
+//            y = y < 0 ? 0 : y;
+//            texture_coordinate[i * 2] = x > 1 ? 1 : x;
+            texture_coordinate[i * 2] = x;
+            #if __APPLE__
+//            texture_coordinate[i * 2 + 1] = 1.0F - ( y > 1 ? 1 : y);
+            texture_coordinate[i * 2 + 1] = 1.0F - y;
+            #else
+//            texture_coordinate[i * 2 + 1] = (y > 1 ? 1 : y);
+            texture_coordinate[i  *2 + 1] = y;
+            #endif
         }
-        return textureCoordinate;
+        return texture_coordinate;
     }
 
     GLuint* ElementIndexs() {

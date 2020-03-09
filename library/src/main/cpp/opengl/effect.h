@@ -33,6 +33,7 @@
 #include "blend.h"
 #include "face_markup_render.h"
 #include "face_detection.h"
+#include "filter.h"
 
 // glm
 #include "gtx/norm.hpp"
@@ -170,7 +171,19 @@ class Transform {
         , face_detect(false) {}
 
     ~Transform() {
-
+        for (auto& position : positions) {
+            delete position;
+        }
+        positions.clear();
+        if (nullptr != relation) {
+            delete relation;
+            relation = nullptr;
+        }
+        relation_index.clear();
+        if (nullptr != scale) {
+            delete scale;
+            scale = nullptr;
+        }
     }
     std::vector<Position*> positions;
     Relation* relation;
@@ -186,6 +199,36 @@ class Transform {
 
 class FaceMakeupV2Filter {
  public:
+    FaceMakeupV2Filter() 
+        : image_count(0)
+        , image_interval(0)
+        , blend_mode(0)
+        , filter_type(nullptr)
+        , intensity(0)
+        , x(0)
+        , y(0)
+        , width(0)
+        , height(0)
+        , image_buffer(nullptr)
+        , face_markup_render(nullptr)
+        , z_position(0) {
+    
+    }
+    ~FaceMakeupV2Filter() {
+        printf("~FaceMarkupV2Filter\n");
+        if (nullptr != filter_type) {
+            delete[] filter_type;
+            filter_type = nullptr;
+        }
+        if (nullptr != image_buffer) {
+            delete image_buffer;
+            image_buffer = nullptr;
+        }
+        if (nullptr != face_markup_render) {
+            delete face_markup_render;
+            face_markup_render = nullptr;
+        }
+    }
     int image_count;
     double image_interval;
     int blend_mode;
@@ -196,11 +239,25 @@ class FaceMakeupV2Filter {
     double width;
     double height;
     ImageBuffer* image_buffer;
+    FaceMarkupRender* face_markup_render;
     int z_position;
 };
 
 class FaceMakeupV2 {
  public:
+    FaceMakeupV2()
+        : standard_face_width(0)
+        , standard_face_height(0) {
+    
+    }
+    ~FaceMakeupV2() {
+        printf("~FaceMarkupV2\n");
+        face_ids.clear();
+        for (auto& filter : filters) {
+            delete filter;
+        }
+        filters.clear();
+    }
     std::vector<int> face_ids;
     std::vector<FaceMakeupV2Filter*> filters;
     int standard_face_width;
@@ -310,7 +367,33 @@ class FaceMakeupV2SubEffect : public StickerSubEffect {
  public:
     FaceMakeupV2* face_makeup_v2_;
     FaceMarkupRender* face_markup_render_;
-    NormalBlend* blend;
+};
+
+// filterSubEffect
+class FilterSubEffect : public SubEffect {
+ public:
+    FilterSubEffect()
+        : filter(nullptr) {
+    
+    }
+    ~FilterSubEffect() {
+        if (nullptr != filter) {
+            delete filter;
+            filter = nullptr;
+        }
+    }
+    int file_type;
+    float intensity;
+    int shader_type;
+    int type;
+    Filter* filter;
+    
+    virtual int OnDrawFrame(FaceDetection* face_detection, std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id, uint64_t current_time) {
+        if (nullptr == filter) {
+            return origin_texture_id;
+        }
+        return filter->OnDrawFrame(origin_texture_id);
+    }
 };
 
 class Effect {
@@ -325,6 +408,7 @@ class Effect {
  private:
     char* CopyValue(char* src);
     int ReadFile(const std::string& path, char** buffer);
+    void ConvertFilter(cJSON* effect_item_json, char* resource_root_path, FilterSubEffect* filter_sub_effect);
     void ConvertStickerConfig(cJSON* effect_item_json, char* resource_root_path, SubEffect* sub_effect);
     void ConvertGeneralConfig(cJSON* effect_item_json, char* resource_root_path, GeneralSubEffect* general_sub_effect);
     void ParseFaceMakeupV2(cJSON* makeup_root_json, const std::string& resource_root_path, FaceMakeupV2* face_makeup_v2);
