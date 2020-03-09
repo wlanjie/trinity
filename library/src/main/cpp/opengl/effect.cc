@@ -81,9 +81,8 @@ glm::vec2 Transform::Center(float aspect, FaceDetectionReport* face_detection) {
                 anchor_face_point.y + (center.y - anchor_point.y) * scale.y);
         center = glm::vec2(center.x * 2 - 1, center.y * 2 -1);
         return center;
-    } else {
-        glm::vec2(0., 0.);
     }
+    return glm::vec2(0., 0.);
 }
 
 glm::vec2 Transform::ScaleSize(float aspect, FaceDetectionReport* face_detection) {
@@ -99,11 +98,9 @@ glm::vec2 Transform::ScaleSize(float aspect, FaceDetectionReport* face_detection
             glm::vec2 anchor_face_point2 = glm::vec2(land_marks[28], land_marks[29]);
             float distance = glm::distance(anchor_face_point1, anchor_face_point2);
             return glm::vec2(scale_x * distance, scale_x * distance / aspect);
-
         }
-    } else {
-        return glm::vec2(0.F, 0.F);
     }
+    return glm::vec2(0.F, 0.F);
 }
 
 // StickerSubEffect
@@ -181,7 +178,7 @@ ImageBuffer* StickerSubEffect::StickerBufferAtFrameTime(float time) {
 }
 
 glm::mat4 StickerSubEffect::VertexMatrix(FaceDetectionReport* face_detection) {
-
+    return glm::mat4();
 }
 
 // StickerV3
@@ -274,7 +271,7 @@ int FaceMakeupV2SubEffect::OnDrawFrame(FaceDetection* face_detection, std::list<
     std::vector<FaceDetectionReport*> face_reports;
     face_detection->FaceDetector(face_reports);
     auto face_markup_filters = face_makeup_v2_->filters;
-    int prop_texture_id = origin_texture_id;
+    int prop_texture_id = texture_id;
     for (auto& face_markup_filter : face_markup_filters) {
         for (auto &face_detection_report : face_reports) {
             if (face_detection_report->HasFace()) {
@@ -282,7 +279,7 @@ int FaceMakeupV2SubEffect::OnDrawFrame(FaceDetection* face_detection, std::list<
                         face_markup_filter->x,
                         face_markup_filter->y, face_markup_filter->width,
                         face_markup_filter->height);
-                return face_markup_render_->OnDrawFrame(prop_texture_id,
+                prop_texture_id = face_markup_filter->face_markup_render->OnDrawFrame(prop_texture_id,
                                                         face_markup_filter->image_buffer->GetTextureId(),
                                                         face_markup_filter->blend_mode,
                                                         face_markup_filter->intensity,
@@ -602,6 +599,11 @@ void Effect::ParseConfig(char *config_path) {
                 face_makeup_v2_effect->enable = enable;
                 face_makeup_v2_effect->zorder = zorder;
                 sub_effects_.push_back(face_makeup_v2_effect);
+            } else if (strcmp(type, "filter") == 0) {
+                auto* filter_effect = new FilterSubEffect();
+                filter_effect->zorder = zorder;
+                ConvertFilter(effect_item_json, config_path, filter_effect);
+                sub_effects_.push_back(filter_effect);
             }
         }
     }
@@ -711,8 +713,14 @@ void Effect::ParseFaceMakeupV2(cJSON *makeup_root_json, const std::string &resou
     cJSON* filter_json_array = cJSON_GetObjectItem(makeup_root_json, "filters");
     int filter_size = cJSON_GetArraySize(filter_json_array);
     for (int i = 0; i < filter_size; ++i) {
-        auto* face_makeup_filter = new FaceMakeupV2Filter;
         cJSON* filter_item_json = cJSON_GetArrayItem(filter_json_array, i);
+        cJSON* filter_type_json = cJSON_GetObjectItem(filter_item_json, "filterType");
+        char* filter_type = filter_type_json->valuestring;
+        if (strcmp(filter_type, "pupil") == 0 || strcmp(filter_type, "brow") == 0) {
+            continue;
+        }
+        auto* face_makeup_filter = new FaceMakeupV2Filter;
+        face_makeup_filter->filter_type = CopyValue(filter_type_json->valuestring);
         cJSON* sequence_resource_json = cJSON_GetObjectItem(filter_item_json, "2dSequenceResources");
         cJSON* image_count_json = cJSON_GetObjectItem(sequence_resource_json, "imageCount");
         face_makeup_filter->image_count = image_count_json->valueint;
@@ -725,8 +733,6 @@ void Effect::ParseFaceMakeupV2(cJSON *makeup_root_json, const std::string &resou
         face_makeup_filter->image_interval = image_interval_json->valuedouble;
         cJSON* blend_mode_json = cJSON_GetObjectItem(filter_item_json, "blendMode");
         face_makeup_filter->blend_mode = blend_mode_json->valueint;
-        cJSON* filter_type_json = cJSON_GetObjectItem(filter_item_json, "filterType");
-        face_makeup_filter->filter_type = CopyValue(filter_type_json->valuestring);
         cJSON* intensity_json = cJSON_GetObjectItem(filter_item_json, "intensity");
         face_makeup_filter->intensity = intensity_json->valuedouble;
         cJSON* rect_json = cJSON_GetObjectItem(filter_item_json, "rect");
@@ -760,6 +766,7 @@ void Effect::ParseFaceMakeupV2(cJSON *makeup_root_json, const std::string &resou
 
         cJSON* z_position_json = cJSON_GetObjectItem(filter_item_json, "zPosition");
         face_makeup_filter->z_position = z_position_json->valueint;
+        face_makeup_filter->face_markup_render = new FaceMarkupRender();
         face_makeup->filters.push_back(face_makeup_filter);
     }
 }
@@ -823,7 +830,77 @@ void Effect::ConvertFaceMakeupV2(cJSON *effect_item_json, char *resource_root_pa
     face_makeup_v2_sub_effect->face_makeup_v2_ = face_makeup;
 }
 
-glm::mat4 Effect::VertexMatrix(SubEffect* sub_effect) {}
+// convertFilterSubEffect
+void Effect::ConvertFilter(cJSON* effect_item_json, char *resource_root_path, FilterSubEffect* filter_sub_effect) {
+    cJSON* path_json = cJSON_GetObjectItem(effect_item_json, "path");
+    if (nullptr == path_json) {
+        return;
+    }
+    char* path = path_json->valuestring;
+    char const* content_name = "config.json";
+    std::string content_root_path;
+    content_root_path.append(resource_root_path);
+    content_root_path.append("/");
+    content_root_path.append(path);
+
+    std::string config_path;
+    config_path.append(content_root_path);
+    config_path.append(content_name);
+    char* content_buffer = nullptr;
+    LOGE("%s content_path: %s", __func__, config_path.c_str());
+    int ret = ReadFile(config_path, &content_buffer);
+    if (ret != 0 || nullptr == content_buffer) {
+        return;
+    }
+    cJSON* content_root_json = cJSON_Parse(content_buffer);
+    if (nullptr == content_root_json) {
+        return;
+    }
+    cJSON* content_json = cJSON_GetObjectItem(content_root_json, "content");
+    if (nullptr == content_json) {
+        return;
+    }
+    cJSON* filter_json = cJSON_GetObjectItem(content_json, "filter");
+    if (nullptr == filter_json) {
+        return;
+    }
+    cJSON* file_type_json = cJSON_GetObjectItem(filter_json, "fileType");
+    cJSON* intensity_json = cJSON_GetObjectItem(filter_json, "intensity");
+    cJSON* shader_type_json = cJSON_GetObjectItem(filter_json, "shaderType");
+    cJSON* type_json = cJSON_GetObjectItem(filter_json, "type");
+    if (nullptr != file_type_json) {
+        filter_sub_effect->file_type = file_type_json->valueint;
+    }
+    if (nullptr != intensity_json) {
+        filter_sub_effect->intensity = static_cast<float>(intensity_json->valuedouble);
+    }
+    if (nullptr != shader_type_json) {
+        filter_sub_effect->shader_type = shader_type_json->valueint;
+    }
+    if (nullptr != type_json) {
+        filter_sub_effect->type = type_json->valueint;
+    }
+    std::string filter_root_path;
+    filter_root_path.append(resource_root_path);
+    filter_root_path.append("/");
+    filter_root_path.append(path);
+    filter_root_path.append("filter/filter.png");
+    int filter_texture_width = 0;
+    int filter_texture_height = 0;
+    int channels = 0;
+    unsigned char* filter_texture_buffer = stbi_load(filter_root_path.c_str(), &filter_texture_width,
+                                                     &filter_texture_height, &channels, STBI_rgb_alpha);
+    if (filter_texture_width > 0 && filter_texture_height > 0) {
+        auto* filter = new Filter(filter_texture_buffer, filter_texture_width, filter_texture_height);
+        filter->SetIntensity(filter_sub_effect->intensity);
+        stbi_image_free(filter_texture_buffer);
+        filter_sub_effect->filter = filter;
+    }                                                    
+}
+
+glm::mat4 Effect::VertexMatrix(SubEffect* sub_effect) {
+    return glm::mat4();
+}
 
 void Effect::ParseTextureFiles(cJSON *texture_files, StickerSubEffect* sub_effect,
         const std::string& resource_root_path) {

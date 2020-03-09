@@ -99,7 +99,7 @@ class FacePoint {
                 point[i * 2] = x * 2 - 1;
                 point[i * 2 + 1] = y * 2 - 1;
                 indices[i] = i;
-                LOGE("point land_mark[%d] x: %f y: %f x1: %f y1: %f", i, x, y, x * 2 - 1, y * 2 - 1);
+//                LOGE("point land_mark[%d] x: %f y: %f x1: %f y1: %f", i, x, y, x * 2 - 1, y * 2 - 1);
             }
 //            LOGE("218: %f 219: %f 220: %f 221: %f sw: %f sh: %f\n", point[218], point[219], point[220], point[221], face->key_points[218], face->key_points[219]);
             glUseProgram(program_);

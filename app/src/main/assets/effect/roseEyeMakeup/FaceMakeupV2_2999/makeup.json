@@ -21,6 +21,95 @@
                 "y": 536.0
             },
             "zPosition": 2999
+        },
+        {
+            "2dSequenceResources": {
+                "imageCount": 1,
+                "imageInterval": 0.05,
+                "name": "pupil_seq2998_",
+                "path": "pupil_seq2998/"
+            },
+            "blendMode": 17,
+            "blend_resources": {
+                "imageCount": 1,
+                "imageInterval": 0.05,
+                "name": "pupil_blend2998_",
+                "path": "pupil_blend2998/"
+            },
+            "filterType": "pupil",
+            "intensity": 0.9950098167539267,
+            "mask_resources": {
+                "imageCount": 1,
+                "imageInterval": 0.05,
+                "name": "pupil_mask2998_",
+                "path": "pupil_mask2998/"
+            },
+            "pupilV2Param": {
+                "enableReflect": true,
+                "reflectBlendMode": 21,
+                "reflectIntensity": 1.0
+            },
+            "rect": {
+                "height": 71,
+                "width": 366,
+                "x": 457,
+                "y": 485
+            },
+            "zPosition": 2998
+        },
+        {
+            "2dSequenceResources": {
+                "imageCount": 1,
+                "imageInterval": 0.5,
+                "name": "mask2997_",
+                "path": "mask2997/"
+            },
+            "blendMode": 0,
+            "filterType": "mask",
+            "intensity": 1.0,
+            "rect": {
+                "height": 225.6,
+                "width": 401.6,
+                "x": 440.0,
+                "y": 459.2
+            },
+            "zPosition": 2997
+        },
+        {
+            "2dSequenceResources": {
+                "imageCount": 1,
+                "imageInterval": 0.5,
+                "name": "mask2996_",
+                "path": "mask2996/"
+            },
+            "blendMode": 15,
+            "filterType": "mask",
+            "intensity": 0.6568021924083767,
+            "rect": {
+                "height": 124.8,
+                "width": 432.0,
+                "x": 422.4,
+                "y": 452.8
+            },
+            "zPosition": 2996
+        },
+        {
+            "2dSequenceResources": {
+                "imageCount": 1,
+                "imageInterval": 0.5,
+                "name": "mask2995_",
+                "path": "mask2995/"
+            },
+            "blendMode": 15,
+            "filterType": "mask",
+            "intensity": 1.0,
+            "rect": {
+                "height": 528.0,
+                "width": 755.2,
+                "x": 260.8,
+                "y": 401.6
+            },
+            "zPosition": 2995
         }
     ],
     "standardFaceKeyPoints": "FaceMakeupV2/texcoord.txt",

@@ -145,6 +145,9 @@ int Blend::OnDrawFrame(int texture_id, int sticker_texture_id, GLfloat* matrix, 
     glVertexAttribPointer(input_texture_coordinate_location, 2, GL_FLOAT, GL_FALSE,
             2 * sizeof(GLfloat), default_texture_coordinates_);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glDisableVertexAttribArray(position_location);
+    glDisableVertexAttribArray(input_texture_coordinate_location);
+    
     glUseProgram(second_program_);
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE_MINUS_DST_ALPHA, GL_ONE);
@@ -160,6 +163,8 @@ int Blend::OnDrawFrame(int texture_id, int sticker_texture_id, GLfloat* matrix, 
     glVertexAttribPointer(input_texture_coordinate2_locaiton, 2, GL_FLOAT, GL_FALSE,
             2 * sizeof(GLfloat), default_texture_coordinates_);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glDisableVertexAttribArray(position2_location);
+    glDisableVertexAttribArray(input_image_texture2_location);
     glDisable(GL_BLEND);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     return frame_buffer_texture_id_;

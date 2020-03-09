@@ -1,9 +1,9 @@
 {
   "content": {
     "filter": {
-      "file_type": 0,
+      "fileType": 0,
       "intensity": 0.6173715591430664,
-      "shader_type": 0,
+      "shaderType": 0,
       "type": 0
     }
   },
