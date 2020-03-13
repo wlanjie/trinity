@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include "player.h"
 #include "tools.h"
+#include "matrix.h"
 
 namespace trinity {
 
@@ -62,6 +63,7 @@ Player::Player(JNIEnv* env, jobject object) : Handler()
     , audio_buffer_size_(0)
     , audio_buffer_(nullptr)
     , draw_texture_id_(0) {
+    texture_matrix_ = new float[16];
     pthread_mutex_init(&mutex_, nullptr);
     pthread_cond_init(&cond_, nullptr);
     message_queue_ = new MessageQueue("Player Message Queue");
@@ -75,24 +77,24 @@ Player::Player(JNIEnv* env, jobject object) : Handler()
     av_play_set_buffer_time(av_play_context_, 5);
 
     vertex_coordinate_ = new GLfloat[8];
-    vertex_coordinate_[0] = -1.0f;
-    vertex_coordinate_[1] = -1.0f;
-    vertex_coordinate_[2] = 1.0f;
-    vertex_coordinate_[3] = -1.0f;
-    vertex_coordinate_[4] = -1.0f;
-    vertex_coordinate_[5] = 1.0f;
-    vertex_coordinate_[6] = 1.0f;
-    vertex_coordinate_[7] = 1.0f;
+    vertex_coordinate_[0] = -1.0F;
+    vertex_coordinate_[1] = -1.0F;
+    vertex_coordinate_[2] = 1.0F;
+    vertex_coordinate_[3] = -1.0F;
+    vertex_coordinate_[4] = -1.0F;
+    vertex_coordinate_[5] = 1.0F;
+    vertex_coordinate_[6] = 1.0F;
+    vertex_coordinate_[7] = 1.0F;
 
     texture_coordinate_ = new GLfloat[8];
-    texture_coordinate_[0] = 0.0f;
-    texture_coordinate_[1] = 1.0f;
-    texture_coordinate_[2] = 1.0f;
-    texture_coordinate_[3] = 1.0f;
-    texture_coordinate_[4] = 0.0f;
-    texture_coordinate_[5] = 0.0f;
-    texture_coordinate_[6] = 1.0f;
-    texture_coordinate_[7] = 0.0f;
+    texture_coordinate_[0] = 0.0F;
+    texture_coordinate_[1] = 0.0F;
+    texture_coordinate_[2] = 1.0F;
+    texture_coordinate_[3] = 0.0F;
+    texture_coordinate_[4] = 0.0F;
+    texture_coordinate_[5] = 1.0F;
+    texture_coordinate_[6] = 1.0F;
+    texture_coordinate_[7] = 1.0F;
 
     pthread_attr_t attr;
     pthread_attr_init(&attr);
@@ -115,12 +117,16 @@ Player::~Player() {
     }
 
     if (nullptr != vertex_coordinate_) {
-        delete vertex_coordinate_;
+        delete[] vertex_coordinate_;
         vertex_coordinate_ = nullptr;
     }
     if (nullptr != texture_coordinate_) {
-        delete texture_coordinate_;
+        delete[] texture_coordinate_;
         texture_coordinate_ = nullptr;
+    }
+    if (nullptr != texture_matrix_) {
+        delete[] texture_matrix_;
+        texture_matrix_ = nullptr;
     }
     JNIEnv* env = nullptr;
     if ((vm_)->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) == JNI_OK) {
@@ -761,6 +767,9 @@ int Player::DrawVideoFrame() {
         if (!av_play_context_->is_sw_decode) {
             mediacodec_update_image(av_play_context_);
             int ret = mediacodec_get_texture_matrix(av_play_context_, texture_matrix_);
+            if (ret != 0) {
+                matrixSetIdentityM(texture_matrix_);
+            }
         }
         int width = MIN(av_play_context_->video_frame->linesize[0], av_play_context_->video_frame->width);
         int height = av_play_context_->video_frame->height;
@@ -777,7 +786,7 @@ int Player::DrawVideoFrame() {
                     delete media_codec_render_;
                 }
                 media_codec_render_ = new FrameBuffer(frame_width_, frame_height_,
-                        DEFAULT_VERTEX_SHADER, DEFAULT_OES_FRAGMENT_SHADER);
+                                  DEFAULT_VERTEX_MATRIX_SHADER, DEFAULT_OES_FRAGMENT_SHADER);
                 media_codec_render_->SetTextureType(TEXTURE_OES);
             }
             if (surface_width_ != 0 && surface_height_ != 0) {
@@ -791,7 +800,7 @@ int Player::DrawVideoFrame() {
             draw_texture_id_ = yuv_render_->DrawFrame(av_play_context_->video_frame);
         } else {
             media_codec_render_->ActiveProgram();
-            draw_texture_id_ = media_codec_render_->OnDrawFrame(oes_texture_);
+            draw_texture_id_ = media_codec_render_->OnDrawFrame(oes_texture_, texture_matrix_);
         }
         ReleaseVideoFrame();
 

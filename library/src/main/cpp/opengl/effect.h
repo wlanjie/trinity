@@ -62,6 +62,7 @@ enum UniformType {
     UniformTypePoint = 4,
     UniformTypeVec3 = 5,
     UniformTypeMatrix4x4 = 8,
+    UniformTypeFace = 66,
     UniformTypeInputTexture = 100,
     UniformTypeInputTextureLast = 101,
     UniformTypeImageWidth = 200,
@@ -193,8 +194,8 @@ class Transform {
     Scale* scale;
     bool face_detect;
  public:
-    glm::vec2 Center(float aspect, FaceDetectionReport* face_detection);
-    glm::vec2 ScaleSize(float aspect, FaceDetectionReport* face_detection);
+    glm::vec2 Center(float aspect, FaceDetectionReport* face_detection, int source_width, int source_height);
+    glm::vec2 ScaleSize(float aspect, FaceDetectionReport* face_detection, int source_width, int source_height);
 };
 
 class FaceMakeupV2Filter {
@@ -297,7 +298,8 @@ class SubEffect {
     void SetTextureUnit(ShaderUniforms* uniform, ProcessBuffer* process_buffer, GLuint texture);
     void SetUniform(std::list<SubEffect*> sub_effects, ProcessBuffer* process_buffer,
             std::vector<ShaderUniforms*> uniforms, int origin_texture_id, int texture_id, uint64_t current_time);
-    virtual int OnDrawFrame(FaceDetection* face_detection, std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id, uint64_t current_time) {
+    virtual int OnDrawFrame(FaceDetection* face_detection, std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id, 
+        int width, int height, uint64_t current_time) {
         return texture_id;
     }
 
@@ -310,7 +312,8 @@ class GeneralSubEffect : public SubEffect {
  public:
     GeneralSubEffect();
     ~GeneralSubEffect();
-    virtual int OnDrawFrame(FaceDetection* face_detection, std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id, uint64_t current_time);
+    virtual int OnDrawFrame(FaceDetection* face_detection, std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id,
+        int width, int height, uint64_t current_time);
 };
 
 // Sticker
@@ -321,7 +324,8 @@ class StickerSubEffect : public SubEffect {
 
     int OnDrawFrame(FaceDetection* face_detection,
             std::list<SubEffect*> sub_effects,
-            int origin_texture_id, int texture_id, uint64_t current_time) override;
+            int origin_texture_id, int texture_id,
+            int width, int height, uint64_t current_time) override;
     ImageBuffer* StickerBufferAtFrameTime(float time);
  public:
     int blendmode;
@@ -334,12 +338,11 @@ class StickerSubEffect : public SubEffect {
     std::map<int, ImageBuffer*> image_buffers;
     int pic_index;
     bool face_detect;
-    bool has_face;
     float input_aspect;
     Blend* blend;
     int begin_frame_time;
  protected:
-    virtual glm::mat4 VertexMatrix(FaceDetectionReport* face_detection);
+    virtual glm::mat4 VertexMatrix(FaceDetectionReport* face_detection, int source_width, int source_height);
 };
 
 // StickerV3
@@ -348,12 +351,13 @@ class StickerV3SubEffect : public StickerSubEffect {
     StickerV3SubEffect();
     ~StickerV3SubEffect();
 
-    int OnDrawFrame(FaceDetection* face_detection, std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id, uint64_t current_time) override;
+    int OnDrawFrame(FaceDetection* face_detection, std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id,
+        int width, int height, uint64_t current_time) override;
  public:
     Transform* transform;
 
  protected:
-    glm::mat4 VertexMatrix(FaceDetectionReport* face_detection);
+    glm::mat4 VertexMatrix(FaceDetectionReport* face_detection, int source_width, int source_height);
 };
 
 // faceMakeupV2
@@ -361,9 +365,10 @@ class FaceMakeupV2SubEffect : public StickerSubEffect {
  public:
     FaceMakeupV2SubEffect();
     ~FaceMakeupV2SubEffect();
-    int OnDrawFrame(FaceDetection* face_detection, std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id, uint64_t current_time) override;
+    int OnDrawFrame(FaceDetection* face_detection, std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id,
+        int width, int height, uint64_t current_time) override;
  protected:
-    glm::mat4 VertexMatrix();
+    glm::mat4 VertexMatrix(int source_width, int soruce_height);
  public:
     FaceMakeupV2* face_makeup_v2_;
     FaceMarkupRender* face_markup_render_;
@@ -372,8 +377,7 @@ class FaceMakeupV2SubEffect : public StickerSubEffect {
 // filterSubEffect
 class FilterSubEffect : public SubEffect {
  public:
-    FilterSubEffect()
-        : filter(nullptr) {
+    FilterSubEffect() : filter(nullptr) {
     
     }
     ~FilterSubEffect() {
@@ -388,7 +392,8 @@ class FilterSubEffect : public SubEffect {
     int type;
     Filter* filter;
     
-    virtual int OnDrawFrame(FaceDetection* face_detection, std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id, uint64_t current_time) {
+    virtual int OnDrawFrame(FaceDetection* face_detection, std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id,
+        int width, int height, uint64_t current_time) {
         if (nullptr == filter) {
             return origin_texture_id;
         }
@@ -402,7 +407,7 @@ class Effect {
     ~Effect();
     void SetFaceDetection(FaceDetection* face_detection);
     void ParseConfig(char* config_path);
-    int OnDrawFrame(GLuint texture_id, uint64_t current_time);
+    int OnDrawFrame(GLuint texture_id, int width, int height, uint64_t current_time);
     void UpdateTime(int start_time, int end_time);
     void UpdateParam(const char* effect_name, const char* param_name, float value);
  private:
@@ -413,11 +418,11 @@ class Effect {
     void ConvertGeneralConfig(cJSON* effect_item_json, char* resource_root_path, GeneralSubEffect* general_sub_effect);
     void ParseFaceMakeupV2(cJSON* makeup_root_json, const std::string& resource_root_path, FaceMakeupV2* face_makeup_v2);
     void ConvertFaceMakeupV2(cJSON* effect_item_json, char* resource_root_path, FaceMakeupV2SubEffect* face_makeup_v2_sub_effect);
-    glm::mat4 VertexMatrix(SubEffect* sub_effect);
+    glm::mat4 VertexMatrix(SubEffect* sub_effect, int source_width, int source_height);
     void ParseTextureFiles(cJSON* texture_files, StickerSubEffect* sub_effect, const std::string& resource_root_path);
     std::string& ReplaceAllDistince(std::string& str, const std::string& old_value, const std::string& new_value);
-    void ParsePartsItem(cJSON* clip_root_json, const std::string& resource_root_path, const std::string& type);
-    void Parse2DStickerV3(SubEffect* sub_effect, const std::string& resource_root_path);
+    void ParsePartsItem(cJSON* clip_root_json, const std::string& resource_root_path, const std::string& type, bool face_detect);
+    void Parse2DStickerV3(const std::string& resource_root_path);
     void ParseUniform(SubEffect *sub_effect, char *config_path, cJSON *uniforms_json, ShaderUniformType type);
  private:
     FaceDetection* face_detection_;

@@ -419,6 +419,9 @@ class FaceDetectionReport {
 
  public:
     void SetLandMarks(float* land_mark, int land_mark_size) {
+        if (land_mark_size == 0) {
+            return;
+        }
         int size = land_mark_size * sizeof(float);
         key_point_size = land_mark_size + 10;
         key_points = new float[land_mark_size + 10];
@@ -447,7 +450,7 @@ class FaceDetectionReport {
     }
 
     bool HasFace() {
-        return left > 0 && right > 0 && top > 0 && bottom > 0;
+        return left > 0 && right > 0 && top > 0 && bottom > 0 && key_point_size > 0;
     }
 
     float ConvertX(float x, int width) {
@@ -503,15 +506,10 @@ class FaceDetectionReport {
         for (int i = 0; i < point_count; i++) {
             float x = static_cast<float>((faceTextureCoordinates[i * 2 + 0] * 1280 - x_offset) / width);
             float y = static_cast<float>((faceTextureCoordinates[i * 2 + 1] * 1280 - y_offset) / height);
-//            x = x < 0 ? 0 : x;
-//            y = y < 0 ? 0 : y;
-//            texture_coordinate[i * 2] = x > 1 ? 1 : x;
             texture_coordinate[i * 2] = x;
             #if __APPLE__
-//            texture_coordinate[i * 2 + 1] = 1.0F - ( y > 1 ? 1 : y);
             texture_coordinate[i * 2 + 1] = 1.0F - y;
             #else
-//            texture_coordinate[i * 2 + 1] = (y > 1 ? 1 : y);
             texture_coordinate[i  *2 + 1] = y;
             #endif
         }

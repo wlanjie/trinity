@@ -273,10 +273,14 @@ class MakeFaceDetection : public FaceDetection {
     virtual void FaceDetector(std::vector<FaceDetectionReport*>& face_detection) {
         FaceDetectionReport* report = new FaceDetectionReport();
         report->SetLandMarks(make_land_mark, 106 * 2);
-        report->left = 220;
-        report->right = 440;
-        report->top = 220;
-        report->bottom = 440;
+        report->left = 146;
+        report->right = 296;
+        report->top = 155;
+        report->bottom = 298;
+        report->roll = -0.022232315;
+        report->score = 0.9999269;
+        report->yaw = -0.13338177;
+        report->pitch = -0.13473696;
         face_detection.push_back(report);
     }
 };
@@ -342,7 +346,7 @@ int main() {
 
     clock_t start = clock();
     ImageProcess image_process;
-    char* name = "app/src/main/assets/effect/roseEyeMakeup";
+    char* name = "app/src/main/assets/effect/princess";
     auto* detection = new MakeFaceDetection();
     image_process.OnAction(name, 0, detection);
     FacePoint face_point;

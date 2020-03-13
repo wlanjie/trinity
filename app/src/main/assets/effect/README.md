@@ -78,3 +78,11 @@
     <td align="center">爱心光斑</td>
   </tr>
 </table>
+
+### 人脸识别
+<table>
+    <tr>
+    <td>roseEyeMarkup</td>
+    <td align="center">玫瑰眼妆</td>
+  </tr>
+</table>
