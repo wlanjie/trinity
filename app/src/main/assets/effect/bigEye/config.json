@@ -1,0 +1,30 @@
+{
+    "requirement": {
+        "faceDetect": false,
+        "matting": false
+    },
+    "effect": [
+        {
+            "type": "generalEffect",
+            "name": "bigEye",
+            "vertexShader": "resource/vshader.vs",
+            "vertexUniforms": [],
+            "fragmentShader": "resource/fshader.fs",
+            "fragmentUniforms": [
+                {
+                    "name": "inputImageTexture",
+                    "type": 100
+                },
+                {
+                    "name": "facePoints",
+                    "type": 66
+                },
+                {
+                    "name": "bigEyeScale",
+                    "type": 2
+                }
+            ]
+        }
+    ],
+    "version": 1.0
+}

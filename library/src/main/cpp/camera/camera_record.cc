@@ -235,11 +235,11 @@ void CameraRecord::Draw() {
     render_screen_->ActiveProgram();
     render_screen_->ProcessImage(texture_id);
 
-    std::vector<FaceDetectionReport*> face_detection_reports;
-    GetFaceDetectionReports(face_detection_reports);
-    face_point_->SetSourceSize(camera_width_, camera_height_);
-    face_point_->SetTargetSize(screen_width_, screen_height_);
-    face_point_->OnDrawFrame(face_detection_reports);
+//    std::vector<FaceDetectionReport*> face_detection_reports;
+//    GetFaceDetectionReports(face_detection_reports);
+//    face_point_->SetSourceSize(camera_width_, camera_height_);
+//    face_point_->SetTargetSize(screen_width_, screen_height_);
+//    face_point_->OnDrawFrame(face_detection_reports);
 
     if (!egl_core_->SwapBuffers(preview_surface_)) {
         LOGE("eglSwapBuffers(preview_surface_) returned error %d", eglGetError());
@@ -491,12 +491,12 @@ bool CameraRecord::Initialize() {
     glBindTexture(GL_TEXTURE_EXTERNAL_OES, 0);
 
     delete image_process_;
-    image_process_ = new ImageProcess();
 
     delete face_point_;
     face_point_ = new FacePoint();
     StartCameraPreview();
     ConfigCamera();
+    image_process_ = new ImageProcess();
     render_screen_ = new OpenGL(DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
     LOGI("leave %s", __FUNCTION__);
     return true;
@@ -733,6 +733,7 @@ void CameraRecord::UpdateActionParam(int action_id, const char *effect_name, con
 }
 
 void CameraRecord::DeleteAction(int action_id) {
+    LOGI("enter %s action_id: %d", __func__, action_id);
     auto* message = new Message(kEffectDelete, action_id, 0);
     PostMessage(message);
 }

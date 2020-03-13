@@ -3,7 +3,7 @@
         {
             "defaultEnable": false,
             "path": "Filter_2998/",
-            "type": "Filter",
+            "type": "filter",
             "zorder": 2998
         },
         {

@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "name": "玫瑰眼妆",
+    "color": "#cc23bdb1",
+    "effect": "effect/roseEyeMakeup"
+  },
+  {
+    "id": 2,
+    "name": "王妃",
+    "color": "#cce77e86",
+    "effect": "effect/princess"
+  }
+]

@@ -25,12 +25,12 @@ import com.trinity.camera.Flash
 import com.trinity.camera.TrinityPreviewView
 import com.trinity.core.Frame
 import com.trinity.core.MusicInfo
-import com.trinity.face.FaceDetection
 import com.trinity.face.MnnFaceDetection
 import com.trinity.listener.OnRenderListener
 import com.trinity.record.PreviewResolution
 import com.trinity.record.Speed
 import com.trinity.record.TrinityRecord
+import com.trinity.sample.entity.Effect
 import com.trinity.sample.entity.Filter
 import com.trinity.sample.entity.MediaItem
 import com.trinity.sample.fragment.*
@@ -39,8 +39,6 @@ import com.trinity.sample.view.RecordButton
 import com.trinity.sample.view.foucs.AutoFocusTrigger
 import com.trinity.sample.view.foucs.DefaultAutoFocusMarker
 import com.trinity.sample.view.foucs.MarkerLayout
-import kotlinx.android.synthetic.main.fragment_media.*
-import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -56,6 +54,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     private const val MEDIA_TAG = "media_tag"
     private const val FILTER_TAG = "filter_tag"
     private const val BEAUTY_TAG = "beauty_tag"
+    private const val EFFECT_TAG = "effect_tag"
   }
 
   private lateinit var mRecord: TrinityRecord
@@ -83,6 +82,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
   private var mPermissionDenied = false
   private var mFilterId = -1
   private var mBeautyId = -1
+  private var mIdentifyId = -1
 
   @SuppressLint("ClickableViewAccessibility")
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -127,6 +127,10 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
         .setOnClickListener {
           showBeauty()
         }
+    findViewById<View>(R.id.effect)
+      .setOnClickListener {
+        showEffect()
+      }
 
     mInsideBottomSheet = findViewById(R.id.frame_container)
     findViewById<View>(R.id.setting)
@@ -186,6 +190,34 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
       mRecordDurations.add(it.duration)
       mLineView.addProgress(it.duration * 1.0f / mRecordDuration)
       mMedias.add(it)
+    }
+  }
+
+  private fun showEffect() {
+    var effectFragment = supportFragmentManager.findFragmentByTag(EFFECT_TAG)
+    if (effectFragment == null) {
+      effectFragment = IdentifyFragment()
+      supportFragmentManager.transaction {
+        replace(R.id.frame_container, effectFragment, EFFECT_TAG)
+      }
+    }
+    if (effectFragment is IdentifyFragment) {
+      effectFragment.setCallback(object: IdentifyFragment.Callback {
+        override fun onIdentifyClick(effect: Effect?) {
+          if (effect == null) {
+            mRecord.deleteAction(mIdentifyId)
+          } else {
+            val effectPath = effect?.effect ?: return
+            mIdentifyId = mRecord.addAction(externalCacheDir?.absolutePath + "/" + effectPath)
+          }
+        }
+      })
+    }
+    val behavior = BottomSheetBehavior.from(mInsideBottomSheet)
+    if (behavior.state != BottomSheetBehavior.STATE_EXPANDED) {
+      behavior.state = BottomSheetBehavior.STATE_EXPANDED
+    } else {
+      behavior.state = BottomSheetBehavior.STATE_HIDDEN
     }
   }
 
@@ -451,10 +483,6 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     }
     setPreviewResolution(preferences.getString("preview_resolution", "720P"))
 //    mLineView.setMaxDuration(mRecordDuration)
-
-    mLineView.postDelayed({
-      mRecord.addAction(externalCacheDir?.absolutePath + "/effect/roseEyeMakeup")
-    }, 3000)
   }
 
   override fun onPause() {

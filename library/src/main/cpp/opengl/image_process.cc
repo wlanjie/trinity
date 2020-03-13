@@ -33,7 +33,8 @@
 
 namespace trinity {
 
-ImageProcess::ImageProcess() : action_id_(-1) {}
+ImageProcess::ImageProcess() 
+    : action_id_(-1) {}
 
 ImageProcess::~ImageProcess() {
     ClearAction();
@@ -57,14 +58,14 @@ int ImageProcess::OnProcess(int texture_id, uint64_t current_time, int width, in
     }
     if (action_id_ == -1) {
         for (auto& effect : effects_) {
-            texture = effect.second->OnDrawFrame(texture, current_time);
+            texture = effect.second->OnDrawFrame(texture, width, height, current_time);
         }
     } else {
         auto effect_iterator = effects_.find(action_id_);
         if (effect_iterator == effects_.end()) {
             return texture;
         }
-        texture = effect_iterator->second->OnDrawFrame(texture, current_time);
+        texture = effect_iterator->second->OnDrawFrame(texture, width, height, current_time);
     }
     return texture;
 }
@@ -126,7 +127,7 @@ int ImageProcess::ReadFile(char *path, char **buffer) {
 }
 
 void ImageProcess::RemoveAction(int action_id) {
-    if (action_id != -1) {
+    if (action_id == -1) {
         return;
     }
     if (!effects_.empty()) {

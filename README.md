@@ -5,7 +5,7 @@
 
 [![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-trinity-brightgreen.svg?style=flat)](https://android-arsenal.com/details/1/8010)
 [![Build Status](https://api.travis-ci.org/wlanjie/trinity.svg?branch=master)](https://travis-ci.org/wlanjie/trinity/)
-[![Download](https://api.bintray.com/packages/wlanjie/maven/trinity/images/download.svg?version=0.2.3)](https://bintray.com/wlanjie/maven/trinity/0.2.3/link)
+[![Download](https://api.bintray.com/packages/wlanjie/maven/trinity/images/download.svg?version=0.2.5)](https://bintray.com/wlanjie/maven/trinity/0.2.5/link)
 ![platform](https://img.shields.io/badge/platform-Android-orange.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
@@ -40,6 +40,7 @@
 - ffmpeg 3.4
 - libx264
 - xlogger
+- mnnkit
 
 ## 功能
 <table>
@@ -192,7 +193,17 @@
     <td>爱心光斑</td>
     <td align="center">√</td>
   </tr>
+  <tr>
+    <td rowspan="1">人脸识别<br/>
+  </tr>
+  <tr>
+    <td>玫瑰眼妆</td>
+    <td align="center">√</td>
+  </tr>
 </table>
+
+## 人脸特效
+![玫瑰眼妆](roseEye.png)
 
 ## 特效调试
 项目中使用xcode调试特效效果, 使用前需要安装glfw  

@@ -122,7 +122,7 @@ class Player : public Handler {
     GLfloat* vertex_coordinate_;
     GLfloat* texture_coordinate_;
     int current_action_id_;
-    GLfloat texture_matrix_[16];
+    GLfloat* texture_matrix_;
     GLuint oes_texture_;
     MusicDecoderController* music_player_;
     PlayerEventObserver* player_event_observer_;
