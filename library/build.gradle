@@ -18,7 +18,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 29
         versionCode 1
-        versionName "0.2.3"
+        versionName "0.2.5"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
@@ -106,7 +106,7 @@ publish {
     userOrg = 'wlanjie'
     groupId = 'com.github.wlanjie'
     artifactId = 'trinity'
-    publishVersion = '0.2.3'
+    publishVersion = '0.2.5'
     desc = 'android short video sdk'
     website = 'https://github.com/wlanjie/trinity'
 

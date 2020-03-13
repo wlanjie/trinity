@@ -236,7 +236,7 @@ adb devices
 ### 添加jcenter依赖
 ``` gradle
 dependencies {
-    implementation 'com.github.wlanjie:trinity:0.2.3'
+    implementation 'com.github.wlanjie:trinity:0.2.5'
 }
 ```
 
