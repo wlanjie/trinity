@@ -766,10 +766,7 @@ int Player::DrawVideoFrame() {
     } else {
         if (!av_play_context_->is_sw_decode) {
             mediacodec_update_image(av_play_context_);
-            int ret = mediacodec_get_texture_matrix(av_play_context_, texture_matrix_);
-            if (ret != 0) {
-                matrixSetIdentityM(texture_matrix_);
-            }
+            mediacodec_get_texture_matrix(av_play_context_, texture_matrix_);
         }
         int width = MIN(av_play_context_->video_frame->linesize[0], av_play_context_->video_frame->width);
         int height = av_play_context_->video_frame->height;

@@ -337,7 +337,8 @@ static void convert_h264_to_annexb(uint8_t *p_buf, size_t i_len,
 MediaCodecContext * create_mediacodec_context(AVPlayContext *context);
 void mediacodec_release_buffer(AVPlayContext *context, AVFrame *frame);
 int mediacodec_receive_frame(AVPlayContext *context, AVFrame *frame);
-int mediacodec_send_packet(AVPlayContext *context, AVPacket *packet);
+int mediacodec_dequeue_input_buffer_index(AVPlayContext* context);
+int mediacodec_send_packet(AVPlayContext *context, AVPacket *packet, int buffer_index);
 void mediacodec_flush(AVPlayContext *context);
 void mediacodec_start(AVPlayContext *context);
 void mediacodec_stop(AVPlayContext *context);

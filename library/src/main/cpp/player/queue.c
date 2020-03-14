@@ -65,7 +65,7 @@ void frame_pool_unref_frame(FramePool *pool, AVFrame *frame){
     pool->count--;
 }
 
-FrameQueue * frame_queue_create(unsigned int size){
+FrameQueue* frame_queue_create(unsigned int size){
     FrameQueue * queue = (FrameQueue *)malloc(sizeof(FrameQueue));
     queue->mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
     queue->cond = (pthread_cond_t *)malloc(sizeof(pthread_cond_t));

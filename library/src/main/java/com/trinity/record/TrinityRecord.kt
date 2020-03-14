@@ -391,6 +391,7 @@ class TrinityRecord(
     val flipType = if (frontCamera) FlipType.FLIP_Y else FlipType.FLIP_NONE
     val result = mFaceDetection?.faceDetection(data, width, height, FaceDetectionImageType.YUV_NV21, inAngle, outAngle, flipType)
     mFaceDetectionReports = result
+    onFrameAvailable(mHandle)
   }
 
   override fun update(timer: Timer, elapsedTime: Int) {
@@ -651,9 +652,9 @@ class TrinityRecord(
     Log.i(Constants.TAG, "enter startPreviewFromNative")
     mSurfaceTexture = SurfaceTexture(textureId)
     mSurfaceTexture?.let {
-      it.setOnFrameAvailableListener {
-        onFrameAvailable(mHandle)
-      }
+//      it.setOnFrameAvailableListener {
+//        onFrameAvailable(mHandle)
+//      }
       if (mRequestPreview) {
         mRequestPreview = false
         mCamera.setAspectRatio(mAspectRatio)

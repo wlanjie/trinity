@@ -392,7 +392,9 @@ void* video_decode_hw_thread(void* data){
                 frame->FRAME_ROTATION = context->frame_rotation;
                 frame_queue_put(context->video_frame_queue, frame);
                 frame = frame_pool_get_frame(context->video_frame_pool);
-            } else if(ret == 1) {
+            }
+            int buffer_index = mediacodec_dequeue_input_buffer_index(context);
+            if (buffer_index >= 0) {
                 if (packet == NULL) {
                     packet = packet_queue_get(context->video_packet_queue);
                 }
@@ -413,7 +415,8 @@ void* video_decode_hw_thread(void* data){
                     packet = NULL;
                     continue;
                 }
-                if (0 == mediacodec_send_packet(context, packet)) {
+                ret = mediacodec_send_packet(context, packet, buffer_index);
+                if (0 == ret) {
                     packet_pool_unref_packet(context->packet_pool, packet);
                     packet = NULL;
                 } else {
@@ -424,12 +427,6 @@ void* video_decode_hw_thread(void* data){
                         usleep(NULL_LOOP_SLEEP_US);
                     }
                 }
-
-            } else if(ret == -2) {
-                //frame = frame_pool_get_frame(context->video_frame_pool);
-            } else {
-                context->on_error(context, ERROR_VIDEO_HW_MEDIACODEC_RECEIVE_FRAME);
-                break;
             }
         }
     }

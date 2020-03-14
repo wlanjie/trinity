@@ -94,23 +94,23 @@ class MediaCodecDecode {
   }
 
   fun dequeueInputBuffer(timeout: Long): Int {
-    return mMediaCodec?.dequeueInputBuffer(timeout) ?: -10
+    return mMediaCodec?.dequeueInputBuffer(timeout) ?: -1
   }
 
   fun getInputBuffer(id: Int): ByteBuffer? {
-    return mMediaCodec?.inputBuffers?.get(id)
+    val buffer = mMediaCodec?.inputBuffers?.get(id)
+    buffer?.clear()
+    return buffer
   }
 
   fun queueInputBuffer(id: Int, size: Int, pts: Long, flags: Int) {
-//    Log.e("trinity", "id: $id size: $size pts: $pts")
     mMediaCodec?.queueInputBuffer(id, 0, size, pts, flags)
   }
 
   fun dequeueOutputBufferIndex(timeout: Long): ByteBuffer? {
-    val id = mMediaCodec?.dequeueOutputBuffer(mOutputBufferInfo, timeout) ?: -1000
+    val id = mMediaCodec?.dequeueOutputBuffer(mOutputBufferInfo, timeout) ?: -1
     mBuffer.position(0)
     mBuffer.putInt(id)
-//    Log.e("trinity", "dequeueOutputBufferIndex id: $id")
     if (id >= 0) {
       mBuffer.putInt(mOutputBufferInfo.offset)
       mBuffer.putLong(mOutputBufferInfo.presentationTimeUs)
@@ -120,7 +120,6 @@ class MediaCodecDecode {
 
   fun releaseOutputBuffer(id: Int) {
     try {
-//      Log.e("trinity", "releaseOutputBuffer: $id")
       mMediaCodec?.releaseOutputBuffer(id, true)
     } catch (e: Exception) {
       e.printStackTrace()
@@ -133,9 +132,9 @@ class MediaCodecDecode {
     val height = newFormat?.getInteger(MediaFormat.KEY_HEIGHT) ?: -1
     val colorFormat = newFormat?.getInteger(MediaFormat.KEY_COLOR_FORMAT) ?: -1
     mChangeBuffer.position(0)
-    mChangeBuffer?.putInt(width)
-    mChangeBuffer?.putInt(height)
-    mChangeBuffer?.putInt(colorFormat)
+    mChangeBuffer.putInt(width)
+    mChangeBuffer.putInt(height)
+    mChangeBuffer.putInt(colorFormat)
     return mChangeBuffer
   }
 

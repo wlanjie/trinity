@@ -226,7 +226,6 @@ void mediacodec_release_context(AVPlayContext * pd){
 }
 #else
 
-
 static int get_int(uint8_t *buf) {
     return (buf[0] << 24) + (buf[1] << 16) + (buf[2] << 8) + buf[3];
 }
@@ -386,12 +385,11 @@ int mediacodec_receive_frame(AVPlayContext *context, AVFrame *frame) {
     int output_ret = 1;
     jobject deqret = (*env)->CallObjectMethod(env, java_class->media_codec_object,
                                                        java_class->codec_dequeueOutputBufferIndex,
-                                                       (jlong) 0);
+                                                       (jlong) 100 * 1000);
     uint8_t *retbuf = (*env)->GetDirectBufferAddress(env, deqret);
     int outbufidx = get_int(retbuf);
     int64_t pts = get_long(retbuf + 8);
     (*env)->DeleteLocalRef(env, deqret);
-
     if (outbufidx >= 0) {
         frame->pts = pts;
         frame->format = PIX_FMT_EGL_EXT;
@@ -438,7 +436,19 @@ int mediacodec_receive_frame(AVPlayContext *context, AVFrame *frame) {
     return output_ret;
 }
 
-int mediacodec_send_packet(AVPlayContext *context, AVPacket *packet) {
+int mediacodec_dequeue_input_buffer_index(AVPlayContext* context) {
+    if (context == NULL) {
+        return -1;
+    }
+    JNIEnv *env = NULL;
+    (*context->vm)->AttachCurrentThread(context->vm, &env, NULL);
+    JavaClass* java_class = context->java_class;
+    int id = (*env)->CallIntMethod(env, java_class->media_codec_object, java_class->codec_dequeueInputBuffer, (jlong) 100 * 1000);
+    (*context->vm)->DetachCurrentThread(context->vm);
+    return id;
+}
+
+int mediacodec_send_packet(AVPlayContext *context, AVPacket *packet, int buffer_index) {
     if (packet == NULL) {
         return -2;
     }
@@ -466,24 +476,25 @@ int mediacodec_send_packet(AVPlayContext *context, AVPacket *packet) {
     if ((packet->flags | AV_PKT_FLAG_KEY) > 0) {
         keyframe_flag |= 0x1;
     }
-    int id = (*env)->CallIntMethod(env, java_class->media_codec_object, java_class->codec_dequeueInputBuffer, (jlong) 1000000);
-    if (id >= 0) {
-        jobject inputBuffer = (*env)->CallObjectMethod(env, java_class->media_codec_object, java_class->codec_getInputBuffer, id);
+//    int id = (*env)->CallIntMethod(env, java_class->media_codec_object, java_class->codec_dequeueInputBuffer, (jlong) 100 * 1000);
+    if (buffer_index >= 0) {
+        jobject inputBuffer = (*env)->CallObjectMethod(env, java_class->media_codec_object,
+                java_class->codec_getInputBuffer, buffer_index);
         uint8_t *buf = (*env)->GetDirectBufferAddress(env, inputBuffer);
         jlong size = (*env)->GetDirectBufferCapacity(env, inputBuffer);
         if (buf != NULL && size >= packet->size) {
             memcpy(buf, packet->data, (size_t) packet->size);
             (*env)->CallVoidMethod(env, java_class->media_codec_object,
                                             java_class->codec_queueInputBuffer,
-                                            (jint) id, (jint) packet->size,
+                                            (jint) buffer_index, (jint) packet->size,
                                             (jlong) time_stamp, (jint) keyframe_flag);
         }
         (*env)->DeleteLocalRef(env, inputBuffer);
-    } else if (id == -1) {
+    } else if (buffer_index == -1) {
         (*context->vm)->DetachCurrentThread(context->vm);
         return -1;
     } else {
-        LOGE("input buffer id < 0  value == %zd", id);
+        LOGE("input buffer id < 0  value == %zd", buffer_index);
     }
 
     (*context->vm)->DetachCurrentThread(context->vm);
