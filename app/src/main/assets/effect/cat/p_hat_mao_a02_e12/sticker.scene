@@ -1,0 +1,261 @@
+{
+    "animTextures": [],
+    "animations": [],
+    "entities": [
+        {
+            "id": 0,
+            "name": "rootEntity",
+            "orientation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "parent": "-1",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ]
+        },
+        {
+            "components": [
+                {
+                    "cameraParam": {
+                        "FOV": 53.13,
+                        "aspect_ratio": [
+                            0.5625,
+                            1
+                        ],
+                        "cameraType": "PERSPECTIVE",
+                        "far": 1000,
+                        "near": 1,
+                        "view_port": [
+                            0,
+                            1,
+                            0,
+                            1
+                        ]
+                    },
+                    "name": "camera0",
+                    "type": "cameraComponent"
+                }
+            ],
+            "id": 1,
+            "name": "camera0",
+            "orientation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "parent": "0",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ]
+        },
+        {
+            "components": [
+                {
+                    "isDefaultPlayAnim": true,
+                    "name": "particle",
+                    "particle": 2,
+                    "particleRenderer": {
+                        "type": "quat"
+                    },
+                    "textureBlockSize": 5,
+                    "type": "particleComponent"
+                },
+                {
+                    "material": 2,
+                    "name": "no-effect",
+                    "type": "materialComponent"
+                }
+            ],
+            "id": 2,
+            "name": "mao_a02_e121",
+            "orientation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "parent": "0",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ]
+        },
+        {
+            "components": [
+                {
+                    "isDefaultPlayAnim": true,
+                    "name": "particle",
+                    "particle": 3,
+                    "particleRenderer": {
+                        "type": "quat"
+                    },
+                    "textureBlockSize": 5,
+                    "type": "particleComponent"
+                },
+                {
+                    "material": 3,
+                    "name": "no-effect",
+                    "type": "materialComponent"
+                }
+            ],
+            "id": 3,
+            "name": "mao_a02_e121",
+            "orientation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "parent": "0",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ]
+        },
+        {
+            "components": [
+                {
+                    "isDefaultPlayAnim": true,
+                    "name": "particle",
+                    "particle": 4,
+                    "particleRenderer": {
+                        "type": "quat"
+                    },
+                    "textureBlockSize": 5,
+                    "type": "particleComponent"
+                },
+                {
+                    "material": 4,
+                    "name": "no-effect",
+                    "type": "materialComponent"
+                }
+            ],
+            "id": 4,
+            "name": "p_huxu_xt_a01_e12",
+            "orientation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "parent": "0",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ]
+        },
+        {
+            "components": [
+                {
+                    "isDefaultPlayAnim": true,
+                    "name": "particle",
+                    "particle": 5,
+                    "particleRenderer": {
+                        "type": "quat"
+                    },
+                    "textureBlockSize": 5,
+                    "type": "particleComponent"
+                },
+                {
+                    "material": 5,
+                    "name": "no-effect",
+                    "type": "materialComponent"
+                }
+            ],
+            "id": 5,
+            "name": "p_huxu_xt_a01_e121",
+            "orientation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "parent": "0",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ]
+        }
+    ],
+    "groups": [],
+    "materials": [
+        {
+            "id": 2,
+            "source": "p_hat_mao_a02_e12/particle01_material.acmtl"
+        },
+        {
+            "id": 3,
+            "source": "p_hat_mao_a02_e12/particle01_material.acmtl"
+        },
+        {
+            "id": 4,
+            "source": "p_hat_mao_a02_e12/particle01_material.acmtl"
+        },
+        {
+            "id": 5,
+            "source": "p_hat_mao_a02_e12/particle01_material.acmtl"
+        }
+    ],
+    "models": [],
+    "particles": [
+        {
+            "id": 2,
+            "source": "p_hat_mao_a02_e12/particle01.particle"
+        },
+        {
+            "id": 3,
+            "source": "p_hat_mao_a02_e12/particle02.particle"
+        },
+        {
+            "id": 4,
+            "source": "p_hat_mao_a02_e12/particle03.particle"
+        },
+        {
+            "id": 5,
+            "source": "p_hat_mao_a02_e12/particle04.particle"
+        }
+    ],
+    "textures": []
+}

@@ -345,6 +345,43 @@ class StickerSubEffect : public SubEffect {
     virtual glm::mat4 VertexMatrix(FaceDetectionReport* face_detection, int source_width, int source_height);
 };
 
+// 2DSticker
+class StickerFace : public StickerSubEffect {
+ public:
+    StickerFace();
+    ~StickerFace();
+  class Position {
+    public:
+        int index;
+        double x;
+        double y;
+  };
+  class Scale {
+    public:
+        int index;
+        double x;
+        double y;
+  };
+  class Rotate {
+    public:
+        double x;
+        double y;
+  };
+  
+  std::vector<StickerFace::Position*> positions;
+  std::vector<StickerFace::Scale*> scales;
+  std::vector<Rotate*> rotates;
+  int frame_count;
+  
+  public:
+    int OnDrawFrame(FaceDetection* face_detection,
+        std::list<SubEffect *> sub_effects,
+        int origin_texture_id, int texture_id,
+        int width, int height, uint64_t current_time);
+  protected:
+    glm::mat4 VertexMatrix(FaceDetectionReport* face_detection, int source_width, int source_height) override;
+};
+
 // StickerV3
 class StickerV3SubEffect : public StickerSubEffect {
  public:
@@ -415,6 +452,8 @@ class Effect {
     int ReadFile(const std::string& path, char** buffer);
     void ConvertFilter(cJSON* effect_item_json, char* resource_root_path, FilterSubEffect* filter_sub_effect);
     void ConvertStickerConfig(cJSON* effect_item_json, char* resource_root_path, SubEffect* sub_effect);
+    // 转换带人脸的2D贴纸json
+    int ConvertStickerFaceConfig(cJSON* effect_item_json, char* resource_root_path, std::list<SubEffect*>& sub_effects);
     void ConvertGeneralConfig(cJSON* effect_item_json, char* resource_root_path, GeneralSubEffect* general_sub_effect);
     void ParseFaceMakeupV2(cJSON* makeup_root_json, const std::string& resource_root_path, FaceMakeupV2* face_makeup_v2);
     void ConvertFaceMakeupV2(cJSON* effect_item_json, char* resource_root_path, FaceMakeupV2SubEffect* face_makeup_v2_sub_effect);

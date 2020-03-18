@@ -10,5 +10,23 @@
     "name": "王妃",
     "color": "#cce77e86",
     "effect": "effect/princess"
+  },
+  {
+    "id": 3,
+    "name": "贴纸妆",
+    "color": "#cce77e86",
+    "effect": "effect/stickerMarkup"
+  },
+  {
+    "id": 4,
+    "name": "飘落小猪",
+    "color": "#cce77e86",
+    "effect": "effect/fallPig"
+  },
+  {
+    "id": 5,
+    "name": "猫头",
+    "color": "#cce77e86",
+    "effect": "effect/cat"
   }
 ]

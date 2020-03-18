@@ -11,7 +11,7 @@
 
 #include "android_xlog.h"
 
-#define NDK_MEDIACODEC_VERSION 21
+#define NDK_MEDIACODEC_VERSION 29
 
 #define AUDIO_FLAG 0x1
 #define VIDEO_FLAG 0x2

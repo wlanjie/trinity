@@ -1,0 +1,32 @@
+{
+    "content": {
+        "events": {
+            "faceNums": 1,
+            "params": [
+                {
+                    "type": "face",
+                    "useCoordUnit_M": true
+                }
+            ],
+            "source": "./sticker.event",
+            "version": 2
+        },
+        "replaceableTexture": [],
+        "scenes": [
+            {
+                "id": 0,
+                "isRevPostProc": true,
+                "name": "scene0",
+                "source": "./sticker.scene"
+            }
+        ],
+        "useOccluderM": true
+    },
+    "requirement": {
+        "faceDetect": true,
+        "faceTrack": true,
+        "matting": false
+    },
+    "tag": "p_hat_mao_a03_e12",
+    "version": "1.2"
+}

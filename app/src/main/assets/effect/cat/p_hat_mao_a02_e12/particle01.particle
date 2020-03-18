@@ -1,0 +1,85 @@
+{
+    "version": "1.0",
+    "name": "jet3.veparticle",
+    "quota" : 8,
+    "emitters": [
+        { 
+            "type": "BOX",
+            "name": "boxEmitter",
+            "keepLocal": false,
+            "isEnabled": true,
+            "color": [1.0, 1.0, 1.0, 1.0],
+            "position": [-1.4, 2.8, 1.370],
+            "angle": {
+                "type": "FIXED",
+                "value": 0.16
+            },
+            "velocity": {
+                "type": "RANDOM",
+                "max": 0,
+                "min": 0
+            },
+            "emissionRate": {
+                "type": "FIXED",
+                "value": 5
+            },
+            "totalTimeToLive": {
+                "type": "RANDOM",
+                "max": 1,
+                "min": 1
+            },
+            "width": {
+                "type": "RANDOM",
+                "max": 0.8,
+                "min": 0.8
+            },
+            "height": {
+                "type": "RANDOM",
+                "max": 0.8,
+                "min": 0.8
+            },
+            "boxWidth": 0.6,
+            "boxHeight": 0.6,
+            "boxDepth": 0.6
+        }
+    ],
+    "affectors": [
+        {
+            "type": "COLOR",
+            "name": "colorAffector",
+            "colors": [
+       [0.0, 1, 1, 1, 0.5],   
+       [1.0, 1, 1, 1, 0.3]
+            ]
+        },
+        {
+             "type": "GRAVITY",
+             "name": "gravityAffector",
+             "position" : [0.0, 5.9, 0.0],
+             "gravity" : 2.4
+        },
+        {
+            "type": "TEXTURE_ANIMATION",
+            "name": "textureAnimationAffector",
+            "animationType": "loop",
+            "animationTimeStep": 0.02,
+            "textureCoordsStart": 0,
+            "textureCoordsEnd": 24
+        },
+		{
+		    "type": "TEXTURE_ROTATION",
+			"name": "textureRotation",
+			"useOwnRotationSpeed": true,
+			"rotationSpeed": {
+                "type": "RANDOM",
+                "max": 0.0,
+                "min": 0.0
+            },
+			"rotation": {
+                "type": "RANDOM",
+                "max": 1.2,
+                "min": 1.2
+            }
+		}
+    ]
+}

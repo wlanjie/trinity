@@ -1,0 +1,124 @@
+{
+    "parts": {
+        "Untitled_1542791789": {
+            "blendMode": 0,
+            "enable": false,
+            "frameCount": 25,
+            "height": 264,
+            "position": {
+                "positionX": [
+                    {
+                        "index": 46,
+                        "x": 373.2572300173503,
+                        "y": 134.42489916150623
+                    }
+                ],
+                "positionY": [
+                ]
+            },
+            "positionRelationType": 1,
+            "positionType": 1,
+            "rotateCenter": [
+                {
+                    "x": 111.2234519020176,
+                    "y": -403.24081282759136
+                }
+            ],
+            "scale": {
+                "scaleX": {
+                    "pointA": [
+                        {
+                            "index": 74,
+                            "x": 291.41663637176293,
+                            "y": 35.856264993392415
+                        }
+                    ],
+                    "pointB": [
+                        {
+                            "index": 77,
+                            "x": 456.0872518084103,
+                            "y": 36.018711399911496
+                        }
+                    ]
+                },
+                "scaleY": {
+                    "pointA": [
+                    ],
+                    "pointB": [
+                    ]
+                }
+            },
+            "triggerDelay": 0,
+            "triggerDisappear": false,
+            "triggerLoop": 0,
+            "triggerRestart": false,
+            "triggerStop": false,
+            "triggerType": 0,
+            "width": 750,
+            "zPosition": 5000
+        },
+        "Untitled_1542793284": {
+            "blendMode": 0,
+            "enable": true,
+            "frameCount": 25,
+            "height": 264,
+            "position": {
+                "positionX": [
+                    {
+                        "index": 74,
+                        "x": 294.76671127546547,
+                        "y": 364.0370001109441
+                    },
+                    {
+                        "index": 77,
+                        "x": 451.9092532260949,
+                        "y": 364.1920201257991
+                    }
+                ],
+                "positionY": [
+                ]
+            },
+            "positionRelationType": 1,
+            "positionType": 1,
+            "rotateCenter": [
+                {
+                    "x": 122.81122926872997,
+                    "y": -54.98633801721723
+                }
+            ],
+            "scale": {
+                "scaleX": {
+                    "pointA": [
+                        {
+                            "index": 74,
+                            "x": 294.76671127546547,
+                            "y": 364.0370001109441
+                        }
+                    ],
+                    "pointB": [
+                        {
+                            "index": 77,
+                            "x": 451.9092532260949,
+                            "y": 364.1920201257991
+                        }
+                    ]
+                },
+                "scaleY": {
+                    "pointA": [
+                    ],
+                    "pointB": [
+                    ]
+                }
+            },
+            "triggerDelay": 0,
+            "triggerDisappear": false,
+            "triggerLoop": 0,
+            "triggerRestart": false,
+            "triggerStop": false,
+            "triggerType": 0,
+            "width": 750,
+            "zPosition": 4999
+        }
+    },
+    "version": "1.1"
+}

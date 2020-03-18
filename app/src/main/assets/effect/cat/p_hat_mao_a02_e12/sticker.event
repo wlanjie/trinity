@@ -1,0 +1,90 @@
+[
+    {
+        "action": {
+            "actionGroup": [
+                {
+                    "params": {
+                        "entity": "2",
+                        "index": 0
+                    },
+                    "type": "transformAnimation"
+                }
+            ],
+            "groupType": "ALL"
+        },
+        "event": [
+            {
+                "eventContent": {
+                    "index": 0
+                },
+                "eventType": "FACE_FOLLOW"
+            }
+        ]
+    },
+    {
+        "action": {
+            "actionGroup": [
+                {
+                    "params": {
+                        "entity": "3",
+                        "index": 0
+                    },
+                    "type": "transformAnimation"
+                }
+            ],
+            "groupType": "ALL"
+        },
+        "event": [
+            {
+                "eventContent": {
+                    "index": 0
+                },
+                "eventType": "FACE_FOLLOW"
+            }
+        ]
+    },
+    {
+        "action": {
+            "actionGroup": [
+                {
+                    "params": {
+                        "entity": "4",
+                        "index": 0
+                    },
+                    "type": "transformAnimation"
+                }
+            ],
+            "groupType": "ALL"
+        },
+        "event": [
+            {
+                "eventContent": {
+                    "index": 0
+                },
+                "eventType": "FACE_FOLLOW"
+            }
+        ]
+    },
+    {
+        "action": {
+            "actionGroup": [
+                {
+                    "params": {
+                        "entity": "5",
+                        "index": 0
+                    },
+                    "type": "transformAnimation"
+                }
+            ],
+            "groupType": "ALL"
+        },
+        "event": [
+            {
+                "eventContent": {
+                    "index": 0
+                },
+                "eventType": "FACE_FOLLOW"
+            }
+        ]
+    }
+]

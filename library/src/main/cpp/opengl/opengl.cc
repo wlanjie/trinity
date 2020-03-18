@@ -25,9 +25,10 @@
 #include "android_xlog.h"
 #elif __APPLE__
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#define LOGI
-#define LOGE
+#define LOGE(format, ...) fprintf(stdout, format, __VA_ARGS__) // NOLINT
+#define LOGI(format, ...) fprintf(stdout, format, __VA_ARGS__) // NOLINT
 #endif
+
 #include "opengl.h"
 #include "matrix.h"
 #include "gl.h"

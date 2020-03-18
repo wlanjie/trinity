@@ -1,0 +1,100 @@
+{
+    "faceID": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+    ],
+    "faceSDKType": 2,
+    "filters": [
+        {
+            "2dSequenceResources": {
+                "imageCount": 1,
+                "imageInterval": 0.5,
+                "name": "yhwclhur_1548993646.png_",
+                "path": "yhwclhur_1548993646.png/"
+            },
+            "blendMode": 0,
+            "filterType": "mask",
+            "intensity": 1,
+            "rect": {
+                "height": 887,
+                "width": 624,
+                "x": 324,
+                "y": 213
+            },
+            "zPosition": 5000
+        },
+        {
+            "2dSequenceResources": {
+                "imageCount": 1,
+                "imageInterval": 0.5,
+                "name": "winujwoj_1549004082.png_",
+                "path": "winujwoj_1549004082.png/"
+            },
+            "blendMode": 15,
+            "filterType": "mask",
+            "intensity": 1,
+            "rect": {
+                "height": 113,
+                "width": 234,
+                "x": 525,
+                "y": 726
+            },
+            "zPosition": 4999
+        },
+        {
+            "2dSequenceResources": {
+                "imageCount": 1,
+                "imageInterval": 0.5,
+                "name": "grtitmsw_1548993622.png_",
+                "path": "grtitmsw_1548993622.png/"
+            },
+            "blendMode": 15,
+            "filterType": "eye_part",
+            "intensity": 1,
+            "rect": {
+                "height": 287,
+                "width": 698,
+                "x": 284,
+                "y": 416
+            },
+            "zPosition": 4998
+        },
+        {
+            "blendMode": 15,
+            "blend_resources": {
+                "imageCount": 1,
+                "imageInterval": 0.05,
+                "name": "kjglknen",
+                "path": "kjglknen_1549010539/"
+            },
+            "browV2Param": {
+                "thinIntensity": 1
+            },
+            "filterType": "brow",
+            "intensity": 1,
+            "mask_resources": {
+                "imageCount": 1,
+                "imageInterval": 0.05,
+                "name": "sqdrsscs",
+                "path": "sqdrsscs_1549010539/"
+            },
+            "rect": {
+                "height": 1280,
+                "width": 1280,
+                "x": 0,
+                "y": 0
+            },
+            "zPosition": 4997
+        }
+    ],
+    "standardFaceKeyPoints": "mask/texcoord.txt",
+    "standardFaceSize": {
+        "height": 1280,
+        "width": 1280
+    },
+    "version": "1.1"
+}

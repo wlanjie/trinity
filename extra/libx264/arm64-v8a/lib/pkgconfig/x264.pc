@@ -1,0 +1,11 @@
+prefix=../build/x264/arm64-v8a
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: x264
+Description: H.264 (MPEG4 AVC) encoder library
+Version: 0.157.2970 5493be8
+Libs: -L${exec_prefix}/lib -lx264 -lm
+Libs.private: 
+Cflags: -I${prefix}/include

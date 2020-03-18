@@ -12,7 +12,7 @@
 
 #if __ANDROID_API__ >= NDK_MEDIACODEC_VERSION
 
-int mediacodec_send_packet(AVPlayContext *context, AVPacket *packet) {
+int mediacodec_send_packet(AVPlayContext *context, AVPacket *packet, int buffer_index) {
     MediaCodecContext *media_codec_context = context->media_codec_context;
     if (packet == NULL) {
         return -2;
@@ -36,14 +36,13 @@ int mediacodec_send_packet(AVPlayContext *context, AVPacket *packet) {
     if ((packet->flags | AV_PKT_FLAG_KEY) > 0) {
         keyframe_flag |= 0x1;
     }
-    ssize_t id = AMediaCodec_dequeueInputBuffer(media_codec_context->codec, 1000000);
     media_status_t media_status;
     size_t size;
-    if (id >= 0) {
-        uint8_t *buf = AMediaCodec_getInputBuffer(media_codec_context->codec, (size_t) id, &size);
+    if (buffer_index >= 0) {
+        uint8_t *buf = AMediaCodec_getInputBuffer(media_codec_context->codec, (size_t) buffer_index, &size);
         if (buf != NULL && size >= packet->size) {
             memcpy(buf, packet->data, (size_t) packet->size);
-            media_status = AMediaCodec_queueInputBuffer(media_codec_context->codec, (size_t) id, 0, (size_t) packet->size,
+            media_status = AMediaCodec_queueInputBuffer(media_codec_context->codec, (size_t) buffer_index, 0, (size_t) packet->size,
                                                         (uint64_t) time_stamp,
                                                         keyframe_flag);
             if (media_status != AMEDIA_OK) {
@@ -51,12 +50,21 @@ int mediacodec_send_packet(AVPlayContext *context, AVPacket *packet) {
                 return (int) media_status;
             }
         }
-    }else if(id == AMEDIACODEC_INFO_TRY_AGAIN_LATER){
+    }else if(buffer_index == AMEDIACODEC_INFO_TRY_AGAIN_LATER){
         return -1;
     }else{
-        LOGE("input buffer id < 0  value == %zd", id);
+        LOGE("input buffer id < 0  value == %zd", buffer_index);
     }
     return 0;
+}
+
+int mediacodec_dequeue_input_buffer_index(AVPlayContext* context) {
+    if (context == NULL) {
+        return -1;
+    }
+    MediaCodecContext *media_codec_context = context->media_codec_context;
+    ssize_t id = AMediaCodec_dequeueInputBuffer(media_codec_context->codec, 1000000);
+    return (int) id;
 }
 
 void mediacodec_release_buffer(AVPlayContext *pd, AVFrame *frame) {
@@ -200,10 +208,10 @@ MediaCodecContext *create_mediacodec_context(AVPlayContext *pd) {
 
 void mediacodec_start(AVPlayContext *pd){
     MediaCodecContext *ctx = pd->media_codec_context;
-    while(pd->video_render_context->texture_window == NULL){
+    while(pd->window == NULL){
         usleep(10000);
     }
-    media_status_t ret = AMediaCodec_configure(ctx->codec, ctx->format, pd->video_render_context->texture_window, NULL, 0);
+    media_status_t ret = AMediaCodec_configure(ctx->codec, ctx->format, pd->window, NULL, 0);
     if (ret != AMEDIA_OK) {
         LOGE("open mediacodec failed \n");
     }

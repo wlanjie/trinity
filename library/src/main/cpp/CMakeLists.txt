@@ -158,7 +158,25 @@ add_library(xlog SHARED IMPORTED)
 set_target_properties(xlog PROPERTIES IMPORTED_LOCATION ${XLOG_LIB})
 
 #target_link_libraries(trinity android jnigraphics log z swresample avformat avcodec avutil jpeg jpeg_turbo GLESv2 EGL OpenSLES)
-target_link_libraries(trinity
+if (${CMAKE_SYSTEM_VERSION} MATCHES "21")
+    target_link_libraries(trinity
+        log
+        android
+        GLESv2
+        EGL
+        z
+        mediandk
+        OpenSLES
+        swresample
+        avformat
+        avcodec
+        avfilter
+        avutil
+        fdk-aac
+        x264
+        xlog)
+else (${CMAKE_SYSTEM_VERSION} LESS "21")
+    target_link_libraries(trinity
         log
         android
         GLESv2
@@ -173,3 +191,4 @@ target_link_libraries(trinity
         fdk-aac
         x264
         xlog)
+endif (${CMAKE_SYSTEM_VERSION} MATCHES "21")

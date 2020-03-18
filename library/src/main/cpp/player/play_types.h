@@ -156,6 +156,7 @@ typedef struct AVPlayContext {
     int sample_rate;
     jobject *play_object;
     JavaClass *java_class;
+    ANativeWindow* window;
 
     //用户设置
     int buffer_size_max;

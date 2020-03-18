@@ -187,6 +187,138 @@ glm::mat4 StickerSubEffect::VertexMatrix(FaceDetectionReport* face_detection, in
     return glm::mat4();
 }
 
+// StickerFace
+StickerFace::StickerFace() {}
+
+StickerFace::~StickerFace() {
+    for (auto position : positions) {
+        delete position;
+    }
+    positions.clear();
+    for (auto scale : scales) {
+        delete scale;
+    }
+    scales.clear();
+    for (auto rotate : rotates) {
+        delete rotate;
+    }
+    rotates.clear();
+}
+
+glm::mat4 StickerFace::VertexMatrix(FaceDetectionReport *face_detection, int source_width, int source_height) {
+    glm::mat4 model_matrix = {
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    };
+    bool is_invalid = face_detection->HasFace() || face_detect
+        || positions.empty() || scales.empty();
+    if (!is_invalid) {
+        return model_matrix;
+    }
+    float* land_marks = face_detection->key_points;
+    float aspect = source_width * 1.0F / source_height;
+    float sticker_aspect = width * 1.0F / height;
+    StickerFace::Position* position1 = positions[0];
+    StickerFace::Position* position2 = positions[positions.size() - 1];
+    glm::vec2 anchor_face_point1 = glm::vec2(land_marks[position1->index * 2] / source_width,
+        land_marks[position1->index * 2 + 1] / source_height);
+    glm::vec2 anchor_face_point2 = glm::vec2(land_marks[position2->index * 2] / source_width,
+        land_marks[position2->index * 2 + 1] / source_height);    
+    float distance1 = glm::distance(anchor_face_point1, anchor_face_point2);
+    float distance2 = fabs(position1->x - position2->x);
+    float ratio = distance1 / distance2;
+    glm::vec2 sticker_center = glm::vec2(0.5, 0.5);
+    sticker_center = glm::vec2(anchor_face_point2.x + (sticker_center.x - position2->x) * ratio,
+        anchor_face_point2.y + (sticker_center.y - position2->y) / sticker_aspect * ratio);
+    sticker_center = glm::vec2(sticker_center.x * 2 - 1, sticker_center.y * 2 - 1);
+    // 贴纸长宽
+    StickerFace::Scale* scale1 = scales[0];
+    StickerFace::Scale* scale2 = scales[scales.size() - 1];
+    glm::vec2 scale_face_point1 = glm::vec2(land_marks[scale1->index * 2] / source_width,
+        land_marks[scale1->index * 2 + 1] / source_height);
+    glm::vec2 scale_face_point2 = glm::vec2(land_marks[scale2->index * 2] / source_width,
+        land_marks[scale2->index * 2 + 1] / source_height);
+    distance1 = glm::distance(scale_face_point1, scale_face_point2);
+    distance2 = fabs(scale1->x - scale2->x);
+    float ndc_sticker_width = distance1 / distance2;
+    float ndc_sticker_height = ndc_sticker_width / sticker_aspect;
+    glm::vec2 rotation_center = glm::vec2(land_marks[43 * 2] / source_width * 2 - 1,
+        land_marks[43 * 2 + 1] / source_height * 2 - 1);
+    float pitch_angle = face_detection->pitch;
+    float yaw_angle = face_detection->yaw;
+    float roll_angle = face_detection->roll;
+    if (fabs(yaw_angle) > M_PI / 180.0 * 50.0) {
+        yaw_angle = (yaw_angle / fabs(yaw_angle)) * M_PI / 180.0 * 50.0;
+    }
+    if (fabs(pitch_angle) > M_PI / 180.0 * 30.0) {
+        pitch_angle = (pitch_angle / fabs(pitch_angle)) * M_PI / 180.0 * 30.0;
+    }
+    // 围绕rotationCenter旋转
+    float projeciton_scale = 2;
+    glm::mat4 projection = glm::frustum(-1 / projeciton_scale, 1 / projeciton_scale, 
+        -1 / aspect / projeciton_scale, 1 / aspect / projeciton_scale, 5.0F, 100.0F);
+    glm::mat4 view_matrix = glm::lookAt(glm::vec3(0, 0, 10), 
+        glm::vec3(0, 0, -1), glm::vec3(0, 1, 0));
+    model_matrix = glm::translate(model_matrix, glm::vec3(rotation_center.x, rotation_center.y, 0));
+    // rotate z
+    float z_cos = cosf(roll_angle);
+    float z_sin = sinf(roll_angle);
+    glm::mat4 rotation_z = { z_cos, z_sin, 0.0F, 0.0F,
+                     -z_sin, z_cos, 0.0F, 0.0F,
+                     0.0F, 0.0F, 1.0F, 0.0F,
+                     0.0F, 0.0F, 0.0F, 1.0F};
+    model_matrix = model_matrix * rotation_z;
+    // rotate y
+    float y_cos = cosf(yaw_angle);
+    float y_sin = sinf(yaw_angle);
+    glm::mat4 rotation_y = {
+        y_cos, 0.0F, -y_sin, 0.0F,
+        0.0F, 1.0F, 0.0F, 0.0F,
+        y_sin, 0.0F, y_cos, 0.0F,
+        0.0F, 0.0F, 0.0F, 1.0F
+    };
+    model_matrix = model_matrix * rotation_y;
+    // rotate x
+    float x_cos = cosf(pitch_angle);
+    float x_sin = sinf(pitch_angle);
+    glm::mat4 rotation_x = {
+        1.0F, 0.0F, 0.0F, 0.0F,
+        0.0F, x_cos, x_sin, 0.0F,
+        0.0F, -x_sin, x_cos, 0.0F,
+        0.0F, 0.0F, 0.0F, 1.0F
+    };
+    model_matrix = model_matrix * rotation_x;
+    model_matrix = glm::translate(model_matrix, glm::vec3(-rotation_center.x, -rotation_center.y, 0));
+    // 移动贴图到目标位置
+    model_matrix = glm::translate(model_matrix, glm::vec3(sticker_center.x, sticker_center.y, 0));
+    model_matrix = glm::scale(model_matrix, glm::vec3(ndc_sticker_width, ndc_sticker_height, 1.0F));
+    glm::mat4 model_view_matrix = view_matrix * model_matrix;
+    glm::mat4 mvp = projection * model_view_matrix;
+    return mvp;
+}
+
+int StickerFace::OnDrawFrame(FaceDetection* face_detection,
+    std::list<SubEffect *> sub_effects,
+    int origin_texture_id, int texture_id,
+    int width, int height, uint64_t current_time) {
+    int sticker_texture_id = texture_id;
+    if (nullptr != blend) {
+        std::vector<FaceDetectionReport*> face_detections;
+        face_detection->FaceDetector(face_detections);
+        ImageBuffer* image_buffer = StickerBufferAtFrameTime(current_time);
+        if (nullptr != image_buffer) {
+            for (auto face_detection_report : face_detections) {
+                glm::mat4 matrix = VertexMatrix(face_detection_report, width, height);
+                float* m = glm::value_ptr(matrix);
+                sticker_texture_id = blend->OnDrawFrame(sticker_texture_id, image_buffer->GetTextureId(), width, height, m, alpha_factor);
+            }
+        }
+    }
+    return sticker_texture_id;
+}
+
 // StickerV3
 StickerV3SubEffect::StickerV3SubEffect()
     : transform(nullptr) {}
@@ -623,6 +755,16 @@ void Effect::ParseConfig(char *config_path) {
                 face_makeup_v2_effect->enable = enable;
                 face_makeup_v2_effect->zorder = zorder;
                 sub_effects_.push_back(face_makeup_v2_effect);
+            } else if (strcasecmp(type, "2DSticker") == 0) {
+//                auto* sticker_face = new StickerFace();
+//                sticker_face->zorder = zorder;
+//                sticker_face->enable = enable;
+                std::list<SubEffect*> sticker_face_effect;
+                ConvertStickerFaceConfig(effect_item_json, config_path, sticker_face_effect);
+                for (auto& sub_effect : sticker_face_effect) {
+                    sub_effects_.push_back(sub_effect);
+                }
+                sticker_face_effect.clear();
             } else if (strcasecmp(type, "filter") == 0) {
                 auto* filter_effect = new FilterSubEffect();
                 filter_effect->zorder = zorder;
@@ -746,8 +888,8 @@ void Effect::ParseFaceMakeupV2(cJSON *makeup_root_json, const std::string &resou
         auto* face_makeup_filter = new FaceMakeupV2Filter;
         face_makeup_filter->filter_type = CopyValue(filter_type_json->valuestring);
         cJSON* sequence_resource_json = cJSON_GetObjectItem(filter_item_json, "2dSequenceResources");
-        cJSON* image_count_json = cJSON_GetObjectItem(sequence_resource_json, "imageCount");
-        face_makeup_filter->image_count = image_count_json->valueint;
+//        cJSON* image_count_json = cJSON_GetObjectItem(sequence_resource_json, "imageCount");
+//        face_makeup_filter->image_count = image_count_json->valueint;
         cJSON* name_json = cJSON_GetObjectItem(sequence_resource_json, "name");
         cJSON* path_json = cJSON_GetObjectItem(sequence_resource_json, "path");
         if (name_json == nullptr || path_json == nullptr) {
@@ -852,6 +994,200 @@ void Effect::ConvertFaceMakeupV2(cJSON *effect_item_json, char *resource_root_pa
     auto* face_makeup = new FaceMakeupV2();
     ParseFaceMakeupV2(makeup_root_json, content_root_path, face_makeup);
     face_makeup_v2_sub_effect->face_makeup_v2_ = face_makeup;
+}
+
+// convertStickerFace
+int Effect::ConvertStickerFaceConfig(cJSON* effect_item_json, char* resource_root_path, std::list<SubEffect*>& sub_effects) {
+    cJSON* path_json = cJSON_GetObjectItem(effect_item_json, "path");
+    if (nullptr == path_json) {
+        return -1;
+    }
+    char* path = path_json->valuestring;
+    char const* content_name = "content.json";
+    std::string content_root_path;
+    content_root_path.append(resource_root_path);
+    content_root_path.append("/");
+    content_root_path.append(path);
+
+    std::string content_path;
+    content_path.append(content_root_path);
+    content_path.append(content_name);
+    char* content_buffer = nullptr;
+    LOGE("%s content_path: %s", __func__, content_path.c_str());
+    int ret = ReadFile(content_path, &content_buffer);
+    if (ret != 0 || nullptr == content_buffer) {
+        return -1;
+    }
+    cJSON* content_root_json = cJSON_Parse(content_buffer);
+    if (nullptr == content_root_json) {
+        return -1;
+    }
+    bool face_detect = false;
+    cJSON* requirement_json = cJSON_GetObjectItem(content_root_json, "requirement");
+    if (nullptr != requirement_json) {
+        cJSON* face_detect_json = cJSON_GetObjectItem(requirement_json, "faceDetect");
+        face_detect = face_detect_json->valueint == 1;
+    }
+    cJSON* content_json = cJSON_GetObjectItem(content_root_json, "content");
+    if (nullptr == content_json) {
+        return -1;
+    }
+    cJSON* content_path_json = cJSON_GetObjectItem(content_json, "path");
+    if (nullptr == content_path_json) {
+        return -1;
+    }
+    char* sticker_path = content_path_json->valuestring;
+    std::string sticker_config_path;
+    sticker_config_path.append(content_root_path);
+    sticker_config_path.append(sticker_path);
+    char* sticker_config_buffer = nullptr;
+    ret = ReadFile(sticker_config_path, &sticker_config_buffer);
+    if (ret != 0 || nullptr == content_buffer) {
+        return -1;
+    }
+    cJSON* sticker_config_root_json = cJSON_Parse(sticker_config_buffer);
+    if (nullptr == sticker_config_root_json) {
+        return -1;
+    }
+    cJSON* parts_json = cJSON_GetObjectItem(sticker_config_root_json, "parts");
+    if (nullptr == parts_json) {
+        return -1;
+    }
+    int parts_size = cJSON_GetArraySize(parts_json);
+    for (int i = 0; i < parts_size; i++) {
+        auto* sticker_face = new StickerFace();
+        sticker_face->face_detect = face_detect;
+        
+        cJSON* parts_item_json = cJSON_GetArrayItem(parts_json, i);
+        char* parts_item_path = parts_item_json->string;
+        cJSON* parts_sub_item_json = cJSON_GetObjectItem(parts_json, parts_item_path);
+        cJSON* blend_mode_json = cJSON_GetObjectItem(parts_sub_item_json, "blendMode");
+        if (nullptr != blend_mode_json) {
+            sticker_face->blendmode = blend_mode_json->valueint;
+            sticker_face->blend = BlendFactory::CreateBlend(sticker_face->blendmode);
+        }
+        cJSON* enable_json = cJSON_GetObjectItem(parts_sub_item_json, "enable");
+        if (nullptr != enable_json) {
+            sticker_face->enable = enable_json->valueint == 1;
+        }
+        cJSON* frame_count_json = cJSON_GetObjectItem(parts_sub_item_json, "frameCount");
+        if (nullptr != frame_count_json) {
+            sticker_face->frame_count = frame_count_json->valueint;
+        }        cJSON* width_json = cJSON_GetObjectItem(parts_sub_item_json, "width");
+        if (nullptr != width_json) {
+            sticker_face->width = width_json->valueint;
+        }
+        if (sticker_face->width == 0) {
+            continue;
+        }
+        cJSON* height_json = cJSON_GetObjectItem(parts_sub_item_json, "height");
+        if (nullptr != height_json) {
+            sticker_face->height = height_json->valueint;
+        }
+        if (sticker_face->height == 0) {
+            continue;
+        }
+        cJSON* alpha_factor_json = cJSON_GetObjectItem(parts_sub_item_json, "alphaFactor");
+        if (nullptr != alpha_factor_json) {
+            sticker_face->alpha_factor = alpha_factor_json->valuedouble;
+        }
+        cJSON* zorder_json = cJSON_GetObjectItem(parts_sub_item_json, "zorder");
+        if (nullptr != zorder_json) {
+            sticker_face->zorder = zorder_json->valueint;
+        }
+        cJSON* fps_json = cJSON_GetObjectItem(parts_sub_item_json, "fps");
+        if (nullptr != fps_json) {
+            sticker_face->fps = fps_json->valuedouble;
+        }
+        sticker_face->name = CopyValue(parts_item_path);
+        cJSON* position_json = cJSON_GetObjectItem(parts_sub_item_json, "position");
+        if (nullptr != position_json) {
+            cJSON* position_x_json = cJSON_GetObjectItem(position_json, "positionX");
+            int position_x_size = cJSON_GetArraySize(position_x_json);
+            for (int i = 0; i < position_x_size; i++) {
+                StickerFace::Position* position = new StickerFace::Position();
+                cJSON* position_x_item_json = cJSON_GetArrayItem(position_x_json, i);
+                cJSON* x_json = cJSON_GetObjectItem(position_x_item_json, "x");
+                if (nullptr != x_json) {
+                    position->x = x_json->valuedouble / sticker_face->width;
+                }
+                cJSON* y_json = cJSON_GetObjectItem(position_x_item_json, "y");
+                if (nullptr != y_json) {
+                    position->y = y_json->valuedouble / sticker_face->height;
+                }
+                cJSON* index_json = cJSON_GetObjectItem(position_x_item_json, "index");
+                if (nullptr != index_json) {
+                    position->index = index_json->valueint;
+                }
+                sticker_face->positions.push_back(position);
+            }
+        }
+        cJSON* scale_json = cJSON_GetObjectItem(parts_sub_item_json, "scale");
+        if (nullptr != scale_json) {
+            cJSON* scale_x_json = cJSON_GetObjectItem(scale_json, "scaleX");
+            if (nullptr != scale_x_json) {
+                int scale_x_size = cJSON_GetArraySize(scale_x_json);
+                for (int i = 0; i < scale_x_size; i++) {
+                    cJSON* scale_x_key_json = cJSON_GetArrayItem(scale_x_json, i);
+                    cJSON* scale_x_item_json = cJSON_GetObjectItem(scale_x_json, scale_x_key_json->string);
+                    int point_size = cJSON_GetArraySize(scale_x_item_json);
+                    for (int point_index = 0; point_index < point_size; point_index++) {
+                        cJSON* point_json = cJSON_GetArrayItem(scale_x_item_json, point_index);
+                        StickerFace::Scale* scale = new StickerFace::Scale();
+                        cJSON* x_json = cJSON_GetObjectItem(point_json, "x");
+                        if (nullptr != x_json) {
+                            scale->x = x_json->valuedouble / sticker_face->width;
+                        }
+                        cJSON* y_json = cJSON_GetObjectItem(point_json, "y");
+                        if (nullptr != y_json) {
+                            scale->y = y_json->valuedouble / sticker_face->height;
+                        }
+                        cJSON* index_json = cJSON_GetObjectItem(point_json, "index");
+                        if (nullptr != index_json) {
+                            scale->index = index_json->valueint;
+                        }
+                        sticker_face->scales.push_back(scale); 
+                    }
+                }
+            }
+        }
+        cJSON* rotate_center_json = cJSON_GetObjectItem(parts_sub_item_json, "rotateCenter");
+        if (nullptr != rotate_center_json) {
+            int size = cJSON_GetArraySize(rotate_center_json);
+            for (int i = 0; i < size; i++) {
+                StickerFace::Rotate* rotate = new StickerFace::Rotate();
+                cJSON* rotate_item_json = cJSON_GetArrayItem(rotate_center_json, i);
+                cJSON* x_json = cJSON_GetObjectItem(rotate_item_json, "x");
+                if (nullptr != x_json) {
+                    rotate->x = x_json->valuedouble / sticker_face->width;
+                }
+                cJSON* y_json = cJSON_GetObjectItem(rotate_item_json, "y");
+                if (nullptr != y_json) {
+                    rotate->y = y_json->valuedouble / sticker_face->height;
+                }
+                sticker_face->rotates.push_back(rotate);
+            }
+        }
+        for (int i = 0; i < sticker_face->frame_count; i++) {
+            std::string sticker_path;
+            sticker_path.append(content_root_path);
+            sticker_path.append(parts_item_path);
+            sticker_path.append("/");
+            sticker_path.append(parts_item_path);
+            sticker_path.append("_");
+            if (i < 10) {
+                sticker_path.append("00");
+            } else if (i < 100) {
+                sticker_path.append("0");
+            }
+            sticker_path.append(std::to_string(i));
+            sticker_path.append(".png");
+            sticker_face->sticker_paths.push_back(CopyValue(const_cast<char*>(sticker_path.c_str())));
+            sticker_face->sticker_idxs.push_back(i);
+        }
+        sub_effects.push_back(sticker_face);
+    }
+    return 0;
 }
 
 // convertFilterSubEffect

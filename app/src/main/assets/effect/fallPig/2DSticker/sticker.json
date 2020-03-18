@@ -1,0 +1,69 @@
+{
+    "parts": {
+        "brhgwaqc_1549001581": {
+            "alphaFactor": 1,
+            "blendMode": 0,
+            "enable": true,
+            "frameCount": 85,
+            "height": 1176,
+            "position": {
+                "positionX": [
+                    {
+                        "index": 74,
+                        "x": 285.60439725399794,
+                        "y": 386.5010603285478
+                    },
+                    {
+                        "index": 77,
+                        "x": 417.96570932098786,
+                        "y": 386.6316338340298
+                    }
+                ],
+                "positionY": [
+                ]
+            },
+            "positionRelationType": 1,
+            "positionType": 1,
+            "rotateCenter": [
+                {
+                    "x": 140.76613173406045,
+                    "y": 33.5573053601546
+                }
+            ],
+            "scale": {
+                "scaleX": {
+                    "pointA": [
+                        {
+                            "index": 74,
+                            "x": 285.60439725399794,
+                            "y": 386.5010603285478
+                        }
+                    ],
+                    "pointB": [
+                        {
+                            "index": 77,
+                            "x": 417.96570932098786,
+                            "y": 386.6316338340298
+                        }
+                    ]
+                },
+                "scaleY": {
+                    "pointA": [
+                    ],
+                    "pointB": [
+                    ]
+                }
+            },
+            "traceRegion": 1,
+            "triggerDelay": 0,
+            "triggerDisappear": false,
+            "triggerLoop": 9999,
+            "triggerRestart": false,
+            "triggerStop": false,
+            "triggerType": 0,
+            "width": 712,
+            "zPosition": 5000
+        }
+    },
+    "version": "1.1"
+}

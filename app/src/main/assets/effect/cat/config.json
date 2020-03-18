@@ -1,0 +1,19 @@
+{
+    "effect": [
+        {
+            "path": "2DSticker/",
+            "type": "2DSticker",
+            "zorder": 5004
+        },
+        {
+            "faceIndex": [
+                0
+            ],
+            "path": "p_hat_mao_a02_e12/",
+            "type": "3DStickerV3",
+            "zorder": 5000
+        }
+    ],
+    "name": "89297_074DAED1-A038-4A2D-A154-5F3ABAA958C6",
+    "version": "3.4.0"
+}

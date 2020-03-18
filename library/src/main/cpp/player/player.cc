@@ -150,6 +150,9 @@ int Player::Init() {
 
 void Player::OnSurfaceCreated(ANativeWindow* window) {
     window_ = window;
+    if (nullptr != av_play_context_) {
+        av_play_context_->window = window;
+    }
     PostMessage(new Message(kEGLWindowCreate));
 }
 

@@ -61,7 +61,7 @@ static const char* FILTER_FRAGMENT_SHADER =
         "     newColor1 = texture2D(inputImageTextureLookup, texPos1);                               \n"
         "     newColor2 = texture2D(inputImageTextureLookup, texPos2);                               \n"
         "     vec4 newColor = mix(newColor1, newColor2, fract(yColor));                              \n"
-        "     gl_FragColor = mix(textureColor, vec4(newColor.rgb, textureColor.w), intensity);       \n"
+        "     gl_FragColor = mix(textureColor, vec4(newColor.rgb, textureColor.a), intensity);       \n"
         " } else {                                                                                   \n"
         "     gl_FragColor = textureColor;                                                           \n"
         " }                                                                                          \n"

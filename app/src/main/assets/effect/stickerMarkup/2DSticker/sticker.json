@@ -1,0 +1,197 @@
+{
+    "parts": {
+        "bapqjpwe_1552305936.png": {
+            "alphaFactor": 1,
+            "blendMode": 0,
+            "enable": true,
+            "frameCount": 1,
+            "height": 170,
+            "position": {
+                "positionX": [
+                    {
+                        "index": 35,
+                        "x": -274.30088862019767,
+                        "y": 123.53651331021193
+                    },
+                    {
+                        "index": 40,
+                        "x": -53.9618528419999,
+                        "y": 122.80612806786156
+                    }
+                ],
+                "positionY": [
+                ]
+            },
+            "positionRelationType": 1,
+            "positionType": 1,
+            "rotateCenter": [
+                {
+                    "x": -477.56841904466694,
+                    "y": -327.0452689370684
+                }
+            ],
+            "scale": {
+                "scaleX": {
+                    "pointA": [
+                        {
+                            "index": 74,
+                            "x": -262.7161662169977,
+                            "y": 196.50947403227357
+                        }
+                    ],
+                    "pointB": [
+                        {
+                            "index": 77,
+                            "x": -66.37215462080565,
+                            "y": 196.7031660218296
+                        }
+                    ]
+                },
+                "scaleY": {
+                    "pointA": [
+                    ],
+                    "pointB": [
+                    ]
+                }
+            },
+            "traceRegion": 10,
+            "triggerDelay": 0,
+            "triggerDisappear": false,
+            "triggerLoop": 9999,
+            "triggerRestart": false,
+            "triggerStop": false,
+            "triggerType": 0,
+            "width": 78,
+            "zPosition": 4999
+        },
+        "fsztativ_1552305880.png": {
+            "alphaFactor": 1,
+            "blendMode": 0,
+            "enable": true,
+            "frameCount": 1,
+            "height": 119,
+            "position": {
+                "positionX": [
+                    {
+                        "index": 35,
+                        "x": 148.0142333717164,
+                        "y": 57.862458543655535
+                    },
+                    {
+                        "index": 40,
+                        "x": 373.6951371867984,
+                        "y": 57.114365946060815
+                    }
+                ],
+                "positionY": [
+                ]
+            },
+            "positionRelationType": 1,
+            "positionType": 1,
+            "rotateCenter": [
+                {
+                    "x": -60.18128595801397,
+                    "y": -403.64316392144264
+                }
+            ],
+            "scale": {
+                "scaleX": {
+                    "pointA": [
+                        {
+                            "index": 74,
+                            "x": 159.87981412624418,
+                            "y": 132.6045652777311
+                        }
+                    ],
+                    "pointB": [
+                        {
+                            "index": 77,
+                            "x": 360.98396182848296,
+                            "y": 132.80295310815055
+                        }
+                    ]
+                },
+                "scaleY": {
+                    "pointA": [
+                    ],
+                    "pointB": [
+                    ]
+                }
+            },
+            "traceRegion": 10,
+            "triggerDelay": 0,
+            "triggerDisappear": false,
+            "triggerLoop": 9999,
+            "triggerRestart": false,
+            "triggerStop": false,
+            "triggerType": 0,
+            "width": 66,
+            "zPosition": 4998
+        },
+        "xlcnvokn_1552305977.png": {
+            "alphaFactor": 1,
+            "blendMode": 0,
+            "enable": true,
+            "frameCount": 1,
+            "height": 120,
+            "position": {
+                "positionX": [
+                    {
+                        "index": 35,
+                        "x": -10.262822096857807,
+                        "y": 312.6169551297416
+                    },
+                    {
+                        "index": 40,
+                        "x": 278.6186927772535,
+                        "y": 311.6593635958281
+                    }
+                ],
+                "positionY": [
+                ]
+            },
+            "positionRelationType": 1,
+            "positionType": 1,
+            "rotateCenter": [
+                {
+                    "x": -276.76227330100306,
+                    "y": -278.1306051949775
+                }
+            ],
+            "scale": {
+                "scaleX": {
+                    "pointA": [
+                        {
+                            "index": 74,
+                            "x": 4.925644828273402,
+                            "y": 408.2901496855112
+                        }
+                    ],
+                    "pointB": [
+                        {
+                            "index": 77,
+                            "x": 262.34782744808325,
+                            "y": 408.5440948621537
+                        }
+                    ]
+                },
+                "scaleY": {
+                    "pointA": [
+                    ],
+                    "pointB": [
+                    ]
+                }
+            },
+            "traceRegion": 10,
+            "triggerDelay": 0,
+            "triggerDisappear": false,
+            "triggerLoop": 9999,
+            "triggerRestart": false,
+            "triggerStop": false,
+            "triggerType": 0,
+            "width": 111,
+            "zPosition": 5000
+        }
+    },
+    "version": "1.1"
+}

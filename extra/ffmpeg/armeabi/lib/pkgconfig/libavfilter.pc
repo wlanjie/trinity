@@ -1,0 +1,14 @@
+prefix=/Users/wlanjie/project/android.third.party/build/ffmpeg/armeabi/
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: libavfilter
+Description: FFmpeg audio/video filtering library
+Version: 6.82.100
+Requires: libswresample >= 2.7.100, libavutil >= 55.58.100
+Requires.private: 
+Conflicts:
+Libs: -L${libdir}  -lavfilter -lx264 -lfdk-aac -lm -lz -pthread
+Libs.private: 
+Cflags: -I${includedir}
