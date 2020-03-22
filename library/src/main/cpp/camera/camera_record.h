@@ -164,6 +164,8 @@ class CameraRecord : public Handler, public FaceDetection {
 
     void OnDeleteAction(int action_id);
 
+    int GetCameraFacing();
+
     void GetFaceDetectionReports(std::vector<FaceDetectionReport*>& face_detection_reports);
 
     virtual void HandleMessage(Message* msg);
@@ -201,6 +203,7 @@ class CameraRecord : public Handler, public FaceDetection {
     ImageProcess* image_process_;
     int64_t render_time_;
     FacePoint* face_point_;
+    int camera_facing_id_;
 };
 
 }  // namespace trinity

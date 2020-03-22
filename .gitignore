@@ -27,3 +27,8 @@ local.properties
 node_modules
 
 __pycache__
+library/src/main/cpp/opengl.xcodeproj/xcuserdata/wlanjie.xcuserdatad/xcdebugger/Breakpoints_v2.xcbkptlist
+
+*.xcuserstate
+
+*.xcbkptlist

@@ -26,6 +26,9 @@
 #include "android_xlog.h"
 #include "trinity.h"
 
+#define CAMERA_BACK  0
+#define CAMERA_FRONT 1
+
 namespace trinity {
 
 CameraRecord::CameraRecord(JNIEnv* env) : Handler()
@@ -60,7 +63,8 @@ CameraRecord::CameraRecord(JNIEnv* env) : Handler()
     , current_action_id_(0)
     , image_process_(nullptr)
     , render_time_(0)
-    , face_point_(nullptr) {
+    , face_point_(nullptr)
+    , camera_facing_id_(-1) {
     env->GetJavaVM(&vm_);
 }
 
@@ -182,12 +186,17 @@ void CameraRecord::Draw() {
     if (camera_width_ == 0 || camera_height_ == 0) {
         ConfigCamera();
     }
+    // 如果相机大小改变了, 需要重建预览的FrameBuffer
     if (camera_size_change_) {
         camera_size_change_ = false;
         if (nullptr != frame_buffer_) {
             delete frame_buffer_;
             frame_buffer_ = nullptr;
         }
+    }
+    // 获取前后摄像头
+    if (-1 == camera_facing_id_) {
+        camera_facing_id_ = GetCameraFacing();
     }
     if (frame_buffer_ == nullptr) {
         frame_buffer_ = new FrameBuffer(MIN(camera_width_, camera_height_),
@@ -206,6 +215,7 @@ void CameraRecord::Draw() {
                                  MAX(camera_width_, camera_height_),
                                  screen_width_, screen_height_, frame_type);
     }
+    // 开始录制, 创建编码器
     if (start_recording) {
         start_recording = false;
         start_time_ = 0;
@@ -217,16 +227,19 @@ void CameraRecord::Draw() {
             MAX(camera_width_, camera_height_));
     frame_buffer_->SetTextureType(TEXTURE_OES);
     frame_buffer_->ActiveProgram();
+    // 把oes转成普通的TEXTURE_2D类型, 并且根据SurfaceTexture的matrix矩阵进行旋转
     int texture_id = frame_buffer_->OnDrawFrame(oes_texture_id_, texture_matrix_);
     if (nullptr != image_process_) {
         if (render_time_ == 0) {
             render_time_ = getCurrentTime();
         }
         auto current_time = getCurrentTime() - render_time_;
+        // 根据时间进行特效处理
         texture_id = image_process_->Process(texture_id, current_time,
                 MIN(camera_width_, camera_height_),
                 MAX(camera_width_, camera_height_), 0, 0);
     }
+    // 进行第三方的特效处理
     int third_party_id = OnDrawFrame(texture_id,
                                  camera_width_, camera_height_);
     if (third_party_id > 0) {
@@ -807,6 +820,42 @@ void CameraRecord::OnDeleteAction(int action_id) {
     LOGI("leave %s", __func__);
 }
 
+int CameraRecord::GetCameraFacing() {
+    JNIEnv *env = nullptr;
+    if (vm_->AttachCurrentThread(&env, nullptr) != JNI_OK) {
+        LOGE("%s: AttachCurrentThread() failed", __FUNCTION__);
+        return -1;
+    }
+    if (nullptr == env) {
+        LOGI("getJNIEnv failed");
+        return -1;
+    }
+    jclass clazz = env->GetObjectClass(obj_);
+    if (nullptr == clazz) {
+        return -1;
+    }
+    jmethodID camera_facing_method_id = env->GetMethodID(
+            clazz, "getCameraFacing", "()Lcom/trinity/camera/Facing;");
+    if (nullptr == camera_facing_method_id) {
+        return -1;
+    }
+    jobject facing_object = reinterpret_cast<jobject>(
+            env->CallObjectMethod(obj_, camera_facing_method_id));
+    if (nullptr == facing_object) {
+        return -1;
+    }
+    jclass facing_class = env->GetObjectClass(facing_object);
+    jfieldID ordinal_field_id = env->GetFieldID(facing_class, "ordinal", "I");
+    if (nullptr == ordinal_field_id) {
+        return -1;
+    }
+    int camera_facing = env->GetIntField(facing_object, ordinal_field_id);
+    if (vm_->DetachCurrentThread() != JNI_OK) {
+        LOGE("%s: DetachCurrentThread() failed", __FUNCTION__);
+    }
+    return camera_facing;
+}
+
 void CameraRecord::GetFaceDetectionReports(std::vector<FaceDetectionReport*>& face_detection_reports) {
     JNIEnv *env = nullptr;
     if (vm_->AttachCurrentThread(&env, nullptr) != JNI_OK) {
@@ -869,9 +918,9 @@ void CameraRecord::GetFaceDetectionReports(std::vector<FaceDetectionReport*>& fa
                         sizeof(float));
                 env->ReleaseFloatArrayElements(visibilities_array, visibilities, JNI_FALSE);
                 face_detection_report->score = score;
-                face_detection_report->yaw = yaw;
-                face_detection_report->pitch = pitch;
-                face_detection_report->roll = roll;
+                face_detection_report->yaw = -yaw;
+                face_detection_report->pitch = -pitch;
+                face_detection_report->roll = -roll;
                 face_detection_report->face_action = face_action;
                 face_detection_reports.push_back(face_detection_report);
             }

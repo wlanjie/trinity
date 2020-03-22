@@ -127,7 +127,6 @@ int Blend::OnDrawFrame(int texture_id, int sticker_texture_id, int width, int he
     
     glUseProgram(second_program_);
 //    glBlendFunc(GL_ONE_MINUS_DST_ALPHA, GL_ONE);
-    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, texture_id);
     auto blend_input_image_texture_location = glGetUniformLocation(second_program_, "inputImageTexture");
@@ -145,6 +144,8 @@ int Blend::OnDrawFrame(int texture_id, int sticker_texture_id, int width, int he
     
     glUseProgram(program_);
     glEnable(GL_BLEND);
+//    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, texture_id);
     auto input_image_texture_location = glGetUniformLocation(program_, "inputImageTexture");
@@ -179,6 +180,15 @@ int Blend::OnDrawFrame(int texture_id, int sticker_texture_id, int width, int he
     glVertexAttribPointer(input_texture_coordinate_location, 2, GL_FLOAT, GL_FALSE,
             2 * sizeof(GLfloat), default_texture_coordinates_);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    
+//    char* buffer = reinterpret_cast<char*>(malloc(width * height * 4));
+//    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+//    stbi_write_png("/Users/wlanjie/Desktop/offscreen.png",
+//                   width, height, 4,
+//                   buffer + (width * 4 * (height - 1)),
+//                   -width * 4);
+//    free(buffer);
+    
     glDisableVertexAttribArray(position_location);
     glDisableVertexAttribArray(input_texture_coordinate_location);
     glDisable(GL_BLEND);

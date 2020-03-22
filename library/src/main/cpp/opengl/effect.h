@@ -29,6 +29,9 @@
 #include "image_buffer.h"
 #include "process_buffer.h"
 #include "frame_buffer.h"
+#define STB_IMAGE_WRITE_STATIC
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 #include "stb_image.h"
 #include "blend.h"
 #include "face_markup_render.h"
@@ -43,6 +46,7 @@
 #include "ext/vector_float2.hpp"
 #include "common.hpp"
 #include "vec2.hpp"
+#include "gtx/rotate_vector.hpp"
 
 extern "C" {
 #include "cJSON.h"
@@ -377,7 +381,7 @@ class StickerFace : public StickerSubEffect {
     int OnDrawFrame(FaceDetection* face_detection,
         std::list<SubEffect *> sub_effects,
         int origin_texture_id, int texture_id,
-        int width, int height, uint64_t current_time);
+        int width, int height, uint64_t current_time) override;
   protected:
     glm::mat4 VertexMatrix(FaceDetectionReport* face_detection, int source_width, int source_height) override;
 };
@@ -394,7 +398,7 @@ class StickerV3SubEffect : public StickerSubEffect {
     Transform* transform;
 
  protected:
-    glm::mat4 VertexMatrix(FaceDetectionReport* face_detection, int source_width, int source_height);
+    glm::mat4 VertexMatrix(FaceDetectionReport* face_detection, int source_width, int source_height) override;
 };
 
 // faceMakeupV2
@@ -434,7 +438,7 @@ class FilterSubEffect : public SubEffect {
         if (nullptr == filter) {
             return origin_texture_id;
         }
-        return filter->OnDrawFrame(origin_texture_id);
+        return filter->OnDrawFrame(texture_id);
     }
 };
 

@@ -175,6 +175,10 @@ ImageBuffer* StickerSubEffect::StickerBufferAtFrameTime(float time) {
     unsigned char* sample_texture_buffer = stbi_load(image_path,
             &sample_texture_width, &sample_texture_height, &channels, STBI_rgb_alpha);
     if (nullptr != sample_texture_buffer && sample_texture_width > 0 && sample_texture_height > 0) {
+//        stbi_write_png("/Users/wlanjie/Desktop/offscreen.png",
+//                       sample_texture_width, sample_texture_height, 4,
+//                       sample_texture_buffer + (sample_texture_width * 4 * (sample_texture_height - 1)),
+//                       -sample_texture_width * 4);
         auto* image_buffer = new ImageBuffer(sample_texture_width, sample_texture_height, sample_texture_buffer);
         stbi_image_free(sample_texture_buffer);
         image_buffers.insert(std::pair<int, ImageBuffer*>(final_index, image_buffer));
@@ -206,12 +210,7 @@ StickerFace::~StickerFace() {
 }
 
 glm::mat4 StickerFace::VertexMatrix(FaceDetectionReport *face_detection, int source_width, int source_height) {
-    glm::mat4 model_matrix = {
-        1, 0, 0, 0,
-        0, 1, 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1
-    };
+    glm::mat4 model_matrix = glm::mat4(1.0);
     bool is_invalid = face_detection->HasFace() || face_detect
         || positions.empty() || scales.empty();
     if (!is_invalid) {
@@ -228,7 +227,7 @@ glm::mat4 StickerFace::VertexMatrix(FaceDetectionReport *face_detection, int sou
         land_marks[position2->index * 2 + 1] / source_height);    
     float distance1 = glm::distance(anchor_face_point1, anchor_face_point2);
     float distance2 = fabs(position1->x - position2->x);
-    float ratio = distance1 / distance2;
+    float ratio = positions.size() == 1 ? sticker_aspect : distance1 / distance2;
     glm::vec2 sticker_center = glm::vec2(0.5, 0.5);
     sticker_center = glm::vec2(anchor_face_point2.x + (sticker_center.x - position2->x) * ratio,
         anchor_face_point2.y + (sticker_center.y - position2->y) / sticker_aspect * ratio);
@@ -292,7 +291,7 @@ glm::mat4 StickerFace::VertexMatrix(FaceDetectionReport *face_detection, int sou
     model_matrix = model_matrix * rotation_x;
     model_matrix = glm::translate(model_matrix, glm::vec3(-rotation_center.x, -rotation_center.y, 0));
     // 移动贴图到目标位置
-    model_matrix = glm::translate(model_matrix, glm::vec3(sticker_center.x, sticker_center.y, 0));
+    model_matrix = glm::translate(model_matrix, glm::vec3(sticker_center.x, -sticker_center.y, 0));
     model_matrix = glm::scale(model_matrix, glm::vec3(ndc_sticker_width, ndc_sticker_height, 1.0F));
     glm::mat4 model_view_matrix = view_matrix * model_matrix;
     glm::mat4 mvp = projection * model_view_matrix;
@@ -766,10 +765,12 @@ void Effect::ParseConfig(char *config_path) {
                 }
                 sticker_face_effect.clear();
             } else if (strcasecmp(type, "filter") == 0) {
+                #ifndef __APPLE__
                 auto* filter_effect = new FilterSubEffect();
                 filter_effect->zorder = zorder;
                 ConvertFilter(effect_item_json, config_path, filter_effect);
                 sub_effects_.push_back(filter_effect);
+                #endif
             }
         }
     }

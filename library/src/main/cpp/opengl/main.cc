@@ -346,7 +346,7 @@ int main() {
 
     clock_t start = clock();
     ImageProcess image_process;
-    char* name = "app/src/main/assets/effect/stickerMakeup";
+    char* name = "app/src/main/assets/effect/cat";
     auto* detection = new MakeFaceDetection();
     image_process.OnAction(name, 0, detection);
     FacePoint face_point;

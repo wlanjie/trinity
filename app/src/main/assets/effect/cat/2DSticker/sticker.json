@@ -2,7 +2,7 @@
     "parts": {
         "Untitled_1542791789": {
             "blendMode": 0,
-            "enable": false,
+            "enable": true,
             "frameCount": 25,
             "height": 264,
             "position": {
