@@ -210,14 +210,21 @@ class EffectController(private val context: Context, private val videoEditor: Tr
       mTailView.layoutParams = lpTail
     }
 
-    override val container: ViewGroup
-      get() = mRootView as ViewGroup
-    override val headView: View
-      get() = mRootView.findViewById(R.id.head_view)
-    override val tailView: View
-      get() = mRootView.findViewById(R.id.tail_view)
-    override val middleView: View
-      get() = mRootView.findViewById(R.id.middle_view)
+    override fun getContainer(): ViewGroup {
+      return mRootView as ViewGroup
+    }
+
+    override fun getHeadView(): View {
+      return mRootView.findViewById(R.id.head_view)
+    }
+
+    override fun getTailView(): View {
+      return mRootView.findViewById(R.id.tail_view)
+    }
+
+    override fun getMiddleView(): View {
+      return mRootView.findViewById(R.id.middle_view)
+    }
 
   }
 }

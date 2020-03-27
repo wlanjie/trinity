@@ -74,7 +74,7 @@ class EffectAdapter(context: Context, effects: List<Effect>) : RecyclerView.Adap
 
   override fun onTouch(v: View?, event: MotionEvent?): Boolean {
     mDetector.onTouchEvent(event)
-    when (MotionEventCompat.getActionMasked(event)) {
+    when (event?.action) {
       MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
 //        if (!mAdding) {
 //          mPressView = null

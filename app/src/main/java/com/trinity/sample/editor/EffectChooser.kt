@@ -24,7 +24,7 @@ import java.nio.charset.Charset
 /**
  * Created by wlanjie on 2019-07-26
  */
-class EffectChooser(context: Context, fragmentManager: FragmentManager) : Chooser(context), EffectAdapter.OnItemTouchListener, TabLayout.OnTabSelectedListener {
+class EffectChooser(context: Context) : Chooser(context), EffectAdapter.OnItemTouchListener, TabLayout.OnTabSelectedListener {
 
   private lateinit var mRecyclerView: RecyclerView
   private lateinit var mThumbnailContainer: FrameLayout

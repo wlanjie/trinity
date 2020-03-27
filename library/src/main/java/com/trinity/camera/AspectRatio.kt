@@ -30,16 +30,15 @@ class AspectRatio private constructor(val x: Int, val y: Int) : Comparable<Aspec
     return this.x == x && this.y == y
   }
 
-  override fun equals(o: Any?): Boolean {
-    if (o == null) {
+  override fun equals(other: Any?): Boolean {
+    if (other == null) {
       return false
     }
-    if (this === o) {
+    if (this === other) {
       return true
     }
-    if (o is AspectRatio) {
-      val ratio = o as AspectRatio?
-      return x == ratio!!.x && y == ratio.y
+    if (other is AspectRatio) {
+      return x == other.x && y == other.y
     }
     return false
   }
@@ -61,10 +60,10 @@ class AspectRatio private constructor(val x: Int, val y: Int) : Comparable<Aspec
     return y xor (x shl Integer.SIZE / 2 or x.ushr(Integer.SIZE / 2))
   }
 
-  override fun compareTo(another: AspectRatio): Int {
-    if (equals(another)) {
+  override fun compareTo(other: AspectRatio): Int {
+    if (equals(other)) {
       return 0
-    } else if (toFloat() - another.toFloat() > 0) {
+    } else if (toFloat() - other.toFloat() > 0) {
       return 1
     }
     return -1
@@ -73,6 +72,7 @@ class AspectRatio private constructor(val x: Int, val y: Int) : Comparable<Aspec
   /**
    * @return The inverse of this [AspectRatio].
    */
+  @Suppress("unused")
   fun inverse(): AspectRatio {
     return of(y, x)
   }
@@ -98,8 +98,8 @@ class AspectRatio private constructor(val x: Int, val y: Int) : Comparable<Aspec
      * Returns an instance of [AspectRatio] specified by `x` and `y` values.
      * The values `x` and `` will be reduced by their greatest common divider.
      *
-     * @param x The width
-     * @param y The height
+     * @param a The width
+     * @param b The height
      * @return An instance of [AspectRatio]
      */
     fun of(a: Int, b: Int): AspectRatio {
@@ -124,6 +124,7 @@ class AspectRatio private constructor(val x: Int, val y: Int) : Comparable<Aspec
      * @return The aspect ratio
      * @throws IllegalArgumentException when the format is incorrect.
      */
+    @Suppress("unused")
     fun parse(s: String): AspectRatio {
       val position = s.indexOf(':')
       if (position == -1) {
@@ -151,6 +152,7 @@ class AspectRatio private constructor(val x: Int, val y: Int) : Comparable<Aspec
     }
 
     @JvmField
+    @Suppress("unused")
     val CREATOR = object : Parcelable.Creator<AspectRatio> {
 
       override fun createFromParcel(source: Parcel): AspectRatio {

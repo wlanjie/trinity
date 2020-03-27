@@ -13,6 +13,7 @@ import android.widget.RadioGroup
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.commit
 import androidx.fragment.app.transaction
 import androidx.preference.PreferenceManager
 import com.github.florent37.runtimepermission.kotlin.askPermission
@@ -197,7 +198,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     var effectFragment = supportFragmentManager.findFragmentByTag(EFFECT_TAG)
     if (effectFragment == null) {
       effectFragment = IdentifyFragment()
-      supportFragmentManager.transaction {
+      supportFragmentManager.commit {
         replace(R.id.frame_container, effectFragment, EFFECT_TAG)
       }
     }
@@ -207,7 +208,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
           if (effect == null) {
             mRecord.deleteAction(mIdentifyId)
           } else {
-            val effectPath = effect?.effect ?: return
+            val effectPath = effect.effect
             mIdentifyId = mRecord.addAction(externalCacheDir?.absolutePath + "/" + effectPath)
           }
         }
@@ -225,7 +226,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     var beautyFragment = supportFragmentManager.findFragmentByTag(BEAUTY_TAG)
     if (beautyFragment == null) {
       beautyFragment = BeautyFragment()
-      supportFragmentManager.transaction {
+      supportFragmentManager.commit {
         replace(R.id.frame_container, beautyFragment, BEAUTY_TAG)
       }
     }
@@ -252,7 +253,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     var filterFragment = supportFragmentManager.findFragmentByTag(FILTER_TAG)
     if (filterFragment == null) {
       filterFragment = FilterFragment()
-      supportFragmentManager.transaction {
+      supportFragmentManager.commit {
         replace(R.id.frame_container, filterFragment, FILTER_TAG)
       }
     }
@@ -279,7 +280,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     var mediaFragment = supportFragmentManager.findFragmentByTag(MEDIA_TAG)
     if (mediaFragment == null) {
       mediaFragment = MediaFragment()
-      supportFragmentManager.transaction {
+      supportFragmentManager.commit {
         replace(R.id.frame_container, mediaFragment, MEDIA_TAG)
       }
     }
@@ -295,7 +296,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     var musicFragment = supportFragmentManager.findFragmentByTag(MUSIC_TAG)
     if (musicFragment == null) {
       musicFragment = MusicFragment.newInstance()
-      supportFragmentManager.transaction {
+      supportFragmentManager.commit {
         replace(R.id.frame_container, musicFragment, MUSIC_TAG)
       }
     }
@@ -316,7 +317,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     var settingFragment = supportFragmentManager.findFragmentByTag(SETTING_TAG)
     if (settingFragment == null) {
       settingFragment = SettingFragment.newInstance()
-      supportFragmentManager.transaction {
+      supportFragmentManager.commit {
         replace(R.id.frame_container, settingFragment, SETTING_TAG)
       }
     }

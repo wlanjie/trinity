@@ -359,10 +359,12 @@ class VideoEditor(
 
   private external fun release(id: Long)
 
+  @Suppress("unused")
   private fun onPlayStatusChanged(status: Int) {
 
   }
 
+  @Suppress("unused")
   private fun onPlayError(error: Int) {
 
   }

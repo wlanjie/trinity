@@ -27,16 +27,15 @@ class Size(val width: Int, val height: Int) : Comparable<Size> {
     return Size(height, width)
   }
 
-  override fun equals(o: Any?): Boolean {
-    if (o == null) {
+  override fun equals(other: Any?): Boolean {
+    if (other == null) {
       return false
     }
-    if (this === o) {
+    if (this === other) {
       return true
     }
-    if (o is Size) {
-      val size = o as Size?
-      return width == size!!.width && height == size.height
+    if (other is Size) {
+      return width == other.width && height == other.height
     }
     return false
   }
@@ -50,8 +49,8 @@ class Size(val width: Int, val height: Int) : Comparable<Size> {
     return height xor (width shl Integer.SIZE / 2 or width.ushr(Integer.SIZE / 2))
   }
 
-  override fun compareTo(another: Size): Int {
-    return width * height - another.width * another.height
+  override fun compareTo(other: Size): Int {
+    return width * height - other.width * other.height
   }
 
 }

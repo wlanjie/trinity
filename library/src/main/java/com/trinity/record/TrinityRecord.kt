@@ -21,7 +21,6 @@ package com.trinity.record
 import android.content.Context
 import android.graphics.PointF
 import android.graphics.SurfaceTexture
-import android.hardware.Camera
 import android.provider.Settings
 import android.provider.Settings.SettingNotFoundException
 import android.view.OrientationEventListener
@@ -405,6 +404,7 @@ class TrinityRecord(
     stopRecording()
   }
 
+  @Suppress("unused")
   private fun isLandscape(displayOrientation: Int): Boolean {
     return false
   }
@@ -430,6 +430,7 @@ class TrinityRecord(
    * @param configPath 滤镜config.json的父目录
    * @return 返回当前滤镜的唯一id
    */
+  @Suppress("unused")
   fun addFilter(configPath: String): Int {
     return addFilter(mHandle, configPath)
   }
@@ -517,6 +518,7 @@ class TrinityRecord(
    * 设置录制角度
    * @param rotation 角度包含 0 90 180 270
    */
+  @Suppress("unused")
   fun setRecordRotation(rotation: Int) {
 
   }
@@ -526,6 +528,7 @@ class TrinityRecord(
    * 静音录制需要把麦克风采集到的数据全部设置为0即可
    * @param mute true为静音
    */
+  @Suppress("unused")
   fun setMute(mute: Boolean) {
 
   }

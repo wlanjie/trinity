@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.trinity.sample.editor.EditorPage
 import java.util.*
+import kotlin.math.round
 
 class OverlayThumbLineBar (
     context: Context,
@@ -56,7 +57,7 @@ class OverlayThumbLineBar (
     if (startTime < 0) {
       startTime = 0
     }
-    view.container.tag = uiEditorPage
+    view.getContainer().tag = uiEditorPage
     mDuration = mLinePlayer?.getDuration() ?: 0
     val overlay = ThumbLineOverlay(this, startTime, duration, view, mDuration, minDuration, isInvert, listener)
     overlay.uiEditorPage = uiEditorPage
@@ -127,7 +128,7 @@ class OverlayThumbLineBar (
    */
   internal fun duration2Distance(duration: Long): Int {
     val length = timelineBarViewWidth * duration.toFloat() * 1.0f / mDuration
-    return Math.round(length)
+    return round(length).toInt()
   }
 
   /**
@@ -137,8 +138,8 @@ class OverlayThumbLineBar (
    * @return long duration
    */
   internal fun distance2Duration(distance: Float): Long {
-    val lenth = mDuration * distance / timelineBarViewWidth
-    return Math.round(lenth).toLong()
+    val length = mDuration * distance / timelineBarViewWidth
+    return round(length).toLong()
   }
 
   /**
@@ -180,11 +181,11 @@ class OverlayThumbLineBar (
     if (uiEditorPage == null) {
       return
     }
-    val isCaption = uiEditorPage == EditorPage.FONT || uiEditorPage == EditorPage.CAPTION
+    val isCaption = uiEditorPage == EditorPage.FONT || uiEditorPage == EditorPage.SUBTITLE
     for (overlay in mOverlayList) {
       if (uiEditorPage === overlay.uiEditorPage) {
         overlay.overlayView?.visibility = View.VISIBLE
-      } else if (isCaption && (overlay.uiEditorPage == EditorPage.CAPTION || overlay.uiEditorPage == EditorPage.FONT)) {
+      } else if (isCaption && (overlay.uiEditorPage == EditorPage.SUBTITLE || overlay.uiEditorPage == EditorPage.FONT)) {
         overlay.overlayView?.visibility = View.VISIBLE
       } else {
         overlay.overlayView?.visibility = View.INVISIBLE

@@ -6,6 +6,7 @@ import android.util.AttributeSet
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import com.trinity.sample.view.OverlayThumbLineBar
+import com.trinity.sample.view.PasteUISimpleImpl
 import com.trinity.sample.view.ThumbLineBar
 
 /**
@@ -82,4 +83,8 @@ abstract class Chooser : FrameLayout {
   }
 
   abstract fun isPlayerNeedZoom(): Boolean
+
+  open fun isHostPaste(paste: PasteUISimpleImpl): Boolean {
+    return false
+  }
 }

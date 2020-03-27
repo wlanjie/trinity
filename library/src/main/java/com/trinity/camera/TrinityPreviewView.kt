@@ -38,7 +38,7 @@ class TrinityPreviewView : SurfaceView, Callback {
   init {
     val surfaceHolder = holder
     surfaceHolder.addCallback(this)
-    surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS)
+//    surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS)
   }
 
   override fun surfaceCreated(holder: SurfaceHolder) {

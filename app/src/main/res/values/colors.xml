@@ -3,6 +3,7 @@
     <color name="colorPrimary">#2196F3</color>
     <color name="colorPrimaryDark">#1976D2</color>
     <color name="colorAccent">#FF9800</color>
+    <color name="colorPrimaryAlpha30">#4d2196F3</color>
 
     <color name="video_gray">#aadddddd</color>
     <color name="bg_rate_bar">#CC1C1F21</color>
@@ -20,4 +21,42 @@
     <color name="effect_color3">#E6FEA933</color>
     <color name="effect_color4">#E6F35C4B</color>
     <color name="effect_color5">#E6798ECD</color>
+
+    <array name="text_edit_colors">
+        <item>#FFF8AA99</item>
+        <item>#FFFFC580</item>
+        <item>#FFFFEA8A</item>
+        <item>#FFBBE5B3</item>
+        <item>#FFB6ECEB</item>
+        <item>#FFB4E0FA</item>
+        <item>#FFB3BCF5</item>
+        <item>#FFE3D0FF</item>
+        <item>#FFF9FAFB</item>
+        <item>#FFF4775C</item>
+        <item>#FFFFA133</item>
+        <item>#FFEDC200</item>
+        <item>#FF50B83C</item>
+        <item>#FF47C1BF</item>
+        <item>#FF007ACE</item>
+        <item>#FF5C6AC4</item>
+        <item>#FF9C6ADE</item>
+        <item>#FF637381</item>
+        <item>#FFF15533</item>
+        <item>#FFFF8A00</item>
+        <item>#FF9C6F19</item>
+        <item>#FF108043</item>
+        <item>#FF00848E</item>
+        <item>#FF084E8A</item>
+        <item>#FF202E78</item>
+        <item>#FF50248F</item>
+        <item>#FF212B36</item>
+        <item>#FFE55130</item>
+        <item>#FFF28300</item>
+        <item>#FF573B00</item>
+        <item>#FF173630</item>
+        <item>#FF003136</item>
+        <item>#FF00152A</item>
+        <item>#FF000639</item>
+        <item>#FF230051</item>
+    </array>
 </resources>

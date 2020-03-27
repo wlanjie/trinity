@@ -129,4 +129,21 @@
     <attr name="pv_divider_color" format="color|reference" />
     <attr name="pv_divider_width" format="dimension|reference" />
   </declare-styleable>
+
+  <declare-styleable name="EditOverlay_Layout">
+    <attr name="android:layout_gravity" />
+    <attr name="android:layout_width" />
+    <attr name="android:layout_height" />
+  </declare-styleable>
+
+  <declare-styleable name="AutoResizingTextView">
+    <attr name="strokeWidth" format="dimension" />
+    <attr name="strokeMiter" format="dimension" />
+    <attr name="strokeColor" format="color" />
+    <attr name="strokeJoinStyle">
+      <enum name="miter" value="0" />
+      <enum name="bevel" value="1" />
+      <enum name="round" value="2" />
+    </attr>
+  </declare-styleable>
 </resources>

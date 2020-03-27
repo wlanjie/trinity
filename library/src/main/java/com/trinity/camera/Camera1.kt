@@ -16,6 +16,8 @@
  *
  */
 
+@file:Suppress("DEPRECATION")
+
 package com.trinity.camera
 
 import android.content.Context
@@ -409,18 +411,20 @@ class Camera1(
       }
       mCameraCallback.dispatchOnFocusStart(p)
 
-      if (mFocusEndRunnable != null) {
-        mHandler.removeCallbacks(mFocusEndRunnable)
+      mFocusEndRunnable?.let {
+        mHandler.removeCallbacks(it)
       }
       mFocusEndRunnable = Runnable { mCameraCallback.dispatchOnFocusEnd(false, p) }
-      mHandler.postDelayed(mFocusEndRunnable, AUTOFOCUS_END_DELAY_MILLIS)
+      mFocusEndRunnable?.let {
+        mHandler.postDelayed(it, AUTOFOCUS_END_DELAY_MILLIS)
+      }
 
       try {
         mCamera?.autoFocus { success, _ ->
-          if (mFocusEndRunnable != null) {
-            mHandler.removeCallbacks(mFocusEndRunnable)
-            mFocusEndRunnable = null
+          mFocusEndRunnable?.let {
+            mHandler.removeCallbacks(it)
           }
+          mFocusEndRunnable = null
           mCameraCallback.dispatchOnFocusEnd(success, p)
           mHandler.removeCallbacks(mFocusResetRunnable)
           mHandler.postDelayed(mFocusResetRunnable, 3000)

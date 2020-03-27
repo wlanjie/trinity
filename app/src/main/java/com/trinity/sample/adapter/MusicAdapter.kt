@@ -24,13 +24,6 @@ class MusicAdapter(private val context: Context, private val callback: (music: S
     )
     if (cursor?.moveToFirst() == true) {
       do {
-        val title = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.TITLE))
-        var singer = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST))
-        if ("<unknown>" == singer) {
-          singer = "未知艺术家"
-        }
-        val album = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM))
-        val size = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Media.SIZE))
         val time = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Media.DURATION))
         val url = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.DATA))
         val name = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.DISPLAY_NAME))

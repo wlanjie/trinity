@@ -192,7 +192,7 @@ glm::mat4 StickerSubEffect::VertexMatrix(FaceDetectionReport* face_detection, in
 }
 
 // StickerFace
-StickerFace::StickerFace() {}
+StickerFace::StickerFace() : frame_count(0) {}
 
 StickerFace::~StickerFace() {
     for (auto position : positions) {
@@ -310,7 +310,7 @@ int StickerFace::OnDrawFrame(FaceDetection* face_detection,
         if (nullptr != image_buffer) {
             for (auto face_detection_report : face_detections) {
                 glm::mat4 matrix = VertexMatrix(face_detection_report, width, height);
-                float* m = glm::value_ptr(matrix);
+                float* m = const_cast<float*>(glm::value_ptr(matrix));
                 sticker_texture_id = blend->OnDrawFrame(sticker_texture_id, image_buffer->GetTextureId(), width, height, m, alpha_factor);
             }
         }

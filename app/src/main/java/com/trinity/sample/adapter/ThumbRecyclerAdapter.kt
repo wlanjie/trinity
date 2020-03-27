@@ -22,7 +22,7 @@ import java.io.File
 
 class ThumbRecyclerAdapter(
     private val context: Context,
-    private val medias: Array<MediaItem>,
+    private val medias: MutableList<MediaItem>,
     private var mCount: Int, duration: Int,
     private val mScreenWidth: Int,
     private val thumbnailWidth: Int,

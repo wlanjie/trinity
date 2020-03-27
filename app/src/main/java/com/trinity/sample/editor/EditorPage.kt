@@ -20,7 +20,7 @@ enum class EditorPage {
     /**
      * 字幕
      */
-    CAPTION,
+    SUBTITLE,
     /**
      * MV
      */

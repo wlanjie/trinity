@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.trinity.sample
 
 import android.app.Application
@@ -63,7 +65,7 @@ class TrinityApplication : Application() {
       return
     }
     val dest = File(targetPath)
-    dest.parentFile.mkdirs()
+    dest.parentFile?.mkdirs()
     try {
       val inputStream = BufferedInputStream(assets.open(source))
       val out = BufferedOutputStream(FileOutputStream(dest))

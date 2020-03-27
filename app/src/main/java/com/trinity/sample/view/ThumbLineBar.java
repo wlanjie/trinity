@@ -25,6 +25,8 @@ import com.trinity.sample.adapter.ThumbRecyclerAdapter;
 import com.trinity.sample.editor.PlayerListener;
 import com.trinity.sample.entity.MediaItem;
 
+import java.util.List;
+
 public class ThumbLineBar extends FrameLayout {
 
     private static String TAG = ThumbLineBar.class.getName();
@@ -120,7 +122,7 @@ public class ThumbLineBar extends FrameLayout {
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    public void setup(MediaItem[] medias, ThumbLineConfig thumbLineConfig, OnBarSeekListener barSeekListener, PlayerListener linePlayer) {
+    public void setup(List<MediaItem> medias, ThumbLineConfig thumbLineConfig, OnBarSeekListener barSeekListener, PlayerListener linePlayer) {
         mThumbLineConfig = thumbLineConfig;
         initLayoutParams();
         mDuration = linePlayer.getDuration();

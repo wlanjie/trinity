@@ -65,4 +65,13 @@
     <string name="undo">撤消</string>
     <string name="split_screen">分屏</string>
     <string name="dream">梦幻</string>
+
+    <string name="caption_effect_font_category_name">纯文字</string>
+    <string name="caption_effect_bottom_keyboard">键盘</string>
+    <string name="caption_effect_bottom_color">颜色</string>
+    <string name="caption_effect_bottom_font">字体</string>
+    <string name="caption_effect_bottom_animation">特效</string>
+    <string name="text_count_outof">字数超出限制</string>
+    <string name="subtitle_text_color">填充</string>
+    <string name="subtitle_text_stroke">描边</string>
 </resources>
