@@ -17,6 +17,7 @@
 #endif
 
 #include "face_detection.h"
+#include "frame_buffer.h"
 
 namespace trinity {
 
@@ -26,12 +27,16 @@ class FaceMarkupRender {
     ~FaceMarkupRender();
     int OnDrawFrame(int origin_texture_id,
             int prop_texture_id,
+            int source_width,
+            int source_height,
             int blend_mode,
             float intensity,
             float* texture_coordinate,
             FaceDetectionReport* face_detection);
 
  private:
+    void CreateFrameBuffer(int width, int height);
+    void DeleteFrameBuffer();
     GLuint CreateProgram(const char* vertex, const char* fragment);
     void CompileShader(const char* shader_string, GLuint shader);
     int Link(GLuint program);
@@ -42,10 +47,11 @@ class FaceMarkupRender {
     GLuint frame_buffer_id_;
     GLuint program_;
     GLuint prop_program_;
-    GLuint point_program_;
-    GLuint vertex_buffer_;
     GLfloat* default_vertex_coordinates_;
     GLfloat* default_texture_coordinates_;
+    int source_width_;
+    int source_height_;
+    FrameBuffer* frame_buffer_;
 };
 
 }

@@ -282,6 +282,7 @@ class MakeFaceDetection : public FaceDetection {
         report->yaw = -0.13338177;
         report->pitch = -0.13473696;
         face_detection.push_back(report);
+        face_detection.push_back(report);
     }
 };
 
@@ -346,7 +347,7 @@ int main() {
 
     clock_t start = clock();
     ImageProcess image_process;
-    char* name = "app/src/main/assets/effect/cat";
+    char* name = "app/src/main/assets/effect/roseEyeMakeup";
     auto* detection = new MakeFaceDetection();
     image_process.OnAction(name, 0, detection);
     FacePoint face_point;

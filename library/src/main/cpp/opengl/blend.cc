@@ -44,7 +44,10 @@ namespace trinity {
 
 Blend::Blend(const char* fragment_shader) :
     frame_buffer_texture_id_(0)
-    , frame_buffer_id_(0) {
+    , frame_buffer_id_(0)
+    , frame_buffer_(nullptr)
+    , source_width_(0)
+    , source_height_(0) {
     default_vertex_coordinates_ = new GLfloat[8];
     default_texture_coordinates_ = new GLfloat[8];
     default_vertex_coordinates_[0] = -1.0F;
@@ -87,6 +90,33 @@ Blend::~Blend() {
         glDeleteProgram(second_program_);
         second_program_ = 0;
     }
+}
+
+void Blend::CreateFrameBuffer(int width, int height) {
+    DeleteFrameBuffer();
+    glGenTextures(1, &frame_buffer_texture_id_);
+    glGenFramebuffers(1, &frame_buffer_id_);
+    glBindTexture(GL_TEXTURE_2D, frame_buffer_texture_id_);
+    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_id_);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, frame_buffer_texture_id_, 0);
+
+    int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE) {
+#if __ANDROID__
+        LOGE("frame buffer error");
+#endif
+    }
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    frame_buffer_ = new FrameBuffer(width, height, DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
+}
+
+void Blend::DeleteFrameBuffer() {
     if (frame_buffer_texture_id_ != 0) {
         glDeleteTextures(1, &frame_buffer_texture_id_);
         frame_buffer_texture_id_ = 0;
@@ -95,30 +125,20 @@ Blend::~Blend() {
         glDeleteFramebuffers(1, &frame_buffer_id_);
         frame_buffer_id_ = 0;
     }
+    if (nullptr != frame_buffer_) {
+        delete frame_buffer_;
+        frame_buffer_ = nullptr;
+    }
 }
 
 int Blend::OnDrawFrame(int texture_id, int sticker_texture_id, int width, int height, GLfloat* matrix, float alpha_factor) {
-    if (frame_buffer_id_ == 0) {
-        glGenTextures(1, &frame_buffer_texture_id_);
-        glGenFramebuffers(1, &frame_buffer_id_);
-        glBindTexture(GL_TEXTURE_2D, frame_buffer_texture_id_);
-        glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_id_);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, frame_buffer_texture_id_, 0);
-
-        int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-        if (status != GL_FRAMEBUFFER_COMPLETE) {
-    #if __ANDROID__
-            LOGE("frame buffer error");
-    #endif
-        }
-        glBindTexture(GL_TEXTURE_2D, 0);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    if (source_width_ != width && source_height_ != height) {
+        source_width_ = width;
+        source_height_ = height;
+        DeleteFrameBuffer();
+        CreateFrameBuffer(width, height);
     }
+    int frame_buffer_texture_id =  frame_buffer_->OnDrawFrame(texture_id);
     
     glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_id_);
     glViewport(0, 0, width, height);
@@ -128,7 +148,7 @@ int Blend::OnDrawFrame(int texture_id, int sticker_texture_id, int width, int he
     glUseProgram(second_program_);
 //    glBlendFunc(GL_ONE_MINUS_DST_ALPHA, GL_ONE);
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, texture_id);
+    glBindTexture(GL_TEXTURE_2D, frame_buffer_texture_id);
     auto blend_input_image_texture_location = glGetUniformLocation(second_program_, "inputImageTexture");
     glUniform1i(blend_input_image_texture_location, 2);
     auto position2_location = glGetAttribLocation(second_program_, "position");
@@ -147,7 +167,7 @@ int Blend::OnDrawFrame(int texture_id, int sticker_texture_id, int width, int he
 //    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, texture_id);
+    glBindTexture(GL_TEXTURE_2D, frame_buffer_texture_id);
     auto input_image_texture_location = glGetUniformLocation(program_, "inputImageTexture");
     glUniform1i(input_image_texture_location, 2);
     glActiveTexture(GL_TEXTURE3);

@@ -24,6 +24,7 @@
 
 #include "opengl.h"
 #include "gl.h"
+#include "frame_buffer.h"
 
 #define NORMAL_BLEND      0
 #define ADD_BLEND         4
@@ -351,6 +352,8 @@ class Blend {
     virtual ~Blend();
     int OnDrawFrame(int texture_id, int sticker_texture_id, int width, int height, GLfloat* matrix, float alpha_factor);
  private:
+    void CreateFrameBuffer(int width, int height);
+    void DeleteFrameBuffer();
     int CreateProgram(const char* vertex, const char* fragment);
     void CompileShader(const char* shader_string, GLuint shader);
     int Link(int program);
@@ -362,6 +365,9 @@ class Blend {
     GLuint frame_buffer_texture_id_;
     GLfloat* default_vertex_coordinates_;
     GLfloat* default_texture_coordinates_;
+    int source_width_;
+    int source_height_;
+    FrameBuffer* frame_buffer_;
 };
 
 class NormalBlend : public Blend {

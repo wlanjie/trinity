@@ -105,40 +105,14 @@ FaceMarkupRender::FaceMarkupRender() :
     , default_vertex_coordinates_(nullptr)
     , texture_id_(0)
     , frame_buffer_id_(0)
-    , point_program_(0)
-    , vertex_buffer_(0) {
+    , source_width_(0)
+    , source_height_(0)
+    , frame_buffer_(nullptr) {
     default_vertex_coordinates_ = new GLfloat[8];
     default_texture_coordinates_ = new GLfloat[8];
 
     prop_program_ = CreateProgram(FACE_MARKUP_VERTEX, FACE_MARKUP_FRAGMENT);
     program_ = CreateProgram(DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
-    point_program_ = CreateProgram(FACE_POINT_VERTEX_SHADER, FACE_POINT_FRAGMENT_SHADER);
-    glGenTextures(1, &texture_id_);
-    glGenFramebuffers(1, &frame_buffer_id_);
-    glBindTexture(GL_TEXTURE_2D, texture_id_);
-    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_id_);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WIDTH, HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_id_, 0);
-
-    int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (status != GL_FRAMEBUFFER_COMPLETE) {
-#if __ANDROID__
-        LOGE("frame buffer error");
-#endif
-    }
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    
-    int buffer_length_ = 111 * 2 * sizeof(float);
-    glGenBuffers(1, &vertex_buffer_);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_);
-    glBufferData(GL_ARRAY_BUFFER, buffer_length_, &vertex_buffer_, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
     InitCoordinates();
 }
 
@@ -155,6 +129,38 @@ FaceMarkupRender::~FaceMarkupRender() {
         delete[] default_texture_coordinates_;
         default_texture_coordinates_ = nullptr;
     }
+    if (program_ != 0) {
+        glDeleteProgram(program_);
+        program_ = 0;
+    }
+    DeleteFrameBuffer();
+}
+
+void FaceMarkupRender::CreateFrameBuffer(int width, int height) {
+    DeleteFrameBuffer();
+    glGenTextures(1, &texture_id_);
+    glGenFramebuffers(1, &frame_buffer_id_);
+    glBindTexture(GL_TEXTURE_2D, texture_id_);
+    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_id_);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_id_, 0);
+
+    int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE) {
+#if __ANDROID__
+        LOGE("frame buffer error");
+#endif
+    }
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    frame_buffer_ = new FrameBuffer(width, height, DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
+}
+
+void FaceMarkupRender::DeleteFrameBuffer() {
     if (texture_id_ != 0) {
         glDeleteTextures(1, &texture_id_);
         texture_id_ = 0;
@@ -163,22 +169,27 @@ FaceMarkupRender::~FaceMarkupRender() {
         glDeleteFramebuffers(1, &frame_buffer_id_);
         frame_buffer_id_ = 0;
     }
-    if (program_ != 0) {
-        glDeleteProgram(program_);
-        program_ = 0;
-    }
-    if (point_program_ != 0) {
-        glDeleteProgram(point_program_);
-        point_program_ = 0;
+    if (nullptr != frame_buffer_) {
+        delete frame_buffer_;
+        frame_buffer_ = nullptr;
     }
 }
 
 int FaceMarkupRender::OnDrawFrame(int origin_texture_id,
         int prop_texture_id,
+        int source_width,
+        int source_height,
         int blend_mode,
         float intensity,
         float* texture_coordinate,
         FaceDetectionReport *face_detection) {
+        
+    if (source_width_ != source_width && source_height_ != source_height) {
+        source_width_ = source_width;
+        source_height_ = source_height;
+        CreateFrameBuffer(source_width, source_height);
+    }
+    int texture_id = frame_buffer_->OnDrawFrame(origin_texture_id);        
     glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_id_);
     GLfloat* vertices = face_detection->VertexCoordinates();
     GLuint* indexs = face_detection->ElementIndexs();
@@ -190,7 +201,7 @@ int FaceMarkupRender::OnDrawFrame(int origin_texture_id,
 
     glUseProgram(program_);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, origin_texture_id);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
     auto input_image_texture = static_cast<GLuint>(glGetUniformLocation(program_, "inputImageTexture"));
     glUniform1i(input_image_texture, 0);
     auto position = static_cast<GLuint>(glGetAttribLocation(program_, "position"));
@@ -202,12 +213,13 @@ int FaceMarkupRender::OnDrawFrame(int origin_texture_id,
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glDisableVertexAttribArray(position);
     glDisableVertexAttribArray(input_texture_coordinate);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     glUseProgram(prop_program_);
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, origin_texture_id);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
     GLint input_image_texture_location = glGetUniformLocation(prop_program_, "inputImageTexture");
     glUniform1i(input_image_texture_location, 1);
 
@@ -233,6 +245,7 @@ int FaceMarkupRender::OnDrawFrame(int origin_texture_id,
     glDisableVertexAttribArray(prop_position);
     glDisableVertexAttribArray(prop_input_texture_coordinate);
     glDisable(GL_BLEND);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     #ifdef SHOW_LAND_MARK
     glUseProgram(point_program_);

@@ -432,6 +432,7 @@ int FaceMakeupV2SubEffect::OnDrawFrame(FaceDetection* face_detection, std::list<
                         face_markup_filter->height);
                 prop_texture_id = face_markup_filter->face_markup_render->OnDrawFrame(prop_texture_id,
                                                         face_markup_filter->image_buffer->GetTextureId(),
+                                                        width, height,
                                                         face_markup_filter->blend_mode,
                                                         face_markup_filter->intensity,
                                                         texture_coordinate,
@@ -443,7 +444,7 @@ int FaceMakeupV2SubEffect::OnDrawFrame(FaceDetection* face_detection, std::list<
     return prop_texture_id;
 }
 
-glm::mat4 FaceMakeupV2SubEffect::VertexMatrix(int soruce_width, int source_height) {
+glm::mat4 FaceMakeupV2SubEffect::VertexMatrix(int source_width, int source_height) {
     return {
         1, 0, 0, 0,
         0, 1, 0, 0,
