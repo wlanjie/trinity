@@ -35,7 +35,7 @@ class SoftEncoderAdapter : public VideoEncoderAdapter {
 
     void CreateEncoder(EGLCore *eglCore, int inputTexId);
 
-    void Encode(int timeMills = -1);
+    void Encode(float speed = 1.0F);
 
     void renderLoop();
 
@@ -82,7 +82,7 @@ class SoftEncoderAdapter : public VideoEncoderAdapter {
     VideoX264Encoder *encoder_;
     pthread_t x264_encoder_thread_;
     OpenGL *renderer_;
-    int time_mills_;
+    int64_t time_mills_;
 };
 
 }  // namespace trinity

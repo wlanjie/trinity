@@ -192,7 +192,6 @@ class CameraRecord : public Handler, public FaceDetection {
     VideoEncoderAdapter* encoder_;
     bool encoding_;
     VideoConsumerThread* packet_thread_;
-    int64_t start_time_;
     float speed_;
     int frame_type_;
     int frame_count_;

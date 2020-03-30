@@ -11,7 +11,7 @@ before_install:
 - echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > $ANDROID_HOME/licenses/android-sdk-license
 - echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> $ANDROID_HOME/licenses/android-sdk-license
 install:
-- echo y | sdkmanager "ndk-bundle"
+- echo y | sdkmanager "ndk;21.0.6113669"
 - echo y | sdkmanager "cmake;3.6.4111459"
 - echo y | sdkmanager "cmake;3.10.2.4988404"
 - echo y | sdkmanager "lldb;3.1"
@@ -27,7 +27,7 @@ android:
   - android-sdk-license-.+
   - google-gdk-license-.+
 script:
-- "./gradlew clean check --profile"
+- "./gradlew clean"
 - pandoc `ls -1rt build/reports/profile/profile-*.html | tail -n1` -t plain
 - "./gradlew assembleDebug"
 deploy:

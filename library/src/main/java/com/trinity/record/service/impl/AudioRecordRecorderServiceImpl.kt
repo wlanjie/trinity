@@ -70,7 +70,7 @@ class AudioRecordRecorderServiceImpl private constructor() : RecorderService {
     get() = SAMPLE_RATE_IN_HZ
 
   @Throws(AudioConfigurationException::class)
-  override fun init() {
+  override fun init(speed: Float) {
     if (null != audioRecord) {
       audioRecord?.release()
     }
@@ -109,7 +109,7 @@ class AudioRecordRecorderServiceImpl private constructor() : RecorderService {
     }
     bufferSizeInShorts = bufferSizeInBytes / 2
     recordProcessor = AudioRecordProcessor()
-    recordProcessor?.initAudioBufferSize(SAMPLE_RATE_IN_HZ, 8820)
+    recordProcessor?.initAudioBufferSize(SAMPLE_RATE_IN_HZ, 8820, speed)
   }
 
   @Throws(StartRecordingException::class)
@@ -135,7 +135,7 @@ class AudioRecordRecorderServiceImpl private constructor() : RecorderService {
 
   }
 
-  override fun initAudioRecorderProcessor(): Boolean {
+  override fun initAudioRecorderProcessor(speed: Float): Boolean {
     var result = true
     recordProcessor = AudioRecordProcessor()
 //    var packetBufferTime: PacketBufferTimeEnum
@@ -153,7 +153,7 @@ class AudioRecordRecorderServiceImpl private constructor() : RecorderService {
 //        break
 //      }
 //    }
-    recordProcessor?.initAudioBufferSize(SAMPLE_RATE_IN_HZ, 8820)
+    recordProcessor?.initAudioBufferSize(SAMPLE_RATE_IN_HZ, 8820, speed)
     return result
   }
 

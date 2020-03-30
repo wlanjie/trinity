@@ -26,6 +26,10 @@
 #include "packet_pool.h"
 #include "audio_encoder_adapter.h"
 
+extern "C" {
+#include "sonic.h"
+}
+
 namespace trinity {
 
 class RecordProcessor {
@@ -33,7 +37,7 @@ class RecordProcessor {
     RecordProcessor();
     ~RecordProcessor();
 
-    void InitAudioBufferSize(int sample_rate, int audio_buffer_size);
+    void InitAudioBufferSize(int sample_rate, int audio_buffer_size, float speed);
     int PushAudioBufferToQueue(short* samples, int size);
     void FlushAudioBufferToQueue();
     void Destroy();
@@ -56,6 +60,7 @@ class RecordProcessor {
     int64_t start_time_mills_;
     int64_t data_accumulate_time_mills_;
     AudioEncoderAdapter* audio_encoder_;
+    sonicStream sonic_stream_;
 };
 
 }  // namespace trinity

@@ -14,7 +14,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.commit
-import androidx.fragment.app.transaction
 import androidx.preference.PreferenceManager
 import com.github.florent37.runtimepermission.kotlin.askPermission
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -69,6 +68,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
   private var mFlashIndex = 0
   private val mMedias = mutableListOf<MediaItem>()
   private val mRecordDurations = mutableListOf<Int>()
+  private var mCurrentRecordProgress = 0
   private var mCurrentRecordDuration = 0
   private var mHardwareEncode = false
   private var mFrame = Frame.FIT
@@ -81,6 +81,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
   private var mRecordDuration = 60 * 1000
   private var mAutoFocusMarker = DefaultAutoFocusMarker()
   private var mPermissionDenied = false
+  private var mSpeed = Speed.NORMAL
   private var mFilterId = -1
   private var mBeautyId = -1
   private var mIdentifyId = -1
@@ -333,11 +334,26 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     val group = findViewById<RadioGroup>(R.id.rate_bar)
     group.setOnCheckedChangeListener { _, checkedId ->
       when (checkedId) {
-        R.id.rate_quarter -> mRecord.setSpeed(Speed.VERY_SLOW)
-        R.id.rate_half -> mRecord.setSpeed(Speed.SLOW)
-        R.id.rate_origin -> mRecord.setSpeed(Speed.NORMAL)
-        R.id.rate_double -> mRecord.setSpeed(Speed.FAST)
-        R.id.rate_double_power2 -> mRecord.setSpeed(Speed.VERY_FAST)
+        R.id.rate_quarter -> {
+          mRecord.setSpeed(Speed.VERY_SLOW)
+          mSpeed = Speed.VERY_SLOW
+        }
+        R.id.rate_half -> {
+          mRecord.setSpeed(Speed.SLOW)
+          mSpeed = Speed.SLOW
+        }
+        R.id.rate_origin -> {
+          mRecord.setSpeed(Speed.NORMAL)
+          mSpeed = Speed.NORMAL
+        }
+        R.id.rate_double -> {
+          mRecord.setSpeed(Speed.FAST)
+          mSpeed = Speed.FAST
+        }
+        R.id.rate_double_power2 -> {
+          mRecord.setSpeed(Speed.VERY_FAST)
+          mSpeed = Speed.VERY_FAST
+        }
       }
     }
   }
@@ -417,11 +433,11 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
 
   override fun onUp() {
     mRecord.stopRecording()
-    mRecordDurations.add(mCurrentRecordDuration)
+    mRecordDurations.add(mCurrentRecordProgress)
     val item = mMedias[mMedias.size - 1]
-    item.duration = mCurrentRecordDuration
+    item.duration = mCurrentRecordProgress
     runOnUiThread {
-      mLineView.addProgress(mCurrentRecordDuration * 1.0f / mRecordDuration)
+      mLineView.addProgress(mCurrentRecordProgress * 1.0F / mCurrentRecordDuration)
     }
   }
 
@@ -452,7 +468,8 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
 //  }
 
   override fun onRecording(currentTime: Int, duration: Int) {
-    mCurrentRecordDuration = currentTime
+    mCurrentRecordProgress = currentTime
+    mCurrentRecordDuration = duration
     runOnUiThread {
       mLineView.setLoadingProgress(currentTime * 1.0f / duration)
     }

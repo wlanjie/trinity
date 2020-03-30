@@ -43,7 +43,7 @@ class MediaEncodeAdapter : public VideoEncoderAdapter, public Handler {
 
     virtual void DestroyEncoder();
 
-    virtual void Encode(int timeMills = -1);
+    virtual void Encode(float speed = 1.0F);
 
     void DrainEncodeData();
 

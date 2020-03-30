@@ -148,7 +148,7 @@ void MediaEncodeAdapter::DestroyEncoder() {
     LOGI("after DestroyEncoder");
 }
 
-void MediaEncodeAdapter::Encode(int timeMills) {
+void MediaEncodeAdapter::Encode(float speed) {
     if (start_time_ == 0) {
         start_time_ = getCurrentTime();
     }
@@ -162,18 +162,19 @@ void MediaEncodeAdapter::Encode(int timeMills) {
         LOGE("HWEncoderAdapter:dropped frame_, encoder_ queue_ full");
         return;
     }
-    int64_t curTime = getCurrentTime() - start_time_;
+    int64_t current_time = static_cast<int64_t>((getCurrentTime() - start_time_) * speed);
     // need drop frames
-    int expectedFrameCount = static_cast<int>(timeMills / 1000.0F * frame_rate_ + 0.5F);
+    int expectedFrameCount = static_cast<int>(current_time / 1000.0F * frame_rate_ + 0.5F);
     if (expectedFrameCount < encode_frame_count_) {
         LOGE("drop frame encode_count: %d frame_count: %d", encode_frame_count_, expectedFrameCount);
         return;
     }
+    LOGE("Encode");
     encode_frame_count_++;
     if (EGL_NO_SURFACE != encoder_surface_) {
         core_->MakeCurrent(encoder_surface_);
         render_->ProcessImage(texture_id_);
-        core_->SetPresentationTime(encoder_surface_, ((khronos_stime_nanoseconds_t) timeMills) * 1000000);
+        core_->SetPresentationTime(encoder_surface_, ((khronos_stime_nanoseconds_t) current_time) * 1000000);
         PostMessage(new Message(FRAME_AVAILABLE));
         if (!core_->SwapBuffers(encoder_surface_)) {
             LOGE("eglSwapBuffers(encoder_surface_) returned error %d", eglGetError());
@@ -182,6 +183,7 @@ void MediaEncodeAdapter::Encode(int timeMills) {
 }
 
 void MediaEncodeAdapter::DrainEncodeData() {
+    LOGE("DrainEncodeData");
     JNIEnv *env;
     int status = 0;
     bool needAttach = false;
@@ -275,8 +277,10 @@ void MediaEncodeAdapter::DrainEncodeData() {
         videoPacket->buffer = frameBuffer;
         videoPacket->size = frameBufferSize;
         videoPacket->timeMills = timeMills;
-        if (videoPacket->size > 0)
+        LOGE("time: %d size: %d", timeMills, frameBufferSize);
+        if (videoPacket->size > 0) {
             packet_pool_->PushRecordingVideoPacketToQueue(videoPacket);
+        }
     }
     env->ReleaseByteArrayElements(output_buffer_, reinterpret_cast<jbyte*>(outputData), 0);
     if (needAttach) {

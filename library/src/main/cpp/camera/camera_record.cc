@@ -53,7 +53,6 @@ CameraRecord::CameraRecord(JNIEnv* env) : Handler()
     , encoder_(nullptr)
     , encoding_(false)
     , packet_thread_(nullptr)
-    , start_time_(0)
     , speed_(1.0F)
     , frame_type_(-1)
     , frame_count_(0)
@@ -218,7 +217,6 @@ void CameraRecord::Draw() {
     // 开始录制, 创建编码器
     if (start_recording) {
         start_recording = false;
-        start_time_ = 0;
         encoder_->CreateEncoder(egl_core_, frame_buffer_->GetTextureId());
         encoding_ = true;
     }
@@ -657,9 +655,6 @@ void CameraRecord::StopRecording() {
 
 void CameraRecord::RenderFrame() {
     if (nullptr != egl_core_) {
-        if (start_time_ == 0) {
-            start_time_ = getCurrentTime();
-        }
 //        float position = ((float) (getCurrentTime() - start_time_)) / 1000.0f;
 //        ProcessVideoFrame(position);
         if (EGL_NO_SURFACE != preview_surface_) {
@@ -667,9 +662,8 @@ void CameraRecord::RenderFrame() {
             FPS();
         }
 
-        int64_t duration = getCurrentTime() - start_time_;
         if (encoding_ && nullptr != encoder_) {
-            encoder_->Encode(static_cast<int>(duration * speed_));
+            encoder_->Encode(speed_);
         }
     }
 }

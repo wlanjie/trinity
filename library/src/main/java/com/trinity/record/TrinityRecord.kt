@@ -565,7 +565,7 @@ class TrinityRecord(
       // TODO mAudioRecordService.sampleRate
       resetStopState()
       try {
-        mAudioRecordService.init()
+        mAudioRecordService.init(mSpeed.value)
       } catch (e: AudioConfigurationException) {
         e.printStackTrace()
         return -1

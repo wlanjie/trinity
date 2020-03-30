@@ -284,9 +284,9 @@ static void Android_JNI_releaseNative(JNIEnv *env, jobject object, jlong id) {
 }
 
 static jlong
-Android_JNI_audio_record_processor_init(JNIEnv *env, jobject object, jint sampleRate, jint audioBufferSize) {
+Android_JNI_audio_record_processor_init(JNIEnv *env, jobject object, jint sampleRate, jint audioBufferSize, jfloat speed) {
     auto *recorder = new RecordProcessor();
-    recorder->InitAudioBufferSize(sampleRate, audioBufferSize);
+    recorder->InitAudioBufferSize(sampleRate, audioBufferSize, speed);
     return reinterpret_cast<jlong>(recorder);
 }
 
@@ -737,7 +737,7 @@ static JNINativeMethod recordMethods[] = {
 };
 
 static JNINativeMethod audioRecordProcessorMethods[] = {
-        {"init",                    "(II)J",   (void **) Android_JNI_audio_record_processor_init},
+        {"init",                    "(IIF)J",  (void **) Android_JNI_audio_record_processor_init},
         {"flushAudioBufferToQueue", "(J)V",    (void **) Android_JNI_audio_record_processor_flush_audio_buffer_to_queue},
         {"destroy",                 "(J)V",    (void **) Android_JNI_audio_record_processor_destroy},
         {"pushAudioBufferToQueue",  "(J[SI)I", (void **) Android_JNI_audio_record_processor_push_audio_buffer_to_queue},

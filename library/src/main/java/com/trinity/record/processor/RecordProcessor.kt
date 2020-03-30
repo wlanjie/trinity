@@ -4,7 +4,7 @@ interface RecordProcessor {
     /**
      * 初始化AudioQueue里面的每个packet的大小
      */
-    fun initAudioBufferSize(audioSampleRate: Int, audioBufferSize: Int)
+    fun initAudioBufferSize(audioSampleRate: Int, audioBufferSize: Int, speed: Float)
 
     fun destroy()
     /**

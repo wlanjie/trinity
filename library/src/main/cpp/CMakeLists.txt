@@ -83,6 +83,7 @@ file(GLOB FILES_QUEUE "${PATH_TO_MEDIACORE}/queue/*.cc")
 file(GLOB FILES_THREAD "${PATH_TO_MEDIACORE}/thread/*.cc")
 file(GLOB FILES_MP4 "${PATH_TO_MEDIACORE}/mp4/*.cc")
 file(GLOB FILES_UTIL "${PATH_TO_MEDIACORE}/util/*.cc")
+file(GLOB FILES_UTIL_C "${PATH_TO_MEDIACORE}/util/*.c")
 file(GLOB FILES_PLAYER "${PATH_TO_MEDIACORE}/player/*.cc")
 file(GLOB FILES_PLAYER_C "${PATH_TO_MEDIACORE}/player/*.c")
 file(GLOB FILE_OPENSL "${PATH_TO_MEDIACORE}/opensl/*.cc")
@@ -105,6 +106,7 @@ add_library(
         ${FILES_THREAD}
         ${FILES_MP4}
         ${FILES_UTIL}
+        ${FILES_UTIL_C}
         ${FILES_PLAYER}
         ${FILES_PLAYER_C}
         ${FILE_OPENSL}

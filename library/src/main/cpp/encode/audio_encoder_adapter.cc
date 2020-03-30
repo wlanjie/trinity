@@ -52,7 +52,7 @@ void AudioEncoderAdapter::Init(PacketPool *pool, int audio_sample_rate, int audi
     audio_sample_rate_ = audio_sample_rate;
     audio_channels_ = audio_channels;
     audio_bit_rate_ = audio_bit_rate;
-    int audio_codec_name_length = strlen(audio_codec_name);
+    auto audio_codec_name_length = strlen(audio_codec_name);
     audio_codec_name_ = new char[audio_codec_name_length + 1];
     memset(audio_codec_name_, 0, audio_codec_name_length + 1);
     memcpy(audio_codec_name_, audio_codec_name, audio_codec_name_length);

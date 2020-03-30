@@ -22,6 +22,8 @@
 #include "tools.h"
 #include "android_xlog.h"
 
+#define AUDIO_CHANNEL 1
+
 #define MIN_DIFF_TIME_MILLS 50
 #define MAX_DIFF_TIME_MILLS 150
 
@@ -43,7 +45,7 @@ RecordProcessor::RecordProcessor() {
 
 RecordProcessor::~RecordProcessor() {}
 
-void RecordProcessor::InitAudioBufferSize(int sample_rate, int audio_buffer_size) {
+void RecordProcessor::InitAudioBufferSize(int sample_rate, int audio_buffer_size, float speed) {
     LOGI("%s sample_rate: %d audio_buffer_size: %d", __FUNCTION__, sample_rate, audio_buffer_size);
     audio_sample_cursor_ = 0;
     audio_buffer_size_ = audio_buffer_size;
@@ -51,6 +53,8 @@ void RecordProcessor::InitAudioBufferSize(int sample_rate, int audio_buffer_size
     audio_samples_ = new short[audio_buffer_size];
     packet_pool_ = PacketPool::GetInstance();
     audio_buffer_time_mills_ = static_cast<int>(audio_buffer_size * 1000.0f / audio_sample_rate_);
+    sonic_stream_ = sonicCreateStream(sample_rate, AUDIO_CHANNEL);
+    sonicSetSpeed(sonic_stream_, speed);
 }
 
 int RecordProcessor::PushAudioBufferToQueue(short *samples, int size) {
@@ -61,23 +65,30 @@ int RecordProcessor::PushAudioBufferToQueue(short *samples, int size) {
         recording_flag_ = true;
         start_time_mills_ = currentTimeMills();
     }
-    int samplesCursor = 0;
-    int samplesCnt = size;
-    while (samplesCnt > 0) {
-        if ((audio_sample_cursor_ + samplesCnt) < audio_buffer_size_) {
-            this->CopyToAudioSamples(samples + samplesCursor, samplesCnt);
-            audio_sample_cursor_ += samplesCnt;
-            samplesCursor += samplesCnt;
-            samplesCnt = 0;
-        } else {
-            int subFullSize = audio_buffer_size_ - audio_sample_cursor_;
-            this->CopyToAudioSamples(samples + samplesCursor, subFullSize);
-            audio_sample_cursor_ += subFullSize;
-            samplesCursor += subFullSize;
-            samplesCnt -= subFullSize;
-            FlushAudioBufferToQueue();
+    sonicWriteShortToStream(sonic_stream_, samples, size);
+    int sample_written = 0;
+    auto* out_buffer = new short[2048];
+    do {
+        sample_written = sonicReadShortFromStream(sonic_stream_, out_buffer, 2048);
+        int samples_cursor = 0;
+        int samples_count = sample_written;
+        while (samples_count > 0) {
+            if ((audio_sample_cursor_ + samples_count) < audio_buffer_size_) {
+                this->CopyToAudioSamples(out_buffer + samples_cursor, samples_count);
+                audio_sample_cursor_ += samples_count;
+                samples_cursor += samples_count;
+                samples_count = 0;
+            } else {
+                int subFullSize = audio_buffer_size_ - audio_sample_cursor_;
+                this->CopyToAudioSamples(out_buffer + samples_cursor, subFullSize);
+                audio_sample_cursor_ += subFullSize;
+                samples_cursor += subFullSize;
+                samples_count -= subFullSize;
+                FlushAudioBufferToQueue();
+            }
         }
-    }
+    } while (sample_written > 0);
+    delete[] out_buffer;
     return size;
 }
 
@@ -85,10 +96,9 @@ void RecordProcessor::FlushAudioBufferToQueue() {
     if (audio_sample_cursor_ > 0) {
         if (NULL == audio_encoder_) {
             audio_encoder_ = new AudioEncoderAdapter();
-            int audioChannels = 1;
             int audioBitRate = 128 * 1024;
             const char* audioCodecName = "libfdk_aac";
-            audio_encoder_->Init(packet_pool_, audio_sample_rate_, audioChannels, audioBitRate, audioCodecName);
+            audio_encoder_->Init(packet_pool_, audio_sample_rate_, AUDIO_CHANNEL, audioBitRate, audioCodecName);
         }
         short* packetBuffer = new short[audio_sample_cursor_];
         if (NULL == packetBuffer) {
@@ -120,6 +130,7 @@ void RecordProcessor::Destroy() {
         delete audio_encoder_;
         audio_encoder_ = nullptr;
     }
+    sonicDestroyStream(sonic_stream_);
     LOGI("leave %s", __FUNCTION__);
 }
 

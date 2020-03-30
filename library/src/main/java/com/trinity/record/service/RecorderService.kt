@@ -41,12 +41,12 @@ interface RecorderService {
    * 初始化录音器的硬件部分
    */
   @Throws(AudioConfigurationException::class)
-  fun init()
+  fun init(speed: Float)
 
   /**
    * 初始化我们后台处理数据部分
    */
-  fun initAudioRecorderProcessor(): Boolean
+  fun initAudioRecorderProcessor(speed: Float): Boolean
 
   /**
    * 销毁我们的后台处理数据部分

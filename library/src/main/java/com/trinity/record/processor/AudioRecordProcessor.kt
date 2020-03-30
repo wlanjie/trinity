@@ -3,8 +3,8 @@ package com.trinity.record.processor
 class AudioRecordProcessor : RecordProcessor {
     private var handle: Long = 0
 
-    override fun initAudioBufferSize(audioSampleRate: Int, audioBufferSize: Int) {
-        handle = init(audioSampleRate, audioBufferSize)
+    override fun initAudioBufferSize(audioSampleRate: Int, audioBufferSize: Int, speed: Float) {
+        handle = init(audioSampleRate, audioBufferSize, speed)
     }
 
     override fun pushAudioBufferToQueue(audioSamples: ShortArray, audioSampleSize: Int) {
@@ -23,7 +23,7 @@ class AudioRecordProcessor : RecordProcessor {
         handle = 0
     }
 
-    private external fun init(audioSampleRate: Int, audioBufferSize: Int): Long
+    private external fun init(audioSampleRate: Int, audioBufferSize: Int, speed: Float): Long
     private external fun flushAudioBufferToQueue(handle: Long)
     private external fun destroy(handle: Long)
     private external fun pushAudioBufferToQueue(

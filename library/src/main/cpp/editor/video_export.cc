@@ -508,7 +508,7 @@ void VideoExport::ProcessVideoExport() {
         if (previous_time_ != 0) {
             current_time_ = current_time_ + previous_time_;
         }
-        encoder_->Encode(current_time_);
+        encoder_->Encode();
         OnExportProgress(current_time_);
     }
     mediacodec_flush(av_play_context_);
