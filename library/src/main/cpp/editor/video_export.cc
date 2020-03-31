@@ -429,7 +429,7 @@ void VideoExport::ProcessVideoExport() {
     OnEffect();
 
     auto* frame_buffer = new FrameBuffer(video_width_, video_height_, DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
-    encoder_->CreateEncoder(egl_core_, frame_buffer->GetTextureId());
+    encoder_->CreateEncoder(egl_core_);
     while (true) {
         if (!export_ing_) {
             break;
@@ -508,7 +508,7 @@ void VideoExport::ProcessVideoExport() {
         if (previous_time_ != 0) {
             current_time_ = current_time_ + previous_time_;
         }
-        encoder_->Encode();
+        encoder_->Encode(1.0F, texture_id);
         OnExportProgress(current_time_);
     }
     mediacodec_flush(av_play_context_);

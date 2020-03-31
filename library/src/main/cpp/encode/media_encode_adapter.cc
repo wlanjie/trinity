@@ -90,9 +90,8 @@ void MediaEncodeAdapter::HandleMessage(trinity::Message *msg) {
     }
 }
 
-void MediaEncodeAdapter::CreateEncoder(EGLCore *core, int texture_id) {
+void MediaEncodeAdapter::CreateEncoder(EGLCore *core) {
     core_ = core;
-    texture_id_ = texture_id;
     bool need_attach = false;
     JNIEnv* env;
     int status = vm_->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
@@ -148,7 +147,7 @@ void MediaEncodeAdapter::DestroyEncoder() {
     LOGI("after DestroyEncoder");
 }
 
-void MediaEncodeAdapter::Encode(float speed) {
+void MediaEncodeAdapter::Encode(float speed, int texture_id) {
     if (start_time_ == 0) {
         start_time_ = getCurrentTime();
     }
@@ -173,7 +172,7 @@ void MediaEncodeAdapter::Encode(float speed) {
     encode_frame_count_++;
     if (EGL_NO_SURFACE != encoder_surface_) {
         core_->MakeCurrent(encoder_surface_);
-        render_->ProcessImage(texture_id_);
+        render_->ProcessImage(texture_id);
         core_->SetPresentationTime(encoder_surface_, ((khronos_stime_nanoseconds_t) current_time) * 1000000);
         PostMessage(new Message(FRAME_AVAILABLE));
         if (!core_->SwapBuffers(encoder_surface_)) {

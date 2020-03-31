@@ -33,9 +33,9 @@ class SoftEncoderAdapter : public VideoEncoderAdapter {
 
     virtual ~SoftEncoderAdapter();
 
-    void CreateEncoder(EGLCore *eglCore, int inputTexId);
+    void CreateEncoder(EGLCore *eglCore);
 
-    void Encode(float speed = 1.0F);
+    void Encode(float speed = 1.0F, int texture_id = 0);
 
     void renderLoop();
 

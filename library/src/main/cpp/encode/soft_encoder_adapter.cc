@@ -68,10 +68,9 @@ SoftEncoderAdapter::~SoftEncoderAdapter() {
     }
 }
 
-void SoftEncoderAdapter::CreateEncoder(EGLCore *eglCore, int inputTexId) {
+void SoftEncoderAdapter::CreateEncoder(EGLCore *eglCore) {
     LOGI("enter CreateEncoder");
     this->load_texture_context_ = eglCore->GetContext();
-    this->texture_id_ = inputTexId;
     pixel_size_ = video_width_ * video_height_ * 3 / 2;
 
     start_time_ = 0;
@@ -101,7 +100,7 @@ void SoftEncoderAdapter::HotConfig(int maxBitrate, int avgBitrate, int fps) {
     ResetFpsStartTimeIfNeed(fps);
 }
 
-void SoftEncoderAdapter::Encode(float speed) {
+void SoftEncoderAdapter::Encode(float speed, int texture_id) {
     while (msg_ == MSG_WINDOW_SET || NULL == egl_core_) {
         usleep(100 * 1000);
     }
@@ -112,6 +111,7 @@ void SoftEncoderAdapter::Encode(float speed) {
         fps_change_time_ = getCurrentTime();
     }
 
+    texture_id_ = texture_id;
     // need drop frames
     int64_t current_time = static_cast<int64_t>((getCurrentTime() - fps_change_time_) * speed);
     int expectedFrameCount = static_cast<int>(current_time / 1000.0F * frame_rate_ + 0.5F);

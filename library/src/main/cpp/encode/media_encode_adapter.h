@@ -39,11 +39,11 @@ class MediaEncodeAdapter : public VideoEncoderAdapter, public Handler {
     MediaEncodeAdapter(JavaVM* vm, jobject object);
     virtual ~MediaEncodeAdapter();
 
-    virtual void CreateEncoder(EGLCore* core, int texture_id);
+    virtual void CreateEncoder(EGLCore* core);
 
     virtual void DestroyEncoder();
 
-    virtual void Encode(float speed = 1.0F);
+    virtual void Encode(float speed = 1.0F, int texture_id = 0);
 
     void DrainEncodeData();
 

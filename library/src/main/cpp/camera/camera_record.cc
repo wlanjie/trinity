@@ -217,7 +217,7 @@ void CameraRecord::Draw() {
     // 开始录制, 创建编码器
     if (start_recording) {
         start_recording = false;
-        encoder_->CreateEncoder(egl_core_, frame_buffer_->GetTextureId());
+        encoder_->CreateEncoder(egl_core_);
         encoding_ = true;
     }
     render_screen_->SetOutput(screen_width_, screen_height_);
@@ -254,6 +254,10 @@ void CameraRecord::Draw() {
 
     if (!egl_core_->SwapBuffers(preview_surface_)) {
         LOGE("eglSwapBuffers(preview_surface_) returned error %d", eglGetError());
+    }
+
+    if (encoding_ && nullptr != encoder_) {
+        encoder_->Encode(speed_, texture_id);
     }
 }
 
@@ -660,10 +664,6 @@ void CameraRecord::RenderFrame() {
         if (EGL_NO_SURFACE != preview_surface_) {
             Draw();
             FPS();
-        }
-
-        if (encoding_ && nullptr != encoder_) {
-            encoder_->Encode(speed_);
         }
     }
 }
