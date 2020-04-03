@@ -562,7 +562,7 @@ void SubEffect::SetUniform(std::list<SubEffect*> sub_effects, ProcessBuffer *pro
         }
         switch (fragment_uniform->type) {
             case UniformTypeInputTexture:
-                SetTextureUnit(fragment_uniform, process_buffer, texture_id);
+                SetTextureUnit(fragment_uniform, process_buffer, origin_texture_id);
                 break;
             case UniformTypeMattingTexture:
             case UniformTypeInputTextureLast:
@@ -744,7 +744,7 @@ void Effect::ParseConfig(char *config_path) {
                 path.append(config_path);
                 path.append("/");
                 path.append(path_value);
-                Parse2DStickerV3(path);
+                Parse2DStickerV3(path, zorder);
             } else if (strcasecmp(type, "generalEffect") == 0) {
                 auto* general_sub_effect = new GeneralSubEffect();
                 ConvertGeneralConfig(effect_item_json, config_path, general_sub_effect);
@@ -1297,7 +1297,7 @@ std::string& Effect::ReplaceAllDistince(std::string &str, const std::string &old
     return str;
 }
 
-void Effect::ParsePartsItem(cJSON* clip_root_json, const std::string& resource_root_path, const std::string& type, bool face_detect) {
+void Effect::ParsePartsItem(cJSON* clip_root_json, const std::string& resource_root_path, const std::string& type, bool face_detect, int zorder) {
     cJSON* parts_json = cJSON_GetObjectItem(clip_root_json, "parts");
     if (nullptr == parts_json) {
         return;
@@ -1358,11 +1358,12 @@ void Effect::ParsePartsItem(cJSON* clip_root_json, const std::string& resource_r
             int height = height_json->valueint;
             stickerv3->height = height;
         }
-        cJSON* zorder_json = cJSON_GetObjectItem(parts_value_json, "zorder");
-        if (nullptr != zorder_json) {
-            int zorder = zorder_json->valueint;
-            stickerv3->zorder = zorder;
-        }
+        stickerv3->zorder = zorder;
+//        cJSON* zorder_json = cJSON_GetObjectItem(parts_value_json, "zorder");
+//        if (nullptr != zorder_json) {
+//            int zorder = zorder_json->valueint;
+//            stickerv3->zorder = zorder;
+//        }
         cJSON* transform_type_json = cJSON_GetObjectItem(parts_value_json, "transformType");
         if (nullptr != transform_type_json) {
             char* transform_type = transform_type_json->valuestring;
@@ -1501,7 +1502,7 @@ void Effect::ParsePartsItem(cJSON* clip_root_json, const std::string& resource_r
     }
 }
 
-void Effect::Parse2DStickerV3(const std::string& resource_root_path) {
+void Effect::Parse2DStickerV3(const std::string& resource_root_path, int zorder) {
     char const* content_name = "content.json";
     std::string content_path;
     content_path.append(resource_root_path);
@@ -1552,7 +1553,7 @@ void Effect::Parse2DStickerV3(const std::string& resource_root_path) {
         return;
     }
     // convert sticker config
-    ParsePartsItem(clip_root_json, resource_root_path, type_string, face_detect);
+    ParsePartsItem(clip_root_json, resource_root_path, type_string, face_detect, zorder);
     printf("");
 }
 

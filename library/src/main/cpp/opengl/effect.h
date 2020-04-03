@@ -464,8 +464,8 @@ class Effect {
     glm::mat4 VertexMatrix(SubEffect* sub_effect, int source_width, int source_height);
     void ParseTextureFiles(cJSON* texture_files, StickerSubEffect* sub_effect, const std::string& resource_root_path);
     std::string& ReplaceAllDistince(std::string& str, const std::string& old_value, const std::string& new_value);
-    void ParsePartsItem(cJSON* clip_root_json, const std::string& resource_root_path, const std::string& type, bool face_detect);
-    void Parse2DStickerV3(const std::string& resource_root_path);
+    void ParsePartsItem(cJSON* clip_root_json, const std::string& resource_root_path, const std::string& type, bool face_detect, int zorder);
+    void Parse2DStickerV3(const std::string& resource_root_path, int zorder);
     void ParseUniform(SubEffect *sub_effect, char *config_path, cJSON *uniforms_json, ShaderUniformType type);
  private:
     FaceDetection* face_detection_;

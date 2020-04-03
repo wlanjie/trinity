@@ -136,7 +136,7 @@ class TrinityTestCase(unittest.TestCase):
                     print(attrib['text'])
                     d(text=attrib['text']).long_click(2)
                     # 往左滑动
-                    d.swipe_ext("left", box=(0, self.displayHeight - 200, 260, self.displayHeight), scale=0.7) 
+                    d.swipe_ext("left", scale=0.2) 
             except Exception:
                 self.runTest()
 
