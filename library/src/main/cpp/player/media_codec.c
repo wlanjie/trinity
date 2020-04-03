@@ -393,7 +393,7 @@ int mediacodec_receive_frame(AVPlayContext *context, AVFrame *frame) {
     int output_ret = 1;
     jobject deqret = (*env)->CallObjectMethod(env, java_class->media_codec_object,
                                                        java_class->codec_dequeueOutputBufferIndex,
-                                                       (jlong) 100 * 1000);
+                                                       (jlong) 0);
     uint8_t *retbuf = (*env)->GetDirectBufferAddress(env, deqret);
     int outbufidx = get_int(retbuf);
     int64_t pts = get_long(retbuf + 8);

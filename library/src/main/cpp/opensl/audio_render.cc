@@ -131,6 +131,7 @@ SLresult AudioRender::Start() {
 }
 
 SLresult AudioRender::Init(int channels, int accompanySampleRate, AudioPlayerCallback produceDataCallback, void* ctx) {
+    LOGI("enter: %s channels: %d sample_rate: %d", __func__, channels, accompanySampleRate);
     context_ = ctx;
     audio_player_callback_ = produceDataCallback;
     SLresult result = SL_RESULT_UNKNOWN_ERROR;
