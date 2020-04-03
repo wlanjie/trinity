@@ -100,7 +100,7 @@ void SoftEncoderAdapter::HotConfig(int maxBitrate, int avgBitrate, int fps) {
     ResetFpsStartTimeIfNeed(fps);
 }
 
-void SoftEncoderAdapter::Encode(float speed, int texture_id) {
+void SoftEncoderAdapter::Encode(uint64_t time, int texture_id) {
     while (msg_ == MSG_WINDOW_SET || NULL == egl_core_) {
         usleep(100 * 1000);
     }
@@ -113,14 +113,14 @@ void SoftEncoderAdapter::Encode(float speed, int texture_id) {
 
     texture_id_ = texture_id;
     // need drop frames
-    int64_t current_time = static_cast<int64_t>((getCurrentTime() - fps_change_time_) * speed);
-    int expectedFrameCount = static_cast<int>(current_time / 1000.0F * frame_rate_ + 0.5F);
+//    int64_t current_time = static_cast<int64_t>((getCurrentTime() - fps_change_time_) * speed);
+    int expectedFrameCount = static_cast<int>(time / 1000.0F * frame_rate_ + 0.5F);
     if (expectedFrameCount < encode_frame_count_) {
         LOGE("expectedFrameCount is %d while encoded_frame_count_ is %d", expectedFrameCount,
              encode_frame_count_);
         return;
     }
-    time_mills_ = current_time;
+    time_mills_ = time;
     encode_frame_count_++;
     pthread_mutex_lock(&lock_);
     pthread_cond_signal(&condition_);

@@ -201,6 +201,7 @@ class CameraRecord : public Handler, public FaceDetection {
     int current_action_id_;
     ImageProcess* image_process_;
     int64_t render_time_;
+    int64_t encode_time_;
     FacePoint* face_point_;
     int camera_facing_id_;
 };

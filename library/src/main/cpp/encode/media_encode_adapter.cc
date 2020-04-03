@@ -147,7 +147,7 @@ void MediaEncodeAdapter::DestroyEncoder() {
     LOGI("after DestroyEncoder");
 }
 
-void MediaEncodeAdapter::Encode(float speed, int texture_id) {
+void MediaEncodeAdapter::Encode(uint64_t time, int texture_id) {
     if (start_time_ == 0) {
         start_time_ = getCurrentTime();
     }
@@ -161,9 +161,9 @@ void MediaEncodeAdapter::Encode(float speed, int texture_id) {
         LOGE("HWEncoderAdapter:dropped frame_, encoder_ queue_ full");
         return;
     }
-    int64_t current_time = static_cast<int64_t>((getCurrentTime() - start_time_) * speed);
+//    int64_t current_time = static_cast<int64_t>((getCurrentTime() - start_time_) * speed);
     // need drop frames
-    int expectedFrameCount = static_cast<int>(current_time / 1000.0F * frame_rate_ + 0.5F);
+    int expectedFrameCount = static_cast<int>(time / 1000.0F * frame_rate_ + 0.5F);
     if (expectedFrameCount < encode_frame_count_) {
         LOGE("drop frame encode_count: %d frame_count: %d", encode_frame_count_, expectedFrameCount);
         return;
@@ -173,7 +173,7 @@ void MediaEncodeAdapter::Encode(float speed, int texture_id) {
     if (EGL_NO_SURFACE != encoder_surface_) {
         core_->MakeCurrent(encoder_surface_);
         render_->ProcessImage(texture_id);
-        core_->SetPresentationTime(encoder_surface_, ((khronos_stime_nanoseconds_t) current_time) * 1000000);
+        core_->SetPresentationTime(encoder_surface_, ((khronos_stime_nanoseconds_t) time) * 1000000);
         PostMessage(new Message(FRAME_AVAILABLE));
         if (!core_->SwapBuffers(encoder_surface_)) {
             LOGE("eglSwapBuffers(encoder_surface_) returned error %d", eglGetError());

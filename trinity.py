@@ -7,6 +7,7 @@ if sys.version_info < (3,0):
 import uiautomator2 as u2
 import time
 import os
+import random
 from datetime import datetime
 import unittest
 
@@ -17,6 +18,7 @@ d = u2.connect_usb(device)
 xp = d.ext_xpath
 
 effects = ["闪白", "两屏", "三屏", "四屏", "六屏", "九屏", "黑白分屏", "模糊分屏", "灵魂出窍", "抖动", "毛刺", "缩放", "70s", "x-signal"]
+effect_tab_names = ["梦幻", "滤镜", "分屏", "转场"]
 
 class TrinityTestCase(unittest.TestCase):
     def setUp(self):
@@ -51,13 +53,53 @@ class TrinityTestCase(unittest.TestCase):
             self.runApp()
             d.app_stop(self.package_name)
 
+    def clickPhoto(self):
+        # 选择相机中的视频, 并点击完成
+        d(resourceId="com.trinity.sample:id/photo", className="android.widget.ImageView").click()
+        try:
+            elements = d.xpath("//android.widget.FrameLayout//androidx.recyclerview.widget.RecyclerView//android.widget.FrameLayout//android.widget.TextView").all()
+            random_value = random.randint(0, len(elements) - 1)
+            elements[random_value].click()
+            elements = d.xpath("//android.widget.RelativeLayout//android.widget.ImageView").all()
+            for item in elements:
+                attrib = item.attrib
+                if 'done' in attrib['resource-id']:
+                    item.click()
+        except Exception:
+            print('clickPhoto error')
+            self.runTest()             
+
+    def clickRecordEffect(self):
+        # 选择录制中的特效
+        d(resourceId="com.trinity.sample:id/effect", className="android.widget.ImageView").click()
+        time.sleep(2)
+        try:
+            effect_elements = d.xpath("//android.view.ViewGroup//androidx.recyclerview.widget.RecyclerView//android.widget.LinearLayout").all()
+            effect_index = random.randint(0, len(effect_elements) - 1)
+            print(effect_elements)
+            print(effect_index)
+            time.sleep(1)
+            effect_elements[effect_index].click()
+            time.sleep(2)
+            d.swipe_ext("down", box=(200, 0, self.displayWidth, self.displayHeight), scale=0.7)
+        except Exception:
+            d.swipe_ext("down", box=(200, 0, self.displayWidth, self.displayHeight), scale=0.7)
+            print('click record effect error')
+            # self.runTest()    
+
     def runApp(self):
-        # 录制20段视频,每段2秒
-        for num in range(0, 20): 
-            # 长按录制按钮2秒
-            d(resourceId="com.trinity.sample:id/record_button", className="android.view.View").long_click(2)
+        # 录制5段视频,每段5秒
+        for num in range(0, 5): 
+            # 随机去选一次相册中的视频
+            album_random_value = random.randint(0, 5)
+            if (album_random_value == num):
+                self.clickPhoto()
+                continue
+            self.clickRecordEffect()
+            # 长按录制按钮5秒
+            d(resourceId="com.trinity.sample:id/record_button", className="android.view.View").long_click(5)
             # 切换摄像头
-            d(resourceId="com.trinity.sample:id/switch_camera", className="android.widget.ImageView").click()
+            # d(resourceId="com.trinity.sample:id/switch_camera", className="android.widget.ImageView").click()
 
         # 点击完成,跳转到编辑页
         d(resourceId="com.trinity.sample:id/done", className="android.widget.ImageView").click()
@@ -84,17 +126,30 @@ class TrinityTestCase(unittest.TestCase):
         # 点击特效
         d(text="特效").click()
 
-        # 遍历特效, 所有特效执行一次
-
-        for effect_name in effects:
+        for effect_tab in effect_tab_names:
             try:
-                # 每个特效显示2秒
-                d(text=effect_name).long_click(2)
+                d.xpath(effect_tab).click()
+                time.sleep(2)
+                effect_elements = d.xpath("//androidx.recyclerview.widget.RecyclerView//android.widget.LinearLayout//android.widget.FrameLayout//android.widget.TextView").all()
+                for effect in effect_elements:
+                    attrib = effect.attrib
+                    print(attrib['text'])
+                    d(text=attrib['text']).long_click(2)
+                    # 往左滑动
+                    d.swipe_ext("left", box=(0, self.displayHeight - 200, 260, self.displayHeight), scale=0.7) 
             except Exception:
-                print('click effect exception')
                 self.runTest()
-            # 往左滑动
-            d.swipe_ext("left", box=(0, self.displayHeight - 200, 260, self.displayHeight), scale=0.7)                        
+
+        # 遍历特效, 所有特效执行一次
+        # for effect_name in effects:
+        #     try:
+        #         # 每个特效显示2秒
+        #         d(text=effect_name).long_click(2)
+        #     except Exception:
+        #         print('click effect exception')
+        #         self.runTest()
+        #     # 往左滑动
+        #     d.swipe_ext("left", box=(0, self.displayHeight - 200, 260, self.displayHeight), scale=0.7)                        
 
          # 点击隐藏特效列表
         d(resourceId="com.trinity.sample:id/root_view", className="android.widget.RelativeLayout").click()

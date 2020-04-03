@@ -21,6 +21,7 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -28,8 +29,9 @@ import com.trinity.sample.R
 import com.trinity.sample.entity.Effect
 import java.nio.charset.Charset
 
-class IdentifyAdapter(private val context: Context,
-                      val callback: (effect: Effect?) -> Unit) : RecyclerView.Adapter<IdentifyAdapter.ViewHolder>() {
+class IdentifyAdapter(
+  context: Context,
+  val callback: (effect: Effect?) -> Unit) : RecyclerView.Adapter<IdentifyAdapter.ViewHolder>() {
 
   private val mEffects: List<Effect>
   private var mCurrentPosition = -1
@@ -40,10 +42,12 @@ class IdentifyAdapter(private val context: Context,
     val buffer = ByteArray(size)
     stream.read(buffer)
     stream.close()
-    mEffects = Gson().fromJson<List<Effect>>(String(buffer, Charset.forName("UTF-8")), object: TypeToken<List<Effect>>(){}.type)
+    mEffects = Gson().fromJson(String(buffer, Charset.forName("UTF-8")), object: TypeToken<List<Effect>>(){}.type)
   }
 
   class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    val selectStateImage: ImageView = itemView.findViewById(R.id.select_state)
+    val resourceImage: ImageView = itemView.findViewById(R.id.resource_image_view)
   }
 
   override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -56,6 +60,11 @@ class IdentifyAdapter(private val context: Context,
   }
 
   override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+    if (position != mCurrentPosition) {
+      holder.selectStateImage.visibility = View.GONE
+    } else {
+      holder.selectStateImage.visibility = View.VISIBLE
+    }
     holder.itemView.setOnClickListener {
       mCurrentPosition = if (position == mCurrentPosition) {
         callback(null)
@@ -64,6 +73,7 @@ class IdentifyAdapter(private val context: Context,
         callback(mEffects[position])
         position
       }
+      notifyDataSetChanged()
     }
   }
 }

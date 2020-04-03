@@ -438,7 +438,7 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
 
     private var mPosX = 0F
     private var mPosY = 0F
-    private var mShouldDrag = true
+    private var mShouldDrag = false
 
     fun shouldDrag(): Boolean {
       return mShouldDrag
@@ -450,9 +450,9 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
         val bottomView = mViewOperator.getBottomView()
         bottomView?.let {
           val count = mPasterContainer.childCount
-          for (i in 0..count) {
+          for (i in 0 until count) {
             val view = mPasterContainer.getChildAt(i)
-            val simpleImpl = view.tag as PasteUISimpleImpl
+            val simpleImpl = view?.tag as PasteUISimpleImpl?
             if (simpleImpl != null && bottomView.isHostPaste(simpleImpl)) {
               if (simpleImpl.isVisibleInTime(getCurrentDuration()) && simpleImpl.contentContains(e.x, e.y)) {
                 outSide = false
@@ -518,7 +518,7 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
       }
       mPosX = 0F
       mPosY = 0F
-      return true
+      return mShouldDrag
     }
   }
 

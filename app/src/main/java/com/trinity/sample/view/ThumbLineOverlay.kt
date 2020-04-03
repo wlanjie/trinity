@@ -169,7 +169,7 @@ class ThumbLineOverlay(
         mHeadView?.active()
         mContext?.apply {
           if (middleViewColor != 0) {
-            mSelectedMiddleView?.setBackgroundColor(ContextCompat.getColor(this, middleViewColor))
+            mSelectedMiddleView?.setBackgroundColor(middleViewColor)
           } else {
             mSelectedMiddleView?.setBackgroundColor(ContextCompat.getColor(this, R.color.timeline_bar_active_overlay))
           }
@@ -180,7 +180,7 @@ class ThumbLineOverlay(
         mHeadView?.fix()
         mContext?.apply {
           if (middleViewColor != 0) {
-            mSelectedMiddleView?.setBackgroundColor(ContextCompat.getColor(this, middleViewColor))
+            mSelectedMiddleView?.setBackgroundColor(middleViewColor)
           } else {
             mSelectedMiddleView?.setBackgroundColor(ContextCompat.getColor(this, R.color.timeline_bar_active_overlay))
           }
@@ -209,7 +209,7 @@ class ThumbLineOverlay(
         mHeadView?.active()
         mContext?.apply {
           if (middleViewColor != 0) {
-            mSelectedMiddleView?.setBackgroundColor(ContextCompat.getColor(this, middleViewColor))
+            mSelectedMiddleView?.setBackgroundColor(middleViewColor)
           } else {
             mSelectedMiddleView?.setBackgroundColor(ContextCompat.getColor(this, R.color.timeline_bar_active_overlay))
           }
@@ -220,7 +220,7 @@ class ThumbLineOverlay(
         mHeadView?.fix()
         mContext?.apply {
           if (middleViewColor != 0) {
-            mSelectedMiddleView?.setBackgroundColor(ContextCompat.getColor(this, middleViewColor))
+            mSelectedMiddleView?.setBackgroundColor(middleViewColor)
           } else {
             mSelectedMiddleView?.setBackgroundColor(ContextCompat.getColor(this, R.color.timeline_bar_active_overlay))
           }

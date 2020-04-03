@@ -135,6 +135,7 @@ class Player : public Handler {
     // 前几个视频的时间总和
     int video_count_duration_;
     AudioRender* audio_render_;
+    bool audio_render_start_;
     int audio_buffer_size_;
     uint8_t* audio_buffer_;
     int draw_texture_id_;

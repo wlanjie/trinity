@@ -60,6 +60,7 @@ Player::Player(JNIEnv* env, jobject object) : Handler()
     , video_count_duration_(0)
     , end_time_(INT_MAX)
     , audio_render_(nullptr)
+    , audio_render_start_(false)
     , audio_buffer_size_(0)
     , audio_buffer_(nullptr)
     , draw_texture_id_(0) {
@@ -541,11 +542,11 @@ void Player::HandleMessage(Message *msg) {
             }
 
             if (av_play_context_->av_track_flags & AUDIO_FLAG) {
+                audio_render_start_ = false;
                 int channels = av_play_context_->audio_codec_context->channels <= 2
                         ? av_play_context_->audio_codec_context->channels : 2;
                 audio_render_ = new AudioRender();
                 audio_render_->Init(channels, av_play_context_->sample_rate, AudioCallback, this);
-                audio_render_->Start();
             }
             PostMessage(new Message(kRenderVideoFrame));
             LOGI("leave Start play");
@@ -585,6 +586,7 @@ void Player::HandleMessage(Message *msg) {
             if (nullptr != av_play_context_) {
                 av_play_stop(av_play_context_);
             }
+            audio_render_start_ = false;
             if (nullptr != audio_render_) {
                 audio_render_->Stop();
                 delete audio_render_;
@@ -729,6 +731,10 @@ int Player::DrawVideoFrame() {
             usleep(10000);
             return 0;
         }
+    }
+    if (!audio_render_start_ && av_play_context_->av_track_flags & AUDIO_FLAG) {
+        audio_render_start_ = true;
+        audio_render_->Start();
     }
     // 发现seeking == 2 开始drop frame 直到发现&context->flush_frame
     // 解决连续seek卡住的问题

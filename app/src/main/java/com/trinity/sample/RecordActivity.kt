@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.PointF
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView

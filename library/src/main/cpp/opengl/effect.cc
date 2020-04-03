@@ -354,6 +354,9 @@ int StickerV3SubEffect::OnDrawFrame(FaceDetection* face_detection,
                         delete report;
                     }
                 }
+            } else {
+                sticker_texture_id = blend->OnDrawFrame(sticker_texture_id, image_buffer->GetTextureId(), 
+                    width, height, matrix, alpha_factor);
             }
         }
     }

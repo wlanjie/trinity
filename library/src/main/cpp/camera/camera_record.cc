@@ -62,6 +62,7 @@ CameraRecord::CameraRecord(JNIEnv* env) : Handler()
     , current_action_id_(0)
     , image_process_(nullptr)
     , render_time_(0)
+    , encode_time_(0)
     , face_point_(nullptr)
     , camera_facing_id_(-1) {
     env->GetJavaVM(&vm_);
@@ -256,8 +257,13 @@ void CameraRecord::Draw() {
         LOGE("eglSwapBuffers(preview_surface_) returned error %d", eglGetError());
     }
 
+    if (encode_time_ == 0) {
+        encode_time_ = getCurrentTime();
+    }
+
     if (encoding_ && nullptr != encoder_) {
-        encoder_->Encode(speed_, texture_id);
+        encoder_->Encode(static_cast<uint64_t>((getCurrentTime() - encode_time_) * speed_),
+                texture_id);
     }
 }
 
@@ -606,6 +612,7 @@ void CameraRecord::StartEncoding(const char* path,
     LOGI("StartEncoding enter width: %d height: %d videoBitRate: %d frameRate: %f useHard: %d audio_sample_rate: %d audio_channel: %d audio_bit_rate: %d",
             width, height, video_bit_rate, frame_rate, use_hard_encode, audio_sample_rate, audio_channel, audio_bit_rate);
 
+    encode_time_ = 0;
     if (nullptr != encoder_) {
         delete encoder_;
         encoder_ = nullptr;

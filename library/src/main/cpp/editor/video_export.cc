@@ -488,7 +488,7 @@ void VideoExport::ProcessVideoExport() {
             current_time_ = static_cast<uint64_t>(av_play_context_->video_frame->pts / 1000);
         }
         if (image_process_ != nullptr) {
-            texture_id = image_process_->Process(texture_id, current_time_, frame->width, frame->height, 0, 0);
+            texture_id = image_process_->Process(texture_id, current_time_ + previous_time_, frame->width, frame->height, 0, 0);
         }
         frame_buffer->ActiveProgram();
         frame_buffer->OnDrawFrame(texture_id);
@@ -508,7 +508,7 @@ void VideoExport::ProcessVideoExport() {
         if (previous_time_ != 0) {
             current_time_ = current_time_ + previous_time_;
         }
-        encoder_->Encode(1.0F, texture_id);
+        encoder_->Encode(current_time_, texture_id);
         OnExportProgress(current_time_);
     }
     mediacodec_flush(av_play_context_);
