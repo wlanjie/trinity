@@ -28,6 +28,7 @@ node_modules
 
 __pycache__
 library/src/main/cpp/opengl.xcodeproj/xcuserdata/wlanjie.xcuserdatad/xcdebugger/Breakpoints_v2.xcbkptlist
+library/src/main/cpp/opengl.xcodeproj/project.xcworkspace/xcuserdata/wlanjie.xcuserdatad/UserInterfaceState.xcuserstate
 
 *.xcuserstate
 
