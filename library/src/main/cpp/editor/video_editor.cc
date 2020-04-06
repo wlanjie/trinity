@@ -129,7 +129,7 @@ int64_t VideoEditor::GetCurrentPosition() const {
 
 int VideoEditor::GetClipsCount() {
     pthread_mutex_lock(&queue_mutex_);
-    int size = clip_deque_.size();
+    int size = static_cast<int>(clip_deque_.size());
     pthread_mutex_unlock(&queue_mutex_);
     return size;
 }
@@ -141,7 +141,38 @@ MediaClip *VideoEditor::GetClip(int index) {
     return clip_deque_.at(index);
 }
 
+int VideoEditor::CheckFileType(MediaClip *clip) {
+    auto path = clip->file_name;
+    FILE* file = fopen(path, "r");
+    if (file == nullptr) {
+        return -1;
+    }
+    auto buffer = new uint8_t[12];
+    fread(buffer, sizeof(uint8_t), sizeof(uint8_t) * 12, file);
+    fclose(file);
+    if ((buffer[6] == 'J' && buffer[7] == 'F' && buffer[8] == 'I' && buffer[9] == 'F') ||
+        (buffer[6] == 'E' && buffer[7] == 'x' && buffer[8] == 'i' && buffer[9] == 'f')) {
+        // JPEG
+        clip->type = IMAGE;
+    } else if (buffer[1] == 'P' && buffer[2] == 'N' && buffer[3] == 'G') {
+        // PNG
+        clip->type = IMAGE;
+    } else if (buffer[4] == 'f' && buffer[5] == 't' && buffer[6] == 'y' && buffer[7] == 'p') {
+        // mp4
+        clip->type = VIDEO;
+    } else {
+        delete[] buffer;
+        return -2;
+    }
+    delete[] buffer;
+    return 0;
+}
+
 int VideoEditor::InsertClip(MediaClip *clip) {
+    int ret = CheckFileType(clip);
+    if (ret != 0) {
+        return ret;
+    }
     pthread_mutex_lock(&queue_mutex_);
     clip_deque_.push_back(clip);
     editor_resource_->InsertClip(clip);
@@ -308,7 +339,7 @@ void VideoEditor::OnComplete() {
 
     MediaClip* clip = clip_deque_.at(static_cast<unsigned int>(play_index_));
     if (nullptr != player_) {
-        player_->Start(clip->file_name, clip->start_time, clip->end_time, video_count_duration);
+        player_->Start(clip, video_count_duration);
     }
     LOGE("leave %s", __func__);
 }
@@ -327,7 +358,7 @@ int VideoEditor::Play(bool repeat, JNIEnv* env, jobject object) {
     MediaClip* clip = clip_deque_.at(0);
 
     if (nullptr != player_) {
-        return player_->Start(clip->file_name, clip->start_time, clip->end_time);
+        return player_->Start(clip);
     }
     return 0;
 }

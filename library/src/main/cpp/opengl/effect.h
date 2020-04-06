@@ -31,8 +31,11 @@
 #include "frame_buffer.h"
 #define STB_IMAGE_WRITE_STATIC
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+#define STB_IMAGE_RESIZE_STATIC
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "stb_image_write.h"
 #include "stb_image.h"
+#include "stb_image_resize.h"
 #include "blend.h"
 #include "face_markup_render.h"
 #include "face_detection.h"

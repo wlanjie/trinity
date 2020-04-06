@@ -25,10 +25,14 @@
 
 #include <stdint.h>
 
+#define IMAGE 10
+#define VIDEO 11
+
 typedef struct {
     char* file_name;
     int64_t start_time;
     int64_t end_time;
+    int type;
 } MediaClip;
 
 typedef struct {

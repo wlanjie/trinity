@@ -58,9 +58,11 @@ void EditorResource::InsertClip(MediaClip *clip) {
     cJSON* path_json = cJSON_CreateString(clip->file_name);
     cJSON* start_time_json = cJSON_CreateNumber(clip->start_time);
     cJSON* end_time_json = cJSON_CreateNumber(clip->end_time);
+    cJSON* type_json = cJSON_CreateNumber(clip->type);
     cJSON_AddItemToObject(item, "path", path_json);
     cJSON_AddItemToObject(item, "startTime", start_time_json);
     cJSON_AddItemToObject(item, "endTime", end_time_json);
+    cJSON_AddItemToObject(item, "type", type_json);
     char* content = cJSON_Print(root_json_);
     fprintf(resource_file_, "%s", content);
     fflush(resource_file_);

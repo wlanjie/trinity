@@ -77,7 +77,7 @@ int AudioEncoder::Encode(AudioPacket **packet) {
     int ret = avcodec_encode_audio2(codec_context_, &pkt, encode_frame_, &got_packet);
     if (ret < 0 || !got_packet) {
         LOGE("error encode audio frame: %s", av_err2str(ret));
-        av_free_packet(&pkt);
+        av_packet_unref(&pkt);
         return ret;
     }
     if (got_packet) {
@@ -88,7 +88,7 @@ int AudioEncoder::Encode(AudioPacket **packet) {
         (*packet)->size = pkt.size;
         (*packet)->position = static_cast<float>((pkt.pts * av_q2d(time_base) * 1000.0f));
     }
-    av_free_packet(&pkt);
+    av_packet_unref(&pkt);
     return ret;
 }
 

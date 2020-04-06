@@ -62,7 +62,6 @@ int H264Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st) {
     pkt.stream_index = st->index;
     int64_t cal_pts = last_presentation_time_ms_ / 1000.0f / av_q2d(video_stream_->time_base);
     int64_t pts = h264Packet->pts == PTS_PARAM_UN_SETTIED_FLAG ? cal_pts : h264Packet->pts;
-    LOGE("cal_pts; %lld pts: %lld", cal_pts, pts);
     int64_t dts = h264Packet->dts == DTS_PARAM_UN_SETTIED_FLAG ? pts : h264Packet->dts == DTS_PARAM_NOT_A_NUM_FLAG ? AV_NOPTS_VALUE : h264Packet->dts;
     int nalu_type = (outputData[4] & 0x1F);
     if (nalu_type == H264_NALU_TYPE_SEQUENCE_PARAMETER_SET) {

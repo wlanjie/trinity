@@ -65,6 +65,7 @@
     <string name="undo">撤消</string>
     <string name="split_screen">分屏</string>
     <string name="dream">梦幻</string>
+    <string name="dynamic">动感</string>
 
     <string name="caption_effect_font_category_name">纯文字</string>
     <string name="caption_effect_bottom_keyboard">键盘</string>

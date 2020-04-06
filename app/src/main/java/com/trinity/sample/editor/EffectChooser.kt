@@ -95,7 +95,7 @@ class EffectChooser(context: Context) : Chooser(context), EffectAdapter.OnItemTo
   class PagerAdapter(private val context: Context,
                      private val listener: EffectAdapter.OnItemTouchListener,
                      fragmentManager: FragmentManager) : FragmentPagerAdapter(fragmentManager) {
-    private val mPageTitle = arrayOf(R.string.dream, R.string.filter, R.string.split_screen, R.string.transition)
+    private val mPageTitle = arrayOf(R.string.dream, R.string.dynamic, R.string.split_screen, R.string.transition)
     private val mContent = arrayOf("dream.json", "effect_filter.json", "split_screen.json", "transition.json")
 
     override fun getItem(position: Int): Fragment {

@@ -69,6 +69,7 @@ class VideoExport {
     static void* ExportAudioThread(void* context);
     static void* ExportMessageThread(void* context);
     void StartDecode(MediaClip* clip);
+    void LoadImageTexture(MediaClip* clip);
     void FreeResource();
     void OnFilter();
     void OnEffect();
@@ -78,6 +79,7 @@ class VideoExport {
     void OnExportProgress(uint64_t current_time);
     void OnExportComplete();
     int Resample();
+    int FillMuteAudio();
     void ProcessMessage();
 
  private:
@@ -95,11 +97,13 @@ class VideoExport {
     bool export_ing_;
     EGLCore* egl_core_;
     EGLSurface egl_surface_;
-//    MediaDecode* media_decode_;
-//    StateEvent* state_event_;
+    GLuint image_texture_;
+    int64_t image_render_time_;
+    bool load_image_texture_;
     int export_index_;
     int video_width_;
     int video_height_;
+    int frame_rate_;
     int frame_width_;
     int frame_height_;
     YuvRender* yuv_render_;
@@ -117,13 +121,14 @@ class VideoExport {
     VideoExportHandler* video_export_handler_;
     MessageQueue* video_export_message_queue_;
     pthread_t export_message_thread_;
-    int time_diff_;
     pthread_mutex_t media_mutex_;
     pthread_cond_t media_cond_;
     cJSON* export_config_json_;
     GLfloat* vertex_coordinate_;
     GLfloat* texture_coordinate_;
     AVPlayContext* av_play_context_;
+    uint8_t* image_audio_buffer_;
+    int image_audio_buffer_time_;
 };
 
 class VideoExportHandler : public Handler {

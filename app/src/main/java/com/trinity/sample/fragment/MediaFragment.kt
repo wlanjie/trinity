@@ -43,12 +43,19 @@ class MediaFragment : Fragment() {
   }
 
   private fun getSelectMedias(): MutableList<MediaItem>? {
-    val position = mTabLayout.selectedTabPosition
-    return when (val fragment = mAdapter?.getItem(position)) {
-      is VideoFragment -> fragment.getSelectMedias()
-      is PictureFragment -> fragment.getSelectMedias()
-      else -> null
+    val medias = mutableListOf<MediaItem>()
+    val count = mAdapter?.count ?: 0
+    for (index in 0 until count) {
+      when (val fragment = mAdapter?.getItem(index)) {
+        is VideoFragment -> {
+          medias.addAll(fragment.getSelectMedias())
+        }
+        is PictureFragment -> {
+          medias.addAll(fragment.getSelectMedias())
+        }
+      }
     }
+    return medias
   }
 
 }

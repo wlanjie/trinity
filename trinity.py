@@ -18,7 +18,7 @@ d = u2.connect_usb(device)
 xp = d.ext_xpath
 
 effects = ["闪白", "两屏", "三屏", "四屏", "六屏", "九屏", "黑白分屏", "模糊分屏", "灵魂出窍", "抖动", "毛刺", "缩放", "70s", "x-signal"]
-effect_tab_names = ["梦幻", "滤镜", "分屏", "转场"]
+effect_tab_names = ["梦幻", "动感", "分屏", "转场"]
 
 class TrinityTestCase(unittest.TestCase):
     def setUp(self):
@@ -49,9 +49,9 @@ class TrinityTestCase(unittest.TestCase):
 
     def runTest(self):
         for index in range(0, 100):
-            d.app_start(self.package_name)
+            # d.app_start(self.package_name)
             self.runApp()
-            d.app_stop(self.package_name)
+            # d.app_stop(self.package_name)
 
     def clickPhoto(self):
         # 选择相机中的视频, 并点击完成
@@ -70,10 +70,10 @@ class TrinityTestCase(unittest.TestCase):
             self.runTest()             
 
     def clickRecordEffect(self):
-        # 选择录制中的特效
-        d(resourceId="com.trinity.sample:id/effect", className="android.widget.ImageView").click()
-        time.sleep(2)
         try:
+            # 选择录制中的特效
+            d(resourceId="com.trinity.sample:id/effect", className="android.widget.ImageView").click()
+            time.sleep(2)
             effect_elements = d.xpath("//android.view.ViewGroup//androidx.recyclerview.widget.RecyclerView//android.widget.LinearLayout").all()
             effect_index = random.randint(0, len(effect_elements) - 1)
             print(effect_elements)
@@ -105,7 +105,6 @@ class TrinityTestCase(unittest.TestCase):
         d(resourceId="com.trinity.sample:id/done", className="android.widget.ImageView").click()
 
         # 点击滤镜
-        xp.when("滤镜").click()
         d(text="滤镜").click()
         # 遍历滤镜,所有滤镜切换一次
         for num in range(1, 8):
@@ -125,7 +124,6 @@ class TrinityTestCase(unittest.TestCase):
 
         # 点击特效
         d(text="特效").click()
-
         for effect_tab in effect_tab_names:
             try:
                 d.xpath(effect_tab).click()
@@ -136,7 +134,7 @@ class TrinityTestCase(unittest.TestCase):
                     print(attrib['text'])
                     d(text=attrib['text']).long_click(2)
                     # 往左滑动
-                    d.swipe_ext("left", scale=0.2) 
+                    d.swipe_ext("left", box=(0, self.displayHeight - 500, self.displayWidth, self.displayHeight), scale=0.1) 
             except Exception:
                 self.runTest()
 
@@ -156,14 +154,17 @@ class TrinityTestCase(unittest.TestCase):
 
         # 点击下一步
         d(text="下一步").click()
-        time.sleep(40)
+        time.sleep(80)
         d.press("back")
         d.press("back")
-        # for index in range(0, 40):
-        #     try:
-        #         d(resourceId="com.trinity.sample:id/delete", className="android.widget.ImageView").click()
-        #     except Exception:
-        #         print('delete exception')
+        # os.system('adb -s ' + device + " shell rm /sdcard/Android/data/com.trinity.sample/cache/*.mp4")
+        d.press("back")
+
+        for index in range(0, 40):
+            try:
+                d(resourceId="com.trinity.sample:id/delete", className="android.widget.ImageView").click()
+            except Exception:
+                print('delete exception')
 
     def tearDown(self):
         d.set_fastinput_ime(False)

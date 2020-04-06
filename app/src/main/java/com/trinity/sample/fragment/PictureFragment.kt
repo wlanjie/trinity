@@ -1,5 +1,9 @@
+@file:Suppress("DEPRECATION")
+
 package com.trinity.sample.fragment
 
+import android.database.Cursor
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -14,12 +18,10 @@ import com.trinity.sample.R
 import com.trinity.sample.adapter.MediaAdapter
 import com.trinity.sample.entity.MediaItem
 import com.trinity.sample.view.SpacesItemDecoration
-import kotlinx.android.synthetic.main.item_media.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.*
 
 class PictureFragment : Fragment() {
 
@@ -54,6 +56,19 @@ class PictureFragment : Fragment() {
     return mAdapter.getSelectMedia()
   }
 
+  private fun loadPictureFromContent(contentUri: String): String {
+    var cursor: Cursor? = null
+    return try {
+      val projection = arrayOf(MediaStore.Images.Media.DATA)
+      cursor = context?.contentResolver?.query(Uri.parse(contentUri), projection, null, null, null)
+      val columnIndex= cursor?.getColumnIndexOrThrow(MediaStore.Images.Media.DATA) ?: 0
+      cursor?.moveToFirst()
+      cursor?.getString(columnIndex) ?: ""
+    } finally {
+      cursor?.close()
+    }
+  }
+
   private suspend fun loadPicture() {
     val medias = mutableListOf<MediaItem>()
     activity?.let {
@@ -63,17 +78,20 @@ class PictureFragment : Fragment() {
           arrayOf(MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString()), ORDER_BY)
       while (cursor?.moveToNext() == true) {
         val id = cursor.getLong(cursor.getColumnIndexOrThrow(PROJECTION[0]))
-        val path = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        var path = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
           QUERY_URI.buildUpon().appendPath(id.toString()).build().toString()
         } else {
           cursor.getString(cursor.getColumnIndexOrThrow(PROJECTION[1]))
+        }
+        if (path.startsWith("content")) {
+          path = loadPictureFromContent(path)
         }
         val pictureType = cursor.getString(cursor.getColumnIndexOrThrow(PROJECTION[2]))
         val width = cursor.getInt(cursor.getColumnIndexOrThrow(PROJECTION[3]))
         val height = cursor.getInt(cursor.getColumnIndexOrThrow(PROJECTION[4]))
         val duration = cursor.getInt(cursor.getColumnIndexOrThrow(PROJECTION[5]))
         val item = MediaItem(path, pictureType, width, height)
-        item.duration = duration
+        item.duration = 3000
         medias.add(item)
       }
       cursor?.close()

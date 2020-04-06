@@ -28,6 +28,9 @@
 #include "tools.h"
 #include "gl.h"
 
+#define MAX_IMAGE_WIDTH 1080
+#define MAX_IMAGE_HEIGHT 1920
+
 namespace trinity {
 
 VideoExport::VideoExport(JNIEnv* env, jobject object)
@@ -45,9 +48,13 @@ VideoExport::VideoExport(JNIEnv* env, jobject object)
     , export_ing_(false)
     , egl_core_(nullptr)
     , egl_surface_(EGL_NO_SURFACE)
+    , image_texture_(0)
+    , image_render_time_(0)
+    , load_image_texture_(false)
     , export_index_(0)
     , video_width_(0)
     , video_height_(0)
+    , frame_rate_(0)
     , frame_width_(0)
     , frame_height_(0)
     , yuv_render_(nullptr)
@@ -70,7 +77,9 @@ VideoExport::VideoExport(JNIEnv* env, jobject object)
     , export_config_json_(nullptr)
     , vertex_coordinate_(nullptr)
     , texture_coordinate_(nullptr)
-    , av_play_context_(nullptr) {
+    , av_play_context_(nullptr)
+    , image_audio_buffer_(nullptr)
+    , image_audio_buffer_time_(0) {
     env->GetJavaVM(&vm_);
     object_ = env->NewGlobalRef(object);
     audio_samples_ = new short[8192];
@@ -169,6 +178,7 @@ int VideoExport::OnComplete() {
         if (export_index_ >= clip_deque_.size()) {
             export_ing_ = false;
         } else {
+            LOGE("current_time_: %lld", current_time_);
             previous_time_ = current_time_;
             MediaClip *clip = clip_deque_.at(export_index_);
             StartDecode(clip);
@@ -181,6 +191,7 @@ int VideoExport::OnComplete() {
 }
 
 void VideoExport::FreeResource() {
+    image_render_time_ = 0;
     if (nullptr != av_play_context_) {
         av_play_stop(av_play_context_);
     }
@@ -297,9 +308,61 @@ void VideoExport::OnMusics() {
 }
 
 void VideoExport::StartDecode(MediaClip *clip) {
+    LOGE("file: %s export_index: %d", clip->file_name, export_index_);
     LOGI("enter %s path: %s start_time: %d", __func__, clip->file_name, clip->start_time);
-    av_play_play(clip->file_name, clip->start_time, av_play_context_);
+    if (clip->type == VIDEO) {
+        av_play_play(clip->file_name, clip->start_time, av_play_context_);
+    } else if (clip->type == IMAGE) {
+        load_image_texture_ = true;
+    }
     LOGI("leave %s", __func__);
+}
+
+void VideoExport::LoadImageTexture(MediaClip *clip) {
+    int width = 0;
+    int height = 0;
+    int channels = 0;
+//    if (!av_play_context_->is_sw_decode) {
+        // 上下翻转图片, openGL渲染图片时会上下翻转
+        stbi_set_flip_vertically_on_load(1);
+//    }
+    auto image_data = stbi_load(clip->file_name, &width, &height, &channels, STBI_rgb_alpha);
+    if (width == 0 || height == 0 || nullptr == image_data) {
+        return;
+    }
+    if (image_texture_ == 0) {
+        glGenTextures(1, &image_texture_);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, image_texture_);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    glBindTexture(GL_TEXTURE_2D, image_texture_);
+    if (width > MAX_IMAGE_WIDTH || height > MAX_IMAGE_HEIGHT) {
+        // 当图片大于1080p时, 缩放到1080p
+        auto resize_width_ratio = MAX_IMAGE_WIDTH * 1.0F / width;
+        auto resize_height_ratio = MAX_IMAGE_HEIGHT * 1.0F / height;
+        auto resize_width = static_cast<int>(MAX(resize_width_ratio, resize_height_ratio) * width);
+        auto resize_height = static_cast<int>(MAX(resize_width_ratio, resize_height_ratio) * height);
+        auto resize_image_data = reinterpret_cast<unsigned char*>(
+                malloc(static_cast<size_t>(resize_width * resize_height * channels)));
+        stbir_resize_uint8(image_data, width, height, 0, resize_image_data, resize_width, resize_height, 0, channels);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, resize_width, resize_height,
+                     0, GL_RGBA, GL_UNSIGNED_BYTE, resize_image_data);
+        free(resize_image_data);
+        frame_width_ = resize_width;
+        frame_height_ = resize_height;
+    } else {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
+        frame_width_ = width;
+        frame_height_ = height;
+    }
+    glBindTexture(GL_TEXTURE_2D, 0);
+    stbi_image_free(image_data);
 }
 
 int VideoExport::Export(const char *export_config, const char *path, int width, int height, int frame_rate,
@@ -359,18 +422,20 @@ int VideoExport::Export(const char *export_config, const char *path, int width, 
 
     video_width_ = static_cast<int>((floor(width / 16.0F)) * 16);
     video_height_ = static_cast<int>((floor(height / 16.0F)) * 16);
+    frame_rate_ = frame_rate;
 
     for (int i = 0; i < clip_size; i++) {
         cJSON* path_item = cJSON_GetObjectItem(item, "path");
         cJSON* start_time_item = cJSON_GetObjectItem(item, "startTime");
         cJSON* end_time_item = cJSON_GetObjectItem(item, "endTime");
+        cJSON* type_item = cJSON_GetObjectItem(item, "type");
         item = item->next;
 
-        LOGE("start_time_item: %p", start_time_item);
         auto* export_clip = new MediaClip();
         export_clip->start_time = start_time_item->valueint;
         export_clip->end_time  = end_time_item->valueint;
         export_clip->file_name = path_item->valuestring;
+        export_clip->type = type_item->valueint;
         clip_deque_.push_back(export_clip);
 
         video_duration_ += export_clip->end_time - export_clip->start_time;
@@ -434,96 +499,119 @@ void VideoExport::ProcessVideoExport() {
         if (!export_ing_) {
             break;
         }
-        if (av_play_context_->video_frame == nullptr) {
-            av_play_context_->video_frame = frame_queue_get(av_play_context_->video_frame_queue);
+        auto clip = clip_deque_.at(export_index_);
+
+        if (load_image_texture_) {
+            load_image_texture_ = false;
+            LoadImageTexture(clip);
         }
 
-        if (!av_play_context_->video_frame) {
-            if (av_play_context_->eof && av_play_context_->video_packet_queue->count == 0) {
-                pthread_mutex_lock(&media_mutex_);
-                LOGI("export video message stop");
-                av_play_context_->send_message(av_play_context_, message_stop);
-                pthread_cond_wait(&media_cond_, &media_mutex_);
-                pthread_mutex_unlock(&media_mutex_);
-            }
-            continue;
-        }
-
-        if (!av_play_context_->is_sw_decode) {
-            mediacodec_update_image(av_play_context_);
-//            int ret = mediacodec_get_texture_matrix(av_play_context_, )
-        }
-
-        AVFrame* frame = av_play_context_->video_frame;
-        int width = MIN(frame->linesize[0], frame->width);
-        int height = frame->height;
-        if (frame_width_ != width || frame_height_ != height) {
-            frame_width_ = width;
-            frame_height_ = height;
-            if (av_play_context_->is_sw_decode) {
-                if (nullptr != yuv_render_) {
-                    delete yuv_render_;
-                }
-                yuv_render_ = new YuvRender(0);
-            } else {
-                if (nullptr != media_codec_render_) {
-                    delete media_codec_render_;
-                }
-                media_codec_render_ = new FrameBuffer(frame_width_, frame_height_, DEFAULT_VERTEX_SHADER, DEFAULT_OES_FRAGMENT_SHADER);
-                media_codec_render_->SetTextureType(TEXTURE_OES);
-            }
-        }
         int texture_id = -1;
-        if (av_play_context_->is_sw_decode) {
-            texture_id = yuv_render_->DrawFrame(frame);
-        } else {
-            media_codec_render_->ActiveProgram();
-            texture_id = media_codec_render_->OnDrawFrame(oes_texture_);
+        if (clip->type == IMAGE) {
+            texture_id = image_texture_;
+            image_render_time_ += 1000 / frame_rate_;
+            current_time_ = static_cast<uint64_t>(image_render_time_);
+            if (image_render_time_ >= clip->end_time) {
+                current_time_ += previous_time_;
+                OnComplete();
+                continue;
+            }
+        } else if (clip->type == VIDEO) {
+            if (av_play_context_->video_frame == nullptr) {
+                av_play_context_->video_frame = frame_queue_get(av_play_context_->video_frame_queue);
+            }
+
+            if (!av_play_context_->video_frame) {
+                if (av_play_context_->eof && av_play_context_->video_packet_queue->count == 0) {
+                    pthread_mutex_lock(&media_mutex_);
+                    LOGI("export video message stop");
+                    av_play_context_->send_message(av_play_context_, message_stop);
+                    pthread_cond_wait(&media_cond_, &media_mutex_);
+                    pthread_mutex_unlock(&media_mutex_);
+                }
+                continue;
+            }
+
+            if (!av_play_context_->is_sw_decode) {
+                mediacodec_update_image(av_play_context_);
+    //            int ret = mediacodec_get_texture_matrix(av_play_context_, )
+            }
+
+            AVFrame* frame = av_play_context_->video_frame;
+            int width = MIN(frame->linesize[0], frame->width);
+            int height = frame->height;
+            if (frame_width_ != width || frame_height_ != height) {
+                frame_width_ = width;
+                frame_height_ = height;
+                if (av_play_context_->is_sw_decode) {
+                    if (nullptr != yuv_render_) {
+                        delete yuv_render_;
+                    }
+                    yuv_render_ = new YuvRender(0);
+                } else {
+                    if (nullptr != media_codec_render_) {
+                        delete media_codec_render_;
+                    }
+                    media_codec_render_ = new FrameBuffer(frame_width_, frame_height_, DEFAULT_VERTEX_SHADER, DEFAULT_OES_FRAGMENT_SHADER);
+                    media_codec_render_->SetTextureType(TEXTURE_OES);
+                }
+            }
+            if (av_play_context_->is_sw_decode) {
+                texture_id = yuv_render_->DrawFrame(frame);
+            } else {
+                media_codec_render_->ActiveProgram();
+                texture_id = media_codec_render_->OnDrawFrame(oes_texture_);
+            }
+            if (av_play_context_->is_sw_decode) {
+                current_time_ = static_cast<uint64_t>(av_rescale_q(av_play_context_->video_frame->pts,
+                                                                av_play_context_->format_context->streams[av_play_context_->video_index]->time_base,
+                                                                AV_TIME_BASE_Q));
+            } else {
+                current_time_ = static_cast<uint64_t>(av_play_context_->video_frame->pts / 1000);
+            }
+            if (!av_play_context_->is_sw_decode) {
+                mediacodec_release_buffer(av_play_context_, av_play_context_->video_frame);
+            }
+            frame_pool_unref_frame(av_play_context_->video_frame_pool, av_play_context_->video_frame);
+            av_play_context_->video_frame = nullptr;
         }
-        if (av_play_context_->is_sw_decode) {
-            current_time_ = static_cast<uint64_t>(av_rescale_q(av_play_context_->video_frame->pts,
-                                                               av_play_context_->format_context->streams[av_play_context_->video_index]->time_base,
-                                                               AV_TIME_BASE_Q));
-        } else {
-            current_time_ = static_cast<uint64_t>(av_play_context_->video_frame->pts / 1000);
-        }
+
         if (image_process_ != nullptr) {
-            texture_id = image_process_->Process(texture_id, current_time_ + previous_time_, frame->width, frame->height, 0, 0);
+            texture_id = image_process_->Process(texture_id, current_time_ + previous_time_, frame_width_, frame_height_, 0, 0);
         }
-        frame_buffer->ActiveProgram();
-        frame_buffer->OnDrawFrame(texture_id);
+//        frame_buffer->ActiveProgram();
+//        frame_buffer->OnDrawFrame(texture_id);
         if (!egl_core_->SwapBuffers(egl_surface_)) {
             LOGE("eglSwapBuffers error: %d", eglGetError());
         }
-
-        if (!av_play_context_->is_sw_decode) {
-            mediacodec_release_buffer(av_play_context_, av_play_context_->video_frame);
-        }
-        frame_pool_unref_frame(av_play_context_->video_frame_pool, av_play_context_->video_frame);
-        av_play_context_->video_frame = nullptr;
-
         if (current_time_ == 0)  {
             continue;
         }
         if (previous_time_ != 0) {
             current_time_ = current_time_ + previous_time_;
         }
+        LOGE("current_time: %lld", current_time_);
         encoder_->Encode(current_time_, texture_id);
         OnExportProgress(current_time_);
     }
     mediacodec_flush(av_play_context_);
-    LOGI("export thread ===========> exit");
+    LOGE("export thread ===========> exit");
     encoder_->DestroyEncoder();
     delete encoder_;
     packet_thread_->Stop();
+    PacketPool::GetInstance()->AbortRecordingVideoPacketQueue();
     PacketPool::GetInstance()->DestroyRecordingVideoPacketQueue();
-    PacketPool::GetInstance()->DestroyAudioPacketQueue();
     AudioPacketPool::GetInstance()->DestroyAudioPacketQueue();
     delete packet_thread_;
 
     if (nullptr != image_process_) {
         delete image_process_;
         image_process_ = nullptr;
+    }
+
+    if (image_texture_ != 0) {
+        glDeleteTextures(1, &image_texture_);
+        image_texture_ = 0;
     }
 
     if (nullptr != export_config_json_) {
@@ -609,6 +697,7 @@ void VideoExport::ProcessAudioExport() {
             break;
         }
 
+        auto clip = clip_deque_.at(export_index_);
         AudioPacket* music_packet = nullptr;
         for (int i = 0; i < music_decoder_deque_.size(); ++i) {
             auto* decoder = music_decoder_deque_.at(i);
@@ -644,7 +733,13 @@ void VideoExport::ProcessAudioExport() {
             }
         }
 
-        int audio_size = Resample();
+        int audio_size = 0;
+        if (clip->type == IMAGE) {
+            audio_size = FillMuteAudio();
+        } else if (clip->type == VIDEO) {
+            LOGE("Resample");
+            audio_size = Resample();
+        }
         if (audio_size > 0) {
             // TODO buffer池
             auto *packet = new AudioPacket();
@@ -662,6 +757,7 @@ void VideoExport::ProcessAudioExport() {
             packet_pool_->PushAudioPacketToQueue(packet);
         }
     }
+    LOGE("audio export done");
     if (nullptr != swr_context_) {
         swr_free(&swr_context_);
     }
@@ -675,6 +771,28 @@ void VideoExport::ProcessAudioExport() {
         delete resample;
     }
     resample_deque_.clear();
+    if (nullptr != image_audio_buffer_) {
+        delete[] image_audio_buffer_;
+        image_audio_buffer_ = nullptr;
+    }
+    if (nullptr != audio_encoder_adapter_) {
+        audio_encoder_adapter_->Destroy();
+        delete audio_encoder_adapter_;
+        audio_encoder_adapter_ = nullptr;
+    }
+}
+
+/**
+ * 图片时补空音频
+ * @return 音频数据大小
+ */
+int VideoExport::FillMuteAudio() {
+    if (image_audio_buffer_ == nullptr) {
+        image_audio_buffer_ = new uint8_t[2048];
+    }
+    memset(image_audio_buffer_, 0, 2048);
+    audio_buffer_ = image_audio_buffer_;
+    return 2048;
 }
 
 int VideoExport::Resample() {
@@ -684,6 +802,10 @@ int VideoExport::Resample() {
         if (frame != nullptr) {
             context->audio_frame = frame;
             break;
+        } else {
+            if (av_play_context_->audio_index == -1) {
+                return -1;
+            }
         }
     } while (true);
     AVFrame* frame = context->audio_frame;

@@ -129,6 +129,9 @@ class VideoEditor : public Handler, public PlayerEventObserver {
 
     virtual void OnComplete();
 
+private:
+    int CheckFileType(MediaClip* clip);
+
  private:
     JavaVM* vm_;
     std::deque<MediaClip*> clip_deque_;

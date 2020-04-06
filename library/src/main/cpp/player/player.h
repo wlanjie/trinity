@@ -43,6 +43,14 @@ extern "C" {
 
 namespace trinity {
 
+enum PlayerState {
+    kNone,
+    kStart,
+    kResume,
+    kPause,
+    kStop
+};
+
 class Player : public Handler {
  public:
     Player(JNIEnv* env, jobject object);
@@ -52,7 +60,7 @@ class Player : public Handler {
     void OnSurfaceCreated(ANativeWindow* window);
     void OnSurfaceChanged(int width, int height);
     void OnSurfaceDestroy();
-    int Start(const char* file_name, int start_time, int end_time, int video_count_duration = 0);
+    int Start(MediaClip* clip, int video_count_duration = 0);
     void Seek(int start_time, int end_time);
     void Resume();
     void Pause();
@@ -99,6 +107,7 @@ class Player : public Handler {
     void OnGLCreate();
     void OnGLWindowCreate();
     void OnRenderVideoFrame();
+    void OnRenderImageFrame();
     void OnGLWindowDestroy();
     void OnGLDestroy();
 
@@ -124,14 +133,14 @@ class Player : public Handler {
     int current_action_id_;
     GLfloat* texture_matrix_;
     GLuint oes_texture_;
+    GLuint image_texture_;
+    int64_t image_render_start_time_;
     MusicDecoderController* music_player_;
     PlayerEventObserver* player_event_observer_;
     pthread_mutex_t mutex_;
     pthread_cond_t cond_;
     bool window_created_;
-    char* file_name_;
-    int start_time_;
-    int end_time_;
+    MediaClip* current_clip_;
     // 前几个视频的时间总和
     int video_count_duration_;
     AudioRender* audio_render_;
@@ -139,6 +148,7 @@ class Player : public Handler {
     int audio_buffer_size_;
     uint8_t* audio_buffer_;
     int draw_texture_id_;
+    PlayerState player_state_;
 };
 
 }  // namespace trinity
