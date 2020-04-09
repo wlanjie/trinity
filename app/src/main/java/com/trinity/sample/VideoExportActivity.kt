@@ -38,7 +38,7 @@ class VideoExportActivity : AppCompatActivity(), OnExportListener {
   }
 
   override fun onExportProgress(progress: Float) {
-    println("progress: $progress")
+//    println("progress: $progress")
     mProgressBar.percent = progress * 100
   }
 

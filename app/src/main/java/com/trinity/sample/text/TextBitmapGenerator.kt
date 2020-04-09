@@ -107,12 +107,12 @@ class TextBitmapGenerator : BitmapGenerator {
     return x + align - 1 and (align - 1).inv()
   }
 
-  override fun generateBitmap(bmpWidth: Int, bmpHeight: Int): Bitmap? {
+  override fun generateBitmap(width: Int, height: Int): Bitmap? {
     val textBitmap = mTextBitmap ?: return null
-    mTextBitmap?.mBmpWidth = bmpWidth
-    mTextBitmap?.mBmpHeight = bmpHeight
+    mTextBitmap?.mBmpWidth = width
+    mTextBitmap?.mBmpHeight = height
     configureLayout(mTextBox, textBitmap)
     mTextBox.layout()
-    return getImageAligned(mTextBox, bmpWidth, bmpHeight)
+    return getImageAligned(mTextBox, width, height)
   }
 }

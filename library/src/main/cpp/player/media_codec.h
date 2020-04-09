@@ -29,6 +29,8 @@
 #include "play_types.h"
 #include "endian.h"
 
+#define BUFFER_FLAG_END_OF_STREAM 4
+
 /* Inspired by libavcodec/hevc.c */
 static int convert_hevc_nal_units(const uint8_t *p_buf, size_t i_buf_size,
                            uint8_t *p_out_buf, size_t i_out_buf_size,
@@ -339,6 +341,7 @@ void mediacodec_release_buffer(AVPlayContext *context, AVFrame *frame);
 int mediacodec_receive_frame(AVPlayContext *context, AVFrame *frame);
 int mediacodec_dequeue_input_buffer_index(AVPlayContext* context);
 int mediacodec_send_packet(AVPlayContext *context, AVPacket *packet, int buffer_index);
+void mediacodec_end_of_stream(AVPlayContext* context, int buffer_index);
 void mediacodec_flush(AVPlayContext *context);
 void mediacodec_start(AVPlayContext *context);
 void mediacodec_stop(AVPlayContext *context);

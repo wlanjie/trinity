@@ -74,6 +74,8 @@ class VideoExport {
     void OnFilter();
     void OnEffect();
     void OnMusics();
+    void SetFrame(int source_width, int source_height,
+            int target_width, int target_height, RenderFrame frame_type);
     void ProcessVideoExport();
     void ProcessAudioExport();
     void OnExportProgress(uint64_t current_time);
@@ -97,6 +99,7 @@ class VideoExport {
     bool export_ing_;
     EGLCore* egl_core_;
     EGLSurface egl_surface_;
+    GLuint encode_texture_id_;
     GLuint image_texture_;
     int64_t image_render_time_;
     bool load_image_texture_;
@@ -112,8 +115,8 @@ class VideoExport {
     AudioEncoderAdapter* audio_encoder_adapter_;
     VideoConsumerThread* packet_thread_;
     PacketPool* packet_pool_;
-    uint64_t current_time_;
-    uint64_t previous_time_;
+    int64_t current_time_;
+    int64_t previous_time_;
     SwrContext* swr_context_;
     uint8_t *audio_buffer_;
     uint8_t *audio_buf1;
@@ -126,6 +129,8 @@ class VideoExport {
     cJSON* export_config_json_;
     GLfloat* vertex_coordinate_;
     GLfloat* texture_coordinate_;
+    GLfloat* crop_vertex_coordinate_;
+    GLfloat* crop_texture_coordinate_;
     AVPlayContext* av_play_context_;
     uint8_t* image_audio_buffer_;
     int image_audio_buffer_time_;

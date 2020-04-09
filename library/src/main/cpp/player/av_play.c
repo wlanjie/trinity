@@ -31,7 +31,7 @@ static int message_callback(int fd, int events, void *data) {
         switch (message) {
             case message_stop:
 //                stop(context);
-                LOGI("message_stop");
+                LOGE("message_stop");
                 if (context->on_complete) {
                     context->on_complete(context);
                 }
@@ -203,6 +203,7 @@ static int sw_codec_init(AVPlayContext* context) {
 
 static int hw_codec_init(AVPlayContext* context) {
     context->media_codec_context = create_mediacodec_context(context);
+    mediacodec_start(context);
     return 0;
 }
 
@@ -254,8 +255,13 @@ void* audio_decode_thread(void * data){
             // eof          ==> break
             if(packet == NULL){
                 if (context->eof) {
-                    LOGE("context->eof");
-                    break;
+                    avcodec_send_packet(context->audio_codec_context, NULL);
+                    if (ret == AVERROR_EOF) {
+                        LOGE("context->eof");
+                        break;
+                    } else {
+                        continue;
+                    }
                 } else {
                     usleep(BUFFER_EMPTY_SLEEP_US);
                     continue;
@@ -340,7 +346,12 @@ void* video_decode_sw_thread(void* data){
                 // eof          ==> break
                 if (packet == NULL) {
                     if (context->eof) {
-                        break;
+                        avcodec_send_packet(context->video_codec_ctx, NULL);
+                        if (ret == AVERROR_EOF) {
+                            break;
+                        } else {
+                            continue;
+                        }
                     } else {
                         LOGE("video buffer empty!!!!!!!!!");
                         usleep(BUFFER_EMPTY_SLEEP_US);
@@ -368,6 +379,7 @@ void* video_decode_sw_thread(void* data){
             }
         }
     }
+    context->error_code = BUFFER_FLAG_END_OF_STREAM;
     LOGI("thread ==> %s exit", __func__);
     return NULL;
 }
@@ -376,7 +388,7 @@ void* video_decode_hw_thread(void* data){
     LOGE("enter %s", __func__);
     prctl(PR_SET_NAME, __func__);
     AVPlayContext* context = (AVPlayContext *)data;
-    mediacodec_start(context);
+//    mediacodec_start(context);
     int ret;
     AVPacket* packet = NULL;
     AVFrame* frame = frame_pool_get_frame(context->video_frame_pool);
@@ -392,46 +404,51 @@ void* video_decode_hw_thread(void* data){
                 frame->FRAME_ROTATION = context->frame_rotation;
                 frame_queue_put(context->video_frame_queue, frame);
                 frame = frame_pool_get_frame(context->video_frame_pool);
-            }
-            int buffer_index = mediacodec_dequeue_input_buffer_index(context);
-            if (buffer_index >= 0) {
-                if (packet == NULL) {
-                    packet = packet_queue_get(context->video_packet_queue);
-                }
-                // buffer empty ==> wait  10ms
-                // eof          ==> break
-                if (packet == NULL) {
-                    if (context->eof) {
-                        break;
-                    } else {
-                        usleep(BUFFER_EMPTY_SLEEP_US);
+            } else if (ret == BUFFER_FLAG_END_OF_STREAM) {
+                LOGE("frame->flags & BUFFER_FLAG_END_OF_STREAM: %d",frame->flags & BUFFER_FLAG_END_OF_STREAM);
+                break;
+            } else {
+                int buffer_index = mediacodec_dequeue_input_buffer_index(context);
+                if (buffer_index >= 0) {
+                    if (packet == NULL) {
+                        packet = packet_queue_get(context->video_packet_queue);
+                    }
+                    // buffer empty ==> wait  10ms
+                    // eof          ==> break
+                    if (packet == NULL) {
+                        if (context->eof) {
+                            mediacodec_end_of_stream(context, buffer_index);
+                            continue;
+                        } else {
+                            usleep(BUFFER_EMPTY_SLEEP_US);
+                            continue;
+                        }
+                    }
+                    // seek
+                    if (packet == &context->video_packet_queue->flush_packet) {
+                        frame_queue_flush(context->video_frame_queue, context->video_frame_pool);
+                        mediacodec_flush(context);
+                        packet = NULL;
                         continue;
                     }
-                }
-                // seek
-                if (packet == &context->video_packet_queue->flush_packet) {
-                    frame_queue_flush(context->video_frame_queue, context->video_frame_pool);
-                    mediacodec_flush(context);
-                    packet = NULL;
-                    continue;
-                }
-                ret = mediacodec_send_packet(context, packet, buffer_index);
-                if (0 == ret) {
-                    packet_pool_unref_packet(context->packet_pool, packet);
-                    packet = NULL;
-                } else {
-                    // some device AMediacodec input buffer ids count < frame_queue->size
-                    // when pause   frame_queue not full
-                    // thread will not block in  "frame_queue_put" function
-                    if (context->status == PAUSED) {
-                        usleep(NULL_LOOP_SLEEP_US);
+                    ret = mediacodec_send_packet(context, packet, buffer_index);
+                    if (0 == ret) {
+                        packet_pool_unref_packet(context->packet_pool, packet);
+                        packet = NULL;
+                    } else {
+                        // some device AMediacodec input buffer ids count < frame_queue->size
+                        // when pause   frame_queue not full
+                        // thread will not block in  "frame_queue_put" function
+                        if (context->status == PAUSED) {
+                            usleep(NULL_LOOP_SLEEP_US);
+                        }
                     }
                 }
             }
         }
     }
-    mediacodec_stop(context);
     (*context->vm)->DetachCurrentThread(context->vm);
+    context->error_code = BUFFER_FLAG_END_OF_STREAM;
     LOGE("thread ==> %s exit", __func__);
     return NULL;
 }
@@ -558,7 +575,12 @@ int av_play_play(const char *url, float time, AVPlayContext *context) {
         }
     }
 
+    context->duration = context->format_context->duration / 1000;
+
     if (context->av_track_flags & VIDEO_FLAG) {
+        int64_t d = av_rescale_q(context->format_context->streams[context->video_index]->duration,
+                context->format_context->streams[context->video_index]->time_base
+                , AV_TIME_BASE_Q);
         codecpar = context->format_context->streams[context->video_index]->codecpar;
         context->width = codecpar->width;
         context->height = codecpar->height;
@@ -753,6 +775,10 @@ static int stop(AVPlayContext *context) {
     if ((context->av_track_flags & AUDIO_FLAG) > 0) {
         pthread_join(context->audio_decode_thread, &thread_res);
         avcodec_free_context(&context->audio_codec_context);
+    }
+
+    if (!context->is_sw_decode) {
+        mediacodec_stop(context);
     }
 
     clean_queues(context);

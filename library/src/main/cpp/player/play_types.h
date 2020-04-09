@@ -199,6 +199,7 @@ typedef struct AVPlayContext {
     AVFrame *video_frame;
     int width;
     int height;
+    int64_t duration;
     int frame_rotation;
 
     //软解视频

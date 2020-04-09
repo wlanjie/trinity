@@ -80,6 +80,7 @@ Player::Player(JNIEnv* env, jobject object) : Handler()
     av_play_context_->priv_data = this;
     av_play_context_->on_complete = OnComplete;
     av_play_context_->play_audio = PlayAudio;
+//    av_play_context_->force_sw_decode = 1;
     av_play_set_buffer_time(av_play_context_, 5);
 
     vertex_coordinate_ = new GLfloat[8];
@@ -437,9 +438,9 @@ int Player::GetAudioFrame() {
     context->audio_frame = frame_queue_get(context->audio_frame_queue);
     if (nullptr == context->audio_frame) {
         // 如果没有视频流  就从这里发结束信号
-        if (context->eof && (((context->av_track_flags & VIDEO_FLAG) == 0) || context->just_audio)) {
-            context->send_message(context, message_stop);
-        }
+//        if (context->eof && (((context->av_track_flags & VIDEO_FLAG) == 0) || context->just_audio)) {
+//            context->send_message(context, message_stop);
+//        }
         LOGE("context->audio_frame is null");
         return -1;
     }
@@ -753,18 +754,17 @@ int Player::DrawVideoFrame() {
         LOGE("player abort request");
         return -1;
     }
+    if (av_play_context_->error_code == BUFFER_FLAG_END_OF_STREAM && av_play_context_->video_frame_queue->count == 0) {
+        LOGE("av_play_context_->error_code == BUFFER_FLAG_END_OF_STREAM size: %d count: %d", av_play_context_->video_frame_queue->size, av_play_context_->video_frame_queue->count);
+        return -2;
+    }
     if (av_play_context_->video_frame == nullptr) {
         av_play_context_->video_frame = frame_queue_get(av_play_context_->video_frame_queue);
     }
     if (!av_play_context_->video_frame) {
-        if (av_play_context_->eof && av_play_context_->video_packet_queue->count == 0) {
-            LOGE("video frame is NULL return -2");
-            return -2;
-        } else {
-            LOGE("video frame is NULL return 0");
-            usleep(10000);
-            return 0;
-        }
+        LOGE("!av_play_context_->video_frame");
+        usleep(10000);
+        return 0;
     }
     if (!audio_render_start_ && av_play_context_->av_track_flags & AUDIO_FLAG) {
         audio_render_start_ = true;
@@ -804,7 +804,7 @@ int Player::DrawVideoFrame() {
     //              if draw_mode == fixed_frequency draw previous frame ,return 0
     // diff > 0 && diff < 33ms  sleep(diff) draw return 0
     // diff <= 0  draw return 0
-    if (diff >= WAIT_FRAME_SLEEP_US) {
+    if (diff >= 1000000) {
         return -1;
     } else {
         if (!av_play_context_->is_sw_decode) {

@@ -84,14 +84,14 @@ class MediaCodecDecode {
   }
 
   fun flush() {
-//    while (true) {
-//      val id = mMediaCodec?.dequeueOutputBuffer(mOutputBufferInfo, 0) ?: -1
-//      if (id < 0) {
-//        break
-//      }
-//      Log.e("trinity", "flush id: $id")
-//      mMediaCodec?.releaseOutputBuffer(id, true)
-//    }
+    while (true) {
+      val id = mMediaCodec?.dequeueOutputBuffer(mOutputBufferInfo, 0) ?: -1
+      if (id < 0) {
+        break
+      }
+      Log.i("trinity", "flush id: $id infoTime: ${mOutputBufferInfo.presentationTimeUs / 1000}")
+      mMediaCodec?.releaseOutputBuffer(id, true)
+    }
     mMediaCodec?.flush()
   }
 
@@ -114,7 +114,7 @@ class MediaCodecDecode {
     mBuffer.position(0)
     mBuffer.putInt(id)
     if (id >= 0) {
-      mBuffer.putInt(mOutputBufferInfo.offset)
+      mBuffer.putInt(mOutputBufferInfo.flags)
       mBuffer.putLong(mOutputBufferInfo.presentationTimeUs)
     }
     return mBuffer
