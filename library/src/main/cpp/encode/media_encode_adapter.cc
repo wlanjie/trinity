@@ -195,8 +195,8 @@ void MediaEncodeAdapter::DrainEncodeData() {
         needAttach = true;
     }
     jclass clazz = env->GetObjectClass(object_);
-    jmethodID drainEncoderFunc = env->GetMethodID(clazz, "pullH264StreamFromDrainEncoderFromNative", "([B)J");
-    long bufferSize = (long) env->CallLongMethod(object_, drainEncoderFunc, output_buffer_);
+    jmethodID drainEncoderFunc = env->GetMethodID(clazz, "drainEncoderFromNative", "([B)I");
+    auto bufferSize = env->CallIntMethod(object_, drainEncoderFunc, output_buffer_);
     auto *outputData = reinterpret_cast<uint8_t *>(env->GetByteArrayElements(output_buffer_, 0));
     int size = static_cast<int>(bufferSize);
     jmethodID getLastPresentationTimeUsFunc = env->GetMethodID(clazz, "getLastPresentationTimeUsFromNative", "()J");
@@ -208,19 +208,20 @@ void MediaEncodeAdapter::DrainEncodeData() {
     if (H264_NALU_TYPE_SEQUENCE_PARAMETER_SET == nalu_type) {
         auto* units = new std::vector<NALUnit*>();
         parseH264SpsPps(outputData, size, units);
-        int unitSize = units->size();
+        auto unitSize = units->size();
         if (unitSize > 2) {
             // 证明是sps和pps后边有I帧
             const char bytesHeader[] = "\x00\x00\x00\x01";
             // string literals have implicit trailing '\0'
             size_t headerLength = 4;
             NALUnit* idrUnit = units->at(2);
-            int idrSize = idrUnit->naluSize + headerLength;
+            auto idrSize = idrUnit->naluSize + headerLength;
             auto *videoPacket = new VideoPacket();
             videoPacket->buffer = new uint8_t[idrSize];
             memcpy(videoPacket->buffer, bytesHeader, headerLength);
-            memcpy(videoPacket->buffer + headerLength, idrUnit->naluBody, idrUnit->naluSize);
-            videoPacket->size = idrSize;
+            memcpy(videoPacket->buffer + headerLength, idrUnit->naluBody,
+                   static_cast<size_t>(idrUnit->naluSize));
+            videoPacket->size = static_cast<int>(idrSize);
             videoPacket->timeMills = timeMills;
             if (videoPacket->size > 0) {
                 packet_pool_->PushRecordingVideoPacketToQueue(videoPacket);
@@ -251,8 +252,8 @@ void MediaEncodeAdapter::DrainEncodeData() {
         for (i = units->begin(); i != units->end(); ++i) {
             NALUnit* unit = *i;
             int frameLen = unit->naluSize;
-            frameBufferSize+=headerLength;
-            frameBufferSize+=frameLen;
+            frameBufferSize += headerLength;
+            frameBufferSize += frameLen;
         }
         frameBuffer = new uint8_t[frameBufferSize];
         int frameBufferCursor = 0;
@@ -326,6 +327,8 @@ void MediaEncodeAdapter::CreateMediaEncoder(JNIEnv *env) {
 
 void MediaEncodeAdapter::DestroyMediaEncoder(JNIEnv *env) {
     jclass clazz = env->GetObjectClass(object_);
+    jmethodID signal_end_of_stream_method_id = env->GetMethodID(clazz, "signalEndOfInputStream", "()V");
+    env->CallVoidMethod(object_, signal_end_of_stream_method_id);
     jmethodID closeMediaCodecFunc = env->GetMethodID(clazz, "closeMediaCodecCalledFromNative", "()V");
     env->CallVoidMethod(object_, closeMediaCodecFunc);
 

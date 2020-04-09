@@ -79,7 +79,7 @@ class TrinityRecord(
   // texture矩阵
   private val mTextureMatrix = FloatArray(16)
   // 硬编码对象
-  private var mSurfaceEncoder: MediaCodecSurfaceEncoder ?= null
+  private var mSurfaceEncoder = MediaCodecSurfaceEncoder()
   // Surface 对象
   private var mSurface: Surface ?= null
   // 是否第一次创建
@@ -729,25 +729,12 @@ class TrinityRecord(
   @Suppress("unused")
   private fun createMediaCodecSurfaceEncoderFromNative(width: Int, height: Int, videoBitRate: Int, frameRate: Int) {
     try {
-      mSurfaceEncoder = MediaCodecSurfaceEncoder(width, height, videoBitRate, frameRate)
-      mSurface = mSurfaceEncoder?.inputSurface
+      // TODO return result, if result < 0, using soft encoder
+      mSurfaceEncoder.start(width, height, videoBitRate, frameRate)
+      mSurface = mSurfaceEncoder.getInputSurface()
     } catch (e: Exception) {
       e.printStackTrace()
     }
-  }
-
-  /**
-   * 由c++回调回来
-   * 调整编码信息
-   * @param width 重新调整编码视频的宽
-   * @param height 重新调整编码视频的高
-   * @param videoBitRate 重新调整编码视频的码率
-   * @param fps 重新调整编码视频的帧率
-   */
-  @Suppress("unused")
-  private fun hotConfigEncoderFromNative(width: Int, height: Int, videoBitRate: Int, fps: Int) {
-    mSurfaceEncoder?.hotConfig(width, height, videoBitRate, fps)
-    mSurface = mSurfaceEncoder?.inputSurface
   }
 
   /**
@@ -757,8 +744,8 @@ class TrinityRecord(
    * @return 返回h264数据的大小, 返回0时数据无效
    */
   @Suppress("unused")
-  private fun pullH264StreamFromDrainEncoderFromNative(data: ByteArray): Long {
-    return mSurfaceEncoder?.pullH264StreamFromDrainEncoderFromNative(data) ?: 0
+  private fun drainEncoderFromNative(data: ByteArray): Int {
+    return mSurfaceEncoder.drainEncoder(data)
   }
 
   /**
@@ -768,7 +755,7 @@ class TrinityRecord(
    */
   @Suppress("unused")
   private fun getLastPresentationTimeUsFromNative(): Long {
-    return mSurfaceEncoder?.lastPresentationTimeUs ?: 0
+    return mSurfaceEncoder.getLastPresentationTimeUs()
   }
 
   /**
@@ -787,7 +774,7 @@ class TrinityRecord(
    */
   @Suppress("unused")
   private fun closeMediaCodecCalledFromNative() {
-    mSurfaceEncoder?.shutdown()
+    mSurfaceEncoder.release()
   }
 
   /**

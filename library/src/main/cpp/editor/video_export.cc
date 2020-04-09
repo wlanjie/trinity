@@ -443,8 +443,8 @@ int VideoExport::Export(const char *export_config, const char *path, int width, 
 
 
     free(buffer);
-    encoder_ = new SoftEncoderAdapter(vertex_coordinate_, texture_coordinate_);
-//    encoder_ = new MediaEncodeAdapter(vm_, object_);
+//    encoder_ = new SoftEncoderAdapter(vertex_coordinate_, texture_coordinate_);
+    encoder_ = new MediaEncodeAdapter(vm_, object_);
     encoder_->Init(width, height, video_bit_rate * 1000, frame_rate);
     audio_encoder_adapter_ = new AudioEncoderAdapter();
     audio_encoder_adapter_->Init(packet_pool_, 44100, 1, 128 * 1000, "libfdk_aac");

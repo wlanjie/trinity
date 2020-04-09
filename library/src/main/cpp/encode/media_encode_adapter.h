@@ -58,7 +58,7 @@ class MediaEncodeAdapter : public VideoEncoderAdapter, public Handler {
     EGLSurface encoder_surface_;
     ANativeWindow* encoder_window_;
     jbyteArray output_buffer_;
-    int start_encode_time_;
+    long start_encode_time_;
     OpenGL* render_;
 
  private:

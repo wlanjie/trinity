@@ -31,7 +31,7 @@ class VideoExport(private val context: Context) : TrinityVideoExport {
 
   private var mHandle = create()
   // 硬编码对象
-  private var mSurfaceEncoder: MediaCodecSurfaceEncoder ?= null
+  private var mSurfaceEncoder = MediaCodecSurfaceEncoder()
   // Surface 对象
   private var mSurface: Surface ?= null
   private var mListener: OnExportListener ?= null
@@ -134,25 +134,11 @@ class VideoExport(private val context: Context) : TrinityVideoExport {
   @Suppress("unused")
   private fun createMediaCodecSurfaceEncoderFromNative(width: Int, height: Int, videoBitRate: Int, frameRate: Int) {
     try {
-      mSurfaceEncoder = MediaCodecSurfaceEncoder(width, height, videoBitRate, frameRate)
-      mSurface = mSurfaceEncoder?.inputSurface
+      mSurfaceEncoder.start(width, height, videoBitRate, frameRate)
+      mSurface = mSurfaceEncoder.getInputSurface()
     } catch (e: Exception) {
       e.printStackTrace()
     }
-  }
-
-  /**
-   * 由c++回调回来
-   * 调整编码信息
-   * @param width 重新调整编码视频的宽
-   * @param height 重新调整编码视频的高
-   * @param videoBitRate 重新调整编码视频的码率
-   * @param fps 重新调整编码视频的帧率
-   */
-  @Suppress("unused")
-  private fun hotConfigEncoderFromNative(width: Int, height: Int, videoBitRate: Int, fps: Int) {
-    mSurfaceEncoder?.hotConfig(width, height, videoBitRate, fps)
-    mSurface = mSurfaceEncoder?.inputSurface
   }
 
   /**
@@ -162,8 +148,8 @@ class VideoExport(private val context: Context) : TrinityVideoExport {
    * @return 返回h264数据的大小, 返回0时数据无效
    */
   @Suppress("unused")
-  private fun pullH264StreamFromDrainEncoderFromNative(data: ByteArray): Long {
-    return mSurfaceEncoder?.pullH264StreamFromDrainEncoderFromNative(data) ?: 0
+  private fun drainEncoderFromNative(data: ByteArray): Int {
+    return mSurfaceEncoder.drainEncoder(data)
   }
 
   /**
@@ -173,7 +159,7 @@ class VideoExport(private val context: Context) : TrinityVideoExport {
    */
   @Suppress("unused")
   private fun getLastPresentationTimeUsFromNative(): Long {
-    return mSurfaceEncoder?.lastPresentationTimeUs ?: 0
+    return mSurfaceEncoder.getLastPresentationTimeUs()
   }
 
   /**
@@ -188,11 +174,20 @@ class VideoExport(private val context: Context) : TrinityVideoExport {
 
   /**
    * 由c++回调回来
+   * 发送end of stream信号给编码器
+   */
+  @Suppress("unused")
+  private fun signalEndOfInputStream() {
+    mSurfaceEncoder.signalEndOfInputStream()
+  }
+
+  /**
+   * 由c++回调回来
    * 关闭mediaCodec编码器
    */
   @Suppress("unused")
   private fun closeMediaCodecCalledFromNative() {
-    mSurfaceEncoder?.shutdown()
+    mSurfaceEncoder.release()
   }
 
 }
