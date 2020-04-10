@@ -301,7 +301,7 @@ void PacketPool::DestroyRecordingVideoPacketQueue() {
 int PacketPool::GetRecordingVideoPacket(VideoPacket **videoPacket,
                                         bool block) {
     int result = -1;
-    if (nullptr != video_packet_queue_) {
+    if (nullptr != video_packet_queue_ && video_packet_queue_->Size() > 0) {
         result = video_packet_queue_->Get(videoPacket, block);
     }
     return result;

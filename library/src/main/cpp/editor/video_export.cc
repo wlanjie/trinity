@@ -644,9 +644,9 @@ void VideoExport::ProcessVideoExport() {
     encoder_->DestroyEncoder();
     delete encoder_;
     packet_thread_->Stop();
-    PacketPool::GetInstance()->AbortRecordingVideoPacketQueue();
-    PacketPool::GetInstance()->DestroyRecordingVideoPacketQueue();
-    AudioPacketPool::GetInstance()->DestroyAudioPacketQueue();
+//    PacketPool::GetInstance()->AbortRecordingVideoPacketQueue();
+//    PacketPool::GetInstance()->DestroyRecordingVideoPacketQueue();
+//    AudioPacketPool::GetInstance()->DestroyAudioPacketQueue();
     delete packet_thread_;
 
     if (nullptr != image_process_) {

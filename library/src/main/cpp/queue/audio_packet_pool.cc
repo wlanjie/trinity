@@ -21,6 +21,7 @@
 //
 
 #include "audio_packet_pool.h"
+#include "android_xlog.h"
 
 namespace trinity {
 
@@ -56,7 +57,7 @@ void AudioPacketPool::DestroyAudioPacketQueue() {
 
 int AudioPacketPool::GetAudioPacket(AudioPacket **audioPacket, bool block) {
     int result = -1;
-    if (nullptr != audio_packet_queue_) {
+    if (nullptr != audio_packet_queue_ && audio_packet_queue_->Size() > 0) {
         result = audio_packet_queue_->Get(audioPacket, block);
     }
     return result;

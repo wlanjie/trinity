@@ -658,9 +658,9 @@ void CameraRecord::StopRecording() {
     }
     if (nullptr != packet_thread_) {
         packet_thread_->Stop();
-        PacketPool::GetInstance()->DestroyRecordingVideoPacketQueue();
-        PacketPool::GetInstance()->DestroyAudioPacketQueue();
-        AudioPacketPool::GetInstance()->DestroyAudioPacketQueue();
+//        PacketPool::GetInstance()->DestroyRecordingVideoPacketQueue();
+//        PacketPool::GetInstance()->DestroyAudioPacketQueue();
+//        AudioPacketPool::GetInstance()->DestroyAudioPacketQueue();
     }
 }
 

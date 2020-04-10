@@ -31,7 +31,10 @@
 namespace trinity {
 
 typedef enum {
-    FRAME_AVAILABLE
+    kStartEncoder = 200,
+    kEncodeFrame,
+    kEndOfStream,
+    kDestroyEncoder,
 } MediaEncoderType;
 
 class MediaEncodeAdapter : public VideoEncoderAdapter, public Handler {
@@ -45,7 +48,12 @@ class MediaEncodeAdapter : public VideoEncoderAdapter, public Handler {
 
     virtual void Encode(uint64_t time, int texture_id = 0);
 
-    void DrainEncodeData();
+    int DrainEncodeData();
+
+ private:
+    void CreateMediaCodecEncode(EGLCore* core);
+    void MediaCodecEncode(int texture_id, int time);
+    void DestroyMediaCodec();
 
  private:
     bool encoding_;

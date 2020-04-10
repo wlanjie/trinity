@@ -101,9 +101,9 @@ void VideoConsumerThread::Notify() {
 }
 
 void VideoConsumerThread::Stop() {
-    if (!running_) {
-        return;
-    }
+//    if (!running_) {
+//        return;
+//    }
     if (nullptr == video_packet_pool_) {
         return;
     }
@@ -111,19 +111,19 @@ void VideoConsumerThread::Stop() {
         return;
     }
     stopping_ = true;
-    video_packet_pool_->AbortRecordingVideoPacketQueue();
-    audio_packet_pool_->AbortAudioPacketQueue();
     Wait();
     Release();
+    video_packet_pool_->AbortRecordingVideoPacketQueue();
+    audio_packet_pool_->AbortAudioPacketQueue();
     video_packet_pool_->DestroyRecordingVideoPacketQueue();
     audio_packet_pool_->DestroyAudioPacketQueue();
 }
 
 void VideoConsumerThread::HandleRun(void *context) {
-    while (true) {
+    while (!stopping_) {
         int ret = mp4_muxer_->Encode();
         if (ret < 0) {
-            break;
+//            break;
         }
     }
 }

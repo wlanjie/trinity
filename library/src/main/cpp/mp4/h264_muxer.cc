@@ -48,8 +48,9 @@ int H264Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st) {
     int ret = 0;
     AVCodecContext *c = st->codec;
 
+    LOGE("WriteVideoFrame");
     VideoPacket *h264Packet = nullptr;
-    video_packet_callback_(&h264Packet, video_packet_context_);
+    ret = video_packet_callback_(&h264Packet, video_packet_context_);
     if (h264Packet == nullptr) {
         LOGE("fill_h264_packet_callback_ Get null packet_");
         return VIDEO_QUEUE_ABORT_ERR_CODE;
@@ -123,6 +124,7 @@ int H264Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st) {
             }
 
             pkt.pts = pts;
+            LOGE("pts: %lld", pts);
             pkt.dts = dts;
             pkt.flags = AV_PKT_FLAG_KEY;
             c->frame_number++;
@@ -140,6 +142,7 @@ int H264Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st) {
             }
 
             pkt.pts = pts;
+            LOGE("pts: %lld", pts);
             pkt.dts = dts;
             pkt.flags = 0;
             c->frame_number++;
