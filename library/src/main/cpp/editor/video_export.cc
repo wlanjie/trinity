@@ -45,6 +45,8 @@ VideoExport::VideoExport(JNIEnv* env, jobject object)
     , accompany_packet_buffer_size_(2048)
     , accompany_sample_rate_(44100)
     , vocal_sample_rate_(0)
+    , channel_count_(0)
+    , audio_current_time_(0)
     , export_ing_(false)
     , egl_core_(nullptr)
     , egl_surface_(EGL_NO_SURFACE)
@@ -81,7 +83,8 @@ VideoExport::VideoExport(JNIEnv* env, jobject object)
     , texture_matrix_(nullptr)
     , av_play_context_(nullptr)
     , image_audio_buffer_(nullptr)
-    , image_audio_buffer_time_(0) {
+    , image_audio_buffer_time_(0)
+    , image_frame_buffer_(nullptr) {
     env->GetJavaVM(&vm_);
     object_ = env->NewGlobalRef(object);
     audio_samples_ = new short[8192];
@@ -187,7 +190,6 @@ int VideoExport::OnComplete() {
         if (export_index_ >= clip_deque_.size()) {
             export_ing_ = false;
         } else {
-            LOGE("current_time_: %lld", current_time_);
             previous_time_ = current_time_;
             MediaClip *clip = clip_deque_.at(export_index_);
             StartDecode(clip);
@@ -200,6 +202,7 @@ int VideoExport::OnComplete() {
 }
 
 void VideoExport::FreeResource() {
+    audio_current_time_ = 0;
     image_render_time_ = 0;
     if (nullptr != av_play_context_) {
         av_play_stop(av_play_context_);
@@ -328,6 +331,9 @@ void VideoExport::StartDecode(MediaClip *clip) {
 }
 
 void VideoExport::LoadImageTexture(MediaClip *clip) {
+    // 上下翻转图片, openGL渲染图片时会上下翻转
+    stbi_set_flip_vertically_on_load(1);
+
     int width = 0;
     int height = 0;
     int channels = 0;
@@ -369,6 +375,10 @@ void VideoExport::LoadImageTexture(MediaClip *clip) {
     SetFrame(frame_width_, frame_height_, video_width_, video_height_, FIT);
     glBindTexture(GL_TEXTURE_2D, 0);
     stbi_image_free(image_data);
+
+    if (image_frame_buffer_ == nullptr) {
+        image_frame_buffer_ = new FrameBuffer(video_width_, video_height_, DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
+    }
 }
 
 int VideoExport::Export(const char *export_config, const char *path, int width, int height, int frame_rate,
@@ -415,6 +425,7 @@ int VideoExport::Export(const char *export_config, const char *path, int width, 
     cJSON* item = clips->child;
 
     export_ing_ = true;
+    channel_count_ = channel_count;
     vocal_sample_rate_ = sample_rate;
     packet_thread_ = new VideoConsumerThread();
     int ret = packet_thread_->Init(path, width, height, frame_rate, video_bit_rate * 1000, sample_rate, channel_count, audio_bit_rate * 1000, "libfdk_aac");
@@ -549,7 +560,8 @@ void VideoExport::ProcessVideoExport() {
         }
 
         if (clip->type == IMAGE) {
-            encode_texture_id_ = image_texture_;
+            image_frame_buffer_->ActiveProgram();
+            encode_texture_id_ = image_frame_buffer_->OnDrawFrame(image_texture_, crop_vertex_coordinate_, texture_coordinate_);
             image_render_time_ += 1000 / frame_rate_;
             current_time_ = static_cast<uint64_t>(image_render_time_);
             if (image_render_time_ >= clip->end_time) {
@@ -652,6 +664,11 @@ void VideoExport::ProcessVideoExport() {
     if (image_texture_ != 0) {
         glDeleteTextures(1, &image_texture_);
         image_texture_ = 0;
+    }
+
+    if (nullptr != image_frame_buffer_) {
+        delete image_frame_buffer_;
+        image_frame_buffer_ = nullptr;
     }
 
     if (nullptr != export_config_json_) {
@@ -775,7 +792,9 @@ void VideoExport::ProcessAudioExport() {
 
         int audio_size = 0;
         if (clip->type == IMAGE) {
-            audio_size = FillMuteAudio();
+            if (audio_current_time_ < clip->end_time) {
+                audio_size = FillMuteAudio();
+            }
         } else if (clip->type == VIDEO) {
             audio_size = Resample();
         }
@@ -828,9 +847,10 @@ void VideoExport::ProcessAudioExport() {
 int VideoExport::FillMuteAudio() {
     if (image_audio_buffer_ == nullptr) {
         image_audio_buffer_ = new uint8_t[2048];
+        memset(image_audio_buffer_, 0, 2048);
     }
-    memset(image_audio_buffer_, 0, 2048);
     audio_buffer_ = image_audio_buffer_;
+    audio_current_time_ += (2048 * 1000 / vocal_sample_rate_ * channel_count_);
     return 2048;
 }
 

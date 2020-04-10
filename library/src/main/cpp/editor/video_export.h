@@ -96,6 +96,7 @@ class VideoExport {
     int accompany_packet_buffer_size_;
     int accompany_sample_rate_;
     int vocal_sample_rate_;
+    int channel_count_;
     bool export_ing_;
     EGLCore* egl_core_;
     EGLSurface egl_surface_;
@@ -119,6 +120,7 @@ class VideoExport {
     int64_t previous_time_;
     SwrContext* swr_context_;
     uint8_t *audio_buffer_;
+    int audio_current_time_;
     uint8_t *audio_buf1;
     short* audio_samples_;
     VideoExportHandler* video_export_handler_;
@@ -135,6 +137,7 @@ class VideoExport {
     AVPlayContext* av_play_context_;
     uint8_t* image_audio_buffer_;
     int image_audio_buffer_time_;
+    FrameBuffer* image_frame_buffer_;
 };
 
 class VideoExportHandler : public Handler {

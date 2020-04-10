@@ -402,7 +402,6 @@ int Mp4Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st, bool wait) {
             }
 
             pkt.pts = pts;
-            LOGE("pts: %lld", pts);
             pkt.dts = dts;
             pkt.flags = AV_PKT_FLAG_KEY;
             c->frame_number++;
@@ -420,7 +419,6 @@ int Mp4Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st, bool wait) {
             }
 
             pkt.pts = pts;
-            LOGE("pts: %lld", pts);
             pkt.dts = dts;
             pkt.flags = 0;
             c->frame_number++;
