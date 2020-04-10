@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2019 Trinity. All rights reserved.
- * Copyright (C) 2019 Wang LianJie <wlanjie888@gmail.com>
+ * Copyright (C) 2020 Trinity. All rights reserved.
+ * Copyright (C) 2020 Wang LianJie <wlanjie888@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,18 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package com.trinity.editor
 
-enum class EffectType {
-  Filter,
-  FlashWhite,
-  SplitScreen,
-  BlurSplitScreen,
-  SoulScale,
-  Shake,
-  SkinNeedling
+class VideoExportInfo(val path: String) {
+    var width = 544
+    var height = 960
+    var frameRate = 25
+    var videoBitRate = 2000
+    var sampleRate = 44100
+    var channelCount = 1
+    var audioBitRate = 128
+    var mediaCodecDecode = true
+    var mediaCodecEncode = true
 }

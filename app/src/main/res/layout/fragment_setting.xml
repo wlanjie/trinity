@@ -106,4 +106,29 @@
                 app:mp_show_value="onRight"
                 app:mp_title="最大录制时长" />
     </com.yarolegovich.mp.MaterialPreferenceCategory>
+
+    <com.yarolegovich.mp.MaterialPreferenceCategory
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:mpc_title="编辑">
+    </com.yarolegovich.mp.MaterialPreferenceCategory>
+
+    <com.yarolegovich.mp.MaterialPreferenceCategory
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:mpc_title="导出">
+
+        <com.yarolegovich.mp.MaterialSwitchPreference
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:mp_key="export_soft_encode"
+            app:mp_title="软编"/>
+
+        <com.yarolegovich.mp.MaterialSwitchPreference
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:mp_key="export_soft_decode"
+            app:mp_title="软解"/>
+
+    </com.yarolegovich.mp.MaterialPreferenceCategory>
 </com.yarolegovich.mp.MaterialPreferenceScreen>

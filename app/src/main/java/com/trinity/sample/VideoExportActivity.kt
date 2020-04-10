@@ -5,8 +5,10 @@ import android.view.View
 import android.widget.VideoView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.preference.PreferenceManager
 import com.timqi.sectorprogressview.ColorfulRingProgressView
 import com.trinity.core.TrinityCore
+import com.trinity.editor.VideoExportInfo
 import com.trinity.listener.OnExportListener
 
 /**
@@ -26,15 +28,19 @@ class VideoExportActivity : AppCompatActivity(), OnExportListener {
       it.isLooping = true
     }
 
-    val videoWidth = 544
-    val videoHeight = 960
+    val preferences = PreferenceManager.getDefaultSharedPreferences(this)
+    val softCodecEncode = preferences.getBoolean("export_soft_encode", false)
+    val softCodecDecode = preferences.getBoolean("export_soft_decode", false)
+    val info = VideoExportInfo("/sdcard/export.mp4")
+    info.mediaCodecDecode = !softCodecDecode
+    info.mediaCodecEncode = !softCodecEncode
     val width = resources.displayMetrics.widthPixels
     val params = mVideoView.layoutParams as ConstraintLayout.LayoutParams
     params.width = width
-    params.height = ((width * (videoHeight * 1.0f / videoWidth)).toInt())
+    params.height = ((width * (info.height * 1.0f / info.width)).toInt())
     mVideoView.layoutParams = params
     val export = TrinityCore.createExport(this)
-    export.export("/sdcard/export.mp4", videoWidth, videoHeight, 25, 3000, 44100, 1, 128, this)
+    export.export(info, this)
   }
 
   override fun onExportProgress(progress: Float) {

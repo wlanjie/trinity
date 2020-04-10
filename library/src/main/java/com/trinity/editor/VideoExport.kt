@@ -27,7 +27,7 @@ import com.trinity.util.Trinity
 /**
  * Created by wlanjie on 2019-07-30
  */
-class VideoExport(private val context: Context) : TrinityVideoExport {
+class TrinityVideoExport(private val context: Context) : VideoExport {
 
   private var mHandle = create()
   // 硬编码对象
@@ -36,20 +36,13 @@ class VideoExport(private val context: Context) : TrinityVideoExport {
   private var mSurface: Surface ?= null
   private var mListener: OnExportListener ?= null
 
-  override fun export(
-      path: String,
-      width: Int,
-      height: Int,
-      frameRate: Int,
-      videoBitRate: Int,
-      sampleRate: Int,
-      channelCount: Int,
-      audioBitRate: Int,
-      l: OnExportListener
-  ): Int {
+  override fun export(info: VideoExportInfo, l: OnExportListener): Int {
     mListener = l
     val resourcePath = context.externalCacheDir?.absolutePath + "/resource.json"
-    return export(mHandle, resourcePath, path, width, height, frameRate, videoBitRate, sampleRate, channelCount, audioBitRate)
+    return export(mHandle, resourcePath, info.path,
+      info.width, info.height, info.frameRate, info.videoBitRate,
+      info.sampleRate, info.channelCount, info.audioBitRate,
+      info.mediaCodecDecode, info.mediaCodecEncode)
   }
 
   override fun cancel() {
@@ -66,7 +59,10 @@ class VideoExport(private val context: Context) : TrinityVideoExport {
 
   private external fun create(): Long
 
-  private external fun export(handle: Long, resourcePath: String, path: String, width: Int, height: Int, frameRate: Int, videoBitRate: Int, sampleRate: Int, channelCount: Int, audioBitRate: Int): Int
+  private external fun export(handle: Long, resourcePath: String, path: String,
+                              width: Int, height: Int, frameRate: Int,
+                              videoBitRate: Int, sampleRate: Int, channelCount: Int,
+                              audioBitRate: Int, mediaCodecDecode: Boolean, mediaCodecEncode: Boolean): Int
 
   private external fun cancel(handle: Long)
 

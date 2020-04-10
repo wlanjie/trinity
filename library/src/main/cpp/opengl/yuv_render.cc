@@ -271,7 +271,7 @@ void YuvRender::Link() {
     }
 }
 
-GLuint YuvRender::DrawFrame(AVFrame* frame) {
+GLuint YuvRender::DrawFrame(AVFrame* frame, GLfloat* vertex_coordinate, GLfloat* texture_coordinate) {
     if (program_ == 0) {
         switch (frame->format) {
             case AV_PIX_FMT_YUV420P:
@@ -327,9 +327,9 @@ GLuint YuvRender::DrawFrame(AVFrame* frame) {
             break;
     }
 
-    glVertexAttribPointer(vertex_coordinate_location_, 2, GL_FLOAT, GL_FALSE, 0, vertex_coordinate_);
+    glVertexAttribPointer(vertex_coordinate_location_, 2, GL_FLOAT, GL_FALSE, 0, vertex_coordinate);
     glEnableVertexAttribArray(vertex_coordinate_location_);
-    glVertexAttribPointer(texture_coordinate_location_, 2, GL_FLOAT, GL_FALSE, 0, texture_coordinate_);
+    glVertexAttribPointer(texture_coordinate_location_, 2, GL_FLOAT, GL_FALSE, 0, texture_coordinate);
     glEnableVertexAttribArray(texture_coordinate_location_);
     for (int i = 0; i < 3; i++) {
         glActiveTexture(GL_TEXTURE0 + i);

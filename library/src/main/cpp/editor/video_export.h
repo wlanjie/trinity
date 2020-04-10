@@ -59,7 +59,8 @@ class VideoExport {
 
     int Export(const char* export_config, const char* path,
             int width, int height, int frame_rate, int video_bit_rate,
-            int sample_rate, int channel_count, int audio_bit_rate);
+            int sample_rate, int channel_count, int audio_bit_rate,
+            bool media_codec_decode, bool media_codec_encode);
 
 
  private:
@@ -112,6 +113,7 @@ class VideoExport {
     int frame_height_;
     YuvRender* yuv_render_;
     ImageProcess* image_process_;
+    bool media_codec_encode_;
     VideoEncoderAdapter* encoder_;
     AudioEncoderAdapter* audio_encoder_adapter_;
     VideoConsumerThread* packet_thread_;

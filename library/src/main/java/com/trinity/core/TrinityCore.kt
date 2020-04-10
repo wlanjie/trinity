@@ -17,7 +17,7 @@ object TrinityCore {
     return VideoEditor(context)
   }
 
-  fun createExport(context: Context): TrinityVideoExport {
-    return VideoExport(context)
+  fun createExport(context: Context): VideoExport {
+    return TrinityVideoExport(context)
   }
 }

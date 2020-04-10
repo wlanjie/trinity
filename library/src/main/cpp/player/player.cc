@@ -837,7 +837,7 @@ int Player::DrawVideoFrame() {
             usleep(diff);
         }
         if (av_play_context_->is_sw_decode) {
-            draw_texture_id_ = yuv_render_->DrawFrame(av_play_context_->video_frame);
+            draw_texture_id_ = yuv_render_->DrawFrame(av_play_context_->video_frame, vertex_coordinate_, texture_coordinate_);
         } else {
             media_codec_render_->ActiveProgram();
             draw_texture_id_ = media_codec_render_->OnDrawFrame(oes_texture_, texture_matrix_);

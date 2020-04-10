@@ -48,7 +48,7 @@ class YuvRender {
 
     ~YuvRender();
 
-    virtual GLuint DrawFrame(AVFrame* frame);
+    virtual GLuint DrawFrame(AVFrame* frame, GLfloat* vertex_coordinate, GLfloat* texture_coordinate);
 
  private:
     int Initialize(int width, int height, const char* fragment_shader);

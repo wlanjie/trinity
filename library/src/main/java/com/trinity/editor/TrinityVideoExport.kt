@@ -2,7 +2,7 @@ package com.trinity.editor
 
 import com.trinity.listener.OnExportListener
 
-interface TrinityVideoExport {
+interface VideoExport {
 
   /**
    * 开始导出
@@ -17,17 +17,7 @@ interface TrinityVideoExport {
    * @param l 导出回调 包含成功 失败 和进度回调
    * @return Int ErrorCode.SUCCESS 为成功,其它为失败
    */
-  fun export(
-    path: String,
-    width: Int,
-    height: Int,
-    frameRate: Int,
-    videoBitRate: Int,
-    sampleRate: Int,
-    channelCount: Int,
-    audioBitRate: Int,
-    l: OnExportListener
-  ): Int
+  fun export( info: VideoExportInfo, l: OnExportListener): Int
 
   /**
    * 取消合成

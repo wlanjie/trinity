@@ -296,7 +296,6 @@ void PacketPool::DestroyRecordingVideoPacketQueue() {
 }
 
 int PacketPool::GetRecordingVideoPacket(VideoPacket **videoPacket, bool block, bool wait) {
-    LOGE("size: %d wait: %d", GetRecordingVideoPacketQueueSize(), wait);
     if (GetRecordingVideoPacketQueueSize() == 0 && wait) {
         pthread_mutex_lock(&video_packet_mutex_);
         pthread_cond_wait(&video_packet_cond_, &video_packet_mutex_);
