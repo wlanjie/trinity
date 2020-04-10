@@ -131,6 +131,7 @@ class VideoExport {
     GLfloat* texture_coordinate_;
     GLfloat* crop_vertex_coordinate_;
     GLfloat* crop_texture_coordinate_;
+    GLfloat* texture_matrix_;
     AVPlayContext* av_play_context_;
     uint8_t* image_audio_buffer_;
     int image_audio_buffer_time_;

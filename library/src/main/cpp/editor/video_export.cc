@@ -78,6 +78,7 @@ VideoExport::VideoExport(JNIEnv* env, jobject object)
     , export_config_json_(nullptr)
     , vertex_coordinate_(nullptr)
     , texture_coordinate_(nullptr)
+    , texture_matrix_(nullptr)
     , av_play_context_(nullptr)
     , image_audio_buffer_(nullptr)
     , image_audio_buffer_time_(0) {
@@ -112,6 +113,10 @@ VideoExport::VideoExport(JNIEnv* env, jobject object)
     texture_coordinate_[6] = 1.0f;
     texture_coordinate_[7] = 1.0f;
 
+    texture_matrix_ = new GLfloat[16];
+    memset(texture_matrix_, 0, 16 * sizeof(GLfloat));
+    texture_matrix_[0] = texture_matrix_[5] = texture_matrix_[10] = texture_matrix_[15] = 1.0F;
+
     av_play_context_ = av_play_create(env, object_, 0, 44100);
     av_play_context_->priv_data = this;
     av_play_context_->on_complete = OnCompleteEvent;
@@ -139,8 +144,9 @@ VideoExport::~VideoExport() {
             object_ = nullptr;
         }
     }
-    delete vertex_coordinate_;
-    delete texture_coordinate_;
+    delete[] vertex_coordinate_;
+    delete[] texture_coordinate_;
+    delete[] texture_matrix_;
 }
 
 void* VideoExport::ExportMessageThread(void *context) {
@@ -530,7 +536,6 @@ void VideoExport::ProcessVideoExport() {
     // 添加config解析出来的特效
     OnEffect();
 
-    auto frame_buffer = new FrameBuffer(video_width_, video_height_, DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
     encoder_->CreateEncoder(egl_core_);
     while (true) {
         if (!export_ing_) {
@@ -570,11 +575,6 @@ void VideoExport::ProcessVideoExport() {
                 continue;
             }
 
-            if (!av_play_context_->is_sw_decode) {
-                mediacodec_update_image(av_play_context_);
-//                int ret = mediacodec_get_texture_matrix(av_play_context_, )
-            }
-
             AVFrame* frame = av_play_context_->video_frame;
             int width = MIN(frame->linesize[0], frame->width);
             int height = frame->height;
@@ -593,7 +593,7 @@ void VideoExport::ProcessVideoExport() {
                     if (nullptr != media_codec_render_) {
                         delete media_codec_render_;
                     }
-                    media_codec_render_ = new FrameBuffer(frame_width_, frame_height_, DEFAULT_VERTEX_SHADER, DEFAULT_OES_FRAGMENT_SHADER);
+                    media_codec_render_ = new FrameBuffer(frame_width_, frame_height_, DEFAULT_VERTEX_MATRIX_SHADER, DEFAULT_OES_FRAGMENT_SHADER);
                     media_codec_render_->SetTextureType(TEXTURE_OES);
                 }
             }
@@ -601,18 +601,15 @@ void VideoExport::ProcessVideoExport() {
             // 硬编码时, 把OES纹理渲染成普通 的TEXTURE_2D纹理
             if (av_play_context_->is_sw_decode) {
                 encode_texture_id_ = yuv_render_->DrawFrame(frame);
-            } else {
-                media_codec_render_->ActiveProgram();
-                encode_texture_id_ = media_codec_render_->OnDrawFrame(oes_texture_);
-            }
-            if (av_play_context_->is_sw_decode) {
                 current_time_ = av_rescale_q(av_play_context_->video_frame->pts,
                                                                 av_play_context_->format_context->streams[av_play_context_->video_index]->time_base,
                                                                 AV_TIME_BASE_Q);
             } else {
+                mediacodec_update_image(av_play_context_);
+                int ret = mediacodec_get_texture_matrix(av_play_context_, texture_matrix_);
+                media_codec_render_->ActiveProgram();
+                encode_texture_id_ = media_codec_render_->OnDrawFrame(oes_texture_, crop_vertex_coordinate_, texture_coordinate_, texture_matrix_);
                 current_time_ = av_play_context_->video_frame->pts / 1000;
-            }
-            if (!av_play_context_->is_sw_decode) {
                 mediacodec_release_buffer(av_play_context_, av_play_context_->video_frame);
             }
             frame_pool_unref_frame(av_play_context_->video_frame_pool, av_play_context_->video_frame);
@@ -625,18 +622,16 @@ void VideoExport::ProcessVideoExport() {
         if (previous_time_ != 0) {
             current_time_ = current_time_ + previous_time_;
         }
-        frame_buffer->ActiveProgram();
-        GLuint encode_texture = frame_buffer->OnDrawFrame(encode_texture_id_, crop_vertex_coordinate_, texture_coordinate_);
         // 执行特效操作
         if (image_process_ != nullptr) {
-            encode_texture = image_process_->Process(encode_texture, current_time_, frame_width_, frame_height_, 0, 0);
+            encode_texture_id_ = image_process_->Process(encode_texture_id_, current_time_, frame_width_, frame_height_, 0, 0);
         }
         if (!egl_core_->SwapBuffers(egl_surface_)) {
             LOGE("eglSwapBuffers error: %d", eglGetError());
         }
 
         // 编码视频
-        encoder_->Encode(current_time_, encode_texture);
+        encoder_->Encode(current_time_, encode_texture_id_);
         // 回调合成进度给上层
         OnExportProgress(current_time_);
     }

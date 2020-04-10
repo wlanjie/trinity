@@ -37,29 +37,29 @@ VideoConsumerThread::VideoConsumerThread()
 
 VideoConsumerThread::~VideoConsumerThread() {}
 
-static int AudioPacketCallback(AudioPacket** packet, void* context) {
+static int AudioPacketCallback(AudioPacket** packet, void* context, bool wait) {
     VideoConsumerThread* thread = reinterpret_cast<VideoConsumerThread*>(context);
-    return thread->GetAudioPacket(packet);
+    return thread->GetAudioPacket(packet, wait);
 }
 
-static int VideoPacketCallback(VideoPacket** packet, void* context) {
+static int VideoPacketCallback(VideoPacket** packet, void* context, bool wait) {
     VideoConsumerThread* thread = reinterpret_cast<VideoConsumerThread*>(context);
-    return thread->GetH264Packet(packet);
+    return thread->GetH264Packet(packet, wait);
 }
 
-int VideoConsumerThread::GetH264Packet(VideoPacket** packet) {
-    return video_packet_pool_->GetRecordingVideoPacket(packet, true);
+int VideoConsumerThread::GetH264Packet(VideoPacket** packet, bool wait) {
+    return video_packet_pool_->GetRecordingVideoPacket(packet, true, wait);
 }
 
-int VideoConsumerThread::GetAudioPacket(AudioPacket** packet) {
-    return audio_packet_pool_->GetAudioPacket(packet, true);
+int VideoConsumerThread::GetAudioPacket(AudioPacket** packet, bool wait) {
+    return audio_packet_pool_->GetAudioPacket(packet, true, wait);
 }
 
 int VideoConsumerThread::Init(const char* path, int video_width, int video_height, int frame_rate, int video_bit_Rate,
          int audio_sample_rate, int audio_channels, int audio_bit_rate, char* audio_codec_name) {
     Init();
     if (nullptr == mp4_muxer_) {
-        mp4_muxer_ = new H264Muxer();
+        mp4_muxer_ = new Mp4Muxer();
         int ret = mp4_muxer_->Init(path, video_width, video_height, frame_rate, video_bit_Rate, audio_sample_rate, audio_channels, audio_bit_rate, audio_codec_name);
         if (ret < 0) {
             Release();
@@ -123,7 +123,7 @@ void VideoConsumerThread::HandleRun(void *context) {
     while (!stopping_) {
         int ret = mp4_muxer_->Encode();
         if (ret < 0) {
-//            break;
+            break;
         }
     }
 }

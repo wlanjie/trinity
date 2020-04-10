@@ -52,13 +52,14 @@ class PacketPool {
     int buffer_cursor_;
     bool DetectDiscardVideoPacket();
     /** 为了计算每一帧的时间长度 **/
-    VideoPacket *temp_video_packet_;
-    int temp_video_packet_ref_count_;
+    int video_packet_duration_;
     int accompany_buffer_size_;
     short* accompany_buffer_;
     int accompany_buffer_cursor_;
     int total_discard_video_packet_duration_copy_;
     pthread_rwlock_t accompany_drop_frame_lock_;
+    pthread_mutex_t video_packet_mutex_;
+    pthread_cond_t video_packet_cond_;
 
  private:
     virtual void RecordDropVideoFrame(int discardVideoPacketSize);
@@ -97,7 +98,7 @@ class PacketPool {
     void InitRecordingVideoPacketQueue();
     void AbortRecordingVideoPacketQueue();
     void DestroyRecordingVideoPacketQueue();
-    int GetRecordingVideoPacket(VideoPacket **videoPacket, bool block);
+    int GetRecordingVideoPacket(VideoPacket **videoPacket, bool block, bool wait = true);
     bool PushRecordingVideoPacketToQueue(VideoPacket *videoPacket);
     int GetRecordingVideoPacketQueueSize();
     void ClearRecordingVideoPacketToQueue();

@@ -26,7 +26,6 @@
 #include <pthread.h>
 #include "packet_pool.h"
 #include "mp4_muxer.h"
-#include "h264_muxer.h"
 #include "audio_packet_pool.h"
 
 namespace trinity {
@@ -46,9 +45,8 @@ class VideoConsumerThread {
     void Notify();
     void Stop();
 
-    int GetH264Packet(VideoPacket** packet);
-
-    int GetAudioPacket(AudioPacket** packet);
+    int GetH264Packet(VideoPacket** packet, bool wait);
+    int GetAudioPacket(AudioPacket** packet, bool wait);
 
  protected:
     virtual void HandleRun(void* context);

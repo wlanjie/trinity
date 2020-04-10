@@ -39,6 +39,8 @@ class FrameBuffer : public OpenGL {
     virtual GLuint OnDrawFrame(GLuint texture_id, uint64_t current_time = 0);
     virtual GLuint OnDrawFrame(GLuint texture_id, GLfloat* matrix, uint64_t current_time = 0);
     virtual GLuint OnDrawFrame(GLuint texture_id, const GLfloat* vertex_coordinate, const GLfloat* texture_coordinate, uint64_t current_time = 0);
+    virtual GLuint OnDrawFrame(GLuint texture_id, const GLfloat* vertex_coordinate, const GLfloat* texture_coordinate,
+            GLfloat* matrix, uint64_t current_time = 0);
 
     GLuint GetTextureId() {
         return texture_id_;

@@ -44,29 +44,35 @@ class Mp4Muxer {
     virtual int Init(const char* path, int video_width, int video_height, int frame_rate, int video_bit_rate,
             int audio_sample_rate, int audio_channels, int audio_bit_rate, char* audio_codec_name);
 
-    virtual void RegisterAudioPacketCallback(int (*audio_packet)(AudioPacket**, void* context), void* context);
-    virtual void RegisterVideoPacketCallback(int (*video_packet)(VideoPacket**, void* context), void* context);
+    virtual void RegisterAudioPacketCallback(int (*audio_packet)(AudioPacket**, void* context, bool wait), void* context);
+    virtual void RegisterVideoPacketCallback(int (*video_packet)(VideoPacket**, void* context, bool wait), void* context);
 
     int Encode();
 
     virtual int Stop();
 
-    typedef int (*AudioPacketCallback) (AudioPacket**, void* context);
-    typedef int (*VideoPacketCallback) (VideoPacket**, void* context);
+    typedef int (*AudioPacketCallback) (AudioPacket**, void* context, bool wait);
+    typedef int (*VideoPacketCallback) (VideoPacket**, void* context, bool wait);
 
  protected:
     virtual AVStream* AddStream(AVFormatContext* oc, AVCodec** codec, enum AVCodecID codec_id, char* codec_name);
 
-    virtual int WriteVideoFrame(AVFormatContext* oc, AVStream* st) = 0;
+    uint32_t FindStartCode(uint8_t *in_buffer, uint32_t in_ui32_buffer_size, uint32_t in_ui32_code,
+                           uint32_t &out_ui32_processed_bytes);
 
-    virtual int WriteAudioFrame(AVFormatContext* oc, AVStream* st);
+    void ParseH264SequenceHeader(uint8_t *in_buffer, uint32_t in_ui32_size, uint8_t **in_sps_buffer, int &in_sps_size,
+                                 uint8_t **in_pps_buffer, int &in_pps_size);
+
+    virtual int WriteVideoFrame(AVFormatContext* oc, AVStream* st, bool wait = true);
+
+    virtual int WriteAudioFrame(AVFormatContext* oc, AVStream* st, bool wait = true);
 
     virtual void CloseVideo(AVFormatContext* oc, AVStream* st);
 
     virtual void CloseAudio(AVFormatContext* oc, AVStream* st);
 
     /** 8、获取视频流的时间戳(秒为单位的double) **/
-    virtual double GetVideoStreamTimeInSecs() = 0;
+    virtual double GetVideoStreamTimeInSecs();
 
     /** 9、获取音频流的时间戳(秒为单位的double) **/
     double GetAudioStreamTimeInSecs();
@@ -85,6 +91,7 @@ class Mp4Muxer {
     AVBitStreamFilterContext* bit_stream_filter_context_;
     double duration_;
     double last_audio_packet_presentation_time_mills_;
+    int last_video_presentation_time_ms_;
     int video_width_;
     int video_height_;
     float video_frame_rate_;

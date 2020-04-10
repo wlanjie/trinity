@@ -128,4 +128,16 @@ FrameBuffer::OnDrawFrame(GLuint texture_id, const GLfloat *vertex_coordinate, co
     return texture_id;
 }
 
+GLuint
+FrameBuffer::OnDrawFrame(GLuint texture_id, const GLfloat *vertex_coordinate, const GLfloat *texture_coordinate,
+        GLfloat* matrix, uint64_t current_time) {
+    if (current_time >= start_time_ && current_time <= end_time_) {
+        glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer_id_);
+        ProcessImage(texture_id, vertex_coordinate, texture_coordinate, matrix);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        return texture_id_;
+    }
+    return texture_id;
+}
+
 }  // namespace trinity

@@ -31,8 +31,7 @@ PacketPool::PacketPool()
       buffer_size_(0),
       buffer_(nullptr),
       buffer_cursor_(0),
-      temp_video_packet_(nullptr),
-      temp_video_packet_ref_count_(0),
+      video_packet_duration_(0) ,
       accompany_buffer_size_(0),
       accompany_buffer_(nullptr),
       accompany_buffer_cursor_(0),
@@ -45,12 +44,16 @@ PacketPool::PacketPool()
       accompany_packet_queue_(nullptr) {
     pthread_rwlock_init(&rw_lock_, nullptr);
     pthread_rwlock_init(&accompany_drop_frame_lock_, nullptr);
+    pthread_mutex_init(&video_packet_mutex_, nullptr);
+    pthread_cond_init(&video_packet_cond_, nullptr);
 }
 
 
 PacketPool::~PacketPool() {
     pthread_rwlock_destroy(&rw_lock_);
     pthread_rwlock_destroy(&accompany_drop_frame_lock_);
+    pthread_mutex_destroy(&video_packet_mutex_);
+    pthread_cond_destroy(&video_packet_cond_);
 }
 
 PacketPool* PacketPool::instance_ = new PacketPool();
@@ -276,8 +279,6 @@ void PacketPool::InitRecordingVideoPacketQueue() {
         const char* name = "recording video yuv frame_ packet_ queue_";
         video_packet_queue_ = new VideoPacketQueue(name);
         total_discard_video_packet_duration_ = 0;
-        temp_video_packet_ = nullptr;
-        temp_video_packet_ref_count_ = 0;
     }
 }
 
@@ -291,15 +292,16 @@ void PacketPool::DestroyRecordingVideoPacketQueue() {
     if (nullptr != video_packet_queue_) {
         delete video_packet_queue_;
         video_packet_queue_ = nullptr;
-        if (temp_video_packet_ref_count_ > 0) {
-            delete temp_video_packet_;
-            temp_video_packet_ = nullptr;
-        }
     }
 }
 
-int PacketPool::GetRecordingVideoPacket(VideoPacket **videoPacket,
-                                        bool block) {
+int PacketPool::GetRecordingVideoPacket(VideoPacket **videoPacket, bool block, bool wait) {
+    LOGE("size: %d", GetRecordingVideoPacketQueueSize());
+    if (GetRecordingVideoPacketQueueSize() == 0 && wait) {
+        pthread_mutex_lock(&video_packet_mutex_);
+        pthread_cond_wait(&video_packet_cond_, &video_packet_mutex_);
+        pthread_mutex_unlock(&video_packet_mutex_);
+    }
     int result = -1;
     if (nullptr != video_packet_queue_ && video_packet_queue_->Size() > 0) {
         result = video_packet_queue_->Get(videoPacket, block);
@@ -323,15 +325,14 @@ bool PacketPool::PushRecordingVideoPacketToQueue(VideoPacket *videoPacket) {
             }
             RecordDropVideoFrame(discardVideoFrameDuration);
         }
-        // 为了计算当前帧的Duration, 所以延迟一帧放入Queue中
-        if (nullptr != temp_video_packet_) {
-            int packetDuration = videoPacket->timeMills - temp_video_packet_->timeMills;
-            temp_video_packet_->duration = packetDuration;
-            video_packet_queue_->Put(temp_video_packet_);
-            temp_video_packet_ref_count_ = 0;
-        }
-        temp_video_packet_ = videoPacket;
-        temp_video_packet_ref_count_ = 1;
+        auto duration = video_packet_duration_ - videoPacket->timeMills;
+        // 第一帧时,不能计算时长,就按25帧的帧率计算
+        videoPacket->duration = duration < 0 ? 40 : duration;
+        video_packet_queue_->Put(videoPacket);
+        video_packet_duration_ = videoPacket->timeMills;
+        pthread_mutex_lock(&video_packet_mutex_);
+        pthread_cond_signal(&video_packet_cond_);
+        pthread_mutex_unlock(&video_packet_mutex_);
     }
     return dropFrame;
 }

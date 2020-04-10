@@ -62,10 +62,10 @@ const char* NV21_FRAGMENT_SHADER =
         "}\n";
 
 static GLfloat VERTEX_COORDINATE[8] = {
-        -1.0f, -1.0f,    // 0 top left
-        1.0f, -1.0f,    // 1 bottom left
-        -1.0f, 1.0f,  // 2 bottom right
-        1.0f, 1.0f,    // 3 top right
+        -1.0f, -1.0f,
+        1.0f, -1.0f,
+        -1.0f, 1.0f,
+        1.0f, 1.0f,
 };
 
 static GLfloat TEXTURE_COORDINATE_NO_ROTATION[8] = {
@@ -271,7 +271,7 @@ void YuvRender::Link() {
     }
 }
 
-int YuvRender::DrawFrame(AVFrame* frame) {
+GLuint YuvRender::DrawFrame(AVFrame* frame) {
     if (program_ == 0) {
         switch (frame->format) {
             case AV_PIX_FMT_YUV420P:

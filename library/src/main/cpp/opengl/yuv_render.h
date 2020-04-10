@@ -48,7 +48,7 @@ class YuvRender {
 
     ~YuvRender();
 
-    virtual int DrawFrame(AVFrame* frame);
+    virtual GLuint DrawFrame(AVFrame* frame);
 
  private:
     int Initialize(int width, int height, const char* fragment_shader);
