@@ -27,6 +27,13 @@
 
 namespace trinity {
 
+typedef enum {
+    kStartEncoder = 200,
+    kEncodeFrame,
+    kEndOfStream,
+    kDestroyEncoder,
+};
+
 class VideoEncoderAdapter {
  public:
     VideoEncoderAdapter();

@@ -30,13 +30,6 @@
 
 namespace trinity {
 
-typedef enum {
-    kStartEncoder = 200,
-    kEncodeFrame,
-    kEndOfStream,
-    kDestroyEncoder,
-} MediaEncoderType;
-
 class MediaEncodeAdapter : public VideoEncoderAdapter, public Handler {
  public:
     MediaEncodeAdapter(JavaVM* vm, jobject object);

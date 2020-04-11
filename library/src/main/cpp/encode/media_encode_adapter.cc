@@ -337,7 +337,7 @@ void MediaEncodeAdapter::EncodeLoop() {
             delete msg;
         }
     }
-    LOGI("HWEncoderAdapter Encode Thread ending...");
+    LOGI("MediaCodec Encode Thread ending...");
 }
 
 void MediaEncodeAdapter::CreateMediaEncoder(JNIEnv *env) {

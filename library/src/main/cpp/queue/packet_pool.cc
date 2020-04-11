@@ -189,7 +189,8 @@ void PacketPool::InitAccompanyPacketQueue(int sampleRate, int channels) {
     const char *name = "accompanyPacket queue_";
     accompany_packet_queue_ = new AudioPacketQueue(name);
     /** 初始化 Accompany 缓冲 Buffer **/
-    accompany_buffer_size_ = sampleRate * channels * AUDIO_PACKET_DURATION_IN_SECS;
+    accompany_buffer_size_ = static_cast<int>(sampleRate * channels *
+                                              AUDIO_PACKET_DURATION_IN_SECS);
     accompany_buffer_ = new short[accompany_buffer_size_];
     accompany_buffer_cursor_ = 0;
     total_discard_video_packet_duration_copy_ = 0;
