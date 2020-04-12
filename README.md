@@ -20,8 +20,6 @@
 125218305
 ```
 ## 联系我
-- QQ: 153920981
-- 微信: w153920981
 - email: wlanjie888@gmail.com
 
 ## git commit 规范
