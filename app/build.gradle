@@ -29,9 +29,6 @@ android {
         preDexLibraries true
         maxProcessCount 8
     }
-    lintOptions {
-        abortOnError true
-    }
     packagingOptions {
         pickFirst 'lib/arm64-v8a/libc++_shared.so'
         pickFirst 'lib/armeabi-v7a/libc++_shared.so'

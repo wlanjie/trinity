@@ -18,7 +18,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 29
         versionCode 1
-        versionName "0.2.5"
+        versionName "0.2.6"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
@@ -43,10 +43,6 @@ android {
             version "3.10.2"
             path "src/main/cpp/CMakeLists.txt"
         }
-    }
-
-    lintOptions {
-        abortOnError true
     }
 
     publishNonDefault true
@@ -110,7 +106,7 @@ publish {
     userOrg = 'wlanjie'
     groupId = 'com.github.wlanjie'
     artifactId = 'trinity'
-    publishVersion = '0.2.5'
+    publishVersion = '0.2.6'
     desc = 'android short video sdk'
     website = 'https://github.com/wlanjie/trinity'
 

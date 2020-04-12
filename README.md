@@ -19,6 +19,11 @@
 ```
 125218305
 ```
+## 联系我
+- QQ: 153920981
+- 微信: w153920981
+- email: wlanjie888@gmail.com
+
 ## git commit 规范
 - 遵循[git cz](https://github.com/commitizen/cz-cli)
 
@@ -108,7 +113,7 @@
       <td align="center">√</td>
   </tr>
 	<tr>
-      <td rowspan="6">视频编辑<br/>
+      <td rowspan="8">视频编辑<br/>
   </tr>
   <tr>
       <td>多段编辑</td>
@@ -128,6 +133,14 @@
   </tr>
   <tr>
       <td>硬解码</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>软解码</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>图片视频混合</td>
       <td align="center">√</td>
   </tr>
   <tr>
@@ -194,16 +207,32 @@
     <td align="center">√</td>
   </tr>
   <tr>
-    <td rowspan="1">人脸识别<br/>
+    <td rowspan="6">人脸识别<br/>
   </tr>
   <tr>
     <td>玫瑰眼妆</td>
     <td align="center">√</td>
   </tr>
+  <tr>
+    <td>王妃</td>
+    <td align="center">√</td>
+  </tr>
+  <tr>
+    <td>贴纸妆</td>
+    <td align="center">√</td>
+  </tr>
+    <tr>
+    <td>飘落小猪</td>
+    <td align="center">√</td>
+  </tr>
+  <tr>
+    <td>猫头</td>
+    <td align="center">√</td>
+  </tr>
 </table>
 
 ## 人脸特效
-![玫瑰眼妆](roseEye.png)
+ <img src="roseEye.png" width = "318" height = "665" alt="玫瑰眼妆" align=center />
 
 ## 特效调试
 项目中使用xcode调试特效效果, 使用前需要安装glfw  
@@ -236,7 +265,7 @@ adb devices
 ### 添加jcenter依赖
 ``` gradle
 dependencies {
-    implementation 'com.github.wlanjie:trinity:0.2.5'
+    implementation 'com.github.wlanjie:trinity:0.2.6'
 }
 ```
 
@@ -388,7 +417,7 @@ mRecord.stopRecording()
 
 ### 视频编辑
 
-####初始化
+#### 初始化
 
 - 创建编辑器实例
 ``` kotlin
@@ -616,26 +645,31 @@ val export = TrinityCore.createExport(this)
 ``` kotlin
 /**
   * 开始导出
-  * @param path 录制的视频保存的地址
-  * @param width 录制视频的宽, SDK中会做16倍整数的运算, 可能最终输出视频的宽和设置进去的不一致
-  * @param height 录制视频的高, SDK中会做16倍整数的运算, 可能最终输出视频的宽和设置进去的不一致
-  * @param videoBitRate 视频输出的码率, 如果设置的是2000, 则为2M, 最终输出的和设置的可能有差别
-  * @param frameRate 视频输出的帧率
-  * @param sampleRate 音频的采样率
-  * @param channelCount 音频的声道数
-  * @param audioBitRate 音频的码率
+  * @param info 导出实体类
   * @param l 导出回调 包含成功 失败 和进度回调
   * @return Int ErrorCode.SUCCESS 为成功,其它为失败
   */
-export.export("/sdcard/export.mp4",
-              544,
-              960,
-              25,
-              3000,
-              44100,
-              1,
-              128,
-              this)
+// 创建实体类, 必须传入视频输出地址  
+val exportVideoInfo = VideoExportInfo("/sdcard/export.mp4")
+// 使用硬解码
+exportVideoInfo.mediaCodecDecode = true
+// 使用硬编码
+exportVideoInfo.mediaCodecEncode = true  
+// 视频宽
+exportVideoInfo.width = 544
+// 视频高
+exportVideoInfo.height = 960
+// 帧率
+exportVideoInfo.frameRate = 25
+// 视频码率 2M
+exportVideoInfo.videoBitRate = 2000
+// 采样率
+exportVideoInfo.sampleRate = 44100
+// 声道数
+exportVideoInfo.channelCount = 1
+// 音频码率 128K
+exportVideoInfo.audioBitRate = 128
+export.export(exportVideoInfo, this)
 ```
 - 取消
 ``` kotlin

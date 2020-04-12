@@ -770,6 +770,15 @@ class TrinityRecord(
 
   /**
    * 由c++回调回来
+   * 发送end of stream信号给编码器
+   */
+  @Suppress("unused")
+  private fun signalEndOfInputStream() {
+    mSurfaceEncoder.signalEndOfInputStream()
+  }
+
+  /**
+   * 由c++回调回来
    * 关闭mediaCodec编码器
    */
   @Suppress("unused")

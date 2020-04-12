@@ -31,7 +31,7 @@ namespace trinity {
 
 namespace {
 // See MAX_ENCODER_Q_SIZE in androidmediaencoder.cc.
-const int MAX_ENCODER_Q_SIZE = 3;
+const int MAX_ENCODER_Q_SIZE = 6;
 }
 
 MediaEncodeAdapter::MediaEncodeAdapter(JavaVM *vm, jobject object)
@@ -124,19 +124,13 @@ void MediaEncodeAdapter::MediaCodecEncode(int texture_id, int time) {
 
     if (GetQueueSize() > MAX_ENCODER_Q_SIZE) {
         // See webrtc bug 2887.
-        LOGE("HWEncoderAdapter:dropped frame_, encoder_ queue_ full");
-        return;
-    }
-//    int64_t current_time = static_cast<int64_t>((getCurrentTime() - start_time_) * speed);
-    // need drop frames
-    int expectedFrameCount = static_cast<int>(time / 1000.0F * frame_rate_ + 0.5F);
-    if (expectedFrameCount < encode_frame_count_) {
-        LOGE("drop frame encode_count: %d frame_count: %d", encode_frame_count_, expectedFrameCount);
         pthread_mutex_lock(&packet_mutex_);
         pthread_cond_signal(&packet_cond_);
         pthread_mutex_unlock(&packet_mutex_);
         return;
     }
+//    int64_t current_time = static_cast<int64_t>((getCurrentTime() - start_time_) * speed);
+    // need drop frames
     encode_frame_count_++;
     if (EGL_NO_SURFACE != encoder_surface_) {
         core_->MakeCurrent(encoder_surface_);
@@ -216,6 +210,11 @@ void MediaEncodeAdapter::DestroyEncoder() {
 }
 
 void MediaEncodeAdapter::Encode(uint64_t time, int texture_id) {
+    int expectedFrameCount = static_cast<int>(time / 1000.0F * frame_rate_ + 0.5F);
+    if (expectedFrameCount < encode_frame_count_) {
+        LOGE("drop frame encode_count: %d frame_count: %d", encode_frame_count_, expectedFrameCount);
+        return;
+    }
     PostMessage(new Message(kEncodeFrame, texture_id, static_cast<int>(time)));
     pthread_mutex_lock(&packet_mutex_);
     pthread_cond_wait(&packet_cond_, &packet_mutex_);
