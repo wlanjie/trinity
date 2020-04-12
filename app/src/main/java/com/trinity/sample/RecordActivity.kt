@@ -279,12 +279,9 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
   }
 
   private fun showMedia() {
-    var mediaFragment = supportFragmentManager.findFragmentByTag(MEDIA_TAG)
-    if (mediaFragment == null) {
-      mediaFragment = MediaFragment()
-      supportFragmentManager.commit {
+    val mediaFragment = MediaFragment()
+    supportFragmentManager.commit {
         replace(R.id.frame_container, mediaFragment, MEDIA_TAG)
-      }
     }
     val behavior = BottomSheetBehavior.from(mInsideBottomSheet)
     if (behavior.state != BottomSheetBehavior.STATE_EXPANDED) {

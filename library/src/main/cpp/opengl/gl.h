@@ -22,6 +22,13 @@
 #ifndef TRINITY_GL_H
 #define TRINITY_GL_H
 
+static const float DEFAULT_VERTEX_COORDINATE[] = {
+        -1.F, -1.F,
+        1.F, -1.F,
+        -1.F, 1.F,
+        1.F, 1.F
+};
+
 // 默认带matrix的顶点shader
 static const char* DEFAULT_VERTEX_MATRIX_SHADER =
         "attribute vec4 position;                                                               \n"

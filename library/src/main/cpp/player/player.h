@@ -79,6 +79,7 @@ class Player : public Handler {
     void DeleteAction(int action_id);
 
  private:
+    int64_t GetVideoDuration();
     void OnAddAction(char* config, int action_id);
     void OnUpdateActionTime(int start_time, int end_time, int action_id);
     void OnDeleteAction(int action_id);
@@ -89,7 +90,6 @@ class Player : public Handler {
     void OnUpdateFilter(char* config, int start_time, int end_time, int action_id);
     void OnDeleteFilter(int action_id);
     void FreeMusicPlayer();
-    static void PlayAudio(AVPlayContext* context);
     int GetAudioFrame();
     static int AudioCallback(uint8_t** buffer, int *buffer_size, void* context);
     static void OnComplete(AVPlayContext* context);
@@ -134,6 +134,7 @@ class Player : public Handler {
     GLfloat* texture_matrix_;
     GLuint oes_texture_;
     GLuint image_texture_;
+    FrameBuffer* image_frame_buffer_;
     int64_t image_render_start_time_;
     MusicDecoderController* music_player_;
     PlayerEventObserver* player_event_observer_;
@@ -149,6 +150,8 @@ class Player : public Handler {
     uint8_t* audio_buffer_;
     int draw_texture_id_;
     PlayerState player_state_;
+    int64_t current_time_;
+    int64_t previous_time_;
 };
 
 }  // namespace trinity

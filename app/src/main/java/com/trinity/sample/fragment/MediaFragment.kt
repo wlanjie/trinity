@@ -25,6 +25,7 @@ class MediaFragment : Fragment() {
     super.onViewCreated(view, savedInstanceState)
     mTabLayout = view.findViewById(R.id.tab_layout)
     val viewPager = view.findViewById<ViewPager>(R.id.view_pager)
+    viewPager.offscreenPageLimit = 2
     activity?.let {
       mAdapter = MediaPagerAdapter(it.supportFragmentManager)
       viewPager.adapter = mAdapter

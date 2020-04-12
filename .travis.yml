@@ -11,7 +11,7 @@ before_install:
 - echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > $ANDROID_HOME/licenses/android-sdk-license
 - echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> $ANDROID_HOME/licenses/android-sdk-license
 install:
-- echo y | sdkmanager "ndk;21.0.6113669"
+- echo y | sudo ${ANDROID_HOME}/tools/bin/sdkmanager --install "ndk;20.0.5594570" --sdk_root=${ANDROID_SDK_ROOT}
 - echo y | sdkmanager "cmake;3.6.4111459"
 - echo y | sdkmanager "cmake;3.10.2.4988404"
 - echo y | sdkmanager "lldb;3.1"

@@ -80,6 +80,7 @@ int64_t AudioRender::GetDeltaTime() {
 }
 
 SLresult AudioRender::Pause() {
+    LOGI("enter: %s", __func__);
     return SetAudioPlayerStatePaused();
 }
 
@@ -97,10 +98,12 @@ SLresult AudioRender::Stop() {
 }
 
 SLresult AudioRender::Play() {
+    LOGI("enter: %s", __func__);
     if (nullptr == audio_player_play_) {
         return SL_RESULT_SUCCESS;
     }
     SLuint32 state = SL_PLAYSTATE_PLAYING;
+    LOGE("state: %d", state);
     (*audio_player_play_)->GetPlayState(audio_player_play_, &state);
     if (state != SL_PLAYSTATE_PAUSED) {
         return SL_RESULT_SUCCESS;
@@ -114,6 +117,7 @@ SLresult AudioRender::Play() {
         return result;
     }
     playing_state_ = PLAYING_STATE_PLAYING;
+    LOGI("leave: %s", __func__);
     return SL_RESULT_SUCCESS;
 }
 

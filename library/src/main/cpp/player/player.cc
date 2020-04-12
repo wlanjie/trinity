@@ -55,6 +55,7 @@ Player::Player(JNIEnv* env, jobject object) : Handler()
     , texture_matrix_()
     , oes_texture_(0)
     , image_texture_(0)
+    , image_frame_buffer_(nullptr)
     , image_render_start_time_(0)
     , image_process_(nullptr)
     , music_player_(nullptr)
@@ -68,7 +69,9 @@ Player::Player(JNIEnv* env, jobject object) : Handler()
     , audio_buffer_size_(0)
     , audio_buffer_(nullptr)
     , draw_texture_id_(0)
-    , player_state_(kNone) {
+    , player_state_(kNone)
+    , current_time_(0)
+    , previous_time_(0) {
     texture_matrix_ = new float[16];
     pthread_mutex_init(&mutex_, nullptr);
     pthread_cond_init(&cond_, nullptr);
@@ -79,7 +82,7 @@ Player::Player(JNIEnv* env, jobject object) : Handler()
     av_play_context_ = av_play_create(env, object_, 0, 44100);
     av_play_context_->priv_data = this;
     av_play_context_->on_complete = OnComplete;
-    av_play_context_->play_audio = PlayAudio;
+//    av_play_context_->play_audio = PlayAudio;
 //    av_play_context_->force_sw_decode = 1;
     av_play_set_buffer_time(av_play_context_, 5);
 
@@ -191,8 +194,8 @@ void Player::OnComplete(AVPlayContext *context) {
 }
 
 int Player::Start(MediaClip* clip, int video_count_duration) {
-    LOGI("enter %s file_name: %s start_time: %d end_time: %d",
-            __func__, clip->file_name, clip->start_time, clip->end_time);
+    LOGI("enter %s file_name: %s start_time: %lld end_time: %lld window_created: %d",
+            __func__, clip->file_name, clip->start_time, clip->end_time, window_created_);
     player_state_ = kNone;
     current_clip_ = new MediaClip();
     current_clip_->start_time = clip->start_time;
@@ -249,6 +252,10 @@ void Player::Destroy() {
 }
 
 int64_t Player::GetCurrentPosition() {
+    return current_time_;
+}
+
+int64_t Player::GetVideoDuration() {
     if (nullptr != av_play_context_) {
         if (av_play_context_->av_track_flags & AUDIO_FLAG) {
             return av_play_context_->audio_clock->pts / 1000;
@@ -421,11 +428,6 @@ void Player::OnDeleteFilter(int action_id) {
     LOGI("leave %s", __func__);
 }
 
-void Player::PlayAudio(AVPlayContext* context) {
-    auto* player = reinterpret_cast<Player*>(context->priv_data);
-    player->PostMessage(new Message(kPlayAudio));
-}
-
 int Player::GetAudioFrame() {
     AVPlayContext* context = av_play_context_;
     if (nullptr == context) {
@@ -544,9 +546,8 @@ void Player::HandleMessage(Message *msg) {
 
         case kPlayerStart: {
             MediaClip* clip = reinterpret_cast<MediaClip*>(obj);
-            LOGI("enter Start play: %d file: %s", av_play_context_->is_sw_decode, clip->file_name);
+            LOGI("enter Start play: %d file: %s type: %d", av_play_context_->is_sw_decode, clip->file_name, clip->type);
             if (clip->type == VIDEO) {
-                LOGE("clip->type == VIDEO");
                 av_play_play(clip->file_name, msg->GetArg1(), av_play_context_);
                 if (nullptr != audio_render_) {
                     delete audio_render_;
@@ -575,7 +576,7 @@ void Player::HandleMessage(Message *msg) {
             break;
 
         case kPlayerResume:
-            LOGI("enter kPlayerResume clip_type: %d", current_clip_->type);
+            LOGI("enter kPlayerResume clip_type: %d window_create: %d", current_clip_->type, window_created_);
             if (current_clip_->type == VIDEO) {
                 if (av_play_context_ != nullptr && av_play_context_->status == PAUSED) {
                     av_play_resume(av_play_context_);
@@ -587,7 +588,7 @@ void Player::HandleMessage(Message *msg) {
             } else if (current_clip_->type == IMAGE) {
                 PostMessage(new Message(kRenderImageFrame));
             }
-            player_state_ = kResume;
+            player_state_ = window_created_ ? kResume : kNone;
             LOGI("leave kPlayerResume");
             break;
 
@@ -627,9 +628,17 @@ void Player::HandleMessage(Message *msg) {
                 glDeleteTextures(1, &image_texture_);
                 image_texture_ = 0;
             }
+            if (image_frame_buffer_ != nullptr) {
+                delete image_frame_buffer_;
+                image_frame_buffer_ = nullptr;
+            }
             image_render_start_time_ = 0;
             frame_width_ = 0;
             frame_height_ = 0;
+            previous_time_ = current_time_;
+            if (previous_time_ >= video_count_duration_) {
+                previous_time_ = 0;
+            }
             player_state_ = kStop;
             LOGI("leave kPlayerStop");
             break;
@@ -838,9 +847,13 @@ int Player::DrawVideoFrame() {
         }
         if (av_play_context_->is_sw_decode) {
             draw_texture_id_ = yuv_render_->DrawFrame(av_play_context_->video_frame, vertex_coordinate_, texture_coordinate_);
+            current_time_ = av_rescale_q(av_play_context_->video_frame->pts,
+                                         av_play_context_->format_context->streams[av_play_context_->video_index]->time_base,
+                                         AV_TIME_BASE_Q) / 1000;
         } else {
             media_codec_render_->ActiveProgram();
             draw_texture_id_ = media_codec_render_->OnDrawFrame(oes_texture_, texture_matrix_);
+            current_time_ = av_play_context_->video_frame->pts / 1000;
         }
         ReleaseVideoFrame();
 
@@ -848,11 +861,11 @@ int Player::DrawVideoFrame() {
             return -1;
         }
 
+        current_time_ = current_time_ + previous_time_;
+
         if (nullptr != image_process_) {
             int progressTextureId = image_process_->Process(draw_texture_id_,
-                    static_cast<uint64_t>(GetCurrentPosition() -
-                    current_clip_->start_time + video_count_duration_),
-                    frame_width_, frame_height_, 0, 0);
+                    current_time_, frame_width_, frame_height_, 0, 0);
             if (progressTextureId != 0) {
                 draw_texture_id_ = progressTextureId;
             }
@@ -991,12 +1004,12 @@ void Player::OnRenderImageFrame() {
         int width = 0;
         int height = 0;
         int channels = 0;
-        // 上下翻转图片, openGL渲染图片时会上下翻转
-        stbi_set_flip_vertically_on_load(1);
+//        stbi_set_flip_vertically_on_load(1);
         auto image_data = stbi_load(current_clip_->file_name, &width, &height, &channels, STBI_rgb_alpha);
         if (width == 0 || height == 0 || nullptr == image_data) {
             return;
         }
+        LOGI("Decode image width: %d height: %d channels: %d", width, height, channels);
         glGenTextures(1, &image_texture_);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, image_texture_);
@@ -1004,6 +1017,8 @@ void Player::OnRenderImageFrame() {
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        frame_width_ = width;
+        frame_height_ = height;
 
         if (width > MAX_IMAGE_WIDTH || height > MAX_IMAGE_HEIGHT) {
             // 当图片大于1080p时, 缩放到1080p
@@ -1017,13 +1032,18 @@ void Player::OnRenderImageFrame() {
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, resize_width, resize_height,
                     0, GL_RGBA, GL_UNSIGNED_BYTE, resize_image_data);
             free(resize_image_data);
-            SetFrame(resize_width, resize_height, surface_width_, surface_height_);
+            frame_width_ = resize_width;
+            frame_height_ = resize_height;
         } else {
-            SetFrame(width, height, surface_width_, surface_height_);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
         }
         glBindTexture(GL_TEXTURE_2D, 0);
         stbi_image_free(image_data);
+        image_frame_buffer_ = new FrameBuffer(frame_width_, frame_height_, DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
+
+        if (surface_width_ > 0 && surface_height_ > 0) {
+            SetFrame(frame_width_, frame_height_, surface_width_, surface_height_);
+        }
     }
 
     if (image_render_start_time_ == 0) {
@@ -1036,16 +1056,23 @@ void Player::OnRenderImageFrame() {
         return;
     }
 
-    int draw_texture_id = image_texture_;
+    static GLfloat texture_coordinate[] = {
+            0.F, 1.F,
+            1.F, 1.F,
+            0.F, 0.F,
+            1.F, 0.F
+    };
+    current_time_ = current_time + previous_time_;
+    // 图片时需要上下镜像一下
+    draw_texture_id_ = image_frame_buffer_->OnDrawFrame(image_texture_, DEFAULT_VERTEX_COORDINATE, texture_coordinate);
     if (nullptr != image_process_) {
         int progressTextureId = image_process_->Process(draw_texture_id_,
-                    static_cast<uint64_t>(current_time - current_clip_->start_time + video_count_duration_),
-                    frame_width_, frame_height_, 0, 0);
+                    current_time_, frame_width_, frame_height_, 0, 0);
         if (progressTextureId != 0) {
             draw_texture_id_ = progressTextureId;
         }
     }
-    Draw(draw_texture_id);
+    Draw(draw_texture_id_);
     // 图片按25帧刷新
     usleep(40 * 1000);
     PostMessage(new Message(kRenderImageFrame));

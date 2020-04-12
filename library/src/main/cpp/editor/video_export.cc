@@ -332,8 +332,7 @@ void VideoExport::StartDecode(MediaClip *clip) {
 }
 
 void VideoExport::LoadImageTexture(MediaClip *clip) {
-    // 上下翻转图片, openGL渲染图片时会上下翻转
-    stbi_set_flip_vertically_on_load(1);
+//    stbi_set_flip_vertically_on_load(1);
 
     int width = 0;
     int height = 0;
@@ -570,7 +569,15 @@ void VideoExport::ProcessVideoExport() {
 
         if (clip->type == IMAGE) {
             image_frame_buffer_->ActiveProgram();
-            encode_texture_id_ = image_frame_buffer_->OnDrawFrame(image_texture_, crop_vertex_coordinate_, texture_coordinate_);
+            static GLfloat texture_coordinate[] = {
+                    0.F, 1.F,
+                    1.F, 1.F,
+                    0.F, 0.F,
+                    1.F, 0.F
+            };
+            // 硬编码时图片上下镜像
+            encode_texture_id_ = image_frame_buffer_->OnDrawFrame(image_texture_,
+                    crop_vertex_coordinate_, media_codec_encode_ ? texture_coordinate : texture_coordinate_);
             image_render_time_ += 1000 / frame_rate_;
             current_time_ = static_cast<uint64_t>(image_render_time_);
             if (image_render_time_ >= clip->end_time) {
