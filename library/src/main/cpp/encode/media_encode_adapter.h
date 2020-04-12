@@ -61,6 +61,8 @@ class MediaEncodeAdapter : public VideoEncoderAdapter, public Handler {
     jbyteArray output_buffer_;
     long start_encode_time_;
     OpenGL* render_;
+    pthread_mutex_t packet_mutex_;
+    pthread_cond_t packet_cond_;
 
  private:
     static void* MessageQueueThread(void* args);

@@ -133,6 +133,9 @@ void SoftEncoderAdapter::EncodeFrame(int texture_id, int time) {
     if (expectedFrameCount < encode_frame_count_) {
         LOGE("expectedFrameCount is %d while encoded_frame_count_ is %d", expectedFrameCount,
              encode_frame_count_);
+        pthread_mutex_lock(&packet_mutex_);
+        pthread_cond_signal(&packet_cond_);
+        pthread_mutex_unlock(&packet_mutex_);
         return;
     }
     EncodeTexture(static_cast<GLuint>(texture_id), time);
@@ -229,10 +232,10 @@ void SoftEncoderAdapter::EncodeTexture(GLuint texture_id, int time) {
     videoPacket->timeMills = time;
     if (nullptr != yuy_packet_pool_) {
         yuy_packet_pool_->Put(videoPacket);
-        pthread_mutex_lock(&packet_mutex_);
-        pthread_cond_signal(&packet_cond_);
-        pthread_mutex_unlock(&packet_mutex_);
     }
+    pthread_mutex_lock(&packet_mutex_);
+    pthread_cond_signal(&packet_cond_);
+    pthread_mutex_unlock(&packet_mutex_);
 }
 
 bool SoftEncoderAdapter::Initialize() {

@@ -52,6 +52,8 @@ MediaEncodeAdapter::MediaEncodeAdapter(JavaVM *vm, jobject object)
     if (nullptr != env) {
         object_ = env->NewGlobalRef(object);
     }
+    pthread_mutex_init(&packet_mutex_, nullptr);
+    pthread_cond_init(&packet_cond_, nullptr);
     encoding_ = true;
     queue_ = new MessageQueue("MediaEncode message queue");
     InitMessageQueue(queue_);
@@ -73,6 +75,8 @@ MediaEncodeAdapter::~MediaEncodeAdapter() {
         env->DeleteGlobalRef(object_);
         object_ = nullptr;
     }
+    pthread_mutex_destroy(&packet_mutex_);
+    pthread_cond_destroy(&packet_cond_);
 }
 
 void* MediaEncodeAdapter::MessageQueueThread(void *args) {
@@ -128,6 +132,9 @@ void MediaEncodeAdapter::MediaCodecEncode(int texture_id, int time) {
     int expectedFrameCount = static_cast<int>(time / 1000.0F * frame_rate_ + 0.5F);
     if (expectedFrameCount < encode_frame_count_) {
         LOGE("drop frame encode_count: %d frame_count: %d", encode_frame_count_, expectedFrameCount);
+        pthread_mutex_lock(&packet_mutex_);
+        pthread_cond_signal(&packet_cond_);
+        pthread_mutex_unlock(&packet_mutex_);
         return;
     }
     encode_frame_count_++;
@@ -140,6 +147,9 @@ void MediaEncodeAdapter::MediaCodecEncode(int texture_id, int time) {
         }
         DrainEncodeData();
     }
+    pthread_mutex_lock(&packet_mutex_);
+    pthread_cond_signal(&packet_cond_);
+    pthread_mutex_unlock(&packet_mutex_);
 }
 
 void MediaEncodeAdapter::DestroyMediaCodec() {
@@ -207,6 +217,9 @@ void MediaEncodeAdapter::DestroyEncoder() {
 
 void MediaEncodeAdapter::Encode(uint64_t time, int texture_id) {
     PostMessage(new Message(kEncodeFrame, texture_id, static_cast<int>(time)));
+    pthread_mutex_lock(&packet_mutex_);
+    pthread_cond_wait(&packet_cond_, &packet_mutex_);
+    pthread_mutex_unlock(&packet_mutex_);
 }
 
 int MediaEncodeAdapter::DrainEncodeData() {

@@ -673,6 +673,7 @@ void VideoExport::ProcessVideoExport() {
             LOGE("eglSwapBuffers error: %d", eglGetError());
         }
 
+        LOGE("current_time_: %lld", current_time_);
         // 编码视频
         encoder_->Encode(current_time_, encode_texture_id_);
         // 回调合成进度给上层
