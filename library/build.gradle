@@ -38,6 +38,10 @@ android {
         }
     }
 
+    lintOptions {
+        abortOnError false
+    }
+
     externalNativeBuild {
         cmake {
             version "3.10.2"
