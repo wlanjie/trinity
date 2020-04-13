@@ -314,6 +314,12 @@ bool PacketPool::DetectDiscardVideoPacket() {
 }
 
 bool PacketPool::PushRecordingVideoPacketToQueue(VideoPacket *videoPacket) {
+    if (videoPacket == nullptr) {
+        pthread_mutex_lock(&video_packet_mutex_);
+        pthread_cond_signal(&video_packet_cond_);
+        pthread_mutex_unlock(&video_packet_mutex_);
+        return false;
+    }
     bool dropFrame = false;
     if (nullptr != video_packet_queue_) {
         while (DetectDiscardVideoPacket()) {

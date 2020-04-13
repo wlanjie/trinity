@@ -74,7 +74,7 @@ int AudioPacketPool::GetAudioPacket(AudioPacket **audioPacket, bool block, bool 
 }
 
 void AudioPacketPool::PushAudioPacketToQueue(AudioPacket *audioPacket) {
-    if (nullptr != audio_packet_queue_) {
+    if (nullptr != audio_packet_queue_ && audioPacket != nullptr) {
         audio_packet_queue_->Put(audioPacket);
     }
     pthread_mutex_lock(&audio_packet_mutex_);

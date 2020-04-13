@@ -175,6 +175,9 @@ void MediaEncodeAdapter::DestroyMediaCodec() {
         delete core_;
         core_ = nullptr;
     }
+    if (packet_pool_ != nullptr) {
+        packet_pool_->PushRecordingVideoPacketToQueue(nullptr);
+    }
     LOGE("after DestroyEncoder");
 }
 

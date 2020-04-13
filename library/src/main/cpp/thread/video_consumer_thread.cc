@@ -78,6 +78,7 @@ void VideoConsumerThread::Start() {
 }
 
 void VideoConsumerThread::StartAsync() {
+    stopping_ = false;
     pthread_create(&thread_, nullptr, StartThread, this);
 }
 
@@ -110,8 +111,9 @@ void VideoConsumerThread::Stop() {
     if (nullptr == audio_packet_pool_) {
         return;
     }
+    LOGE("enter: %s", __func__);
     stopping_ = true;
-    Wait();
+    pthread_join(thread_, nullptr);
     Release();
     video_packet_pool_->AbortRecordingVideoPacketQueue();
     audio_packet_pool_->AbortAudioPacketQueue();
@@ -120,12 +122,14 @@ void VideoConsumerThread::Stop() {
 }
 
 void VideoConsumerThread::HandleRun(void *context) {
+    LOGI("enter: %s", __func__);
     while (!stopping_) {
         int ret = mp4_muxer_->Encode();
         if (ret < 0) {
             break;
         }
     }
+    LOGI("leave: %s", __func__);
 }
 
 void *VideoConsumerThread::StartThread(void *context) {
@@ -133,7 +137,7 @@ void *VideoConsumerThread::StartThread(void *context) {
     thread->running_ = true;
     thread->HandleRun(context);
     thread->running_ = false;
-    return nullptr;
+    pthread_exit(0);
 }
 
 void VideoConsumerThread::Init() {

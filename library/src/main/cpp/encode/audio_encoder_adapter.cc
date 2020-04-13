@@ -99,6 +99,9 @@ void AudioEncoderAdapter::Destroy() {
         return;
     }
     encoding_ = false;
+    if (aac_packet_pool_ != nullptr) {
+        aac_packet_pool_->PushAudioPacketToQueue(nullptr);
+    }
     pcm_packet_pool_->AbortAudioPacketQueue();
     pthread_join(audio_encoder_thread_, nullptr);
     pcm_packet_pool_->DestroyAudioPacketQueue();
