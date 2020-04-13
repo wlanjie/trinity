@@ -632,7 +632,13 @@ void CameraRecord::StartEncoding(const char* path,
     if (use_hard_encode) {
         encoder_ = new MediaEncodeAdapter(vm_, obj_);
     } else {
-        encoder_ = new SoftEncoderAdapter(vertex_coordinate_, texture_coordinate_);
+        GLfloat texture_coordinate[] = {
+                0.0F, 1.0F,
+                1.0F, 1.0F,
+                0.0F, 0.0F,
+                1.0F, 0.0F
+        };
+        encoder_ = new SoftEncoderAdapter(vertex_coordinate_, texture_coordinate);
     }
     encoder_->Init(video_width, video_height, video_bit_rate * 1000, frame_rate);
     PostMessage(new Message(MSG_START_RECORDING));

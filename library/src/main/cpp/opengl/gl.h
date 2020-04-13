@@ -29,6 +29,13 @@ static const float DEFAULT_VERTEX_COORDINATE[] = {
         1.F, 1.F
 };
 
+static const float DEFAULT_TEXTURE_COORDINATE[] = {
+        0.F, 0.F,
+        1.F, 0.F,
+        0.F, 1.F,
+        1.F, 1.F
+};
+
 // 默认带matrix的顶点shader
 static const char* DEFAULT_VERTEX_MATRIX_SHADER =
         "attribute vec4 position;                                                               \n"

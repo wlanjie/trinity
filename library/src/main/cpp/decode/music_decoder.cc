@@ -26,36 +26,29 @@
 
 namespace trinity {
 
-MusicDecoder::MusicDecoder() : seek_req_(false),
-                               seek_resp_(false),
-                               seek_seconds_(0),
-                               actual_seek_position_(0),
-                               format_context_(nullptr),
-                               codec_context_(nullptr),
-                               stream_index_(-1),
-                               time_base_(0),
-                               audio_frame_(nullptr),
-                               path_(nullptr),
-                               seek_success_read_frame_success_(false),
-                               packet_buffer_size_(0),
-                               audio_buffer_(nullptr),
-                               position_(0),
-                               audio_buffer_cursor_(0),
-                               audio_buffer_size_(0),
-                               duration_(0),
-                               need_first_frame_correct_flag_(false),
-                               first_frame_correction_in_secs_(0),
-                               swr_context_(nullptr),
-                               swr_buffer_(nullptr),
-                               swr_buffer_size_(0) {
-    path_ = nullptr;
-    format_context_ = nullptr;
-    codec_context_ = nullptr;
-    audio_frame_ = nullptr;
-    swr_context_ = nullptr;
-    swr_buffer_ = nullptr;
-    seek_req_ = false;
-    seek_resp_ = false;
+MusicDecoder::MusicDecoder()
+    : seek_req_(false)
+    , seek_resp_(false)
+    , seek_seconds_(0)
+    , actual_seek_position_(0)
+    , format_context_(nullptr)
+    , codec_context_(nullptr)
+    , stream_index_(-1)
+    , time_base_(0)
+    , audio_frame_(nullptr)
+    , path_(nullptr)
+    , seek_success_read_frame_success_(false)
+    , packet_buffer_size_(0)
+    , audio_buffer_(nullptr)
+    , position_(0)
+    , audio_buffer_cursor_(0)
+    , audio_buffer_size_(0)
+    , duration_(0)
+    , need_first_frame_correct_flag_(false)
+    , first_frame_correction_in_secs_(0)
+    , swr_context_(nullptr)
+    , swr_buffer_(nullptr)
+    , swr_buffer_size_(0) {
 }
 
 MusicDecoder::~MusicDecoder() {}
@@ -79,7 +72,7 @@ int MusicDecoder::Init(const char *path) {
     first_frame_correction_in_secs_ = 0.0f;
     format_context_ = avformat_alloc_context();
     if (nullptr == path_) {
-        int length = strlen(path);
+        auto length = strlen(path);
         path_ = new char[length + 1];
         memset(path_, 0, length + 1);
         memcpy(path_, path, length + 1);
@@ -105,16 +98,17 @@ int MusicDecoder::Init(const char *path) {
 
     AVStream* audio_stream = format_context_->streams[stream_index_];
     if (audio_stream->time_base.den && audio_stream->time_base.num) {
-        time_base_ = av_q2d(audio_stream->time_base);
+        time_base_ = static_cast<float>(av_q2d(audio_stream->time_base));
     } else if (audio_stream->codec->time_base.den && audio_stream->codec->time_base.num) {
-        time_base_ = av_q2d(audio_stream->codec->time_base);
+        time_base_ = static_cast<float>(av_q2d(audio_stream->codec->time_base));
     }
-    codec_context_ = audio_stream->codec;
-    AVCodec* codec = avcodec_find_decoder(codec_context_->codec_id);
+    AVCodec* codec = avcodec_find_decoder(audio_stream->codecpar->codec_id);
     if (codec == nullptr) {
         Destroy();
         return -1;
     }
+    codec_context_ = avcodec_alloc_context3(codec);
+    avcodec_parameters_from_context(audio_stream->codecpar, codec_context_);
     ret = avcodec_open2(codec_context_, codec, nullptr);
     if (ret < 0) {
         Destroy();
@@ -164,17 +158,16 @@ void MusicDecoder::SeekFrame() {
         // TODO:这里GT的测试样本会差距25ms 不会累加
         currentPosition = 0.0;
     }
-    int read_frame_code = -1;
     while (true) {
         av_init_packet(&packet_);
-        read_frame_code = av_read_frame(format_context_, &packet_);
+        auto read_frame_code = av_read_frame(format_context_, &packet_);
         if (read_frame_code >= 0) {
             currentPosition += frameDuration;
             if (currentPosition >= targetPosition) {
                 break;
             }
         }
-        av_free_packet(&packet_);
+        av_packet_unref(&packet_);
     }
     seek_resp_ = true;
     seek_req_ = false;
@@ -257,7 +250,8 @@ int MusicDecoder::ReadSamples(short *samples, int size) {
         if (audio_buffer_cursor_ < audio_buffer_size_) {
             int audioBufferDataSize = audio_buffer_size_ - audio_buffer_cursor_;
             int copySize = MIN(size, audioBufferDataSize);
-            memcpy(samples + (sampleSize - size), audio_buffer_ + audio_buffer_cursor_, copySize * 2);
+            memcpy(samples + (sampleSize - size), audio_buffer_ + audio_buffer_cursor_,
+                   static_cast<size_t>(copySize * 2));
             size -= copySize;
             audio_buffer_cursor_ += copySize;
         } else {
@@ -347,7 +341,7 @@ int MusicDecoder::ReadFrame() {
             break;
         }
     }
-    av_free_packet(&packet_);
+    av_packet_unref(&packet_);
     return ret;
 }
 

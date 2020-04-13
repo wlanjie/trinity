@@ -225,7 +225,7 @@ void SoftEncoderAdapter::EncodeTexture(GLuint texture_id, int time) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     // TODO 这里需要设置一个buffer池
     auto *packetBuffer = new uint8_t[pixel_size_];
-    encode_render_->CopyYUV420Image(texture_id, packetBuffer, video_width_, video_height_);
+    encode_render_->CopyYUV420Image(output_texture_id_, packetBuffer, video_width_, video_height_);
     auto *videoPacket = new VideoPacket();
     videoPacket->buffer = packetBuffer;
     videoPacket->size = pixel_size_;

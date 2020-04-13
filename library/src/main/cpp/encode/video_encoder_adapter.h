@@ -32,7 +32,7 @@ typedef enum {
     kEncodeFrame,
     kEndOfStream,
     kDestroyEncoder,
-};
+} EncoderMessage;
 
 class VideoEncoderAdapter {
  public:
