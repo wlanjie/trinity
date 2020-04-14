@@ -52,7 +52,7 @@ int AudioEncoder::Init(int bit_rate, int channels, int sample_rate, const char *
     return 0;
 }
 
-int AudioEncoder::Encode(AudioPacket **packet) {
+int AudioEncoder::Encode(AudioPacketPool* audio_packet_pool) {
     double presentation_time_mills = -1;
     int sample_size = pcm_frame_callback_(reinterpret_cast<int16_t*>(audio_samples_data_[0]),
             audio_nb_frames_, channels_, &presentation_time_mills, pcm_frame_context_);
@@ -64,32 +64,34 @@ int AudioEncoder::Encode(AudioPacket **packet) {
     int frame_num = sample_size / channels_;
     int audio_sample_size = frame_num * channels_ * sizeof(short);
     AVRational time_base = { 1, sample_rate_ };
-    AVPacket pkt = { 0 };
-    av_init_packet(&pkt);
-    pkt.duration = AV_NOPTS_VALUE;
-    pkt.pts = pkt.dts = 0;
     encode_frame_->nb_samples = frame_num;
     avcodec_fill_audio_frame(encode_frame_, codec_context_->channels,
         codec_context_->sample_fmt, audio_samples_data_[0], audio_sample_size, 0);
     encode_frame_->pts = audio_next_pts_;
     audio_next_pts_ += encode_frame_->nb_samples;
-    int got_packet;
-    int ret = avcodec_encode_audio2(codec_context_, &pkt, encode_frame_, &got_packet);
-    if (ret < 0 || !got_packet) {
-        LOGE("error encode audio frame: %s", av_err2str(ret));
-        av_packet_unref(&pkt);
+    int ret = avcodec_send_frame(codec_context_, encode_frame_);
+    if (ret < 0) {
+        LOGE("audio send frame error: %s", av_err2str(ret));
         return ret;
     }
-    if (got_packet) {
-        pkt.pts = av_rescale_q(encode_frame_->pts, codec_context_->time_base, time_base);
-        (*packet) = new AudioPacket();
-        (*packet)->data = new uint8_t[pkt.size];
-        memcpy((*packet)->data, pkt.data, pkt.size);
-        (*packet)->size = pkt.size;
-        (*packet)->position = static_cast<float>((pkt.pts * av_q2d(time_base) * 1000.0f));
+    while (ret >= 0) {
+        AVPacket pkt = { 0 };
+        av_init_packet(&pkt);
+        pkt.duration = AV_NOPTS_VALUE;
+        pkt.pts = pkt.dts = 0;
+        ret = avcodec_receive_packet(codec_context_, &pkt);
+        if (ret >= 0) {
+            pkt.pts = av_rescale_q(encode_frame_->pts, codec_context_->time_base, time_base);
+            auto packet = new AudioPacket();
+            packet->data = new uint8_t[pkt.size];
+            memcpy(packet->data, pkt.data, static_cast<size_t>(pkt.size));
+            packet->size = pkt.size;
+            packet->position = static_cast<float>((pkt.pts * av_q2d(time_base) * 1000.0f));
+            audio_packet_pool->PushAudioPacketToQueue(packet);
+        }
+        av_packet_unref(&pkt);
     }
-    av_packet_unref(&pkt);
-    return ret;
+    return 0;
 }
 
 void AudioEncoder::Destroy() {
@@ -124,7 +126,7 @@ int AudioEncoder::AllocFrame() {
       * 但是在我们后续的sox处理的时候就会有问题，这里一定要注意注意 所以改成了10240
       */
 
-    audio_nb_frames_ = codec_context_->codec->capabilities & CODEC_CAP_VARIABLE_FRAME_SIZE
+    audio_nb_frames_ = (codec_context_->codec->capabilities & CODEC_CAP_VARIABLE_FRAME_SIZE)
                         ? 10240 : codec_context_->frame_size;
     int src_sample_line_size;
     int ret = av_samples_alloc_array_and_samples(&audio_samples_data_, &src_sample_line_size,

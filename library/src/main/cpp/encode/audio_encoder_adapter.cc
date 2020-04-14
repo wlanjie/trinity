@@ -138,11 +138,7 @@ void AudioEncoderAdapter::StartEncode() {
     audio_encoder_->Init(audio_bit_rate_, audio_channels_,
             audio_sample_rate_, audio_codec_name_, PCMFrameCallback, this);
     while (encoding_) {
-        AudioPacket* packet = nullptr;
-        int ret = audio_encoder_->Encode(&packet);
-        if (ret >= 0 && nullptr != packet) {
-            aac_packet_pool_->PushAudioPacketToQueue(packet);
-        }
+        audio_encoder_->Encode(aac_packet_pool_);
     }
 }
 
@@ -150,7 +146,7 @@ int AudioEncoderAdapter::CopyToSamples(int16_t *samples, int sample_cursor, int 
                                        double *presentation_time_mills) {
     if (0 == sample_cursor) {
         double packet_buffer_cursor_duration = static_cast<double>(packet_buffer_cursor_)
-            * 1000.0f / static_cast<double>((audio_sample_rate_ * 2.0));
+                                   * 1000.0 / (audio_sample_rate_ * 2.0);
         (*presentation_time_mills) = packet_buffer_presentation_time_mills_ + packet_buffer_cursor_duration;
     }
     memcpy(samples + sample_cursor, packet_buffer_ + packet_buffer_cursor_, buffer_size * sizeof(short));

@@ -35,6 +35,7 @@ Mp4Muxer::Mp4Muxer()
       video_stream_(nullptr),
       audio_stream_(nullptr),
       bit_stream_filter_context_(nullptr),
+//      bit_stream_filter_(nullptr),
       duration_(0),
       last_audio_packet_presentation_time_mills_(0),
       last_video_presentation_time_ms_(0),
@@ -265,8 +266,8 @@ int Mp4Muxer::WriteAudioFrame(AVFormatContext *oc, AVStream *st, bool wait) {
     } else {
         LOGE("av_bitstream_filter_filter: %s", av_err2str(ret));
     }
-    av_free_packet(&new_packet);
-    av_free_packet(&pkt);
+    av_packet_unref(&new_packet);
+    av_packet_unref(&pkt);
     delete audio_packet;
     return ret;
 }
@@ -277,8 +278,9 @@ uint32_t Mp4Muxer::FindStartCode(uint8_t *in_buffer, uint32_t in_ui32_buffer_siz
     const uint8_t * ptr = in_buffer;
     while (ptr < in_buffer + in_ui32_buffer_size) {
         ui32Code = *ptr++ + (ui32Code << 8);
-        if (is_start_code(ui32Code))
+        if (is_start_code(ui32Code)) {
             break;
+        }
     }
     out_ui32_processed_bytes = (uint32_t)(ptr - in_buffer);
     return ui32Code;
@@ -303,7 +305,7 @@ void Mp4Muxer::ParseH264SequenceHeader(uint8_t *in_buffer, uint32_t in_ui32_size
             break;
         }
 
-        uint8_t val = (*pBuffer & 0x1f);
+        uint8_t val = static_cast<uint8_t>(*pBuffer & 0x1f);
         // idr
         if (val == 5) {
             idr = pps + ui32ProcessedBytes - 4;
@@ -328,7 +330,7 @@ int Mp4Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st, bool wait) {
     AVCodecContext *c = st->codec;
 
     VideoPacket *h264Packet = nullptr;
-    ret = video_packet_callback_(&h264Packet, video_packet_context_, wait);
+    video_packet_callback_(&h264Packet, video_packet_context_, wait);
     if (h264Packet == nullptr) {
         LOGE("fill_h264_packet_callback_ Get null packet_");
         return VIDEO_QUEUE_ABORT_ERR_CODE;
@@ -339,7 +341,8 @@ int Mp4Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st, bool wait) {
     AVPacket pkt = { 0 };
     av_init_packet(&pkt);
     pkt.stream_index = st->index;
-    int64_t cal_pts = last_video_presentation_time_ms_ / 1000.0f / av_q2d(video_stream_->time_base);
+    int64_t cal_pts = static_cast<int64_t>(last_video_presentation_time_ms_ / 1000.0f /
+                                           av_q2d(video_stream_->time_base));
     int64_t pts = h264Packet->pts == PTS_PARAM_UN_SETTIED_FLAG ? cal_pts : h264Packet->pts;
     int64_t dts = h264Packet->dts == DTS_PARAM_UN_SETTIED_FLAG ? pts : h264Packet->dts == DTS_PARAM_NOT_A_NUM_FLAG ? AV_NOPTS_VALUE : h264Packet->dts;
     int nalu_type = (outputData[4] & 0x1F);
@@ -347,7 +350,7 @@ int Mp4Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st, bool wait) {
         // 我们这里要求sps和pps一块拼接起来构造成AVPacket传过来
         header_size_ = bufferSize;
         header_data_ = new uint8_t[header_size_];
-        memcpy(header_data_, outputData, bufferSize);
+        memcpy(header_data_, outputData, static_cast<size_t>(bufferSize));
 
         uint8_t* spsFrame = 0;
         uint8_t* ppsFrame = 0;
@@ -355,12 +358,12 @@ int Mp4Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st, bool wait) {
         int spsFrameLen = 0;
         int ppsFrameLen = 0;
 
-        ParseH264SequenceHeader(header_data_, header_size_, &spsFrame, spsFrameLen,
+        ParseH264SequenceHeader(header_data_, static_cast<uint32_t>(header_size_), &spsFrame, spsFrameLen,
                                 &ppsFrame, ppsFrameLen);
 
         // Extradata contains PPS & SPS for AVCC format
         int extradata_len = 8 + spsFrameLen - 4 + 1 + 2 + ppsFrameLen - 4;
-        c->extradata = reinterpret_cast<uint8_t*>(av_mallocz(extradata_len));
+        c->extradata = reinterpret_cast<uint8_t*>(av_mallocz(static_cast<size_t>(extradata_len)));
         c->extradata_size = extradata_len;
         c->extradata[0] = 0x01;
         c->extradata[1] = spsFrame[4 + 1];
@@ -369,17 +372,19 @@ int Mp4Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st, bool wait) {
         c->extradata[4] = 0xFC | 3;
         c->extradata[5] = 0xE0 | 1;
         int tmp = spsFrameLen - 4;
-        c->extradata[6] = (tmp >> 8) & 0x00ff;
-        c->extradata[7] = tmp & 0x00ff;
+        c->extradata[6] = static_cast<uint8_t>((tmp >> 8) & 0x00ff);
+        c->extradata[7] = static_cast<uint8_t>(tmp & 0x00ff);
         int i = 0;
-        for (i = 0; i < tmp; i++)
+        for (i = 0; i < tmp; i++) {
             c->extradata[8 + i] = spsFrame[4 + i];
+        }
         c->extradata[8 + tmp] = 0x01;
         int tmp2 = ppsFrameLen - 4;
-        c->extradata[8 + tmp + 1] = (tmp2 >> 8) & 0x00ff;
-        c->extradata[8 + tmp + 2] = tmp2 & 0x00ff;
-        for (i = 0; i < tmp2; i++)
+        c->extradata[8 + tmp + 1] = static_cast<uint8_t>((tmp2 >> 8) & 0x00ff);
+        c->extradata[8 + tmp + 2] = static_cast<uint8_t>(tmp2 & 0x00ff);
+        for (i = 0; i < tmp2; i++) {
             c->extradata[8 + tmp + 3 + i] = ppsFrame[4 + i];
+        }
 
         ret = avformat_write_header(oc, nullptr);
         if (ret < 0) {
@@ -395,10 +400,10 @@ int Mp4Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st, bool wait) {
             if (pkt.data[0] == 0x00 && pkt.data[1] == 0x00 &&
                 pkt.data[2] == 0x00 && pkt.data[3] == 0x01) {
                 bufferSize -= 4;
-                pkt.data[0] = ((bufferSize) >> 24) & 0x00ff;
-                pkt.data[1] = ((bufferSize) >> 16) & 0x00ff;
-                pkt.data[2] = ((bufferSize) >> 8) & 0x00ff;
-                pkt.data[3] = ((bufferSize)) & 0x00ff;
+                pkt.data[0] = static_cast<uint8_t>(((bufferSize) >> 24) & 0x00ff);
+                pkt.data[1] = static_cast<uint8_t>(((bufferSize) >> 16) & 0x00ff);
+                pkt.data[2] = static_cast<uint8_t>(((bufferSize) >> 8) & 0x00ff);
+                pkt.data[3] = static_cast<uint8_t>(((bufferSize)) & 0x00ff);
             }
 
             pkt.pts = pts;
@@ -412,10 +417,10 @@ int Mp4Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st, bool wait) {
             if (pkt.data[0] == 0x00 && pkt.data[1] == 0x00 &&
                 pkt.data[2] == 0x00 && pkt.data[3] == 0x01) {
                 bufferSize -= 4;
-                pkt.data[0] = ((bufferSize) >> 24) & 0x00ff;
-                pkt.data[1] = ((bufferSize) >> 16) & 0x00ff;
-                pkt.data[2] = ((bufferSize) >> 8) & 0x00ff;
-                pkt.data[3] = ((bufferSize)) & 0x00ff;
+                pkt.data[0] = static_cast<uint8_t>(((bufferSize) >> 24) & 0x00ff);
+                pkt.data[1] = static_cast<uint8_t>(((bufferSize) >> 16) & 0x00ff);
+                pkt.data[2] = static_cast<uint8_t>(((bufferSize) >> 8) & 0x00ff);
+                pkt.data[3] = static_cast<uint8_t>(((bufferSize)) & 0x00ff);
             }
 
             pkt.pts = pts;
@@ -432,7 +437,7 @@ int Mp4Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st, bool wait) {
             ret = 0;
         }
     }
-    av_free_packet(&pkt);
+    av_packet_unref(&pkt);
     delete h264Packet;
     return ret;
 }
@@ -509,9 +514,12 @@ int Mp4Muxer::BuildAudioStream(char *audio_codec_name) {
         // AAC LC by default
         unsigned int object_type = 2;
         char dsi[2];
-        dsi[0] = (object_type << 3) | (GetSampleRateIndex(context->sample_rate) >> 1);
-        dsi[1] = ((GetSampleRateIndex(context->sample_rate) & 1) << 7) | (context->channels << 3);
+        dsi[0] = static_cast<char>((object_type << 3) |
+                                   (GetSampleRateIndex(context->sample_rate) >> 1));
+        dsi[1] = static_cast<char>(((GetSampleRateIndex(context->sample_rate) & 1) << 7) |
+                                   (context->channels << 3));
         memcpy(context->extradata, dsi, 2);
+//        bit_stream_filter_ = av_bsf_get_by_name("aac_adtstoasc");
         bit_stream_filter_context_ = av_bitstream_filter_init("aac_adtstoasc");
     }
     return 0;

@@ -89,6 +89,7 @@ class Mp4Muxer {
     AVStream* video_stream_;
     AVStream* audio_stream_;
     AVBitStreamFilterContext* bit_stream_filter_context_;
+//    const AVBitStreamFilter* bit_stream_filter_;
     double duration_;
     double last_audio_packet_presentation_time_mills_;
     int last_video_presentation_time_ms_;

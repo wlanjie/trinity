@@ -56,23 +56,28 @@ int VideoX264Encoder::Encode(VideoPacket *yuy2VideoPacket) {
     if (nullptr == yuy2_picture_buf_) {
         return -1;
     }
-    memcpy(yuy2_picture_buf_, yuy2VideoPacket->buffer, yuy2VideoPacket->size);
+    memcpy(yuy2_picture_buf_, yuy2VideoPacket->buffer, static_cast<size_t>(yuy2VideoPacket->size));
     frame_->data[0] = yuy2VideoPacket->buffer;
     frame_->data[1] = yuy2VideoPacket->buffer + frame_->width * frame_->height;
     frame_->data[2] = yuy2VideoPacket->buffer + frame_->width * frame_->height +
                       frame_->width * frame_->height / 4;
-    int presentationTimeMills = yuy2VideoPacket->timeMills;
+    int time_mills = yuy2VideoPacket->timeMills;
     AVRational time_base = {1, 1000};
-    int64_t pts = (int64_t) (presentationTimeMills / 1000.0f / av_q2d(time_base));
+    int64_t pts = (int64_t) (time_mills / 1000.0f / av_q2d(time_base));
     frame_->pts = pts;
-    AVPacket pkt = {0};
-    int got_packet;
-    av_init_packet(&pkt);
-    int ret = avcodec_encode_video2(codec_context_, &pkt, frame_, &got_packet);
+    int ret = avcodec_send_frame(codec_context_, frame_);
     if (ret < 0) {
-        LOGE("Error encoding video frame_: %s\n", av_err2str(ret));
-        ret = -1;
-    } else if (got_packet && pkt.size) {
+        LOGE("x264 send frame error: %s", av_err2str(ret));
+        return ret;
+    }
+    while (true) {
+        AVPacket pkt = {0};
+        av_init_packet(&pkt);
+        ret = avcodec_receive_packet(codec_context_, &pkt);
+        if (ret < 0) {
+            av_packet_unref(&pkt);
+            break;
+        }
         int presentationTimeMills = static_cast<int>(pkt.pts * av_q2d(time_base) * 1000.0f);
         int nalu_type = (pkt.data[4] & 0x1F);
         bool isKeyFrame = false;
@@ -86,32 +91,31 @@ int VideoX264Encoder::Encode(VideoPacket *yuy2VideoPacket) {
             isKeyFrame = true;
             // 分离出sps pps
             std::vector<NALUnit *> *units = new std::vector<NALUnit *>();
-            parseH264SpsPps(pkt.data, pkt.size, units);
+            parseH264SpsPps(pkt.data, static_cast<uint32_t>(pkt.size), units);
             if (sps_unwrite_flag_) {
-                NALUnit *spsUnit = units->at(0);
-                uint8_t *spsFrame = spsUnit->naluBody;
-                int spsFrameLen = spsUnit->naluSize;
-                NALUnit *ppsUnit = units->at(1);
-                uint8_t *ppsFrame = ppsUnit->naluBody;
-                int ppsFrameLen = ppsUnit->naluSize;
+                NALUnit *sps_unit = units->at(0);
+                uint8_t *sps_frame = sps_unit->naluBody;
+                int sps_frame_len = sps_unit->naluSize;
+                NALUnit *pps_unit = units->at(1);
+                uint8_t *pps_frame = pps_unit->naluBody;
+                int pps_frame_len = pps_unit->naluSize;
                 // 将sps、pps写出去
-                int metaBuffertSize = headerLength + spsFrameLen + headerLength + ppsFrameLen;
-                uint8_t *metaBuffer = new uint8_t[metaBuffertSize];
-                memcpy(metaBuffer, bytesHeader, headerLength);
-                memcpy(metaBuffer + headerLength, spsFrame, spsFrameLen);
-                memcpy(metaBuffer + headerLength + spsFrameLen, bytesHeader, headerLength);
-                memcpy(metaBuffer + headerLength + spsFrameLen + headerLength, ppsFrame,
-                       ppsFrameLen);
-                PushToQueue(metaBuffer, metaBuffertSize, presentationTimeMills, pkt.pts, pkt.dts);
+                auto meta_buffer_size = headerLength + sps_frame_len + headerLength + pps_frame_len;
+                uint8_t *meta_buffer = new uint8_t[meta_buffer_size];
+                memcpy(meta_buffer, bytesHeader, headerLength);
+                memcpy(meta_buffer + headerLength, sps_frame, static_cast<size_t>(sps_frame_len));
+                memcpy(meta_buffer + headerLength + sps_frame_len, bytesHeader, headerLength);
+                memcpy(meta_buffer + headerLength + sps_frame_len + headerLength, pps_frame,
+                        static_cast<size_t>(pps_frame_len));
+                PushToQueue(meta_buffer, static_cast<int>(meta_buffer_size), presentationTimeMills, pkt.pts, pkt.dts);
                 sps_unwrite_flag_ = false;
             }
             std::vector<NALUnit *>::iterator i;
-            bool isFirstIDRFrame = true;
             for (i = units->begin(); i != units->end(); ++i) {
                 NALUnit *unit = *i;
-                int naluType = unit->naluType;
-                if (H264_NALU_TYPE_SEQUENCE_PARAMETER_SET != naluType &&
-                    H264_NALU_TYPE_PICTURE_PARAMETER_SET != naluType) {
+                nalu_type = unit->naluType;
+                if (H264_NALU_TYPE_SEQUENCE_PARAMETER_SET != nalu_type &&
+                    H264_NALU_TYPE_PICTURE_PARAMETER_SET != nalu_type) {
                     int idrFrameLen = unit->naluSize;
                     frameBufferSize += headerLength;
                     frameBufferSize += idrFrameLen;
@@ -121,24 +125,25 @@ int VideoX264Encoder::Encode(VideoPacket *yuy2VideoPacket) {
             int frameBufferCursor = 0;
             for (i = units->begin(); i != units->end(); ++i) {
                 NALUnit *unit = *i;
-                int naluType = unit->naluType;
-                if (H264_NALU_TYPE_SEQUENCE_PARAMETER_SET != naluType &&
-                    H264_NALU_TYPE_PICTURE_PARAMETER_SET != naluType) {
+                nalu_type = unit->naluType;
+                if (H264_NALU_TYPE_SEQUENCE_PARAMETER_SET != nalu_type &&
+                    H264_NALU_TYPE_PICTURE_PARAMETER_SET != nalu_type) {
                     uint8_t *idrFrame = unit->naluBody;
                     int idrFrameLen = unit->naluSize;
                     //将关键帧分离出来
                     memcpy(frameBuffer + frameBufferCursor, bytesHeader, headerLength);
                     frameBufferCursor += headerLength;
-                    memcpy(frameBuffer + frameBufferCursor, idrFrame, idrFrameLen);
+                    memcpy(frameBuffer + frameBufferCursor, idrFrame,
+                           static_cast<size_t>(idrFrameLen));
                     frameBufferCursor += idrFrameLen;
                     frameBuffer[frameBufferCursor - idrFrameLen - headerLength] =
-                            ((idrFrameLen) >> 24) & 0x00ff;
+                            static_cast<uint8_t>(((idrFrameLen) >> 24) & 0x00ff);
                     frameBuffer[frameBufferCursor - idrFrameLen - headerLength + 1] =
-                            ((idrFrameLen) >> 16) & 0x00ff;
+                            static_cast<uint8_t>(((idrFrameLen) >> 16) & 0x00ff);
                     frameBuffer[frameBufferCursor - idrFrameLen - headerLength + 2] =
-                            ((idrFrameLen) >> 8) & 0x00ff;
+                            static_cast<uint8_t>(((idrFrameLen) >> 8) & 0x00ff);
                     frameBuffer[frameBufferCursor - idrFrameLen - headerLength + 3] =
-                            ((idrFrameLen)) & 0x00ff;
+                            static_cast<uint8_t>(((idrFrameLen)) & 0x00ff);
                 }
                 delete unit;
             }
@@ -147,7 +152,7 @@ int VideoX264Encoder::Encode(VideoPacket *yuy2VideoPacket) {
             //说明是非关键帧, 从Packet里面分离出来
             isKeyFrame = false;
             std::vector<NALUnit *> *units = new std::vector<NALUnit *>();
-            parseH264SpsPps(pkt.data, pkt.size, units);
+            parseH264SpsPps(pkt.data, static_cast<uint32_t>(pkt.size), units);
             std::vector<NALUnit *>::iterator i;
             for (i = units->begin(); i != units->end(); ++i) {
                 NALUnit *unit = *i;
@@ -163,26 +168,24 @@ int VideoX264Encoder::Encode(VideoPacket *yuy2VideoPacket) {
                 int nonIDRFrameLen = unit->naluSize;
                 memcpy(frameBuffer + frameBufferCursor, bytesHeader, headerLength);
                 frameBufferCursor += headerLength;
-                memcpy(frameBuffer + frameBufferCursor, nonIDRFrame, nonIDRFrameLen);
+                memcpy(frameBuffer + frameBufferCursor, nonIDRFrame,
+                       static_cast<size_t>(nonIDRFrameLen));
                 frameBufferCursor += nonIDRFrameLen;
                 frameBuffer[frameBufferCursor - nonIDRFrameLen - headerLength] =
-                        ((nonIDRFrameLen) >> 24) & 0x00ff;
+                        static_cast<uint8_t>(((nonIDRFrameLen) >> 24) & 0x00ff);
                 frameBuffer[frameBufferCursor - nonIDRFrameLen - headerLength + 1] =
-                        ((nonIDRFrameLen) >> 16) & 0x00ff;
+                        static_cast<uint8_t>(((nonIDRFrameLen) >> 16) & 0x00ff);
                 frameBuffer[frameBufferCursor - nonIDRFrameLen - headerLength + 2] =
-                        ((nonIDRFrameLen) >> 8) & 0x00ff;
+                        static_cast<uint8_t>(((nonIDRFrameLen) >> 8) & 0x00ff);
                 frameBuffer[frameBufferCursor - nonIDRFrameLen - headerLength + 3] =
-                        ((nonIDRFrameLen)) & 0x00ff;
+                        static_cast<uint8_t>(((nonIDRFrameLen)) & 0x00ff);
                 delete unit;
             }
             delete units;
         }
         PushToQueue(frameBuffer, frameBufferSize, presentationTimeMills, pkt.pts, pkt.dts);
-    } else {
-        LOGI("No Output Frame...");
     }
-    av_free_packet(&pkt);
-    return ret;
+    return 0;
 }
 
 void
@@ -244,7 +247,7 @@ int VideoX264Encoder::AllocVideoStream(int width, int height, int videoBitRate, 
     codec_context_->width = width;
     codec_context_->height = height;
     codec_context_->time_base.num = 1;
-    codec_context_->time_base.den = frameRate;
+    codec_context_->time_base.den = static_cast<int>(frameRate);
     codec_context_->gop_size = static_cast<int>(frameRate);
     codec_context_->max_b_frames = 0;
 
@@ -285,19 +288,18 @@ int VideoX264Encoder::AllocVideoStream(int width, int height, int videoBitRate, 
 void VideoX264Encoder::AllocAVFrame() {
     // target yuv420p buffer_
     frame_ = av_frame_alloc();
-    int pictureInYUV420PSize = avpicture_get_size(codec_context_->pix_fmt, codec_context_->width,
-                                                  codec_context_->height);
-    picture_buf_ = reinterpret_cast<uint8_t *>(av_malloc(pictureInYUV420PSize));
-    avpicture_fill(reinterpret_cast<AVPicture *>(frame_), picture_buf_, codec_context_->pix_fmt,
-                   codec_context_->width,
-                   codec_context_->height);
+    int yuv_420p_size = av_image_get_buffer_size(codec_context_->pix_fmt, codec_context_->width,
+                                                 codec_context_->height, 1);
+    picture_buf_ = reinterpret_cast<uint8_t *>(av_malloc(static_cast<size_t>(yuv_420p_size)));
+    av_image_fill_arrays(frame_->data, frame_->linesize, picture_buf_, codec_context_->pix_fmt,
+            codec_context_->width, codec_context_->height, 1);
     // origin yuy2 buffer_
     video_yuy2_frame_ = av_frame_alloc();
-    int pictureInYUY2Size = avpicture_get_size(ORIGIN_COLOR_FORMAT, codec_context_->width,
-                                               codec_context_->height);
-    yuy2_picture_buf_ = reinterpret_cast<uint8_t *>(av_malloc(pictureInYUY2Size));
-    avpicture_fill(reinterpret_cast<AVPicture *>(video_yuy2_frame_), yuy2_picture_buf_,
-                   ORIGIN_COLOR_FORMAT, codec_context_->width, codec_context_->height);
+    int yuy_size = av_image_get_buffer_size(ORIGIN_COLOR_FORMAT, codec_context_->width,
+                                            codec_context_->height, 1);
+    yuy2_picture_buf_ = reinterpret_cast<uint8_t *>(av_malloc(static_cast<size_t>(yuy_size)));
+    av_image_fill_arrays(video_yuy2_frame_->data, video_yuy2_frame_->linesize, yuy2_picture_buf_,
+            ORIGIN_COLOR_FORMAT, codec_context_->width, codec_context_->height, 1);
 }
 
 }  // namespace trinity

@@ -25,6 +25,7 @@
 
 extern "C" {
 #include "libavutil/opt.h"
+#include "libavutil/imgutils.h"
 #include "libavcodec/avcodec.h"
 }
 

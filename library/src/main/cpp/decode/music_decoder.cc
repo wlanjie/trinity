@@ -97,32 +97,37 @@ int MusicDecoder::Init(const char *path) {
     }
 
     AVStream* audio_stream = format_context_->streams[stream_index_];
-    if (audio_stream->time_base.den && audio_stream->time_base.num) {
-        time_base_ = static_cast<float>(av_q2d(audio_stream->time_base));
-    } else if (audio_stream->codec->time_base.den && audio_stream->codec->time_base.num) {
-        time_base_ = static_cast<float>(av_q2d(audio_stream->codec->time_base));
-    }
     AVCodec* codec = avcodec_find_decoder(audio_stream->codecpar->codec_id);
     if (codec == nullptr) {
         Destroy();
         return -1;
     }
     codec_context_ = avcodec_alloc_context3(codec);
-    avcodec_parameters_from_context(audio_stream->codecpar, codec_context_);
+    avcodec_parameters_to_context(codec_context_, audio_stream->codecpar);
+    if (audio_stream->time_base.den && audio_stream->time_base.num) {
+        time_base_ = static_cast<float>(av_q2d(audio_stream->time_base));
+    } else if (codec_context_->time_base.den && codec_context_->time_base.num) {
+        time_base_ = static_cast<float>(av_q2d(codec_context_->time_base));
+    }
     ret = avcodec_open2(codec_context_, codec, nullptr);
     if (ret < 0) {
         Destroy();
         return -1;
     }
     if (!AudioCodecIsSupported()) {
-        swr_context_ = swr_alloc_set_opts(NULL, av_get_default_channel_layout(OUT_PUT_CHANNELS), AV_SAMPLE_FMT_S16, codec_context_->sample_rate,
-                                          av_get_default_channel_layout(codec_context_->channels), codec_context_->sample_fmt, codec_context_->sample_rate, 0, NULL);
-        if (!swr_context_ || swr_init(swr_context_)) {
-            if (swr_context_)
-                swr_free(&swr_context_);
+        swr_context_ = swr_alloc_set_opts(nullptr, av_get_default_channel_layout(OUT_PUT_CHANNELS), AV_SAMPLE_FMT_S16,
+                codec_context_->sample_rate, codec_context_->channel_layout, codec_context_->sample_fmt, codec_context_->sample_rate, 0, nullptr);
+        if (nullptr == swr_context_) {
             avcodec_close(codec_context_);
             LOGE("InitMessageQueue resampler_ failed...");
             return -1;
+        }
+        ret = swr_init(swr_context_);
+        if (ret != 0) {
+            swr_free(&swr_context_);
+            avcodec_close(codec_context_);
+            LOGE("swr_init error: %s", av_err2str(ret));
+            return ret;
         }
     }
     audio_frame_ = av_frame_alloc();
@@ -272,69 +277,17 @@ int MusicDecoder::ReadFrame() {
         this->SeekFrame();
     }
     av_init_packet(&packet_);
-    int got_frame = 0;
     int ret = 0;
     while (true) {
         int read_frame_code = av_read_frame(format_context_, &packet_);
         if (read_frame_code >= 0) {
             if (packet_.stream_index == stream_index_) {
-                int len = avcodec_decode_audio4(codec_context_, audio_frame_,
-                                                &got_frame, &packet_);
-                if (len < 0) {
-                    LOGI("Decode audio error, skip packet_");
+                ret = avcodec_send_packet(codec_context_, &packet_);
+                if (ret < 0) {
+                    continue;
                 }
-                if (got_frame) {
-                    int numChannels = OUT_PUT_CHANNELS;
-                    int numFrames = 0;
-                    void * audioData;
-                    if (swr_context_) {
-                        const int ratio = 2;
-                        const int bufSize = av_samples_get_buffer_size(NULL,
-                                                                       numChannels, audio_frame_->nb_samples * ratio,
-                                                                       AV_SAMPLE_FMT_S16, 1);
-                        if (!swr_buffer_ || swr_buffer_size_ < bufSize) {
-                            swr_buffer_size_ = bufSize;
-                            // TODO error
-                            swr_buffer_ = realloc(swr_buffer_, swr_buffer_size_);
-                        }
-                        uint8_t *outbuf[2] = {reinterpret_cast<uint8_t*>(swr_buffer_), NULL };
-                        numFrames = swr_convert(swr_context_, outbuf,
-                                                audio_frame_->nb_samples * ratio,
-                                                (const uint8_t **) audio_frame_->data,
-                                                audio_frame_->nb_samples);
-                        if (numFrames < 0) {
-                            LOGE("fail resample audio");
-                            ret = -1;
-                            break;
-                        }
-                        audioData = swr_buffer_;
-                    } else {
-                        if (codec_context_->sample_fmt != AV_SAMPLE_FMT_S16) {
-                            LOGE("bucheck, audio format is invalid");
-                            ret = -1;
-                            break;
-                        }
-                        audioData = audio_frame_->data[0];
-                        numFrames = audio_frame_->nb_samples;
-                    }
-                    if (need_first_frame_correct_flag_ && position_ >= 0) {
-                        float expectedPosition = position_ + duration_;
-                        float actualPosition = av_frame_get_best_effort_timestamp(audio_frame_) * time_base_;
-                        first_frame_correction_in_secs_ = actualPosition - expectedPosition;
-                        need_first_frame_correct_flag_ = false;
-                    }
-                    duration_ = av_frame_get_pkt_duration(audio_frame_) * time_base_;
-                    position_ = av_frame_get_best_effort_timestamp(audio_frame_) * time_base_ - first_frame_correction_in_secs_;
-                    if (!seek_success_read_frame_success_) {
-                        LOGI("position_ is %.6f", position_);
-                        actual_seek_position_ = position_;
-                        seek_success_read_frame_success_ = true;
-                    }
-                    audio_buffer_size_ = numFrames * numChannels;
-                    audio_buffer_ = reinterpret_cast<short*>(audioData);
-                    audio_buffer_cursor_ = 0;
-                    break;
-                }
+                ReceiveFrame();
+                break;
             }
         } else {
             ret = -1;
@@ -345,7 +298,64 @@ int MusicDecoder::ReadFrame() {
     return ret;
 }
 
-bool MusicDecoder::AudioCodecIsSupported() {
+int MusicDecoder::ReceiveFrame() {
+    while (true) {
+        int ret = avcodec_receive_frame(codec_context_, audio_frame_);
+        if (ret < 0) {
+            break;
+        }
+        int numChannels = OUT_PUT_CHANNELS;
+        int numFrames = 0;
+        void * audioData;
+        if (swr_context_) {
+            const int ratio = 2;
+            const int bufSize = av_samples_get_buffer_size(NULL,
+                                                           numChannels, audio_frame_->nb_samples * ratio,
+                                                           AV_SAMPLE_FMT_S16, 1);
+            if (!swr_buffer_ || swr_buffer_size_ < bufSize) {
+                swr_buffer_size_ = bufSize;
+                // TODO error
+                swr_buffer_ = realloc(swr_buffer_, swr_buffer_size_);
+            }
+            uint8_t *outbuf[2] = {reinterpret_cast<uint8_t*>(swr_buffer_), NULL };
+            numFrames = swr_convert(swr_context_, outbuf,
+                                    audio_frame_->nb_samples * ratio,
+                                    (const uint8_t **) audio_frame_->data,
+                                    audio_frame_->nb_samples);
+            if (numFrames < 0) {
+                LOGE("fail resample audio");
+                return -1;
+            }
+            audioData = swr_buffer_;
+        } else {
+            if (codec_context_->sample_fmt != AV_SAMPLE_FMT_S16) {
+                LOGE("bucheck, audio format is invalid");
+                return  -1;
+            }
+            audioData = audio_frame_->data[0];
+            numFrames = audio_frame_->nb_samples;
+        }
+        if (need_first_frame_correct_flag_ && position_ >= 0) {
+            float expectedPosition = position_ + duration_;
+            float actualPosition = av_frame_get_best_effort_timestamp(audio_frame_) * time_base_;
+            first_frame_correction_in_secs_ = actualPosition - expectedPosition;
+            need_first_frame_correct_flag_ = false;
+        }
+        duration_ = av_frame_get_pkt_duration(audio_frame_) * time_base_;
+        position_ = av_frame_get_best_effort_timestamp(audio_frame_) * time_base_ - first_frame_correction_in_secs_;
+        if (!seek_success_read_frame_success_) {
+            LOGI("position_ is %.6f", position_);
+            actual_seek_position_ = position_;
+            seek_success_read_frame_success_ = true;
+        }
+        audio_buffer_size_ = numFrames * numChannels;
+        audio_buffer_ = reinterpret_cast<short*>(audioData);
+        audio_buffer_cursor_ = 0;
+    }
+    return 0;
+}
+
+    bool MusicDecoder::AudioCodecIsSupported() {
     return codec_context_->sample_fmt == AV_SAMPLE_FMT_S16;
 }
 

@@ -374,8 +374,11 @@ void Player::OnAddMusic(char *config, int action_id) {
         if (nullptr != end_time_json) {
             end_time = end_time_json->valueint;
         }
+        LOGI("music start_time: %d end_time: %d", start_time, end_time);
         if (nullptr != path_json) {
-            music_player_->Start(path_json->valuestring);
+            char* path = path_json->valuestring;
+            LOGI("music path: %s", path);
+            music_player_->Start(path);
         }
     }
 

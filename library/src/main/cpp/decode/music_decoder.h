@@ -53,6 +53,7 @@ class MusicDecoder {
  private:
     int ReadSamples(short* samples, int size);
     int ReadFrame();
+    int ReceiveFrame();
     bool AudioCodecIsSupported();
 
  private:

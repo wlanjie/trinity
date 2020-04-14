@@ -246,7 +246,7 @@ int MusicDecoderController::InitDecoder(const char *path) {
             need_resample_ = true;
             resample_ = new Resample();
             float ratio = accompany_sample_rate_ * 1.0F / vocal_sample_rate_;
-            actualAccompanyPacketBufferSize = ratio * accompany_packet_buffer_size_;
+            actualAccompanyPacketBufferSize = static_cast<int>(ratio * accompany_packet_buffer_size_);
             ret = resample_->Init(accompany_sample_rate_, vocal_sample_rate_, actualAccompanyPacketBufferSize / 2, 2, 2);
             if (ret < 0) {
                 LOGE("resampler_ InitMessageQueue error\n");

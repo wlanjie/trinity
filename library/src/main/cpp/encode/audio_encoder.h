@@ -24,6 +24,7 @@
 
 #include <stdint.h>
 #include "audio_packet_queue.h"
+#include "audio_packet_pool.h"
 
 extern "C" {
 #include "libavcodec/avcodec.h"
@@ -59,7 +60,7 @@ class AudioEncoder {
              int (*PCMFrameCallback)(int16_t *, int, int, double *, void *context),
              void* context);
 
-    int Encode(AudioPacket** packet);
+    int Encode(AudioPacketPool* audio_packet_pool);
     void Destroy();
 };
 
