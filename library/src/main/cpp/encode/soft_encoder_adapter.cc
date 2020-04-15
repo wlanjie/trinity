@@ -24,7 +24,6 @@ namespace trinity {
 SoftEncoderAdapter::SoftEncoderAdapter(GLfloat* vertex_coordinate, GLfloat* texture_coordinate)
     : yuy_packet_pool_(nullptr)
     , encoding_(true)
-    , queue_()
     , vertex_coordinate_(nullptr)
     , texture_coordinate_(nullptr)
     , fbo_(0)
@@ -35,13 +34,6 @@ SoftEncoderAdapter::SoftEncoderAdapter(GLfloat* vertex_coordinate, GLfloat* text
     , encoder_(nullptr)
     , renderer_(nullptr)
     , encoder_surface_(EGL_NO_SURFACE) {
-
-    pthread_mutex_init(&packet_mutex_, nullptr);
-    pthread_cond_init(&packet_cond_, nullptr);
-
-    queue_ = new MessageQueue("X264Encode message queue");
-    InitMessageQueue(queue_);
-    pthread_create(&encoder_thread_, nullptr, MessageQueueThread, this);
 
     // 因为encoder_render时不能改变顶点和纹理坐标
     // 而glReadPixels读取的图像又是上下颠倒的
@@ -58,13 +50,6 @@ SoftEncoderAdapter::SoftEncoderAdapter(GLfloat* vertex_coordinate, GLfloat* text
 }
 
 SoftEncoderAdapter::~SoftEncoderAdapter() {
-    PostMessage(new Message(MESSAGE_QUEUE_LOOP_QUIT_FLAG));
-    pthread_join(encoder_thread_, nullptr);
-    if (nullptr != queue_) {
-        queue_->Abort();
-        delete queue_;
-        queue_ = nullptr;
-    }
     if (nullptr != vertex_coordinate_) {
         delete[] vertex_coordinate_;
         vertex_coordinate_ = nullptr;
@@ -73,37 +58,10 @@ SoftEncoderAdapter::~SoftEncoderAdapter() {
         delete[] texture_coordinate_;
         texture_coordinate_ = nullptr;
     }
-    pthread_mutex_destroy(&packet_mutex_);
-    pthread_cond_destroy(&packet_cond_);
 }
 
-void* SoftEncoderAdapter::MessageQueueThread(void *args) {
-    auto adapter = reinterpret_cast<SoftEncoderAdapter*>(args);
-    adapter->EncodeLoop();
-    pthread_exit(0);
-}
-
-void SoftEncoderAdapter::HandleMessage(trinity::Message *msg) {
-    int what = msg->GetWhat();
-    switch (what) {
-        case kStartEncoder:
-            CreateX264Encoder(reinterpret_cast<EGLCore*>(msg->GetObj()));
-            break;
-
-        case kEncodeFrame:
-            EncodeFrame(msg->GetArg1(), msg->GetArg2());
-            break;
-
-        case kDestroyEncoder:
-            DestroyX264Encoder();
-            break;
-
-        default:
-            break;
-    }
-}
-
-void SoftEncoderAdapter::CreateX264Encoder(EGLCore* core) {
+void SoftEncoderAdapter::CreateEncoder(EGLCore *core) {
+    LOGI("enter CreateEncoder");
     core_ = new EGLCore();
     core_->Init(core->GetContext());
     encoder_surface_ = core_->CreateOffscreenSurface(video_width_, video_height_);
@@ -117,9 +75,10 @@ void SoftEncoderAdapter::CreateX264Encoder(EGLCore* core) {
     yuy_packet_pool_ = new VideoPacketQueue();
     Initialize();
     pthread_create(&x264_encoder_thread_, nullptr, StartEncodeThread, this);
+    LOGI("leave CreateEncoder");
 }
 
-void SoftEncoderAdapter::EncodeFrame(int texture_id, int time) {
+void SoftEncoderAdapter::Encode(uint64_t time, int texture_id) {
     if (start_time_ == 0)
         start_time_ = getCurrentTime();
 
@@ -133,23 +92,21 @@ void SoftEncoderAdapter::EncodeFrame(int texture_id, int time) {
     if (expectedFrameCount < encode_frame_count_) {
         LOGE("expectedFrameCount is %d while encoded_frame_count_ is %d", expectedFrameCount,
              encode_frame_count_);
-        pthread_mutex_lock(&packet_mutex_);
-        pthread_cond_signal(&packet_cond_);
-        pthread_mutex_unlock(&packet_mutex_);
         return;
     }
     EncodeTexture(static_cast<GLuint>(texture_id), time);
     encode_frame_count_++;
 }
 
-void SoftEncoderAdapter::DestroyX264Encoder() {
+void SoftEncoderAdapter::DestroyEncoder() {
     LOGE("enter: %s", __func__);
     encoding_ = false;
     pthread_join(x264_encoder_thread_, 0);
-    yuy_packet_pool_->Abort();
-    delete yuy_packet_pool_;
-    yuy_packet_pool_ = nullptr;
-
+    if (nullptr != yuy_packet_pool_) {
+        yuy_packet_pool_->Abort();
+        delete yuy_packet_pool_;
+        yuy_packet_pool_ = nullptr;
+    }
     if (nullptr != core_ && EGL_NO_SURFACE != encoder_surface_) {
         core_->MakeCurrent(encoder_surface_);
         if (nullptr != encode_render_) {
@@ -180,42 +137,15 @@ void SoftEncoderAdapter::DestroyX264Encoder() {
         delete encoder_;
         encoder_ = nullptr;
     }
-}
-
-void SoftEncoderAdapter::EncodeLoop() {
-    while (true) {
-        Message *msg = nullptr;
-        if (queue_->DequeueMessage(&msg, true) > 0) {
-            if (MESSAGE_QUEUE_LOOP_QUIT_FLAG == msg->Execute()) {
-                break;
-            }
-            delete msg;
-        }
+    if (nullptr != packet_pool_) {
+        packet_pool_->PushRecordingVideoPacketToQueue(nullptr);
     }
-    LOGI("X264 Encode Thread ending...");
-}
-
-void SoftEncoderAdapter::CreateEncoder(EGLCore *core) {
-    LOGI("enter CreateEncoder");
-    PostMessage(new Message(kStartEncoder, core));
-    LOGI("leave CreateEncoder");
-}
-
-void SoftEncoderAdapter::Encode(uint64_t time, int texture_id) {
-    PostMessage(new Message(kEncodeFrame, texture_id, static_cast<int>(time)));
-    pthread_mutex_lock(&packet_mutex_);
-    pthread_cond_wait(&packet_cond_, &packet_mutex_);
-    pthread_mutex_unlock(&packet_mutex_);
-}
-
-void SoftEncoderAdapter::DestroyEncoder() {
-    LOGI("enter: %s", __func__);
-    PostMessage(new Message(kDestroyEncoder));
 }
 
 void SoftEncoderAdapter::EncodeTexture(GLuint texture_id, int time) {
 //    int recordingDuration = getCurrentTime() - start_time_;
 //    glViewport(0, 0, video_width_, video_height_);
+    core_->MakeCurrent(encoder_surface_);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
     if (nullptr != vertex_coordinate_ && nullptr != texture_coordinate_) {
         renderer_->ProcessImage(texture_id, vertex_coordinate_, texture_coordinate_);
@@ -233,9 +163,6 @@ void SoftEncoderAdapter::EncodeTexture(GLuint texture_id, int time) {
     if (nullptr != yuy_packet_pool_) {
         yuy_packet_pool_->Put(videoPacket);
     }
-    pthread_mutex_lock(&packet_mutex_);
-    pthread_cond_signal(&packet_cond_);
-    pthread_mutex_unlock(&packet_mutex_);
 }
 
 bool SoftEncoderAdapter::Initialize() {

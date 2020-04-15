@@ -353,31 +353,31 @@ void VideoExport::LoadImageTexture(MediaClip *clip) {
     }
 
     glBindTexture(GL_TEXTURE_2D, image_texture_);
-    if (width > MAX_IMAGE_WIDTH || height > MAX_IMAGE_HEIGHT) {
-        // 当图片大于1080p时, 缩放到1080p
-        auto resize_width_ratio = MAX_IMAGE_WIDTH * 1.0F / width;
-        auto resize_height_ratio = MAX_IMAGE_HEIGHT * 1.0F / height;
-        auto resize_width = static_cast<int>(MAX(resize_width_ratio, resize_height_ratio) * width);
-        auto resize_height = static_cast<int>(MAX(resize_width_ratio, resize_height_ratio) * height);
-        auto resize_image_data = reinterpret_cast<unsigned char*>(
-                malloc(static_cast<size_t>(resize_width * resize_height * channels)));
-        stbir_resize_uint8(image_data, width, height, 0, resize_image_data, resize_width, resize_height, 0, channels);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, resize_width, resize_height,
-                     0, GL_RGBA, GL_UNSIGNED_BYTE, resize_image_data);
-        free(resize_image_data);
-        frame_width_ = resize_width;
-        frame_height_ = resize_height;
-    } else {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
-        frame_width_ = width;
-        frame_height_ = height;
-    }
+//    if (width > MAX_IMAGE_WIDTH || height > MAX_IMAGE_HEIGHT) {
+//        // 当图片大于1080p时, 缩放到1080p
+//        auto resize_width_ratio = MAX_IMAGE_WIDTH * 1.0F / width;
+//        auto resize_height_ratio = MAX_IMAGE_HEIGHT * 1.0F / height;
+//        auto resize_width = static_cast<int>(MAX(resize_width_ratio, resize_height_ratio) * width);
+//        auto resize_height = static_cast<int>(MAX(resize_width_ratio, resize_height_ratio) * height);
+//        auto resize_image_data = reinterpret_cast<unsigned char*>(
+//                malloc(static_cast<size_t>(resize_width * resize_height * channels)));
+//        stbir_resize_uint8(image_data, width, height, 0, resize_image_data, resize_width, resize_height, 0, channels);
+//        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, resize_width, resize_height,
+//                     0, GL_RGBA, GL_UNSIGNED_BYTE, resize_image_data);
+//        free(resize_image_data);
+//        frame_width_ = resize_width;
+//        frame_height_ = resize_height;
+//    } else {
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
+    frame_width_ = width;
+    frame_height_ = height;
+//    }
     SetFrame(frame_width_, frame_height_, video_width_, video_height_, FIT);
     glBindTexture(GL_TEXTURE_2D, 0);
     stbi_image_free(image_data);
 
     if (image_frame_buffer_ == nullptr) {
-        image_frame_buffer_ = new FrameBuffer(video_width_, video_height_, DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
+        image_frame_buffer_ = new FrameBuffer(frame_width_, frame_height_, DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
     }
 }
 
@@ -430,7 +430,8 @@ int VideoExport::Export(const char *export_config, const char *path,
     channel_count_ = channel_count;
     vocal_sample_rate_ = sample_rate;
     packet_thread_ = new VideoConsumerThread();
-    int ret = packet_thread_->Init(path, width, height, frame_rate, video_bit_rate * 1000, sample_rate, channel_count, audio_bit_rate * 1000, "libfdk_aac");
+    std::string audio_codec_name("libfdk_aac");
+    int ret = packet_thread_->Init(path, width, height, frame_rate, video_bit_rate * 1000, sample_rate, channel_count, audio_bit_rate * 1000, audio_codec_name);
     if (ret < 0) {
         return ret;
     }
@@ -560,6 +561,7 @@ void VideoExport::ProcessVideoExport() {
         if (!export_ing_) {
             break;
         }
+        egl_core_->MakeCurrent(egl_surface_);
         auto clip = clip_deque_.at(export_index_);
 
         if (load_image_texture_) {
@@ -678,6 +680,7 @@ void VideoExport::ProcessVideoExport() {
         // 回调合成进度给上层
         OnExportProgress(current_time_);
     }
+    av_play_context_->send_message(av_play_context_, message_stop);
     LOGE("export thread ===========> exit");
     encoder_->DestroyEncoder();
     delete encoder_;
@@ -785,6 +788,9 @@ void VideoExport::ProcessAudioExport() {
             break;
         }
 
+        if (export_index_ >= clip_deque_.size()) {
+            break;
+        }
         auto clip = clip_deque_.at(export_index_);
         AudioPacket* music_packet = nullptr;
         for (int i = 0; i < music_decoder_deque_.size(); ++i) {

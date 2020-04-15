@@ -40,7 +40,6 @@ MediaEncodeAdapter::MediaEncodeAdapter(JavaVM *vm, jobject object)
     , vm_(vm)
     , object_(nullptr)
     , core_(nullptr)
-    , queue_()
     , encoder_thread_()
     , encoder_surface_(EGL_NO_SURFACE)
     , encoder_window_(nullptr)
@@ -52,40 +51,20 @@ MediaEncodeAdapter::MediaEncodeAdapter(JavaVM *vm, jobject object)
     if (nullptr != env) {
         object_ = env->NewGlobalRef(object);
     }
-    pthread_mutex_init(&packet_mutex_, nullptr);
-    pthread_cond_init(&packet_cond_, nullptr);
     encoding_ = true;
-    queue_ = new MessageQueue("MediaEncode message queue");
-    InitMessageQueue(queue_);
-    pthread_create(&encoder_thread_, nullptr, MessageQueueThread, this);
 }
 
 MediaEncodeAdapter::~MediaEncodeAdapter() {
-    PostMessage(new Message(MESSAGE_QUEUE_LOOP_QUIT_FLAG));
-    pthread_join(encoder_thread_, nullptr);
-    if (nullptr != queue_) {
-        queue_->Abort();
-        delete queue_;
-        queue_ = nullptr;
-    }
-
     JNIEnv* env = nullptr;
     vm_->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     if (nullptr != env) {
         env->DeleteGlobalRef(object_);
         object_ = nullptr;
     }
-    pthread_mutex_destroy(&packet_mutex_);
-    pthread_cond_destroy(&packet_cond_);
 }
 
-void* MediaEncodeAdapter::MessageQueueThread(void *args) {
-    auto* adapter = static_cast<MediaEncodeAdapter *>(args);
-    adapter->EncodeLoop();
-    pthread_exit(nullptr);
-}
-
-void MediaEncodeAdapter::CreateMediaCodecEncode(EGLCore* core) {
+void MediaEncodeAdapter::CreateEncoder(EGLCore *core) {
+    LOGI("enter: %s", __func__);
     core_ = new EGLCore();
     core_->Init(core->GetContext());
     bool need_attach = false;
@@ -111,42 +90,10 @@ void MediaEncodeAdapter::CreateMediaCodecEncode(EGLCore* core) {
     start_time_ = 0;
     fps_change_time_ = -1;
     sps_write_flag_ = true;
+    LOGI("leave: %s", __func__);
 }
 
-void MediaEncodeAdapter::MediaCodecEncode(int texture_id, int time) {
-    if (start_time_ == 0) {
-        start_time_ = getCurrentTime();
-    }
-
-    if (fps_change_time_ == -1) {
-        fps_change_time_ = getCurrentTime();
-    }
-
-    if (GetQueueSize() > MAX_ENCODER_Q_SIZE) {
-        // See webrtc bug 2887.
-        pthread_mutex_lock(&packet_mutex_);
-        pthread_cond_signal(&packet_cond_);
-        pthread_mutex_unlock(&packet_mutex_);
-        return;
-    }
-//    int64_t current_time = static_cast<int64_t>((getCurrentTime() - start_time_) * speed);
-    // need drop frames
-    encode_frame_count_++;
-    if (EGL_NO_SURFACE != encoder_surface_) {
-        core_->MakeCurrent(encoder_surface_);
-        render_->ProcessImage(texture_id);
-        core_->SetPresentationTime(encoder_surface_, ((khronos_stime_nanoseconds_t) time) * 1000000);
-        if (!core_->SwapBuffers(encoder_surface_)) {
-            LOGE("eglSwapBuffers(encoder_surface_) returned error %d", eglGetError());
-        }
-        DrainEncodeData();
-    }
-    pthread_mutex_lock(&packet_mutex_);
-    pthread_cond_signal(&packet_cond_);
-    pthread_mutex_unlock(&packet_mutex_);
-}
-
-void MediaEncodeAdapter::DestroyMediaCodec() {
+void MediaEncodeAdapter::DestroyEncoder() {
     LOGE("before DestroyEncoder");
     JNIEnv *env;
     int status = 0;
@@ -181,47 +128,32 @@ void MediaEncodeAdapter::DestroyMediaCodec() {
     LOGE("after DestroyEncoder");
 }
 
-void MediaEncodeAdapter::HandleMessage(trinity::Message *msg) {
-    int what = msg->GetWhat();
-    switch (what) {
-        case kStartEncoder:
-            CreateMediaCodecEncode(reinterpret_cast<EGLCore*>(msg->GetObj()));
-            break;
-
-        case kEncodeFrame:
-            MediaCodecEncode(msg->GetArg1(), msg->GetArg2());
-            break;
-
-        case kEndOfStream:
-            break;
-
-        case kDestroyEncoder:
-            DestroyMediaCodec();
-            break;
-
-        default:
-            break;
-    }
-}
-
-void MediaEncodeAdapter::CreateEncoder(EGLCore *core) {
-    PostMessage(new Message(kStartEncoder, core));
-}
-
-void MediaEncodeAdapter::DestroyEncoder() {
-    PostMessage(new Message(kDestroyEncoder));
-}
-
 void MediaEncodeAdapter::Encode(uint64_t time, int texture_id) {
     int expectedFrameCount = static_cast<int>(time / 1000.0F * frame_rate_ + 0.5F);
     if (expectedFrameCount < encode_frame_count_) {
         LOGE("drop frame encode_count: %d frame_count: %d", encode_frame_count_, expectedFrameCount);
         return;
     }
-    PostMessage(new Message(kEncodeFrame, texture_id, static_cast<int>(time)));
-    pthread_mutex_lock(&packet_mutex_);
-    pthread_cond_wait(&packet_cond_, &packet_mutex_);
-    pthread_mutex_unlock(&packet_mutex_);
+    if (start_time_ == 0) {
+        start_time_ = getCurrentTime();
+    }
+
+    if (fps_change_time_ == -1) {
+        fps_change_time_ = getCurrentTime();
+    }
+
+//    int64_t current_time = static_cast<int64_t>((getCurrentTime() - start_time_) * speed);
+    // need drop frames
+    encode_frame_count_++;
+    if (EGL_NO_SURFACE != encoder_surface_) {
+        core_->MakeCurrent(encoder_surface_);
+        render_->ProcessImage(texture_id);
+        core_->SetPresentationTime(encoder_surface_, ((khronos_stime_nanoseconds_t) time) * 1000000);
+        if (!core_->SwapBuffers(encoder_surface_)) {
+            LOGE("eglSwapBuffers(encoder_surface_) returned error %d", eglGetError());
+        }
+        DrainEncodeData();
+    }
 }
 
 int MediaEncodeAdapter::DrainEncodeData() {
@@ -244,7 +176,6 @@ int MediaEncodeAdapter::DrainEncodeData() {
     jmethodID getLastPresentationTimeUsFunc = env->GetMethodID(clazz, "getLastPresentationTimeUsFromNative", "()J");
     auto lastPresentationTimeUs = (long long) env->CallLongMethod(object_, getLastPresentationTimeUsFunc);
     int timeMills = static_cast<int>(lastPresentationTimeUs / 1000.0f);
-
     if (size > 0) {
         // push to queue_
         int nalu_type = (outputData[4] & 0x1F);
@@ -342,20 +273,8 @@ int MediaEncodeAdapter::DrainEncodeData() {
     return size;
 }
 
-void MediaEncodeAdapter::EncodeLoop() {
-    while (encoding_) {
-        Message *msg = nullptr;
-        if (queue_->DequeueMessage(&msg, true) > 0) {
-            if (MESSAGE_QUEUE_LOOP_QUIT_FLAG == msg->Execute()) {
-                encoding_ = false;
-            }
-            delete msg;
-        }
-    }
-    LOGI("MediaCodec Encode Thread ending...");
-}
-
 void MediaEncodeAdapter::CreateMediaEncoder(JNIEnv *env) {
+    LOGI("enter: %s", __func__);
     jclass clazz = env->GetObjectClass(object_);
     jmethodID createMediaCodecSurfaceEncoderFunc = env->GetMethodID(clazz,
                                                                     "createMediaCodecSurfaceEncoderFromNative",
@@ -369,9 +288,13 @@ void MediaEncodeAdapter::CreateMediaEncoder(JNIEnv *env) {
     // 2 create window surface
     encoder_window_ = ANativeWindow_fromSurface(env, surface);
     encoder_surface_ = core_->CreateWindowSurface(encoder_window_);
-    core_->MakeCurrent(encoder_surface_);
+    auto result = core_->MakeCurrent(encoder_surface_);
+    if (!result) {
+        LOGE("%s MakeCurrent error", __func__);
+    }
     render_ = new OpenGL(DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
     render_->SetOutput(video_width_, video_height_);
+    LOGI("leave: %s", __func__);
 }
 
 void MediaEncodeAdapter::DestroyMediaEncoder(JNIEnv *env) {

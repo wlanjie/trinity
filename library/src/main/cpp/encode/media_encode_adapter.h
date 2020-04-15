@@ -30,7 +30,7 @@
 
 namespace trinity {
 
-class MediaEncodeAdapter : public VideoEncoderAdapter, public Handler {
+class MediaEncodeAdapter : public VideoEncoderAdapter {
  public:
     MediaEncodeAdapter(JavaVM* vm, jobject object);
     virtual ~MediaEncodeAdapter();
@@ -44,30 +44,19 @@ class MediaEncodeAdapter : public VideoEncoderAdapter, public Handler {
     int DrainEncodeData();
 
  private:
-    void CreateMediaCodecEncode(EGLCore* core);
-    void MediaCodecEncode(int texture_id, int time);
-    void DestroyMediaCodec();
-
- private:
     bool encoding_;
     bool sps_write_flag_;
     JavaVM* vm_;
     jobject object_;
     EGLCore* core_;
-    MessageQueue* queue_;
     pthread_t encoder_thread_;
     EGLSurface encoder_surface_;
     ANativeWindow* encoder_window_;
     jbyteArray output_buffer_;
     long start_encode_time_;
     OpenGL* render_;
-    pthread_mutex_t packet_mutex_;
-    pthread_cond_t packet_cond_;
 
  private:
-    static void* MessageQueueThread(void* args);
-    virtual void HandleMessage(Message* msg);
-    void EncodeLoop();
     void CreateMediaEncoder(JNIEnv* env);
     void DestroyMediaEncoder(JNIEnv* env);
 };

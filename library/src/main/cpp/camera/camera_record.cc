@@ -623,8 +623,9 @@ void CameraRecord::StartEncoding(const char* path,
         PacketPool::GetInstance()->InitRecordingVideoPacketQueue();
         PacketPool::GetInstance()->InitAudioPacketQueue(44100);
         AudioPacketPool::GetInstance()->InitAudioPacketQueue();
+        std::string audio_codec_name("libfdk_aac");
         int ret = packet_thread_->Init(path, video_width, video_height, frame_rate,
-             video_bit_rate * 1000, audio_sample_rate, audio_channel, audio_bit_rate * 1000, "libfdk_aac");
+             video_bit_rate * 1000, audio_sample_rate, audio_channel, audio_bit_rate * 1000, audio_codec_name);
         if (ret >= 0) {
             packet_thread_->StartAsync();
         }

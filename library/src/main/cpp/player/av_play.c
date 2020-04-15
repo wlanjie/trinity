@@ -76,6 +76,7 @@ static void reset(AVPlayContext* context) {
     if (context == NULL) {
         return;
     }
+    context->end_of_stream = false;
     context->eof = false;
     context->av_track_flags = 0;
     context->just_audio = false;
@@ -416,7 +417,9 @@ void* video_decode_hw_thread(void* data){
                     // buffer empty ==> wait  10ms
                     // eof          ==> break
                     if (packet == NULL) {
-                        if (context->eof) {
+                        if (context->eof && !context->end_of_stream) {
+                            LOGE("context->eof mediacodec_end_of_stream");
+                            context->end_of_stream = true;
                             mediacodec_end_of_stream(context, buffer_index);
                             continue;
                         } else {

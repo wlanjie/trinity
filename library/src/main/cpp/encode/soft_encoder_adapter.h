@@ -28,7 +28,7 @@
 
 namespace trinity {
 
-class SoftEncoderAdapter : public VideoEncoderAdapter, public Handler {
+class SoftEncoderAdapter : public VideoEncoderAdapter {
  public:
     explicit SoftEncoderAdapter(GLfloat* vertex_coordinate = nullptr, GLfloat* texture_coordinate = nullptr);
 
@@ -43,20 +43,12 @@ class SoftEncoderAdapter : public VideoEncoderAdapter, public Handler {
  private:
     void StartEncode();
     static void* StartEncodeThread(void* args);
-    static void* MessageQueueThread(void* args);
-    virtual void HandleMessage(Message* msg);
-    void EncodeLoop();
-    void CreateX264Encoder(EGLCore* core);
-    void EncodeFrame(int texture_id, int time);
-    void DestroyX264Encoder();
     bool Initialize();
     void EncodeTexture(GLuint texture_id, int time);
  private:
     bool encoding_;
-    MessageQueue* queue_;
     EGLCore* core_;
     EGLSurface encoder_surface_;
-    pthread_t encoder_thread_;
     VideoPacketQueue *yuy_packet_pool_;
     GLfloat* vertex_coordinate_;
     GLfloat* texture_coordinate_;
@@ -67,8 +59,6 @@ class SoftEncoderAdapter : public VideoEncoderAdapter, public Handler {
     VideoX264Encoder *encoder_;
     pthread_t x264_encoder_thread_;
     OpenGL *renderer_;
-    pthread_mutex_t packet_mutex_;
-    pthread_cond_t packet_cond_;
 };
 
 }  // namespace trinity

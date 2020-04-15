@@ -440,6 +440,9 @@ int Player::GetAudioFrame() {
         LOGE("GetAudioFrame error: %d", context->status);
         return -1;
     }
+    if (context->audio_frame_queue->size == 0) {
+        return 0;
+    }
     context->audio_frame = frame_queue_get(context->audio_frame_queue);
     if (nullptr == context->audio_frame) {
         // 如果没有视频流  就从这里发结束信号
@@ -1023,23 +1026,23 @@ void Player::OnRenderImageFrame() {
         frame_width_ = width;
         frame_height_ = height;
 
-        if (width > MAX_IMAGE_WIDTH || height > MAX_IMAGE_HEIGHT) {
-            // 当图片大于1080p时, 缩放到1080p
-            auto resize_width_ratio = MAX_IMAGE_WIDTH * 1.0F / width;
-            auto resize_height_ratio = MAX_IMAGE_HEIGHT * 1.0F / height;
-            auto resize_width = static_cast<int>(MAX(resize_width_ratio, resize_height_ratio) * width);
-            auto resize_height = static_cast<int>(MAX(resize_width_ratio, resize_height_ratio) * height);
-            auto resize_image_data = reinterpret_cast<unsigned char*>(
-                    malloc(static_cast<size_t>(resize_width * resize_height * channels)));
-            stbir_resize_uint8(image_data, width, height, 0, resize_image_data, resize_width, resize_height, 0, channels);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, resize_width, resize_height,
-                    0, GL_RGBA, GL_UNSIGNED_BYTE, resize_image_data);
-            free(resize_image_data);
-            frame_width_ = resize_width;
-            frame_height_ = resize_height;
-        } else {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
-        }
+//        if (width > MAX_IMAGE_WIDTH || height > MAX_IMAGE_HEIGHT) {
+//            // 当图片大于1080p时, 缩放到1080p
+//            auto resize_width_ratio = MAX_IMAGE_WIDTH * 1.0F / width;
+//            auto resize_height_ratio = MAX_IMAGE_HEIGHT * 1.0F / height;
+//            auto resize_width = static_cast<int>(MIN(resize_width_ratio, resize_height_ratio) * width);
+//            auto resize_height = static_cast<int>(MIN(resize_width_ratio, resize_height_ratio) * height);
+//            auto resize_image_data = reinterpret_cast<unsigned char*>(
+//                    malloc(static_cast<size_t>(resize_width * resize_height * channels)));
+//            stbir_resize_uint8(image_data, width, height, 0, resize_image_data, resize_width, resize_height, 0, channels);
+//            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, resize_width, resize_height,
+//                    0, GL_RGBA, GL_UNSIGNED_BYTE, resize_image_data);
+//            free(resize_image_data);
+//            frame_width_ = resize_width;
+//            frame_height_ = resize_height;
+//        } else {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
+//        }
         glBindTexture(GL_TEXTURE_2D, 0);
         stbi_image_free(image_data);
         image_frame_buffer_ = new FrameBuffer(frame_width_, frame_height_, DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);

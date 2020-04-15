@@ -215,6 +215,9 @@ class WheelView : ScrollView {
       paint?.color = Color.parseColor("#83cde6")
       paint?.strokeWidth = dip2px(1f).toFloat()
     }
+    if (selectedAreaBorder.isEmpty()) {
+      return
+    }
     val drawable = object : Drawable() {
       override fun draw(canvas: Canvas) {
         paint?.let {

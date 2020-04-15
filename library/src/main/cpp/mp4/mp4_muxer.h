@@ -24,6 +24,7 @@
 #define TRINITY_MP4_MUXER_H
 
 #include <stdint.h>
+#include <string>
 #include "audio_packet_queue.h"
 #include "video_packet_queue.h"
 
@@ -42,7 +43,7 @@ class Mp4Muxer {
     Mp4Muxer();
     virtual ~Mp4Muxer();
     virtual int Init(const char* path, int video_width, int video_height, int frame_rate, int video_bit_rate,
-            int audio_sample_rate, int audio_channels, int audio_bit_rate, char* audio_codec_name);
+            int audio_sample_rate, int audio_channels, int audio_bit_rate, std::string& audio_codec_name);
 
     virtual void RegisterAudioPacketCallback(int (*audio_packet)(AudioPacket**, void* context, bool wait), void* context);
     virtual void RegisterVideoPacketCallback(int (*video_packet)(VideoPacket**, void* context, bool wait), void* context);
@@ -55,7 +56,7 @@ class Mp4Muxer {
     typedef int (*VideoPacketCallback) (VideoPacket**, void* context, bool wait);
 
  protected:
-    virtual AVStream* AddStream(AVFormatContext* oc, AVCodec** codec, enum AVCodecID codec_id, char* codec_name);
+    virtual AVStream* AddStream(AVFormatContext* oc, AVCodec** codec, enum AVCodecID codec_id, std::string& codec_name);
 
     uint32_t FindStartCode(uint8_t *in_buffer, uint32_t in_ui32_buffer_size, uint32_t in_ui32_code,
                            uint32_t &out_ui32_processed_bytes);
@@ -79,7 +80,7 @@ class Mp4Muxer {
 
     int BuildVideoStream();
 
-    int BuildAudioStream(char *audio_codec_name);
+    int BuildAudioStream(std::string& audio_codec_name);
 
  protected:
     // sps and pps data

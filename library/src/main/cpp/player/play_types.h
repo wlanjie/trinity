@@ -225,6 +225,8 @@ typedef struct AVPlayContext {
     // end of file
     bool eof;
 
+    bool end_of_stream;
+
     bool abort_request;
 
     int media_codec_texture_id;

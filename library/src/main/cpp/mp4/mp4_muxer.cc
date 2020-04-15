@@ -56,7 +56,7 @@ Mp4Muxer::Mp4Muxer()
 Mp4Muxer::~Mp4Muxer() {}
 
 int Mp4Muxer::Init(const char *path, int video_width, int video_height, int frame_rate, int video_bit_rate,
-                            int audio_sample_rate, int audio_channels, int audio_bit_rate, char *audio_codec_name) {
+                            int audio_sample_rate, int audio_channels, int audio_bit_rate, std::string& audio_codec_name) {
     duration_ = 0;
     format_context_ = nullptr;
     video_stream_ = nullptr;
@@ -180,9 +180,9 @@ int Mp4Muxer::Stop() {
     return 0;
 }
 
-AVStream* Mp4Muxer::AddStream(AVFormatContext *oc, AVCodec **codec, enum AVCodecID codec_id, char *codec_name) {
+AVStream* Mp4Muxer::AddStream(AVFormatContext *oc, AVCodec **codec, enum AVCodecID codec_id, std::string& codec_name) {
     if (AV_CODEC_ID_NONE == codec_id) {
-        *codec = avcodec_find_encoder_by_name(codec_name);
+        *codec = avcodec_find_encoder_by_name(codec_name.c_str());
     } else {
         *codec = avcodec_find_encoder(codec_id);
     }
@@ -467,7 +467,8 @@ double Mp4Muxer::GetAudioStreamTimeInSecs() {
 
 int Mp4Muxer::BuildVideoStream() {
     AVCodec* codec = nullptr;
-    video_stream_ = AddStream(format_context_, &codec, AV_CODEC_ID_H264, nullptr);
+    std::string video_codec_name("none");
+    video_stream_ = AddStream(format_context_, &codec, AV_CODEC_ID_H264, video_codec_name);
     return 0;
 }
 
@@ -504,7 +505,7 @@ int GetSampleRateIndex(unsigned int sampling_frequency) {
     }
 }
 
-int Mp4Muxer::BuildAudioStream(char *audio_codec_name) {
+int Mp4Muxer::BuildAudioStream(std::string& audio_codec_name) {
     AVCodec* codec = nullptr;
     audio_stream_ = AddStream(format_context_, &codec, AV_CODEC_ID_NONE, audio_codec_name);
     if (nullptr != audio_stream_ && nullptr != codec) {

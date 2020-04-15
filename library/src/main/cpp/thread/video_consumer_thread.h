@@ -24,6 +24,7 @@
 #define TRINITY_VIDEO_CONSUMER_THREAD_H
 
 #include <pthread.h>
+#include <string>
 #include "packet_pool.h"
 #include "mp4_muxer.h"
 #include "audio_packet_pool.h"
@@ -36,7 +37,7 @@ class VideoConsumerThread {
     ~VideoConsumerThread();
 
     int Init(const char* path, int video_width, int video_height, int frame_rate, int video_bit_Rate,
-            int audio_sample_rate, int audio_channels, int audio_bit_rate, char* audio_codec_name);
+            int audio_sample_rate, int audio_channels, int audio_bit_rate, std::string& audio_codec_name);
 
     void Start();
     void StartAsync();

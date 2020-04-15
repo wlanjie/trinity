@@ -78,6 +78,7 @@ class MediaCodecSurfaceEncoder {
   }
 
   fun release() {
+    mLastPresentationTimeUs = 0;
     mEncoder?.stop()
     mEncoder?.release()
     mEncoder = null
