@@ -37,22 +37,22 @@ VideoConsumerThread::VideoConsumerThread()
 
 VideoConsumerThread::~VideoConsumerThread() {}
 
-static int AudioPacketCallback(AudioPacket** packet, void* context, bool wait) {
+static int AudioPacketCallback(AudioPacket** packet, void* context) {
     VideoConsumerThread* thread = reinterpret_cast<VideoConsumerThread*>(context);
-    return thread->GetAudioPacket(packet, wait);
+    return thread->GetAudioPacket(packet);
 }
 
-static int VideoPacketCallback(VideoPacket** packet, void* context, bool wait) {
+static int VideoPacketCallback(VideoPacket** packet, void* context) {
     VideoConsumerThread* thread = reinterpret_cast<VideoConsumerThread*>(context);
-    return thread->GetH264Packet(packet, wait);
+    return thread->GetH264Packet(packet);
 }
 
-int VideoConsumerThread::GetH264Packet(VideoPacket** packet, bool wait) {
-    return video_packet_pool_->GetRecordingVideoPacket(packet, true, wait);
+int VideoConsumerThread::GetH264Packet(VideoPacket** packet) {
+    return video_packet_pool_->GetRecordingVideoPacket(packet, true, false);
 }
 
-int VideoConsumerThread::GetAudioPacket(AudioPacket** packet, bool wait) {
-    return audio_packet_pool_->GetAudioPacket(packet, true, wait);
+int VideoConsumerThread::GetAudioPacket(AudioPacket** packet) {
+    return audio_packet_pool_->GetAudioPacket(packet, true, false);
 }
 
 int VideoConsumerThread::Init(const char* path, int video_width, int video_height, int frame_rate, int video_bit_Rate,
@@ -78,8 +78,10 @@ void VideoConsumerThread::Start() {
 }
 
 void VideoConsumerThread::StartAsync() {
+    LOGI("enter: %s", __func__);
     stopping_ = false;
     pthread_create(&thread_, nullptr, StartThread, this);
+    LOGI("leave: %s", __func__);
 }
 
 int VideoConsumerThread::Wait() {
@@ -111,25 +113,30 @@ void VideoConsumerThread::Stop() {
     if (nullptr == audio_packet_pool_) {
         return;
     }
-    LOGE("enter: %s", __func__);
+    LOGI("enter: %s", __func__);
     stopping_ = true;
-    pthread_join(thread_, nullptr);
-    Release();
     video_packet_pool_->AbortRecordingVideoPacketQueue();
     audio_packet_pool_->AbortAudioPacketQueue();
+    pthread_join(thread_, nullptr);
+    Release();
     video_packet_pool_->DestroyRecordingVideoPacketQueue();
     audio_packet_pool_->DestroyAudioPacketQueue();
+    LOGI("leave: %s", __func__);
 }
 
 void VideoConsumerThread::HandleRun(void *context) {
     LOGI("enter: %s", __func__);
     while (!stopping_) {
-        mp4_muxer_->Encode();
+        int ret = mp4_muxer_->Encode();
+        if (ret < 0) {
+            break;
+        }
     }
     LOGI("leave: %s", __func__);
 }
 
 void *VideoConsumerThread::StartThread(void *context) {
+    LOGI("enter: %s", __func__);
     VideoConsumerThread* thread = static_cast<VideoConsumerThread *>(context);
     thread->running_ = true;
     thread->HandleRun(context);

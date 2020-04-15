@@ -91,10 +91,10 @@ class TrinityTestCase(unittest.TestCase):
         # 录制5段视频,每段5秒
         for num in range(0, 5): 
             # 随机去选一次相册中的视频
-            album_random_value = random.randint(0, 5)
-            if (album_random_value == num):
-                self.clickPhoto()
-                continue
+            # album_random_value = random.randint(0, 5)
+            # if (album_random_value == num):
+            #     self.clickPhoto()
+            #     continue
             self.clickRecordEffect()
             # 长按录制按钮5秒
             d(resourceId="com.trinity.sample:id/record_button", className="android.view.View").long_click(5)
@@ -105,38 +105,38 @@ class TrinityTestCase(unittest.TestCase):
         d(resourceId="com.trinity.sample:id/done", className="android.widget.ImageView").click()
 
         # 点击滤镜
-        d(text="滤镜").click()
-        # 遍历滤镜,所有滤镜切换一次
-        for num in range(1, 8):
-            for index in range(1, 8):
-                try:
-                    d.xpath('//*[@resource-id="com.trinity.sample:id/effect_list_filter"]/android.widget.RelativeLayout[' + str(index) +']').click()
-                    # 每个滤镜显示2秒
-                    time.sleep(2)
-                except Exception:
-                    print('click filter exception')
-                    self.runTest()
-            # 往左滑动
-            d.swipe_ext("left", box=(0, self.displayHeight - 200, self.displayWidth, self.displayHeight), scale=0.7)
+        # d(text="滤镜").click()
+        # # 遍历滤镜,所有滤镜切换一次
+        # for num in range(1, 8):
+        #     for index in range(1, 8):
+        #         try:
+        #             d.xpath('//*[@resource-id="com.trinity.sample:id/effect_list_filter"]/android.widget.RelativeLayout[' + str(index) +']').click()
+        #             # 每个滤镜显示2秒
+        #             time.sleep(2)
+        #         except Exception:
+        #             print('click filter exception')
+        #             self.runTest()
+        #     # 往左滑动
+        #     d.swipe_ext("left", box=(0, self.displayHeight - 200, self.displayWidth, self.displayHeight), scale=0.7)
 
-        # 点击隐藏滤镜列表
-        d(resourceId="com.trinity.sample:id/root_view", className="android.widget.RelativeLayout").click()
+        # # 点击隐藏滤镜列表
+        # d(resourceId="com.trinity.sample:id/root_view", className="android.widget.RelativeLayout").click()
 
-        # 点击特效
-        d(text="特效").click()
-        for effect_tab in effect_tab_names:
-            try:
-                d.xpath(effect_tab).click()
-                time.sleep(2)
-                effect_elements = d.xpath("//androidx.recyclerview.widget.RecyclerView//android.widget.LinearLayout//android.widget.FrameLayout//android.widget.TextView").all()
-                for effect in effect_elements:
-                    attrib = effect.attrib
-                    print(attrib['text'])
-                    d(text=attrib['text']).long_click(2)
-                    # 往左滑动
-                    d.swipe_ext("left", box=(0, self.displayHeight - 500, self.displayWidth, self.displayHeight), scale=0.1) 
-            except Exception:
-                self.runTest()
+        # # 点击特效
+        # d(text="特效").click()
+        # for effect_tab in effect_tab_names:
+        #     try:
+        #         d.xpath(effect_tab).click()
+        #         time.sleep(2)
+        #         effect_elements = d.xpath("//androidx.recyclerview.widget.RecyclerView//android.widget.LinearLayout//android.widget.FrameLayout//android.widget.TextView").all()
+        #         for effect in effect_elements:
+        #             attrib = effect.attrib
+        #             print(attrib['text'])
+        #             d(text=attrib['text']).long_click(2)
+        #             # 往左滑动
+        #             d.swipe_ext("left", box=(0, self.displayHeight - 500, self.displayWidth, self.displayHeight), scale=0.1) 
+        #     except Exception:
+        #         self.runTest()
 
         # 遍历特效, 所有特效执行一次
         # for effect_name in effects:
@@ -150,7 +150,7 @@ class TrinityTestCase(unittest.TestCase):
         #     d.swipe_ext("left", box=(0, self.displayHeight - 200, 260, self.displayHeight), scale=0.7)                        
 
          # 点击隐藏特效列表
-        d(resourceId="com.trinity.sample:id/root_view", className="android.widget.RelativeLayout").click()
+        # d(resourceId="com.trinity.sample:id/root_view", className="android.widget.RelativeLayout").click()
 
         # 点击下一步
         d(text="下一步").click()
@@ -158,7 +158,7 @@ class TrinityTestCase(unittest.TestCase):
         d.press("back")
         d.press("back")
         # os.system('adb -s ' + device + " shell rm /sdcard/Android/data/com.trinity.sample/cache/*.mp4")
-        d.press("back")
+        # d.press("back")
 
         for index in range(0, 40):
             try:

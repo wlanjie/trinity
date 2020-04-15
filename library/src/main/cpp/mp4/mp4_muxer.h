@@ -45,15 +45,15 @@ class Mp4Muxer {
     virtual int Init(const char* path, int video_width, int video_height, int frame_rate, int video_bit_rate,
             int audio_sample_rate, int audio_channels, int audio_bit_rate, std::string& audio_codec_name);
 
-    virtual void RegisterAudioPacketCallback(int (*audio_packet)(AudioPacket**, void* context, bool wait), void* context);
-    virtual void RegisterVideoPacketCallback(int (*video_packet)(VideoPacket**, void* context, bool wait), void* context);
+    virtual void RegisterAudioPacketCallback(int (*audio_packet)(AudioPacket**, void* context), void* context);
+    virtual void RegisterVideoPacketCallback(int (*video_packet)(VideoPacket**, void* context), void* context);
 
     int Encode();
 
     virtual int Stop();
 
-    typedef int (*AudioPacketCallback) (AudioPacket**, void* context, bool wait);
-    typedef int (*VideoPacketCallback) (VideoPacket**, void* context, bool wait);
+    typedef int (*AudioPacketCallback) (AudioPacket**, void* context);
+    typedef int (*VideoPacketCallback) (VideoPacket**, void* context);
 
  protected:
     virtual AVStream* AddStream(AVFormatContext* oc, AVCodec** codec, enum AVCodecID codec_id, std::string& codec_name);
@@ -64,9 +64,9 @@ class Mp4Muxer {
     void ParseH264SequenceHeader(uint8_t *in_buffer, uint32_t in_ui32_size, uint8_t **in_sps_buffer, int &in_sps_size,
                                  uint8_t **in_pps_buffer, int &in_pps_size);
 
-    virtual int WriteVideoFrame(AVFormatContext* oc, AVStream* st, bool wait = true);
+    virtual int WriteVideoFrame(AVFormatContext* oc, AVStream* st);
 
-    virtual int WriteAudioFrame(AVFormatContext* oc, AVStream* st, bool wait = true);
+    virtual int WriteAudioFrame(AVFormatContext* oc, AVStream* st);
 
     virtual void CloseVideo(AVFormatContext* oc, AVStream* st);
 

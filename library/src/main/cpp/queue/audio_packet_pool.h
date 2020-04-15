@@ -42,10 +42,6 @@ class AudioPacketPool {
     virtual int GetAudioPacket(AudioPacket **audioPacket, bool block, bool wait = true);
     virtual void PushAudioPacketToQueue(AudioPacket *audioPacket);
     virtual int GetAudioPacketQueueSize();
-
- private:
-    pthread_mutex_t audio_packet_mutex_;
-    pthread_cond_t audio_packet_cond_;
 };
 
 }  // namespace trinity

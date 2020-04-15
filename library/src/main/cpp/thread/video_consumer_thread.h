@@ -46,8 +46,8 @@ class VideoConsumerThread {
     void Notify();
     void Stop();
 
-    int GetH264Packet(VideoPacket** packet, bool wait);
-    int GetAudioPacket(AudioPacket** packet, bool wait);
+    int GetH264Packet(VideoPacket** packet);
+    int GetAudioPacket(AudioPacket** packet);
 
  protected:
     virtual void HandleRun(void* context);

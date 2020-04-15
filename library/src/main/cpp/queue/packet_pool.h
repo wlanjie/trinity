@@ -58,8 +58,6 @@ class PacketPool {
     int accompany_buffer_cursor_;
     int total_discard_video_packet_duration_copy_;
     pthread_rwlock_t accompany_drop_frame_lock_;
-    pthread_mutex_t video_packet_mutex_;
-    pthread_cond_t video_packet_cond_;
 
  private:
     virtual void RecordDropVideoFrame(int discardVideoPacketSize);

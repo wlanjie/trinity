@@ -29,8 +29,6 @@ AudioPacketPool* AudioPacketPool::instance_ = new AudioPacketPool();
 
 AudioPacketPool::AudioPacketPool() {
     audio_packet_queue_ = nullptr;
-    pthread_mutex_init(&audio_packet_mutex_, nullptr);
-    pthread_cond_init(&audio_packet_cond_, nullptr);
 }
 
 AudioPacketPool *AudioPacketPool::GetInstance() {
@@ -38,8 +36,6 @@ AudioPacketPool *AudioPacketPool::GetInstance() {
 }
 
 AudioPacketPool::~AudioPacketPool() {
-    pthread_mutex_destroy(&audio_packet_mutex_);
-    pthread_cond_destroy(&audio_packet_cond_);
 }
 
 void AudioPacketPool::InitAudioPacketQueue() {
@@ -61,13 +57,8 @@ void AudioPacketPool::DestroyAudioPacketQueue() {
 }
 
 int AudioPacketPool::GetAudioPacket(AudioPacket **audioPacket, bool block, bool wait) {
-    if (GetAudioPacketQueueSize() == 0 && wait) {
-        pthread_mutex_lock(&audio_packet_mutex_);
-        pthread_cond_wait(&audio_packet_cond_, &audio_packet_mutex_);
-        pthread_mutex_unlock(&audio_packet_mutex_);
-    }
     int result = -1;
-    if (nullptr != audio_packet_queue_ && audio_packet_queue_->Size() > 0) {
+    if (nullptr != audio_packet_queue_) {
         result = audio_packet_queue_->Get(audioPacket, block);
     }
     return result;
@@ -77,9 +68,6 @@ void AudioPacketPool::PushAudioPacketToQueue(AudioPacket *audioPacket) {
     if (nullptr != audio_packet_queue_ && audioPacket != nullptr) {
         audio_packet_queue_->Put(audioPacket);
     }
-    pthread_mutex_lock(&audio_packet_mutex_);
-    pthread_cond_signal(&audio_packet_cond_);
-    pthread_mutex_unlock(&audio_packet_mutex_);
 }
 
 int AudioPacketPool::GetAudioPacketQueueSize() {

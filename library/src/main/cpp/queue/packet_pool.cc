@@ -44,16 +44,12 @@ PacketPool::PacketPool()
       accompany_packet_queue_(nullptr) {
     pthread_rwlock_init(&rw_lock_, nullptr);
     pthread_rwlock_init(&accompany_drop_frame_lock_, nullptr);
-    pthread_mutex_init(&video_packet_mutex_, nullptr);
-    pthread_cond_init(&video_packet_cond_, nullptr);
 }
 
 
 PacketPool::~PacketPool() {
     pthread_rwlock_destroy(&rw_lock_);
     pthread_rwlock_destroy(&accompany_drop_frame_lock_);
-    pthread_mutex_destroy(&video_packet_mutex_);
-    pthread_cond_destroy(&video_packet_cond_);
 }
 
 PacketPool* PacketPool::instance_ = new PacketPool();
@@ -297,13 +293,8 @@ void PacketPool::DestroyRecordingVideoPacketQueue() {
 }
 
 int PacketPool::GetRecordingVideoPacket(VideoPacket **videoPacket, bool block, bool wait) {
-    if (GetRecordingVideoPacketQueueSize() == 0 && wait) {
-        pthread_mutex_lock(&video_packet_mutex_);
-        pthread_cond_wait(&video_packet_cond_, &video_packet_mutex_);
-        pthread_mutex_unlock(&video_packet_mutex_);
-    }
     int result = -1;
-    if (nullptr != video_packet_queue_ && video_packet_queue_->Size() > 0) {
+    if (nullptr != video_packet_queue_) {
         result = video_packet_queue_->Get(videoPacket, block);
     }
     return result;
@@ -314,12 +305,6 @@ bool PacketPool::DetectDiscardVideoPacket() {
 }
 
 bool PacketPool::PushRecordingVideoPacketToQueue(VideoPacket *videoPacket) {
-    if (videoPacket == nullptr) {
-        pthread_mutex_lock(&video_packet_mutex_);
-        pthread_cond_signal(&video_packet_cond_);
-        pthread_mutex_unlock(&video_packet_mutex_);
-        return false;
-    }
     bool dropFrame = false;
     if (nullptr != video_packet_queue_) {
         while (DetectDiscardVideoPacket()) {
@@ -336,9 +321,6 @@ bool PacketPool::PushRecordingVideoPacketToQueue(VideoPacket *videoPacket) {
         videoPacket->duration = duration < 0 ? 40 : duration;
         video_packet_queue_->Put(videoPacket);
         video_packet_duration_ = videoPacket->timeMills;
-        pthread_mutex_lock(&video_packet_mutex_);
-        pthread_cond_signal(&video_packet_cond_);
-        pthread_mutex_unlock(&video_packet_mutex_);
     }
     return dropFrame;
 }

@@ -137,9 +137,6 @@ void SoftEncoderAdapter::DestroyEncoder() {
         delete encoder_;
         encoder_ = nullptr;
     }
-    if (nullptr != packet_pool_) {
-        packet_pool_->PushRecordingVideoPacketToQueue(nullptr);
-    }
 }
 
 void SoftEncoderAdapter::EncodeTexture(GLuint texture_id, int time) {

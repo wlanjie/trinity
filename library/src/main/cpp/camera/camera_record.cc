@@ -116,7 +116,9 @@ void CameraRecord::PrepareEGLContext(
 }
 
 void CameraRecord::NotifyFrameAvailable() {
-    PostMessage(new Message(MSG_RENDER_FRAME));
+    if (oes_texture_id_ > 0) {
+        PostMessage(new Message(MSG_RENDER_FRAME));
+    }
 }
 
 void CameraRecord::SetSpeed(float speed) {

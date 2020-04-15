@@ -113,12 +113,12 @@ int Mp4Muxer::Init(const char *path, int video_width, int video_height, int fram
     return 0;
 }
 
-void Mp4Muxer::RegisterAudioPacketCallback(int (*audio_packet)(AudioPacket **, void *context, bool wait), void *context) {
+void Mp4Muxer::RegisterAudioPacketCallback(int (*audio_packet)(AudioPacket **, void *context), void *context) {
     audio_packet_callback_ = audio_packet;
     audio_packet_context_ = context;
 }
 
-void Mp4Muxer::RegisterVideoPacketCallback(int (*video_packet)(VideoPacket **, void *context, bool wait), void *context) {
+void Mp4Muxer::RegisterVideoPacketCallback(int (*video_packet)(VideoPacket **, void *context), void *context) {
     video_packet_callback_ = video_packet;
     video_packet_context_ = context;
 }
@@ -129,7 +129,7 @@ int Mp4Muxer::Encode() {
     int ret = 0;
     /* write interleaved audio and video frames */
     if (!video_stream_ || (video_stream_ && audio_stream_ && audio_time < video_time)) {
-        ret = WriteAudioFrame(format_context_, audio_stream_, false);
+        ret = WriteAudioFrame(format_context_, audio_stream_);
     } else if (video_stream_) {
         ret = WriteVideoFrame(format_context_, video_stream_);
     }
@@ -141,16 +141,16 @@ int Mp4Muxer::Stop() {
     LOGE("enter: %s", __func__);
     // flush audio
     if (nullptr != audio_stream_) {
-        int ret = WriteAudioFrame(format_context_, audio_stream_, false);
+        int ret = WriteAudioFrame(format_context_, audio_stream_);
         while (ret >= 0) {
-            ret = WriteAudioFrame(format_context_, audio_stream_, false);
+            ret = WriteAudioFrame(format_context_, audio_stream_);
         }
     }
     // flush video
     if (nullptr != video_stream_) {
-        int ret = WriteVideoFrame(format_context_, video_stream_, false);
+        int ret = WriteVideoFrame(format_context_, video_stream_);
         while (ret >= 0) {
-            ret = WriteVideoFrame(format_context_, video_stream_, false);
+            ret = WriteVideoFrame(format_context_, video_stream_);
         }
     }
     if (write_header_success_) {
@@ -235,9 +235,9 @@ AVStream* Mp4Muxer::AddStream(AVFormatContext *oc, AVCodec **codec, enum AVCodec
     return stream;
 }
 
-int Mp4Muxer::WriteAudioFrame(AVFormatContext *oc, AVStream *st, bool wait) {
+int Mp4Muxer::WriteAudioFrame(AVFormatContext *oc, AVStream *st) {
     AudioPacket* audio_packet = nullptr;
-    int ret = audio_packet_callback_(&audio_packet, audio_packet_context_, wait);
+    int ret = audio_packet_callback_(&audio_packet, audio_packet_context_);
     if (ret < 0 || audio_packet == nullptr) {
         return ret;
     }
@@ -325,12 +325,12 @@ void Mp4Muxer::ParseH264SequenceHeader(uint8_t *in_buffer, uint32_t in_ui32_size
     in_pps_size = idr - pps + 4;
 }
 
-int Mp4Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st, bool wait) {
+int Mp4Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st) {
     int ret = 0;
     AVCodecContext *c = st->codec;
 
     VideoPacket *h264Packet = nullptr;
-    video_packet_callback_(&h264Packet, video_packet_context_, wait);
+    video_packet_callback_(&h264Packet, video_packet_context_);
     if (h264Packet == nullptr) {
         LOGE("fill_h264_packet_callback_ Get null packet_");
         return VIDEO_QUEUE_ABORT_ERR_CODE;

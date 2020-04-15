@@ -582,6 +582,9 @@ void Player::HandleMessage(Message *msg) {
             break;
 
         case kPlayerResume:
+            if (nullptr == current_clip_) {
+                return;
+            }
             LOGI("enter kPlayerResume clip_type: %d window_create: %d", current_clip_->type, window_created_);
             if (current_clip_->type == VIDEO) {
                 if (av_play_context_ != nullptr && av_play_context_->status == PAUSED) {
