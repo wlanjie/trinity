@@ -95,7 +95,7 @@ class TrinityTestCase(unittest.TestCase):
             if (album_random_value == num):
                 self.clickPhoto()
                 continue
-            self.clickRecordEffect()
+            # self.clickRecordEffect()
             # 长按录制按钮5秒
             d(resourceId="com.trinity.sample:id/record_button", className="android.view.View").long_click(5)
             # 切换摄像头
@@ -123,20 +123,20 @@ class TrinityTestCase(unittest.TestCase):
         # d(resourceId="com.trinity.sample:id/root_view", className="android.widget.RelativeLayout").click()
 
         # 点击特效
-        d(text="特效").click()
-        for effect_tab in effect_tab_names:
-            try:
-                d.xpath(effect_tab).click()
-                time.sleep(2)
-                effect_elements = d.xpath("//androidx.recyclerview.widget.RecyclerView//android.widget.LinearLayout//android.widget.FrameLayout//android.widget.TextView").all()
-                for effect in effect_elements:
-                    attrib = effect.attrib
-                    print(attrib['text'])
-                    d(text=attrib['text']).long_click(2)
-                    # 往左滑动
-                    d.swipe_ext("left", box=(0, self.displayHeight - 500, self.displayWidth, self.displayHeight), scale=0.1) 
-            except Exception:
-                self.runTest()
+        # d(text="特效").click()
+        # for effect_tab in effect_tab_names:
+        #     try:
+        #         d.xpath(effect_tab).click()
+        #         time.sleep(2)
+        #         effect_elements = d.xpath("//androidx.recyclerview.widget.RecyclerView//android.widget.LinearLayout//android.widget.FrameLayout//android.widget.TextView").all()
+        #         for effect in effect_elements:
+        #             attrib = effect.attrib
+        #             print(attrib['text'])
+        #             d(text=attrib['text']).long_click(2)
+        #             # 往左滑动
+        #             d.swipe_ext("left", box=(0, self.displayHeight - 500, self.displayWidth, self.displayHeight), scale=0.1) 
+        #     except Exception:
+        #         self.runTest()
 
         # 遍历特效, 所有特效执行一次
         # for effect_name in effects:
@@ -158,7 +158,7 @@ class TrinityTestCase(unittest.TestCase):
         d.press("back")
         d.press("back")
         # os.system('adb -s ' + device + " shell rm /sdcard/Android/data/com.trinity.sample/cache/*.mp4")
-        d.press("back")
+        # d.press("back")
 
         for index in range(0, 40):
             try:
@@ -166,6 +166,9 @@ class TrinityTestCase(unittest.TestCase):
             except Exception:
                 print('delete exception')
 
+        current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+        os.system('adb -s ' + device + ' pull /sdcard/export.mp4 ~/Desktop/trinity_video/' + current_time + ".mp4")
+        os.system('adb -s ' + device + ' pull /sdcard/Android/data/com.trinity.sample/cache/resource.json ~/Desktop/trinity_video/' + current_time + ".json")
     def tearDown(self):
         d.set_fastinput_ime(False)
         d.app_stop(self.package_name)

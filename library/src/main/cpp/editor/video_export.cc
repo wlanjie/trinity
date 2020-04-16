@@ -74,9 +74,6 @@ VideoExport::VideoExport(JNIEnv* env, jobject object)
     , audio_buffer_(nullptr)
     , audio_buf1(nullptr)
     , audio_samples_(nullptr)
-    , video_export_handler_(nullptr)
-    , video_export_message_queue_(nullptr)
-    , export_message_thread_()
     , media_mutex_()
     , media_cond_()
     , export_config_json_(nullptr)
@@ -131,18 +128,16 @@ VideoExport::VideoExport(JNIEnv* env, jobject object)
     av_play_set_buffer_time(av_play_context_, 5);
 
     packet_pool_ = PacketPool::GetInstance();
-    video_export_message_queue_ = new MessageQueue("Video Export Message Queue");
-    video_export_handler_ = new VideoExportHandler(this, video_export_message_queue_);
-    pthread_create(&export_message_thread_, nullptr, ExportMessageThread, this);
 }
 
 VideoExport::~VideoExport() {
+    LOGI("enter: %s", __func__);
     if (nullptr != av_play_context_) {
         av_play_release(av_play_context_);
         av_play_context_ = nullptr;
     }
-    video_export_handler_->PostMessage(new Message(MESSAGE_QUEUE_LOOP_QUIT_FLAG));
-    pthread_join(export_message_thread_, nullptr);
+    pthread_join(export_video_thread_, 0);
+    pthread_join(export_audio_thread_, 0);
     delete[] audio_samples_;
     audio_samples_ = nullptr;
     if (nullptr != object_ && nullptr != vm_) {
@@ -152,33 +147,13 @@ VideoExport::~VideoExport() {
             object_ = nullptr;
         }
     }
+    delete[] crop_vertex_coordinate_;
     delete[] vertex_coordinate_;
     delete[] texture_coordinate_;
     delete[] texture_matrix_;
     pthread_mutex_destroy(&media_mutex_);
     pthread_cond_destroy(&media_cond_);
-}
-
-void* VideoExport::ExportMessageThread(void *context) {
-    auto* video_export = reinterpret_cast<VideoExport*>(context);
-    video_export->ProcessMessage();
-    pthread_exit(nullptr);
-}
-
-void VideoExport::ProcessMessage() {
-    bool rendering = true;
-    while (rendering) {
-        Message *msg = NULL;
-        if (video_export_message_queue_->DequeueMessage(&msg, true) > 0) {
-            if (msg == NULL) {
-                return;
-            }
-            if (MESSAGE_QUEUE_LOOP_QUIT_FLAG == msg->Execute()) {
-                rendering = false;
-            }
-            delete msg;
-        }
-    }
+    LOGI("leave: %s", __func__);
 }
 
 void VideoExport::OnCompleteEvent(AVPlayContext* context) {
@@ -327,8 +302,7 @@ void VideoExport::OnMusics() {
 }
 
 void VideoExport::StartDecode(MediaClip *clip) {
-    LOGE("file: %s export_index: %d", clip->file_name, export_index_);
-    LOGI("enter %s path: %s start_time: %d", __func__, clip->file_name, clip->start_time);
+    LOGI("enter %s path: %s start_time: %d export_index: %d", __func__, clip->file_name, clip->start_time, export_index_);
     if (clip->type == VIDEO) {
         av_play_play(clip->file_name, clip->start_time, av_play_context_);
     } else if (clip->type == IMAGE) {
@@ -690,9 +664,6 @@ void VideoExport::ProcessVideoExport() {
     encoder_->DestroyEncoder();
     delete encoder_;
     packet_thread_->Stop();
-//    PacketPool::GetInstance()->AbortRecordingVideoPacketQueue();
-//    PacketPool::GetInstance()->DestroyRecordingVideoPacketQueue();
-//    AudioPacketPool::GetInstance()->DestroyAudioPacketQueue();
     delete packet_thread_;
 
     if (nullptr != image_process_) {
@@ -719,6 +690,15 @@ void VideoExport::ProcessVideoExport() {
         delete clip;
     }
     clip_deque_.clear();
+
+    if (nullptr != yuv_render_) {
+        delete yuv_render_;
+        yuv_render_ = nullptr;
+    }
+    if (nullptr != packet_pool_) {
+        packet_pool_->AbortRecordingVideoPacketQueue();
+        packet_pool_->DestroyRecordingVideoPacketQueue();
+    }
 
     egl_core_->ReleaseSurface(egl_surface_);
     egl_core_->Release();
@@ -860,6 +840,7 @@ void VideoExport::ProcessAudioExport() {
     LOGE("audio export done");
     if (nullptr != swr_context_) {
         swr_free(&swr_context_);
+        swr_context_ = nullptr;
     }
     for (auto decoder : music_decoder_deque_) {
         decoder->Destroy();
@@ -871,9 +852,17 @@ void VideoExport::ProcessAudioExport() {
         delete resample;
     }
     resample_deque_.clear();
+    if (nullptr != packet_pool_) {
+        packet_pool_->AbortAudioPacketQueue();
+        packet_pool_->DestroyAudioPacketQueue();
+    }
     if (nullptr != image_audio_buffer_) {
         delete[] image_audio_buffer_;
         image_audio_buffer_ = nullptr;
+    }
+    if (nullptr != audio_buf1) {
+        av_free(audio_buf1);
+        audio_buf1 = nullptr;
     }
     if (nullptr != audio_encoder_adapter_) {
         audio_encoder_adapter_->Destroy();

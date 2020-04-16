@@ -68,7 +68,6 @@ class VideoExport {
     int OnComplete();
     static void* ExportVideoThread(void* context);
     static void* ExportAudioThread(void* context);
-    static void* ExportMessageThread(void* context);
     void StartDecode(MediaClip* clip);
     void LoadImageTexture(MediaClip* clip);
     void FreeResource();
@@ -83,7 +82,6 @@ class VideoExport {
     void OnExportComplete();
     int Resample();
     int FillMuteAudio();
-    void ProcessMessage();
 
  private:
     JavaVM* vm_;
@@ -126,9 +124,6 @@ class VideoExport {
     int audio_current_time_;
     uint8_t *audio_buf1;
     short* audio_samples_;
-    VideoExportHandler* video_export_handler_;
-    MessageQueue* video_export_message_queue_;
-    pthread_t export_message_thread_;
     pthread_mutex_t media_mutex_;
     pthread_cond_t media_cond_;
     cJSON* export_config_json_;
@@ -141,27 +136,6 @@ class VideoExport {
     uint8_t* image_audio_buffer_;
     int image_audio_buffer_time_;
     FrameBuffer* image_frame_buffer_;
-};
-
-class VideoExportHandler : public Handler {
- public:
-    VideoExportHandler(VideoExport* video_export, MessageQueue* queue) : Handler(queue) {
-        video_export_ = video_export;
-    }
-
-    void HandleMessage(Message* msg) {
-        int what = msg->GetWhat();
-        switch (what) {
-            case kStartNextExport:
-                break;
-
-            default:
-                break;
-        }
-    }
-
- private:
-    VideoExport* video_export_;
 };
 
 }  // namespace trinity
