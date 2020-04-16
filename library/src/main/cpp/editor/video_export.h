@@ -91,6 +91,7 @@ class VideoExport {
     int64_t video_duration_;
     pthread_t export_video_thread_;
     pthread_t export_audio_thread_;
+    MediaClip* current_media_clip_;
     std::deque<MediaClip*> clip_deque_;
     std::deque<MusicDecoder*> music_decoder_deque_;
     std::deque<trinity::Resample*> resample_deque_;

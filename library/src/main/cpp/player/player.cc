@@ -148,10 +148,12 @@ Player::~Player() {
 }
 
 void Player::ReleasePlayContext() {
+    LOGI("enter: %s", __func__);
     if (nullptr != av_play_context_) {
         av_play_release(av_play_context_);
         av_play_context_ = nullptr;
     }
+    LOGI("leave: %s", __func__);
 }
 
 int Player::Init() {
@@ -159,14 +161,17 @@ int Player::Init() {
 }
 
 void Player::OnSurfaceCreated(ANativeWindow* window) {
+    LOGI("enter: %s", __func__);
     window_ = window;
     if (nullptr != av_play_context_) {
         av_play_context_->window = window;
     }
     PostMessage(new Message(kEGLWindowCreate));
+    LOGI("leave: %s", __func__);
 }
 
 void Player::OnSurfaceChanged(int width, int height) {
+    LOGI("enter: %s", __func__);
     surface_width_ = width;
     surface_height_ = height;
 
@@ -177,10 +182,13 @@ void Player::OnSurfaceChanged(int width, int height) {
         SetFrame(frame_width_, frame_height_, surface_width_, surface_height_);
     }
     PostMessage(new Message(kSurfaceChanged));
+    LOGI("leave: %s", __func__);
 }
 
 void Player::OnSurfaceDestroy() {
+    LOGI("enter: %s", __func__);
     PostMessage(new Message(kEGLWindowDestroy));
+    LOGI("leave: %s", __func__);
 }
 
 void Player::OnComplete(AVPlayContext *context) {
@@ -503,6 +511,7 @@ void Player::ProcessMessage() {
         if (message_queue_->DequeueMessage(&msg, true) > 0) {
             if (nullptr != msg) {
                 if (MESSAGE_QUEUE_LOOP_QUIT_FLAG == msg->Execute()) {
+                    LOGE("MESSAGE_QUEUE_LOOP_QUIT_FLAG");
                     rendering = false;
                 }
                 delete msg;
@@ -924,7 +933,7 @@ void Player::OnGLCreate() {
 }
 
 void Player::OnGLWindowCreate() {
-    LOGI("enter %s", __func__);
+    LOGI("enter %s core_: %p", __func__, core_);
     render_surface_ = core_->CreateWindowSurface(window_);
     if (nullptr != render_surface_ && EGL_NO_SURFACE != render_surface_) {
         auto result = core_->MakeCurrent(render_surface_);
@@ -975,11 +984,7 @@ void Player::OnRenderVideoFrame() {
         pthread_cond_wait(&cond_, &mutex_);
     }
 
-    if (av_play_context_->status == PAUSED) {
-        // TODO wait
-        usleep(100000);
-        PostMessage(new Message(kRenderVideoFrame));
-    } else if (av_play_context_->status == PLAYING) {
+    if (av_play_context_->status == PLAYING) {
         int ret = DrawVideoFrame();
         if (ret == 0) {
             PostMessage(new Message(kRenderVideoFrame));

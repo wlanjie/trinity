@@ -39,6 +39,7 @@ VideoExport::VideoExport(JNIEnv* env, jobject object)
     , video_duration_(0)
     , export_video_thread_()
     , export_audio_thread_()
+    , current_media_clip_(nullptr)
     , clip_deque_()
     , music_decoder_deque_()
     , resample_deque_()
@@ -117,6 +118,9 @@ VideoExport::VideoExport(JNIEnv* env, jobject object)
     texture_coordinate_[6] = 1.0f;
     texture_coordinate_[7] = 1.0f;
 
+    pthread_mutex_init(&media_mutex_, nullptr);
+    pthread_cond_init(&media_cond_, nullptr);
+
     texture_matrix_ = new GLfloat[16];
     memset(texture_matrix_, 0, 16 * sizeof(GLfloat));
     texture_matrix_[0] = texture_matrix_[5] = texture_matrix_[10] = texture_matrix_[15] = 1.0F;
@@ -151,6 +155,8 @@ VideoExport::~VideoExport() {
     delete[] vertex_coordinate_;
     delete[] texture_coordinate_;
     delete[] texture_matrix_;
+    pthread_mutex_destroy(&media_mutex_);
+    pthread_cond_destroy(&media_cond_);
 }
 
 void* VideoExport::ExportMessageThread(void *context) {
@@ -192,8 +198,8 @@ int VideoExport::OnComplete() {
             export_ing_ = false;
         } else {
             previous_time_ = current_time_;
-            MediaClip *clip = clip_deque_.at(export_index_);
-            StartDecode(clip);
+            current_media_clip_ = clip_deque_.at(export_index_);
+            StartDecode(current_media_clip_);
         }
     }
     pthread_cond_signal(&media_cond_);
@@ -461,6 +467,7 @@ int VideoExport::Export(const char *export_config, const char *path,
         video_duration_ += export_clip->end_time - export_clip->start_time;
     }
 
+    current_media_clip_ = clip_deque_.at(0);
 
     free(buffer);
     if (media_codec_encode) {
@@ -474,8 +481,6 @@ int VideoExport::Export(const char *export_config, const char *path,
     encoder_->Init(width, height, video_bit_rate * 1000, frame_rate);
     audio_encoder_adapter_ = new AudioEncoderAdapter();
     audio_encoder_adapter_->Init(packet_pool_, 44100, 1, 128 * 1000, "libfdk_aac");
-    pthread_mutex_init(&media_mutex_, nullptr);
-    pthread_cond_init(&media_cond_, nullptr);
     pthread_create(&export_video_thread_, nullptr, ExportVideoThread, this);
     pthread_create(&export_audio_thread_, nullptr, ExportAudioThread, this);
     LOGI("leave %s", __func__);
@@ -542,9 +547,7 @@ void VideoExport::ProcessVideoExport() {
     glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     av_play_context_->media_codec_texture_id = oes_texture_;
-
-    MediaClip* c = clip_deque_.at(0);
-    StartDecode(c);
+    StartDecode(current_media_clip_);
 
     // 如果硬解码会重新创建
     FrameBuffer* media_codec_render_ = nullptr;
@@ -561,15 +564,17 @@ void VideoExport::ProcessVideoExport() {
         if (!export_ing_) {
             break;
         }
+        if (nullptr == current_media_clip_) {
+            break;
+        }
         egl_core_->MakeCurrent(egl_surface_);
-        auto clip = clip_deque_.at(export_index_);
 
         if (load_image_texture_) {
             load_image_texture_ = false;
-            LoadImageTexture(clip);
+            LoadImageTexture(current_media_clip_);
         }
 
-        if (clip->type == IMAGE) {
+        if (current_media_clip_->type == IMAGE) {
             image_frame_buffer_->ActiveProgram();
             static GLfloat texture_coordinate[] = {
                     0.F, 1.F,
@@ -582,12 +587,12 @@ void VideoExport::ProcessVideoExport() {
                     crop_vertex_coordinate_, media_codec_encode_ ? texture_coordinate : texture_coordinate_);
             image_render_time_ += 1000 / frame_rate_;
             current_time_ = static_cast<uint64_t>(image_render_time_);
-            if (image_render_time_ >= clip->end_time) {
+            if (image_render_time_ >= current_media_clip_->end_time) {
                 current_time_ += previous_time_;
                 OnComplete();
                 continue;
             }
-        } else if (clip->type == VIDEO) {
+        } else if (current_media_clip_->type == VIDEO) {
             if (av_play_context_->error_code == BUFFER_FLAG_END_OF_STREAM && av_play_context_->video_frame_queue->count == 0) {
                 pthread_mutex_lock(&media_mutex_);
                 LOGE("export video message stop");
@@ -788,10 +793,10 @@ void VideoExport::ProcessAudioExport() {
             break;
         }
 
-        if (export_index_ >= clip_deque_.size()) {
+        if (nullptr == current_media_clip_) {
             break;
         }
-        auto clip = clip_deque_.at(export_index_);
+
         AudioPacket* music_packet = nullptr;
         for (int i = 0; i < music_decoder_deque_.size(); ++i) {
             auto* decoder = music_decoder_deque_.at(i);
@@ -828,11 +833,11 @@ void VideoExport::ProcessAudioExport() {
         }
 
         int audio_size = 0;
-        if (clip->type == IMAGE) {
-            if (audio_current_time_ < clip->end_time) {
+        if (current_media_clip_->type == IMAGE) {
+            if (audio_current_time_ < current_media_clip_->end_time) {
                 audio_size = FillMuteAudio();
             }
-        } else if (clip->type == VIDEO) {
+        } else if (current_media_clip_->type == VIDEO) {
             audio_size = Resample();
         }
         if (audio_size > 0) {
@@ -893,6 +898,9 @@ int VideoExport::FillMuteAudio() {
 
 int VideoExport::Resample() {
     AVPlayContext* context = av_play_context_;
+    if (context->eof && context->audio_frame_queue->count == 0) {
+        return -1;
+    }
     do {
         AVFrame* frame = frame_queue_get(context->audio_frame_queue);
         if (frame != nullptr) {
