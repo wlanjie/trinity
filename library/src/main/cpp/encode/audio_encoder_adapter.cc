@@ -99,17 +99,8 @@ void AudioEncoderAdapter::Destroy() {
         return;
     }
     encoding_ = false;
-    if (aac_packet_pool_ != nullptr) {
-        aac_packet_pool_->PushAudioPacketToQueue(nullptr);
-    }
     pcm_packet_pool_->AbortAudioPacketQueue();
     pthread_join(audio_encoder_thread_, nullptr);
-    pcm_packet_pool_->DestroyAudioPacketQueue();
-    if (nullptr != audio_encoder_) {
-        audio_encoder_->Destroy();
-        delete audio_encoder_;
-        audio_encoder_ = nullptr;
-    }
     if (nullptr != audio_codec_name_) {
         delete[] audio_codec_name_;
         audio_codec_name_ = nullptr;
@@ -139,6 +130,12 @@ void AudioEncoderAdapter::StartEncode() {
             audio_sample_rate_, audio_codec_name_, PCMFrameCallback, this);
     while (encoding_) {
         audio_encoder_->Encode(aac_packet_pool_);
+    }
+    pcm_packet_pool_->DestroyAudioPacketQueue();
+    if (nullptr != audio_encoder_) {
+        audio_encoder_->Destroy();
+        delete audio_encoder_;
+        audio_encoder_ = nullptr;
     }
 }
 

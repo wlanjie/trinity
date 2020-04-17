@@ -56,6 +56,7 @@ class TrinityTestCase(unittest.TestCase):
     def clickPhoto(self):
         # 选择相机中的视频, 并点击完成
         d(resourceId="com.trinity.sample:id/photo", className="android.widget.ImageView").click()
+        time.sleep(2)
         try:
             elements = d.xpath("//android.widget.FrameLayout//androidx.recyclerview.widget.RecyclerView//android.widget.FrameLayout//android.widget.TextView").all()
             random_value = random.randint(0, len(elements) - 1)
@@ -66,7 +67,7 @@ class TrinityTestCase(unittest.TestCase):
                 if 'done' in attrib['resource-id']:
                     item.click()
         except Exception:
-            print('clickPhoto error')
+            print('clickPhoto error: ' + str(e))
             self.runTest()             
 
     def clickRecordEffect(self):
@@ -149,6 +150,7 @@ class TrinityTestCase(unittest.TestCase):
         #     # 往左滑动
         #     d.swipe_ext("left", box=(0, self.displayHeight - 200, 260, self.displayHeight), scale=0.7)                        
 
+        time.sleep(40)
          # 点击隐藏特效列表
         d(resourceId="com.trinity.sample:id/root_view", className="android.widget.RelativeLayout").click()
 
