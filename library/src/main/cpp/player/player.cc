@@ -9,7 +9,6 @@
 #include <unistd.h>
 #include "player.h"
 #include "tools.h"
-#include "matrix.h"
 
 #define MAX_IMAGE_WIDTH 1080
 #define MAX_IMAGE_HEIGHT 1920

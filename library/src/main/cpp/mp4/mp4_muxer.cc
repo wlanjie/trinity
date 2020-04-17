@@ -33,9 +33,10 @@ Mp4Muxer::Mp4Muxer()
       header_size_(0),
       format_context_(nullptr),
       video_stream_(nullptr),
+      video_codec_context_(nullptr),
       audio_stream_(nullptr),
-      bit_stream_filter_context_(nullptr),
-//      bit_stream_filter_(nullptr),
+      audio_codec_context_(nullptr),
+      bsf_context_(nullptr),
       duration_(0),
       last_audio_packet_presentation_time_mills_(0),
       last_video_presentation_time_ms_(0),
@@ -140,19 +141,19 @@ int Mp4Muxer::Encode() {
 int Mp4Muxer::Stop() {
     LOGE("enter: %s", __func__);
     // flush audio
-    if (nullptr != audio_stream_) {
-        int ret = WriteAudioFrame(format_context_, audio_stream_);
-        while (ret >= 0) {
-            ret = WriteAudioFrame(format_context_, audio_stream_);
-        }
-    }
-    // flush video
-    if (nullptr != video_stream_) {
-        int ret = WriteVideoFrame(format_context_, video_stream_);
-        while (ret >= 0) {
-            ret = WriteVideoFrame(format_context_, video_stream_);
-        }
-    }
+//    if (nullptr != audio_stream_) {
+//        int ret = WriteAudioFrame(format_context_, audio_stream_);
+//        while (ret >= 0) {
+//            ret = WriteAudioFrame(format_context_, audio_stream_);
+//        }
+//    }
+//    // flush video
+//    if (nullptr != video_stream_) {
+//        int ret = WriteVideoFrame(format_context_, video_stream_);
+//        while (ret >= 0) {
+//            ret = WriteVideoFrame(format_context_, video_stream_);
+//        }
+//    }
     if (write_header_success_) {
         av_write_trailer(format_context_);
     }
@@ -180,96 +181,45 @@ int Mp4Muxer::Stop() {
     return 0;
 }
 
-AVStream* Mp4Muxer::AddStream(AVFormatContext *oc, AVCodec **codec, enum AVCodecID codec_id, std::string& codec_name) {
-    if (AV_CODEC_ID_NONE == codec_id) {
-        *codec = avcodec_find_encoder_by_name(codec_name.c_str());
-    } else {
-        *codec = avcodec_find_encoder(codec_id);
-    }
-    if (!(*codec)) {
-        LOGE("find encoder error: %s", avcodec_get_name(codec_id));
-        return nullptr;
-    }
-    AVStream* stream = avformat_new_stream(oc, *codec);
-    if (stream == nullptr) {
-        LOGE("alloc stream error");
-        return nullptr;
-    }
-    stream->id = oc->nb_streams - 1;
-    AVCodecContext* context = stream->codec;
-    switch ((*codec)->type) {
-        case AVMEDIA_TYPE_AUDIO:
-            context->sample_fmt = AV_SAMPLE_FMT_S16;
-            context->bit_rate = audio_bit_rate_;
-            context->codec_type = AVMEDIA_TYPE_AUDIO;
-            context->sample_rate = audio_sample_rate_;
-            context->channel_layout = audio_channels_ == 1 ? AV_CH_LAYOUT_MONO : AV_CH_LAYOUT_STEREO;
-            context->channels = av_get_channel_layout_nb_channels(context->channel_layout);
-            context->flags |= CODEC_FLAG_GLOBAL_HEADER;
-            break;
-        case AVMEDIA_TYPE_VIDEO:
-            context->codec_id = AV_CODEC_ID_H264;
-            context->bit_rate = video_bit_rate_;
-            context->width = video_width_;
-            context->height = video_height_;
-            AVRational video_time_base = { 1, 10000 };
-            stream->avg_frame_rate = video_time_base;
-            context->time_base = video_time_base;
-            stream->time_base = video_time_base;
-            context->gop_size = static_cast<int>(video_frame_rate_);
-            context->qmin = 10;
-            context->qmax = 30;
-            context->pix_fmt = AV_PIX_FMT_YUV420P;
-            // 新增语句，设置为编码延迟
-            av_opt_set(context->priv_data, "preset", "ultrafast", 0);
-            // 实时编码关键看这句，上面那条无所谓
-            av_opt_set(context->priv_data, "tune", "zerolatency", 0);
-            if (format_context_->oformat->flags & AVFMT_GLOBALHEADER) {
-                context->flags |= CODEC_FLAG_GLOBAL_HEADER;
-            }
-            break;
-    }
-    if (format_context_->oformat->flags & AVFMT_GLOBALHEADER) {
-        context->flags |= CODEC_FLAG_GLOBAL_HEADER;
-    }
-    return stream;
-}
-
 int Mp4Muxer::WriteAudioFrame(AVFormatContext *oc, AVStream *st) {
+    if (nullptr == bsf_context_) {
+        LOGE("nullptr == bsf_context_");
+        return -1;
+    }
     AudioPacket* audio_packet = nullptr;
     int ret = audio_packet_callback_(&audio_packet, audio_packet_context_);
     if (ret < 0 || audio_packet == nullptr) {
+        LOGE("audio_packet_callback_ ret: %d", ret);
         return ret;
     }
-    AVPacket pkt = { 0 };
-    av_init_packet(&pkt);
+    AVPacket* pkt = av_packet_alloc();
     last_audio_packet_presentation_time_mills_ = audio_packet->position;
-    pkt.data = audio_packet->data;
-    pkt.size = audio_packet->size;
-    pkt.dts = pkt.pts = (int64_t) (last_audio_packet_presentation_time_mills_ / 1000.0f / av_q2d(st->time_base));
-    pkt.duration = 1024;
-    pkt.stream_index = st->index;
-    AVPacket new_packet;
-    av_init_packet(&new_packet);
-    ret = av_bitstream_filter_filter(bit_stream_filter_context_, st->codec, nullptr,
-            &new_packet.data, &new_packet.size,
-            pkt.data, pkt.size, pkt.flags & AV_PKT_FLAG_KEY);
-    if (ret >= 0) {
-        new_packet.pts = pkt.pts;
-        new_packet.dts = pkt.dts;
-        new_packet.duration = pkt.duration;
-        new_packet.stream_index = pkt.stream_index;
-        ret = av_interleaved_write_frame(oc, &new_packet);
+    pkt->data = audio_packet->data;
+    pkt->size = audio_packet->size;
+    pkt->dts = pkt->pts = (int64_t) (last_audio_packet_presentation_time_mills_ / 1000.0f / av_q2d(st->time_base));
+    pkt->duration = 1024;
+    pkt->stream_index = st->index;
+    ret = av_bsf_send_packet(bsf_context_, pkt);
+    if (ret < 0) {
+        LOGE("av_bsf_send_packet error: %s", av_err2str(ret));
+        av_packet_free(&pkt) ;
+        delete audio_packet;
+        return -2;
+    }
+    do {
+        ret = av_bsf_receive_packet(bsf_context_, pkt);
+        if (ret < 0) {
+            break;
+        }
+        ret = av_interleaved_write_frame(oc, pkt);
         if (ret != 0) {
             LOGE("write audio frame error: %s", av_err2str(ret));
         }
-    } else {
-        LOGE("av_bitstream_filter_filter: %s", av_err2str(ret));
-    }
-    av_packet_unref(&new_packet);
-    av_packet_unref(&pkt);
+    } while (true);
+
+    av_packet_free(&pkt);
     delete audio_packet;
-    return ret;
+    return 0;
 }
 
 uint32_t Mp4Muxer::FindStartCode(uint8_t *in_buffer, uint32_t in_ui32_buffer_size,
@@ -327,7 +277,7 @@ void Mp4Muxer::ParseH264SequenceHeader(uint8_t *in_buffer, uint32_t in_ui32_size
 
 int Mp4Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st) {
     int ret = 0;
-    AVCodecContext *c = st->codec;
+    AVCodecParameters* c = st->codecpar;
 
     VideoPacket *h264Packet = nullptr;
     video_packet_callback_(&h264Packet, video_packet_context_);
@@ -409,7 +359,6 @@ int Mp4Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st) {
             pkt.pts = pts;
             pkt.dts = dts;
             pkt.flags = AV_PKT_FLAG_KEY;
-            c->frame_number++;
         } else {
             pkt.size = bufferSize;
             pkt.data = outputData;
@@ -426,7 +375,6 @@ int Mp4Muxer::WriteVideoFrame(AVFormatContext *oc, AVStream *st) {
             pkt.pts = pts;
             pkt.dts = dts;
             pkt.flags = 0;
-            c->frame_number++;
         }
         if (pkt.size) {
             ret = av_interleaved_write_frame(oc, &pkt);
@@ -447,17 +395,20 @@ double Mp4Muxer::GetVideoStreamTimeInSecs() {
 }
 
 void Mp4Muxer::CloseVideo(AVFormatContext *oc, AVStream *st) {
-    if (nullptr != st->codec) {
-        avcodec_close(st->codec);
+    if (nullptr != video_codec_context_) {
+        avcodec_close(video_codec_context_);
+        video_codec_context_ = nullptr;
     }
 }
 
 void Mp4Muxer::CloseAudio(AVFormatContext *oc, AVStream *st) {
-    if (nullptr != st->codec) {
-        avcodec_close(st->codec);
+    if (nullptr != audio_codec_context_) {
+        avcodec_close(audio_codec_context_);
+        audio_codec_context_ = nullptr;
     }
-    if (nullptr != bit_stream_filter_context_) {
-        av_bitstream_filter_close(bit_stream_filter_context_);
+    if (nullptr != bsf_context_) {
+        av_bsf_free(&bsf_context_);
+        bsf_context_ = nullptr;
     }
 }
 
@@ -466,13 +417,44 @@ double Mp4Muxer::GetAudioStreamTimeInSecs() {
 }
 
 int Mp4Muxer::BuildVideoStream() {
-    AVCodec* codec = nullptr;
-    std::string video_codec_name("none");
-    video_stream_ = AddStream(format_context_, &codec, AV_CODEC_ID_H264, video_codec_name);
+    AVCodec* codec = avcodec_find_encoder(AV_CODEC_ID_H264);
+    if (nullptr == codec) {
+        LOGE("h264 encode codec is null");
+        return -1;
+    }
+    video_stream_ = avformat_new_stream(format_context_, codec);
+    if (nullptr == video_stream_) {
+        return -2;
+    }
+    video_codec_context_ = avcodec_alloc_context3(nullptr);
+    if (nullptr == video_codec_context_) {
+        return -3;
+    }
+    video_codec_context_->codec_type = AVMEDIA_TYPE_VIDEO;
+    video_codec_context_->codec_id = AV_CODEC_ID_H264;
+    video_codec_context_->pix_fmt = AV_PIX_FMT_YUV420P;
+    video_codec_context_->bit_rate = video_bit_rate_;
+    video_codec_context_->width = video_width_;
+    video_codec_context_->height = video_height_;
+    AVRational video_time_base = { 1, 10000 };
+    video_codec_context_->time_base = video_time_base;
+    video_stream_->avg_frame_rate = video_time_base;
+    video_stream_->time_base = video_time_base;
+    video_codec_context_->gop_size = static_cast<int>(video_frame_rate_);
+    video_codec_context_->qmin = 10;
+    video_codec_context_->qmax = 30;
+    // 新增语句，设置为编码延迟
+    av_opt_set(video_codec_context_->priv_data, "preset", "ultrafast", 0);
+    // 实时编码关键看这句，上面那条无所谓
+    av_opt_set(video_codec_context_->priv_data, "tune", "zerolatency", 0);
+    if (format_context_->oformat->flags & AVFMT_GLOBALHEADER) {
+        video_codec_context_->flags |= CODEC_FLAG_GLOBAL_HEADER;
+    }
+    avcodec_parameters_from_context(video_stream_->codecpar, video_codec_context_);
     return 0;
 }
 
-int GetSampleRateIndex(unsigned int sampling_frequency) {
+int GetSampleRateIndex(int sampling_frequency) {
     switch (sampling_frequency) {
         case 96000:
             return 0;
@@ -506,23 +488,58 @@ int GetSampleRateIndex(unsigned int sampling_frequency) {
 }
 
 int Mp4Muxer::BuildAudioStream(std::string& audio_codec_name) {
-    AVCodec* codec = nullptr;
-    audio_stream_ = AddStream(format_context_, &codec, AV_CODEC_ID_NONE, audio_codec_name);
-    if (nullptr != audio_stream_ && nullptr != codec) {
-        AVCodecContext* context = audio_stream_->codec;
-        context->extradata = reinterpret_cast<uint8_t*>(av_malloc(2));
-        context->extradata_size = 2;
-        // AAC LC by default
-        unsigned int object_type = 2;
-        char dsi[2];
-        dsi[0] = static_cast<char>((object_type << 3) |
-                                   (GetSampleRateIndex(context->sample_rate) >> 1));
-        dsi[1] = static_cast<char>(((GetSampleRateIndex(context->sample_rate) & 1) << 7) |
-                                   (context->channels << 3));
-        memcpy(context->extradata, dsi, 2);
-//        bit_stream_filter_ = av_bsf_get_by_name("aac_adtstoasc");
-        bit_stream_filter_context_ = av_bitstream_filter_init("aac_adtstoasc");
+    LOGI("enter: %s", __func__);
+    AVCodec* codec = avcodec_find_encoder_by_name(audio_codec_name.c_str());
+    if (nullptr == codec) {
+        LOGE("find audio encode name error: %s", audio_codec_name.c_str());
+        return -1;
     }
+    audio_stream_ = avformat_new_stream(format_context_, codec);
+    if (nullptr == audio_stream_) {
+        LOGE("new audio stream error");
+        return -2;
+    }
+    audio_codec_context_ = avcodec_alloc_context3(nullptr);
+    audio_codec_context_->codec_type = AVMEDIA_TYPE_AUDIO;
+    audio_codec_context_->sample_fmt = AV_SAMPLE_FMT_S16;
+    audio_codec_context_->codec_id = AV_CODEC_ID_AAC;
+    audio_codec_context_->sample_rate = audio_sample_rate_;
+    audio_codec_context_->bit_rate = audio_bit_rate_;
+    audio_codec_context_->channel_layout = audio_channels_ == 1 ? AV_CH_LAYOUT_MONO : AV_CH_LAYOUT_STEREO;
+    audio_codec_context_->channels = av_get_channel_layout_nb_channels(audio_codec_context_->channel_layout);
+    audio_codec_context_->flags |= CODEC_FLAG_GLOBAL_HEADER;
+    audio_codec_context_->extradata = reinterpret_cast<uint8_t*>(av_malloc(2));
+    audio_codec_context_->extradata_size = 2;
+    // AAC LC by default
+    unsigned int object_type = 2;
+    uint8_t dsi[2];
+    dsi[0] = static_cast<uint8_t>((object_type << 3) |
+                               (GetSampleRateIndex(audio_codec_context_->sample_rate) >> 1));
+    dsi[1] = static_cast<uint8_t>(((GetSampleRateIndex(audio_codec_context_->sample_rate) & 1) << 7) |
+                               (audio_codec_context_->channels << 3));
+    memcpy(audio_codec_context_->extradata, dsi, 2);
+    avcodec_parameters_from_context(audio_stream_->codecpar, audio_codec_context_);
+    const AVBitStreamFilter* bit_stream_filter_ = av_bsf_get_by_name("aac_adtstoasc");
+    if (nullptr == bit_stream_filter_) {
+        LOGE("aac adts filter is null.");
+        return -1;
+    }
+    int ret = av_bsf_alloc(bit_stream_filter_, &bsf_context_);
+    if (ret < 0) {
+        LOGE("av_bsf_alloc error: %s", av_err2str(ret));
+        return ret;
+    }
+    ret = avcodec_parameters_copy(bsf_context_->par_in, audio_stream_->codecpar);
+    if (ret < 0) {
+        LOGE("copy parameters to par_in error: %s", av_err2str(ret));
+        return ret;
+    }
+    ret = av_bsf_init(bsf_context_);
+    if (ret < 0) {
+        LOGE("av_bsf_init error: %s", av_err2str(ret));
+        return ret;
+    }
+    LOGI("leave: %s", __func__);
     return 0;
 }
 

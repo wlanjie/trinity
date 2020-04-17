@@ -56,8 +56,6 @@ class Mp4Muxer {
     typedef int (*VideoPacketCallback) (VideoPacket**, void* context);
 
  protected:
-    virtual AVStream* AddStream(AVFormatContext* oc, AVCodec** codec, enum AVCodecID codec_id, std::string& codec_name);
-
     uint32_t FindStartCode(uint8_t *in_buffer, uint32_t in_ui32_buffer_size, uint32_t in_ui32_code,
                            uint32_t &out_ui32_processed_bytes);
 
@@ -88,9 +86,10 @@ class Mp4Muxer {
     int header_size_;
     AVFormatContext* format_context_;
     AVStream* video_stream_;
+    AVCodecContext* video_codec_context_;
     AVStream* audio_stream_;
-    AVBitStreamFilterContext* bit_stream_filter_context_;
-//    const AVBitStreamFilter* bit_stream_filter_;
+    AVCodecContext* audio_codec_context_;
+    AVBSFContext* bsf_context_;
     double duration_;
     double last_audio_packet_presentation_time_mills_;
     int last_video_presentation_time_ms_;

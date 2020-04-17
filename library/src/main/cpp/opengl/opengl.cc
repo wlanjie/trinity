@@ -19,6 +19,7 @@
 //
 // Created by wlanjie on 2019/4/13.
 //
+#include <string>
 
 #if __ANDROID__
 #include <malloc.h>
@@ -30,7 +31,6 @@
 #endif
 
 #include "opengl.h"
-#include "matrix.h"
 #include "gl.h"
 
 namespace trinity {
@@ -231,9 +231,10 @@ void OpenGL::ProcessImage(GLuint texture_id, GLfloat *texture_matrix) {
 }
 
 void OpenGL::ProcessImage(GLuint texture_id, const GLfloat *vertex_coordinate, const GLfloat *texture_coordinate) {
-    float texTransMatrix[4 * 4];
-    matrixSetIdentityM(texTransMatrix);
-    ProcessImage(texture_id, vertex_coordinate, texture_coordinate, texTransMatrix);
+    float texture_matrix[4 * 4];
+    memset(reinterpret_cast<void*>(texture_matrix), 0, 16*sizeof(float));
+    texture_matrix[0] = texture_matrix[5] = texture_matrix[10] = texture_matrix[15] = 1.0f;
+    ProcessImage(texture_id, vertex_coordinate, texture_coordinate, texture_matrix);
 }
 
 void OpenGL::ProcessImage(GLuint texture_id, const GLfloat *vertex_coordinate, const GLfloat *texture_coordinate,

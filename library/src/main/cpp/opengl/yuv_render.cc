@@ -22,7 +22,6 @@
 
 #include <unistd.h>
 #include "yuv_render.h"
-#include "matrix.h"
 #include "tools.h"
 #include "android_xlog.h"
 #include "gl.h"
