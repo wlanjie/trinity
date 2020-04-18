@@ -1,195 +1,187 @@
-
 # trinity
+
+![中文文档](https://github.com/wlanjie/trinity/blob/master/README-zh.md)
 
 ![icon~](https://github.com/wlanjie/trinity/blob/master/trinity@2x.png)
 
 [![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-trinity-brightgreen.svg?style=flat)](https://android-arsenal.com/details/1/8010)
-[![Build Status](https://api.travis-ci.org/wlanjie/trinity.svg?branch=master)](https://travis-ci.org/wlanjie/trinity/)
-[![Download](https://api.bintray.com/packages/wlanjie/maven/trinity/images/download.svg?version=0.2.7)](https://bintray.com/wlanjie/maven/trinity/0.2.5/link)
+[![Download](https://api.bintray.com/packages/wlanjie/maven/trinity/images/download.svg?version=0.2.7)](https://bintray.com/wlanjie/maven/trinity/0.2.7/link)
 ![platform](https://img.shields.io/badge/platform-Android-orange.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-**trinity是一个开源的拍摄和短视频处理工具，用kotlin和c++编写，实现了大部分短视频编辑软件热门功能。**
+**trinity is an open source shooting and short video processing tool, written in kotlin and c ++, which implements most of the popular features of short video editing software.**
 
-[apk下载](https://github.com/wlanjie/trinity/blob/master/trinity.apk)
+[apk download](https://github.com/wlanjie/trinity/blob/master/trinity.apk)
 
 ![演示](screen_shot.gif)
 
-## QQ交流群
+## QQ exchange group
 ```
 125218305
 ```
-## 联系我
+## Contact me
 - email: wlanjie888@gmail.com
 
-## git commit 规范
-- 遵循[git cz](https://github.com/commitizen/cz-cli)
+## git commit specification
+- Follow [git cz](https://github.com/commitizen/cz-cli)
 
-## 代码规范
-- kotlin缩进使用2空格缩进
-- c++代码遵循[google c++风格指南](https://zh-google-styleguide.readthedocs.io/en/latest/google-cpp-styleguide/)
+## Code Specification
+- Kotlin indent using 2 spaces indent
+- C++ code follows  [google c ++ style guide](https://en-google-styleguide.readthedocs.io/en/latest/google-cpp-styleguide/)
 
-## 系统版本
+## System version
 
-支持Android 4.3及以上版本
+Support Android 4.3 And above
 
-## 开发环境
+## Development environment
 - Android Studio 3.5
 - NDK r20
 - kotlin 1.3.41
 
-## 使用的开源库
+## Open source library used
 - fdk-aac
 - ffmpeg 3.4
 - libx264
 - xlogger
 - mnnkit
 
-## 功能
+## Features
 <table>
   <tr>
-      <td rowspan="16">视频拍摄<br/>
+      <td rowspan="16">Video shooting<br/>
   </tr>
   <tr>
-      <td>功能说明</td>
-      <td>是否支持</td>
+      <td>Function Description</td>
+      <td>Whether to support</td>
   </tr>
   <tr>
-      <td>多段录制</td>
+      <td>Multi-session recording</td>
       <td align="center">√</td>
   </tr>
   <tr>
-      <td>自定义时长</td>
+      <td>Custom duration</td>
       <td align="center">√</td>
   </tr>
   <tr>
-      <td>自定义相机配置</td>
+      <td>Custom camera configuration</td>
       <td align="center">√</td>
   </tr>  
   <tr>
-      <td>摄像头切换</td>
+      <td>Camera switch</td>
       <td align="center">√</td>
   </tr>
   <tr>
-      <td>闪光灯</td>
+      <td>flash</td>
       <td align="center">√</td>
   </tr>
   <tr>
-      <td>焦距调节</td>
+      <td>Focus adjustment</td>
       <td align="center">√</td>
   </tr>
   <tr>
-      <td>手动对焦</td>
+      <td>Manual focus</td>
       <td align="center">√</td>
   </tr>
   <tr>
-      <td>静音</td>
+      <td>Mute</td>
       <td align="center">√</td>
   </tr>
   <tr>
-      <td>美颜</td>
+      <td>Beauty</td>
       <td align="center">x</td>
   </tr>
   <tr>
-      <td>磨皮</td>
+      <td>Microdermabrasion</td>
+      <td align="center">x</td>
+  </tr>
+  <tr>
+      <td>Custom resolution and bit rate</td>
       <td align="center">√</td>
   </tr>
   <tr>
-      <td>自定义分辨率及码率</td>
+      <td>Record background sound</td>
       <td align="center">√</td>
   </tr>
   <tr>
-      <td>录制背景音</td>
+      <td>Recording speed</td>
       <td align="center">√</td>
   </tr>
   <tr>
-      <td>录制变速</td>
-      <td align="center">√</td>
-  </tr>
-  <tr>
-      <td>软硬编码</td>
+      <td>Hard and soft coding</td>
       <td align="center">√</td>
   </tr>
 	<tr>
-      <td rowspan="8">视频编辑<br/>
+      <td rowspan="6">Video editing<br/>
   </tr>
   <tr>
-      <td>多段编辑</td>
+      <td>Multi-segment editing</td>
       <td align="center">√</td>
   </tr>
   <tr>
-      <td>替换片段</td>
+      <td>Replace fragment</td>
       <td align="center">√</td>
   </tr>
   <tr>
-      <td>设置片段时间</td>
-      <td align="center">√</td>
-  </tr>  
-  <tr>
-      <td>背景音乐</td>
-      <td align="center">√</td>
-  </tr>
-  <tr>
-      <td>硬解码</td>
-      <td align="center">√</td>
-  </tr>
-  <tr>
-      <td>软解码</td>
-      <td align="center">√</td>
-  </tr>
-  <tr>
-      <td>图片视频混合</td>
-      <td align="center">√</td>
-  </tr>
-  <tr>
-      <td rowspan="16">特效<br/>
-  </tr>
-  <tr>
-      <td>滤镜</td>
-      <td align="center">√</td>
-  </tr>
-  <tr>
-	    <td>闪白</td>
-      <td align="center">√</td>
-  </tr>
-  <tr>
-      <td>两分屏</td>
+      <td>Set clip time</td>
       <td align="center">√</td>
   </tr>  
   <tr>
-      <td>三分屏</td>
+      <td>Background music</td>
       <td align="center">√</td>
   </tr>
   <tr>
-      <td>四分屏</td>
+      <td>Hard decode</td>
       <td align="center">√</td>
   </tr>
   <tr>
-      <td>六分屏</td>
+      <td rowspan="14">Special effects<br/>
+  </tr>
+  <tr>
+      <td>Filter</td>
       <td align="center">√</td>
   </tr>
   <tr>
-      <td>九分屏</td>
+	    <td>Flash white</td>
       <td align="center">√</td>
   </tr>
   <tr>
-      <td>模糊分屏</td>
+      <td>Two split screen</td>
+      <td align="center">√</td>
+  </tr>  
+  <tr>
+      <td>Three-point screen</td>
       <td align="center">√</td>
   </tr>
   <tr>
-      <td>高斯模糊</td>
+      <td>Quarter screen</td>
       <td align="center">√</td>
   </tr>
   <tr>
-      <td>灵魂出窍</td>
+      <td>Six split screen</td>
       <td align="center">√</td>
   </tr>
   <tr>
-      <td>抖动</td>
+      <td>Nine points screen</td>
       <td align="center">√</td>
   </tr>
   <tr>
-      <td>毛刺</td>
+      <td>Blur split screen</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>Gaussian blur</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>Soul out</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>shake</td>
+      <td align="center">√</td>
+  </tr>
+  <tr>
+      <td>glitch</td>
       <td align="center">√</td>
   </tr>
   <tr>
@@ -197,80 +189,72 @@
     <td align="center">√</td>
   </tr>
   <tr>
-    <td>倒计时</td>
+    <td rowspan="6">Face recognition<br/>
+  </tr>
+  <tr>
+    <td>Rose eye markup</td>
     <td align="center">√</td>
   </tr>
   <tr>
-    <td>爱心光斑</td>
+    <td>Princess</td>
     <td align="center">√</td>
   </tr>
   <tr>
-    <td rowspan="6">人脸识别<br/>
-  </tr>
-  <tr>
-    <td>玫瑰眼妆</td>
-    <td align="center">√</td>
-  </tr>
-  <tr>
-    <td>王妃</td>
-    <td align="center">√</td>
-  </tr>
-  <tr>
-    <td>贴纸妆</td>
+    <td>Sticker makeup</td>
     <td align="center">√</td>
   </tr>
     <tr>
-    <td>飘落小猪</td>
+    <td>Falling pig</td>
     <td align="center">√</td>
   </tr>
   <tr>
-    <td>猫头</td>
+    <td>Cat head</td>
     <td align="center">√</td>
   </tr>
 </table>
 
-## 人脸特效
- <img src="roseEye.png" width = "318" height = "665" alt="玫瑰眼妆" align=center />
+## Face effect
+<img src="roseEye.png" width = "318" height = "665" alt="玫瑰眼妆" align=center />
 
-## 特效调试
-项目中使用xcode调试特效效果, 使用前需要安装glfw  
+## Special effects debugging
+Use xcode to debug special effects in the project, you need to install glfw before use 
 ```
 brew install glfw
 ```
-然后使用xcode打开```library/src/main/cpp/opengl.xcodeproj```即可  
-切换效果调用代码
+Then use xcode to open```library/src/main/cpp/opengl.xcodeproj```Just  
+Switch effect call code
 ```
 image_process.OnAction("param/blurScreen", 0);
 ```
 
-## 自动化测试
-- 自动化测试使用[uiautomator2](https://github.com/openatx/uiautomator2)具体使用请参考文档
-使用方式如下:  
+## Automated test
+- Use [uiautomator2](https://github.com/openatx/uiautomator2) for automatic testing
+Use as follows:  
 ``` python
 cd trinity
 python trinity.py
 ```
-然后使用
+Then use
 ```
 adb devices
 ```
-在终端输入设备名即可
+Just enter the device name in the terminal
 
-## 性能
+## Performance
 <img src="memory.png" width = "402" height = "283" alt="性能" align=center />
 
-## 使用
+## Use
 
-<font color=red>注意: SDK中不做权限判断,使用时需要由调用方申请好权限, SDK中涉及到的时间均为毫秒</font>
+<font color=red>Note: The permission judgment is not made in the SDK. The caller needs to apply for permission when using it. The time involved in the SDK is milliseconds.</font>
 
-### 添加jcenter依赖
+### Add jcenter dependency
 ``` gradle
 dependencies {
     implementation 'com.github.wlanjie:trinity:0.2.7'
 }
 ```
 
-### 权限要求
+### Permission requirements
 ``` xml
 <uses-permission android:name="android.permission.CAMERA" />
 <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -278,418 +262,414 @@ dependencies {
 <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 ```
 
-## 录制
+## Recording
 
-### 配置参数
-- 创建录制预览view
+### Configuration parameter
+- Create a recording preview view
 ``` kotlin
 val preview = findViewById<TrinityPreviewView>(R.id.preview)
 ```
 
-- 创建录制接口实例
+- Create a recording interface instance
 ``` kotlin
 mRecord = TrinityRecord(preview)
 ```
 
-- 销毁录制接口实例
+- Destroy the recording interface instance
 ``` kotlin
 mRecord.release()
 ```
 
-### 回调设置
-- 设置视频渲染回调
+### Callback settings
+- Set video rendering callback
 ``` kotlin
 mRecord.setOnRenderListener(this)
 ```
 
-- 设置录制进度回调
+- Set recording progress callback
 ``` kotlin
 mRecord.setOnRecordingListener(this)
 ```
 
-- 设置相机回调
+- Set camera callback
 ``` kotlin
 mRecord.setCameraCallback(this)
 ```
 
-### 开启预览
-- 开始预览
+### Open preview
+- Start preview
 ``` kotlin
 mRecord.startPreview()
 ```
 
-- 结束预览
+- End preview
 ``` kotlin
 mRecord.stopPreview()
 ```
 
-- 设置预览类型
+- Set preview type
 ``` kotlin
-// 设置显示类型
-// 包含裁剪显示, 原比例上下留黑显示
+// Set the display type
+// Include crop display, the original proportion is displayed in black
 mRecord.setFrame(mFrame)
 ```
 
-### 录制控制/管理
-- 切换摄像头
+### Recording control / management
+- Switch camera
 ``` kotlin
 mRecord.switchCamera()
 ```
 
-- 获取当前摄像头
+- Get the current camera
 ``` kotlin
-// 返回当前摄像头id
+// return the current camera id
 val facing = mRecord.getCameraFacing()
 ```
 
-- 开关闪光灯
+- Switch flash
 ``` kotlin
 mRecord.flash(mFlash)
 ```
-- 设置zoom
+- Setting up zoom
 ``` kotlin
-// 设置焦距缩放, 0-100 100为最大缩放
+// Set the focal length zoom, 0-100 100 is the maximum zoom
 mRecord.setZoom(0)
 ```
-- 设置曝光度
+- Set exposure
 ``` kotlin
-// 设置相机曝光度, 100为最大曝光
+// Set the camera exposure, 100 is the maximum exposure
 mRecord.setExposureCompensation(0)
 ```
-- 手动对焦
+- Manual focus
 ``` kotlin
-// 设置手动对焦, 参数为x和y
+// Set manual focus, parameters are x and y
 mRecord.focus(mPointF)
 ```
-- 设置录制视频的角度
+- Set the angle of the recorded video
 ``` kotlin
 /**
- * @param rotation 旋转角度包含 0 90 180 270
+ * @param rotation Rotation angle includes 0 90 180 270
  */
 mRecord.setRecordRotation(0)
 ```
-- 设置静音录制
+- Set up silent recording
 ``` kotlin
 mRecord.setMute(false)
 ```
-- 倍速录制
+- Double speed recording
 ``` kotlin
 /**
- * @param speed 速度包含 0.25 0.5 1.0 2.0 4.0倍速
+ * @param speed contains 0.25 0.5 1.0 2.0 4.0 times the speed
  */
 mRecord.setSpeed(mSpeed)
 ```
 
-### 开始录制
+### Start recording
 
-- 开始录制一段视频
+- Start recording a video
 ``` kotlin
 /**
- * 开始录制一段视频
- * @param path 录制的视频保存的地址
- * @param width 录制视频的宽, SDK中会做16倍整数的运算, 可能最终输出视频的宽和设置进去的不一致
- * @param height 录制视频的高, SDK中会做16倍整数的运算, 可能最终输出视频的宽和设置进去的不一致
- * @param videoBitRate 视频输出的码率, 如果设置的是2000, 则为2M, 最终输出的和设置的可能有差别
- * @param frameRate 视频输出的帧率
- * @param useHardWareEncode 是否使用硬编码, 如果设置为true, 而硬编码不支持,则自动切换到软编码
- * @param audioSampleRate 音频的采样率
- * @param audioChannel 音频的声道数
- * @param audioBitRate 音频的码率
- * @param duration 需要录制多少时间
- * @return Int ErrorCode.SUCCESS 为成功,其它为失败
+ * Start recording a video
+ * @param path Recorded video save address
+ * @param width The width of the recorded video. The SDK will do a 16-times integer operation. The width of the final output video may be inconsistent with the setting.
+ * @param height The height of the recorded video. The SDK will do a 16-times integer operation. The width of the final output video may be inconsistent with the setting.
+ * @param videoBitRate The bit rate of the video output. If it is set to 2000, it is 2M. The final output and the set may be different.
+ * @param frameRate frame rate of video output
+ * @param useHardWareEncode whether to use hard coding, if set to true, and hard coding is not supported, it will automatically switch to soft coding
+ * @param audioSampleRate audio sample rate
+ * @param audioChannel number of audio channels
+ * @param audioBitRate audio bit rate
+ * @param duration
+ * @return Int ErrorCode.SUCCESS is success, others are failures
  * @throws InitRecorderFailException
  */
 mRecord.startRecording("/sdcard/a.mp4",
                       720,
                       1280,
-                      2000, // 2M码率
+                      2000, // 2M bit rate
                       30,
                       false,
                       44100,
-                      1, // 单声道
-                      128, // 128K 码率
+                      1, // Mono
+                      128, // 128K Rate
                       Int.MAX_VALUE)
 ```
 
-- 结束录制
+- End recording
 ``` kotlin
 mRecord.stopRecording()
 ```
 
-### 视频编辑
+### Video editing
 
-#### 初始化
+#### Initialization
 
-- 创建编辑器实例
+- Create editor instance
 ``` kotlin
 mVideoEditor = TrinityCore.createEditor(this)
 ```
 
-- 设置预览画面
+- Set preview screen
 ``` kotlin
 val surfaceView = findViewById<SurfaceView>(R.id.surface_view)
 mVideoEditor.setSurfaceView(surfaceView)
 ```
 
-#### 导入视频
-- 添加一个片段
+#### Import video
+- Add a snippet
 ``` kotlin
 val clip = MediaClip(file.absolutePath)
 mVideoEditor.insertClip(clip)
 ```
-- 根据下标添加片段
+- Add fragments based on subscripts
 ``` kotlin
 val clip = MediaClip(file.absolutePath)
 mVideoEditor.insertClip(0, clip)
 ```
-- 删除一个片段
+- Delete a clip
 ``` kotlin
 /**
- * 根据下标删除一个片段
+ * Delete a segment in accordance with the subscript
  */
 mVideoEditor.removeClip(index)
 ```
-- 获取片段的数量
+- Get the number of fragments
 ``` kotlin
 val count = mVideoEditor.getClipsCount()
 ```
-- 根据下标获取一个片段
+- Get a clip based on the subscript
 ``` kotlin
-/**
- * 如果片段不存在, 返回一个null
- */
+ /**
+  * If the fragment does not exist, returns a null
+  */
 val clip = mVideoEditor.getClip(index)
 ```
-- 根据下标替换一个片段
+- Replace a snippet based on a subscript
 ``` kotlin
 mVideoEditor.replaceClip(index, clip)
 ```
-- 获取所有片段
+- Get all clips
 ``` kotlin
-/**
- * 返回所有片段的集合
- */
+ /**
+  * Returns a collection of all clips
+  */
 val clips = mVideoEditor.getVideoClips()
 ```
-- 获取所有片段的时间总长
+- Total time to get all clips
 ``` kotlin
 val duration = mVideoEditor.getVideoDuration()
 ```
-- 获取当前播放片段的进度
+- Get the progress of the currently playing clip
 ``` kotlin
 val current = mVideoEditor.getCurrentPosition()
 ```
-- 获取指定片段的开始和结束时间
+- Get start and end time of specified clip
 ``` kotlin
 val timeRange = mVideoEditor.getClipTimeRange(index)
 ```
-- 根据时间查找片段的下标
+- Find subscripts of clips based on time
 ``` kotlin
 val index = mVideoEditor.getClipIndex(time)
 ```
-#### 背景音乐
-- 添加背景音乐
+#### Background music
+- Add background music
 ``` kotlin
-/**
- * @param config 背景音乐json内容
- * 具体json内容如下:
- * {
- *    "path": "/sdcard/trinity.mp3",
- *    "startTime": 0,
- *    "endTime": 2000
- * }
- * json 参数解释:
- * path: 音乐的本地地址
- * startTime: 这个音乐的开始时间
- * endTime: 这个音乐的结束时间 2000代表这个音乐只播放2秒钟
- */
+ /**
+  * @param config background music json content
+  * The specific json content is as follows:
+  * {
+  *   "path": "/sdcard/trinity.mp3",
+  *   "startTime": 0,
+  *   "endTime": 2000
+  * }
+  * json parameter explanation:
+  * path: the local address of the music
+  * startTime: the start time of this music
+  * endTime: the end time of this music 2000 means this music only plays for 2 seconds
+  */
 val actionId = mVideoEditor.addMusic(config)
 ```
 
-- 更新背景音乐
+- Updated background music
 ``` kotlin
-/**
- * @param config 背景音乐json内容
- * 具体json内容如下:
- * {
- *    "path": "/sdcard/trinity.mp3",
- *    "startTime": 2000,
- *    "endTime": 4000
- * }
- * json 参数解释:
- * path: 音乐的本地地址
- * startTime: 这个音乐的开始时间
- * endTime: 这个音乐的结束时间 4000代表这个音乐从开始时间到结束时间播放2秒钟
- */
+ /**
+  * @param config background music json content
+  * The specific json content is as follows:
+  * {
+  *   "path": "/sdcard/trinity.mp3",
+  *   "startTime": 2000,
+  *   "endTime": 4000
+  *}
+  * json parameter explanation:
+  * path: the local address of the music
+  * startTime: the start time of this music
+  * endTime: the end time of this music 4000 means this music is played for 2 seconds from the start time to the end time
+  */
 val actionId = mVideoEditor.addMusic(config)
 ```
-
-- 删除背景音乐
+- Remove background music
 ``` kotlin
-/**
-* 删除背景音乐
-* @param actionId 必须为添加背景音乐时返回的actionId
-*/
+ /**
+  * Remove background music
+  * @param actionId must be the actionId returned when adding background music
+  */
 mVideoEditor.deleteMusic(actionId)
 ```
 
-#### 添加特效
-- 添加普通滤镜
+#### Add special effects
+- Add ordinary filters
 ``` kotlin
 /**
-* 添加滤镜
-* 如: content.json的绝对路径为 /sdcard/Android/com.trinity.sample/cache/filters/config.json
-* 传入的路径只需要 /sdcard/Android/com.trinity.sample/cache/filters 即可
-* 如果当前路径不包含config.json则添加失败
-* 具体json内容如下:
-* {
-*  "type": 0,
-*  "intensity": 1.0,
-*  "lut": "lut_124/lut_124.png"
-* }
-*
-* json 参数解释:
-* type: 保留字段, 目前暂无作用
-* intensity: 滤镜透明度, 0.0时和摄像头采集的无差别
-* lut: 滤镜颜色表的地址, 必须为本地地址, 而且为相对路径
-*      sdk内部会进行路径拼接
-* @param configPath 滤镜config.json的父目录
-* @return 返回当前滤镜的唯一id
+ * Add filters
+ * For example: the absolute path of content.json is /sdcard/Android/com.trinity.sample/cache/filters/config.json
+ * The path only needs /sdcard/Android/com.trinity.sample/cache/filters
+ * If the current path does not contain config.json, the addition fails
+ * The specific json content is as follows:
+ * {
+ *   "type": 0,
+ *   "intensity": 1.0,
+ *   "lut": "lut_124 / lut_124.png"
+ * }
+ *
+ * json parameter explanation:
+ * type: reserved field, currently has no effect
+ * intensity: filter transparency, no difference between 0.0 and camera acquisition
+ * lut: the address of the filter color table, must be a local address, and it is a relative path
+ * Path splicing will be performed inside sdk
+ * @param configPath filter parent directory of config.json
+ * @return returns the unique id of the current filter
 */
 val actionId = mVideoEditor.addFilter(config)
 ```
-- 更新滤镜
+- Update filters
 ``` kotlin
 /**
-* 更新滤镜
-* @param configPath config.json的路径, 目前对称addFilter说明
-* @param startTime 滤镜的开始时间
-* @param endTime 滤镜的结束时间
-* @param actionId 需要更新哪个滤镜, 必须为addFilter返回的actionId
-*/
+ * Update filters
+ * @param configPath config.json path, currently addFilter description
+ * @param startTime filter start time
+ * @param endTime filter end time
+ * @param actionId Which filter needs to be updated, must be the actionId returned by addFilter
+ */
 mVideoEditor.updateFilter(config, 0, 2000, actionId)
 ```
 
-- 删除滤镜
+- Delete filter
 ``` kotlin
- /**
-   * 删除滤镜
-   * @param actionId 需要删除哪个滤镜, 必须为addFilter时返回的actionId
+  /**
+   * Delete filter
+   * @param actionId Which filter needs to be deleted, it must be the actionId returned when addFilter
    */
-mVideoEditor.deleteFilter(actionId)   
+mVideoEditor.deleteFilter (actionId)
 ```
-- 添加抖音特效
+- Add vibrato effect
 ``` kotlin
 /**
-* 添加特效
-* 如: content.json的绝对路径为 /sdcard/Android/com.trinity.sample/cache/effects/config.json
-* 传入的路径只需要 /sdcard/Android/com.trinity.sample/cache/effects 即可
-* 如果当前路径不包含config.json则添加失败
-* @param configPath 滤镜config.json的父目录
-* @return 返回当前特效的唯一id
-*/
+ * Add special effects
+ * For example: the absolute path of content.json is /sdcard/Android/com.trinity.sample/cache/effects/config.json
+ * The path only needs /sdcard/Android/com.trinity.sample/cache/effects
+ * If the current path does not contain config.json, the addition fails
+ * @param configPath filter parent directory of config.json
+ * @return returns the unique id of the current effect
+ */
 val actionId = mVideoEditor.addAction(configPath)
 ```
 
-- 更新抖音特效
+- Updated vibrato effect
 ``` kotlin
 /**
-* 更新指定特效
-* @param startTime 特效的开始时间
-* @param endTime 特效的结束时间
-* @param actionId 需要更新哪个特效, 必须为addAction返回的actionId
-*/
+ * Update specific effects
+ * @param startTime The start time of the effect
+ * @param endTime End time of the effect
+ * @param actionId Which effect needs to be updated, must be the actionId returned by addAction
+ */
 mVideoEditor.updateAction(0, 2000, actionId)
 ```
 
-- 删除抖音特效
+- Remove vibrato effect
 ``` kotlin
 /**
-* 删除一个特效
-* @param actionId 需要删除哪个特效, 必须为addAction返回的actionId
-*/
+ * Delete a special effect
+ * @param actionId Which effect needs to be deleted, must be the actionId returned by addAction
+ */
 mVideoEditor.deleteAction(actionId)
 ```
 
-#### 开始预览
-- 播放
+#### Start preview
+- Play
 ``` kotlin
 /**
- * @param repeat 是否循环播放
+ * @param repeat whether to repeat playback
  */
 mVideoEditor.play(repeat)
 ```
-- 暂停
+- time out
 ``` kotlin
 mVideoEditor.pause()
 ```
-- 继续播放
+- Resume playback
 ``` kotlin
 mVideoEditor.resume()
 ```
-- 停止播放
+- Stop play
 ``` kotlin
 mVideoEditor.stop()
 ```
 
-#### 释放资源
+#### Release resources
 ``` kotlin
 mVideoEditor.destroy()
 ```
 
-### 导出视频
-- 创建导出实例
+### Export video
+- Create export instance
 ``` kotlin
 val export = TrinityCore.createExport(this)
 ```
-- 开始导出
+- Start export
 ``` kotlin
 /**
-  * 开始导出
-  * @param info 导出实体类
-  * @param l 导出回调 包含成功 失败 和进度回调
-  * @return Int ErrorCode.SUCCESS 为成功,其它为失败
+  * Start export
+  * @param info export object
+  * @param l export callback, success failed and progress
+  * @return Int ErrorCode.SUCCESS is sucess, other failed
   */
-// 创建实体类, 必须传入视频输出地址  
+// Create export object, must be insert video out path 
 val exportVideoInfo = VideoExportInfo("/sdcard/export.mp4")
-// 使用硬解码
+// use hardware decode
 exportVideoInfo.mediaCodecDecode = true
-// 使用硬编码
+// use hardware encode
 exportVideoInfo.mediaCodecEncode = true  
-// 视频宽
+// video width
 exportVideoInfo.width = 544
-// 视频高
+// video height
 exportVideoInfo.height = 960
-// 帧率
+// frame rate
 exportVideoInfo.frameRate = 25
-// 视频码率 2M
+// video bitrate 2M
 exportVideoInfo.videoBitRate = 2000
-// 采样率
+// sample rate
 exportVideoInfo.sampleRate = 44100
-// 声道数
+// channel
 exportVideoInfo.channelCount = 1
-// 音频码率 128K
+// audio bitrate 128K
 exportVideoInfo.audioBitRate = 128
 export.export(exportVideoInfo, this)
 ```
-- 取消
+- Cancel
 ``` kotlin
 export.cancel()
 ```
-- 释放
+- Freed
 ``` kotlin
 export.release()
 ```
 
 ```
 Copyright 2019 Trinity, Inc.
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
    http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
