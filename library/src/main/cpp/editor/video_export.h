@@ -62,7 +62,7 @@ class VideoExport {
             int sample_rate, int channel_count, int audio_bit_rate,
             bool media_codec_decode, bool media_codec_encode);
 
-
+    void Cancel();
  private:
     static void OnCompleteEvent(AVPlayContext* context);
     static void OnStatusChanged(AVPlayContext* context, PlayStatus status);
@@ -81,6 +81,7 @@ class VideoExport {
     void ProcessAudioExport();
     void OnExportProgress(uint64_t current_time);
     void OnExportComplete();
+    void OnCancel();
     int Resample();
     int FillMuteAudio();
 
@@ -99,6 +100,7 @@ class VideoExport {
     int vocal_sample_rate_;
     int channel_count_;
     bool export_ing_;
+    bool cancel_;
     EGLCore* egl_core_;
     EGLSurface egl_surface_;
     GLuint encode_texture_id_;

@@ -50,6 +50,7 @@ VideoExport::VideoExport(JNIEnv* env, jobject object)
     , channel_count_(0)
     , audio_current_time_(0)
     , export_ing_(false)
+    , cancel_(false)
     , egl_core_(nullptr)
     , egl_surface_(EGL_NO_SURFACE)
     , encode_texture_id_(0)
@@ -477,6 +478,11 @@ int VideoExport::Export(const char *export_config, const char *path,
     return 0;
 }
 
+void VideoExport::Cancel() {
+    export_ing_ = false;
+    cancel_ = true;
+}
+
 void* VideoExport::ExportVideoThread(void* context) {
     auto* video_export = reinterpret_cast<VideoExport*>(context);
     video_export->ProcessVideoExport();
@@ -722,8 +728,12 @@ void VideoExport::ProcessVideoExport() {
     egl_surface_ = EGL_NO_SURFACE;
     delete egl_core_;
     FreeResource();
-    // 通知java层合成完成
-    OnExportComplete();
+    if (cancel_) {
+        OnCancel();
+    } else {
+        // 通知java层合成完成
+        OnExportComplete();
+    }
     LOGI("leave %s", __func__);
 }
 
@@ -768,6 +778,29 @@ void VideoExport::OnExportComplete() {
     jclass clazz = env->GetObjectClass(object_);
     if (nullptr != clazz) {
         jmethodID  complete_id = env->GetMethodID(clazz, "onExportComplete", "()V");
+        if (nullptr != complete_id) {
+            env->CallVoidMethod(object_, complete_id);
+        }
+    }
+    if (vm_->DetachCurrentThread() != JNI_OK) {
+        LOGE("DetachCurrentThread failed");
+    }
+}
+
+void VideoExport::OnCancel() {
+    if (nullptr == vm_) {
+        return;
+    }
+    JNIEnv* env = nullptr;
+    if (vm_->AttachCurrentThread(&env, nullptr) != JNI_OK) {
+        return;
+    }
+    if (nullptr == env) {
+        return;
+    }
+    jclass clazz = env->GetObjectClass(object_);
+    if (nullptr != clazz) {
+        jmethodID  complete_id = env->GetMethodID(clazz, "onExportCanceled", "()V");
         if (nullptr != complete_id) {
             env->CallVoidMethod(object_, complete_id);
         }
@@ -842,10 +875,8 @@ void VideoExport::ProcessAudioExport() {
             if (audio_current_time_ < current_media_clip_->end_time) {
                 audio_size = FillMuteAudio();
             }
-            LOGE("audio_current_time: %d end_time: %lld audio_size; %d", audio_current_time_, current_media_clip_->end_time, audio_size);
         } else if (current_media_clip_->type == VIDEO) {
             audio_size = Resample();
-            LOGE("audio_size: %d", audio_size);
         }
         if (audio_size > 0) {
             // TODO buffer池
@@ -929,7 +960,6 @@ int VideoExport::Resample() {
             }
         }
     } while (true);
-    LOGE("Resample");
     AVFrame* frame = context->audio_frame;
     int data_size = av_samples_get_buffer_size(NULL, av_frame_get_channels(frame),
                                                frame->nb_samples, (AVSampleFormat) frame->format, 1);

@@ -792,7 +792,6 @@ int Player::DrawVideoFrame() {
         av_play_context_->video_frame = frame_queue_get(av_play_context_->video_frame_queue);
     }
     if (!av_play_context_->video_frame) {
-        LOGE("!av_play_context_->video_frame");
         usleep(10000);
         return 0;
     }

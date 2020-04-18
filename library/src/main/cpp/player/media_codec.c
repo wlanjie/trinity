@@ -395,7 +395,7 @@ int mediacodec_receive_frame(AVPlayContext *context, AVFrame *frame) {
     JNIEnv *env = NULL;
     (*context->vm)->AttachCurrentThread(context->vm, &env, NULL);
     JavaClass* java_class = context->java_class;
-    int output_ret = 1;
+    int output_ret = -1;
     jobject deqret = (*env)->CallObjectMethod(env, java_class->media_codec_object,
                                                        java_class->codec_dequeueOutputBufferIndex,
                                                        (jlong) 0);

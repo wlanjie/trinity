@@ -8,8 +8,10 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.preference.PreferenceManager
 import com.timqi.sectorprogressview.ColorfulRingProgressView
 import com.trinity.core.TrinityCore
+import com.trinity.editor.VideoExport
 import com.trinity.editor.VideoExportInfo
 import com.trinity.listener.OnExportListener
+import java.io.File
 
 /**
  * Created by wlanjie on 2019-07-30
@@ -18,6 +20,7 @@ class VideoExportActivity : AppCompatActivity(), OnExportListener {
 
   private lateinit var mProgressBar: ColorfulRingProgressView
   private lateinit var mVideoView: VideoView
+  private lateinit var mVideoExport: VideoExport
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -39,8 +42,8 @@ class VideoExportActivity : AppCompatActivity(), OnExportListener {
     params.width = width
     params.height = ((width * (info.height * 1.0f / info.width)).toInt())
     mVideoView.layoutParams = params
-    val export = TrinityCore.createExport(this)
-    export.export(info, this)
+    mVideoExport = TrinityCore.createExport(this)
+    mVideoExport.export(info, this)
   }
 
   override fun onExportProgress(progress: Float) {
@@ -52,11 +55,18 @@ class VideoExportActivity : AppCompatActivity(), OnExportListener {
   }
 
   override fun onExportCanceled() {
+    val file = File("/sdcard/export.mp4")
+    file.delete()
   }
 
   override fun onExportComplete() {
     mProgressBar.visibility = View.GONE
     mVideoView.setVideoPath("/sdcard/export.mp4")
     mVideoView.start()
+  }
+
+  override fun onDestroy() {
+    super.onDestroy()
+    mVideoExport.cancel()
   }
 }

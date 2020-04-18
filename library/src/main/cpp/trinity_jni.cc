@@ -704,6 +704,7 @@ static void Android_JNI_video_export_cancel(JNIEnv* env, jobject object, jlong h
         return;
     }
     VideoExport* video_export = reinterpret_cast<VideoExport*>(handle);
+    video_export->Cancel();
 }
 
 static void Android_JNI_video_export_release(JNIEnv* env, jobject object, jlong handle) {

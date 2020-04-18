@@ -637,13 +637,23 @@ class TrinityRecord(
    * 获取预览宽，由c++调用，创建framebuffer
    */
   @Suppress("unused")
-  private fun getCameraWidth() = mCamera.getWidth()
+  private fun getCameraWidth(): Int {
+    if (mSurfaceTexture == null) {
+      return 0
+    }
+    return mCamera.getWidth()
+  }
 
   /**
    * 获取预览宽，由c++调用，创建framebuffer
    */
   @Suppress("unused")
-  private fun getCameraHeight() = mCamera.getHeight()
+  private fun getCameraHeight(): Int {
+    if (mSurfaceTexture == null) {
+      return 0
+    }
+    return mCamera.getHeight()
+  }
 
   /**
    * 由c++回调回来

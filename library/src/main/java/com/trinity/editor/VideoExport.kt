@@ -46,7 +46,10 @@ class TrinityVideoExport(private val context: Context) : VideoExport {
   }
 
   override fun cancel() {
-
+    if (mHandle <= 0) {
+      return
+    }
+    cancel(mHandle)
   }
 
   override fun release() {

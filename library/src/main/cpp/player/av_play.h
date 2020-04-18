@@ -35,8 +35,6 @@ int av_play_stop(AVPlayContext *context);
 
 int av_play_release(AVPlayContext *context);
 
-void change_audio_speed(float speed, AVPlayContext *context);
-
 void change_status(AVPlayContext *context, PlayStatus statuse);
 
 #endif  // av_play_h

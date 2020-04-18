@@ -157,6 +157,7 @@ AVPlayContext* av_play_create(JNIEnv *env, jobject instance, int play_create, in
     context->send_message = send_message;
     context->on_error = on_error_cb;
     context->play_audio = NULL;
+    context->change_status = NULL;
     reset(context);
     return context;
 }
@@ -402,13 +403,14 @@ void* video_decode_hw_thread(void* data){
             }
         } else {
             ret = mediacodec_receive_frame(context, frame);
-            if (ret == 0) {
+            if (ret == BUFFER_FLAG_END_OF_STREAM) {
+                LOGE("frame->flags & BUFFER_FLAG_END_OF_STREAM: %d",frame->flags & BUFFER_FLAG_END_OF_STREAM);
+                break;
+            }
+            if (ret >= 0) {
                 frame->FRAME_ROTATION = context->frame_rotation;
                 frame_queue_put(context->video_frame_queue, frame);
                 frame = frame_pool_get_frame(context->video_frame_pool);
-            } else if (ret == BUFFER_FLAG_END_OF_STREAM) {
-                LOGE("frame->flags & BUFFER_FLAG_END_OF_STREAM: %d",frame->flags & BUFFER_FLAG_END_OF_STREAM);
-                break;
             } else {
                 int buffer_index = mediacodec_dequeue_input_buffer_index(context);
                 if (buffer_index >= 0) {
@@ -846,10 +848,5 @@ void change_status(AVPlayContext* context, PlayStatus status) {
 }
 
 static void on_error(AVPlayContext* context) {
-//    (*context->env)->CallVoidMethod(context->env, context->play_object, context->java_class->player_onPlayError,
-//                                  context->error_code);
-}
-
-void change_audio_speed(float speed, AVPlayContext* context) {
-    audio_filter_change_speed(context, speed);
+    LOGE("on_error: %d", context->error_code);
 }
