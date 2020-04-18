@@ -32,6 +32,7 @@ static int message_callback(int fd, int events, void *data) {
             case message_stop:
 //                stop(context);
                 LOGE("message_stop");
+                change_status(context, IDEL);
                 if (context->on_complete) {
                     context->on_complete(context);
                 }
@@ -94,7 +95,7 @@ static void reset(AVPlayContext* context) {
     context->abort_request = false;
     context->frame_rotation = ROTATION_0;
     packet_pool_reset(context->packet_pool);
-    context->change_status(context, IDEL);
+    change_status(context, IDEL);
     LOGI("leave %s", __func__);
 }
 
@@ -152,7 +153,7 @@ AVPlayContext* av_play_create(JNIEnv *env, jobject instance, int play_create, in
                       message_callback, context)) {
         LOGE("error. when add fd to main looper");
     }
-    context->change_status = change_status;
+//    context->change_status = change_status;
     context->send_message = send_message;
     context->on_error = on_error_cb;
     context->play_audio = NULL;
@@ -217,7 +218,7 @@ void* audio_decode_thread(void * data){
     AVFrame* decode_frame = av_frame_alloc();
     AVFrame* frame = frame_pool_get_frame(context->audio_frame_pool);
     while (!context->abort_request) {
-        if(context->status == PAUSED){
+        if (context->status == PAUSED) {
             usleep(NULL_LOOP_SLEEP_US);
         }
         ret = avcodec_receive_frame(context->audio_codec_context, frame);
@@ -649,7 +650,8 @@ int av_play_play(const char *url, float time, AVPlayContext *context) {
     if (context->av_track_flags & AUDIO_FLAG) {
         pthread_create(&context->audio_decode_thread, &attr, audio_decode_thread, context);
     }
-    context->change_status(context, PLAYING);
+    LOGE("context->change_status(context, PLAYING);");
+    change_status(context, PLAYING);
     return ret;
 
     fail:
@@ -673,8 +675,12 @@ void av_play_set_buffer_size(AVPlayContext* context, int buffer_size) {
 }
 
 int av_play_resume(AVPlayContext* context) {
-    context->change_status(context, PLAYING);
+    change_status(context, PLAYING);
     return 0;
+}
+
+void av_play_pause(AVPlayContext* context) {
+    change_status(context, PAUSED);
 }
 
 void av_play_seek(AVPlayContext* context, float seek_to) {
@@ -828,13 +834,15 @@ int av_play_release(AVPlayContext* context) {
 }
 
 void change_status(AVPlayContext* context, PlayStatus status) {
+    LOGE("change_status: %d", status);
     if (status == BUFFER_FULL) {
         av_play_resume(context);
     } else {
         context->status = status;
     }
-//    (*context->env)->CallVoidMethod(context->env, context->play_object, context->java_class->player_onPlayStatusChanged,
-//                                  status);
+    if (context->change_status) {
+        context->change_status(context, status);
+    }
 }
 
 static void on_error(AVPlayContext* context) {

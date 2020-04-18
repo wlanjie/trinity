@@ -81,6 +81,7 @@ Player::Player(JNIEnv* env, jobject object) : Handler()
     av_play_context_ = av_play_create(env, object_, 0, 44100);
     av_play_context_->priv_data = this;
     av_play_context_->on_complete = OnComplete;
+    av_play_context_->change_status = OnStatusChanged;
 //    av_play_context_->play_audio = PlayAudio;
 //    av_play_context_->force_sw_decode = 1;
     av_play_set_buffer_time(av_play_context_, 5);
@@ -198,6 +199,9 @@ void Player::OnComplete(AVPlayContext *context) {
         player->player_event_observer_->OnComplete();
     }
     LOGI("leave %s", __func__);
+}
+
+void Player::OnStatusChanged(AVPlayContext *context, PlayStatus status) {
 }
 
 int Player::Start(MediaClip* clip, int video_count_duration) {
@@ -613,7 +617,7 @@ void Player::HandleMessage(Message *msg) {
             LOGI("enter kPlayerPause");
             if (current_clip_->type == VIDEO) {
                 if (nullptr != av_play_context_ && av_play_context_->status == PLAYING) {
-                    av_play_context_->change_status(av_play_context_, PAUSED);
+                    av_play_pause(av_play_context_);
                 }
                 if (audio_render_ != nullptr) {
                     audio_render_->Pause();

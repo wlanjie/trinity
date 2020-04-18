@@ -65,6 +65,7 @@ class VideoExport {
 
  private:
     static void OnCompleteEvent(AVPlayContext* context);
+    static void OnStatusChanged(AVPlayContext* context, PlayStatus status);
     int OnComplete();
     static void* ExportVideoThread(void* context);
     static void* ExportAudioThread(void* context);
@@ -126,6 +127,8 @@ class VideoExport {
     short* audio_samples_;
     pthread_mutex_t media_mutex_;
     pthread_cond_t media_cond_;
+    pthread_mutex_t audio_mutex_;
+    pthread_cond_t audio_cond_;
     cJSON* export_config_json_;
     GLfloat* vertex_coordinate_;
     GLfloat* texture_coordinate_;

@@ -99,7 +99,6 @@ void AudioEncoderAdapter::Destroy() {
         return;
     }
     encoding_ = false;
-    pcm_packet_pool_->AbortAudioPacketQueue();
     pthread_join(audio_encoder_thread_, nullptr);
     if (nullptr != audio_codec_name_) {
         delete[] audio_codec_name_;
@@ -131,6 +130,7 @@ void AudioEncoderAdapter::StartEncode() {
     while (encoding_) {
         audio_encoder_->Encode(aac_packet_pool_);
     }
+    pcm_packet_pool_->AbortAudioPacketQueue();
     pcm_packet_pool_->DestroyAudioPacketQueue();
     if (nullptr != audio_encoder_) {
         audio_encoder_->Destroy();

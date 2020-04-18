@@ -25,6 +25,8 @@ int av_play_play(const char *url, float time, AVPlayContext *context);
 
 int av_play_resume(AVPlayContext *context);
 
+void av_play_pause(AVPlayContext* context);
+
 void av_play_seek(AVPlayContext *context, float seek_to);
 
 void av_play_set_play_background(AVPlayContext *context, bool play_background);
@@ -33,7 +35,7 @@ int av_play_stop(AVPlayContext *context);
 
 int av_play_release(AVPlayContext *context);
 
-void change_audio_speed(float speede, AVPlayContext *context);
+void change_audio_speed(float speed, AVPlayContext *context);
 
 void change_status(AVPlayContext *context, PlayStatus statuse);
 

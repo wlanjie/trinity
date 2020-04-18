@@ -93,6 +93,7 @@ class Player : public Handler {
     int GetAudioFrame();
     static int AudioCallback(uint8_t** buffer, int *buffer_size, void* context);
     static void OnComplete(AVPlayContext* context);
+    static void OnStatusChanged(AVPlayContext* context, PlayStatus status);
     void ReleasePlayContext();
     void ProcessMessage();
     static void* MessageQueueThread(void* args);

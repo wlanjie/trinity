@@ -30,6 +30,7 @@
 
 #define MAX_IMAGE_WIDTH 1080
 #define MAX_IMAGE_HEIGHT 1920
+#define AUDIO_SAMPLE_BITS 16
 
 namespace trinity {
 
@@ -117,6 +118,8 @@ VideoExport::VideoExport(JNIEnv* env, jobject object)
 
     pthread_mutex_init(&media_mutex_, nullptr);
     pthread_cond_init(&media_cond_, nullptr);
+    pthread_mutex_init(&audio_mutex_, nullptr);
+    pthread_cond_init(&audio_cond_, nullptr);
 
     texture_matrix_ = new GLfloat[16];
     memset(texture_matrix_, 0, 16 * sizeof(GLfloat));
@@ -125,6 +128,7 @@ VideoExport::VideoExport(JNIEnv* env, jobject object)
     av_play_context_ = av_play_create(env, object_, 0, 44100);
     av_play_context_->priv_data = this;
     av_play_context_->on_complete = OnCompleteEvent;
+    av_play_context_->change_status = OnStatusChanged;
     av_play_set_buffer_time(av_play_context_, 5);
 
     packet_pool_ = PacketPool::GetInstance();
@@ -153,12 +157,24 @@ VideoExport::~VideoExport() {
     delete[] texture_matrix_;
     pthread_mutex_destroy(&media_mutex_);
     pthread_cond_destroy(&media_cond_);
+    pthread_mutex_destroy(&audio_mutex_);
+    pthread_cond_destroy(&audio_cond_);
     LOGI("leave: %s", __func__);
 }
 
 void VideoExport::OnCompleteEvent(AVPlayContext* context) {
     auto* video_export = reinterpret_cast<VideoExport*>(context->priv_data);
     video_export->OnComplete();
+}
+
+void VideoExport::OnStatusChanged(AVPlayContext *context, PlayStatus status) {
+    auto* video_export = reinterpret_cast<VideoExport*>(context->priv_data);
+    LOGE("status: %d", status);
+    if (status == PLAYING) {
+        pthread_mutex_lock(&video_export->audio_mutex_);
+        pthread_cond_signal(&video_export->audio_cond_);
+        pthread_mutex_unlock(&video_export->audio_mutex_);
+    }
 }
 
 int VideoExport::OnComplete() {
@@ -567,6 +583,7 @@ void VideoExport::ProcessVideoExport() {
                 continue;
             }
         } else if (current_media_clip_->type == VIDEO) {
+//            LOGE("video export status: %d", av_play_context_->status);
             if (av_play_context_->error_code == BUFFER_FLAG_END_OF_STREAM && av_play_context_->video_frame_queue->count == 0) {
                 pthread_mutex_lock(&media_mutex_);
                 LOGE("export video message stop");
@@ -777,6 +794,13 @@ void VideoExport::ProcessAudioExport() {
             break;
         }
 
+        if (current_media_clip_->type == VIDEO && av_play_context_->status != PLAYING) {
+            LOGE("audio wait status: %d", av_play_context_->status);
+            pthread_mutex_lock(&audio_mutex_);
+            pthread_cond_wait(&audio_cond_, &audio_mutex_);
+            pthread_mutex_unlock(&audio_mutex_);
+        }
+
         AudioPacket* music_packet = nullptr;
         for (int i = 0; i < music_decoder_deque_.size(); ++i) {
             auto* decoder = music_decoder_deque_.at(i);
@@ -813,19 +837,21 @@ void VideoExport::ProcessAudioExport() {
         }
 
         int audio_size = 0;
-        if (current_media_clip_->type == IMAGE) {
+        // 如果是图片,或者是视频中没音频的,补空音频
+        if (current_media_clip_->type == IMAGE || av_play_context_->audio_index == -1) {
             if (audio_current_time_ < current_media_clip_->end_time) {
                 audio_size = FillMuteAudio();
             }
+            LOGE("audio_current_time: %d end_time: %lld audio_size; %d", audio_current_time_, current_media_clip_->end_time, audio_size);
         } else if (current_media_clip_->type == VIDEO) {
             audio_size = Resample();
+            LOGE("audio_size: %d", audio_size);
         }
         if (audio_size > 0) {
             // TODO buffer池
             auto *packet = new AudioPacket();
-            // TODO delete
             auto *samples = new short[audio_size / sizeof(short)];
-            memcpy(samples, audio_buffer_, audio_size);
+            memcpy(samples, audio_buffer_, static_cast<size_t>(audio_size));
             if (music_packet != nullptr && nullptr != music_packet->buffer) {
                 auto* mix = new short[audio_size];
                 mixtureAccompanyAudio(samples, music_packet->buffer, audio_size / sizeof(short), mix);
@@ -835,6 +861,8 @@ void VideoExport::ProcessAudioExport() {
             }
             packet->size = audio_size / sizeof(short);
             packet_pool_->PushAudioPacketToQueue(packet);
+        } else {
+            usleep(2000);
         }
     }
     LOGE("audio export done");
@@ -852,10 +880,6 @@ void VideoExport::ProcessAudioExport() {
         delete resample;
     }
     resample_deque_.clear();
-    if (nullptr != packet_pool_) {
-        packet_pool_->AbortAudioPacketQueue();
-        packet_pool_->DestroyAudioPacketQueue();
-    }
     if (nullptr != image_audio_buffer_) {
         delete[] image_audio_buffer_;
         image_audio_buffer_ = nullptr;
@@ -869,6 +893,10 @@ void VideoExport::ProcessAudioExport() {
         delete audio_encoder_adapter_;
         audio_encoder_adapter_ = nullptr;
     }
+    if (nullptr != packet_pool_) {
+        packet_pool_->AbortAudioPacketQueue();
+        packet_pool_->DestroyAudioPacketQueue();
+    }
 }
 
 /**
@@ -877,12 +905,12 @@ void VideoExport::ProcessAudioExport() {
  */
 int VideoExport::FillMuteAudio() {
     if (image_audio_buffer_ == nullptr) {
-        image_audio_buffer_ = new uint8_t[2048];
+        image_audio_buffer_ = new uint8_t[1024 * channel_count_* AUDIO_SAMPLE_BITS / 8];
         memset(image_audio_buffer_, 0, 2048);
     }
     audio_buffer_ = image_audio_buffer_;
-    audio_current_time_ += (2048 * 1000 / vocal_sample_rate_ * channel_count_);
-    return 2048;
+    audio_current_time_ += 1024 * 1000 / vocal_sample_rate_;
+    return 1024 * channel_count_* AUDIO_SAMPLE_BITS / 8;
 }
 
 int VideoExport::Resample() {
@@ -901,6 +929,7 @@ int VideoExport::Resample() {
             }
         }
     } while (true);
+    LOGE("Resample");
     AVFrame* frame = context->audio_frame;
     int data_size = av_samples_get_buffer_size(NULL, av_frame_get_channels(frame),
                                                frame->nb_samples, (AVSampleFormat) frame->format, 1);
