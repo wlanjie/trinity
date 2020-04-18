@@ -78,6 +78,7 @@ class AudioRender {
 
  private:
     SLEngineItf engine_;
+    SLObjectItf engine_object_;
     SLObjectItf output_mix_object_;
     SLObjectItf audio_player_object_;
     SLAndroidSimpleBufferQueueItf audio_player_buffer_queue_;

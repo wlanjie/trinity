@@ -82,7 +82,6 @@ Player::Player(JNIEnv* env, jobject object) : Handler()
     av_play_context_->priv_data = this;
     av_play_context_->on_complete = OnComplete;
     av_play_context_->change_status = OnStatusChanged;
-//    av_play_context_->play_audio = PlayAudio;
 //    av_play_context_->force_sw_decode = 1;
     av_play_set_buffer_time(av_play_context_, 5);
 

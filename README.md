@@ -5,7 +5,7 @@
 
 [![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-trinity-brightgreen.svg?style=flat)](https://android-arsenal.com/details/1/8010)
 [![Build Status](https://api.travis-ci.org/wlanjie/trinity.svg?branch=master)](https://travis-ci.org/wlanjie/trinity/)
-[![Download](https://api.bintray.com/packages/wlanjie/maven/trinity/images/download.svg?version=0.2.5)](https://bintray.com/wlanjie/maven/trinity/0.2.5/link)
+[![Download](https://api.bintray.com/packages/wlanjie/maven/trinity/images/download.svg?version=0.2.7)](https://bintray.com/wlanjie/maven/trinity/0.2.5/link)
 ![platform](https://img.shields.io/badge/platform-Android-orange.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
@@ -256,6 +256,9 @@ adb devices
 ```
 在终端输入设备名即可
 
+## 性能
+<img src="memory.png" width = "402" height = "283" alt="性能" align=center />
+
 ## 使用
 
 <font color=red>注意: SDK中不做权限判断,使用时需要由调用方申请好权限, SDK中涉及到的时间均为毫秒</font>
@@ -263,7 +266,7 @@ adb devices
 ### 添加jcenter依赖
 ``` gradle
 dependencies {
-    implementation 'com.github.wlanjie:trinity:0.2.6'
+    implementation 'com.github.wlanjie:trinity:0.2.7'
 }
 ```
 

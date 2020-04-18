@@ -289,8 +289,8 @@ int MusicDecoder::ReadFrame() {
                 ReceiveFrame();
                 break;
             }
-        } else if (ret == AVERROR_EOF) {
-            av_seek_frame(format_context_, -1, seek_seconds_ / 1000 * AV_TIME_BASE, AVSEEK_FLAG_BACKWARD);
+        } else if (read_frame_code == AVERROR_EOF) {
+            av_seek_frame(format_context_, -1, 0, AVSEEK_FLAG_BACKWARD);
         } else {
             ret = -1;
             break;

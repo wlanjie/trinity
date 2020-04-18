@@ -31,13 +31,13 @@ static void get_frame_defaults(AVFrame *frame) {
     frame->color_range         = AVCOL_RANGE_UNSPECIFIED;
     frame->chroma_location     = AVCHROMA_LOC_UNSPECIFIED;
     frame->flags               = 0;
-
-    frame->width = 0;
-    frame->height = 0;
+    frame->width               = 0;
+    frame->height              = 0;
 }
 
-FramePool * frame_pool_create(int size){
-    FramePool * pool = (FramePool *)malloc(sizeof(FramePool));
+FramePool* frame_pool_create(int size){
+    LOGE("frame_pool_create");
+    FramePool* pool = (FramePool *)malloc(sizeof(FramePool));
     pool->size = size;
     pool->count = 0;
     pool->index = 0;
@@ -48,7 +48,8 @@ FramePool * frame_pool_create(int size){
     return pool;
 }
 
-void frame_pool_release(FramePool *pool){
+void frame_pool_release(FramePool *pool) {
+    LOGE("frame_pool_release");
     av_free(pool->frames);
     free(pool);
 }

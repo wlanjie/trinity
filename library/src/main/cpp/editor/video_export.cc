@@ -172,9 +172,7 @@ void VideoExport::OnStatusChanged(AVPlayContext *context, PlayStatus status) {
     auto* video_export = reinterpret_cast<VideoExport*>(context->priv_data);
     LOGE("status: %d", status);
     if (status == PLAYING) {
-        pthread_mutex_lock(&video_export->audio_mutex_);
-        pthread_cond_signal(&video_export->audio_cond_);
-        pthread_mutex_unlock(&video_export->audio_mutex_);
+
     }
 }
 
@@ -325,6 +323,9 @@ void VideoExport::StartDecode(MediaClip *clip) {
     } else if (clip->type == IMAGE) {
         load_image_texture_ = true;
     }
+    pthread_mutex_lock(&audio_mutex_);
+    pthread_cond_signal(&audio_cond_);
+    pthread_mutex_unlock(&audio_mutex_);
     LOGI("leave %s", __func__);
 }
 
@@ -827,13 +828,6 @@ void VideoExport::ProcessAudioExport() {
             break;
         }
 
-        if (current_media_clip_->type == VIDEO && av_play_context_->status != PLAYING) {
-            LOGE("audio wait status: %d", av_play_context_->status);
-            pthread_mutex_lock(&audio_mutex_);
-            pthread_cond_wait(&audio_cond_, &audio_mutex_);
-            pthread_mutex_unlock(&audio_mutex_);
-        }
-
         AudioPacket* music_packet = nullptr;
         for (int i = 0; i < music_decoder_deque_.size(); ++i) {
             auto* decoder = music_decoder_deque_.at(i);
@@ -877,6 +871,14 @@ void VideoExport::ProcessAudioExport() {
             }
         } else if (current_media_clip_->type == VIDEO) {
             audio_size = Resample();
+        }
+        if (export_index_ >= clip_deque_.size()) {
+            break;
+        }
+        if (audio_size <= 0) {
+            pthread_mutex_lock(&audio_mutex_);
+            pthread_cond_wait(&audio_cond_, &audio_mutex_);
+            pthread_mutex_unlock(&audio_mutex_);
         }
         if (audio_size > 0) {
             // TODO buffer池

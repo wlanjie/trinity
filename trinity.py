@@ -155,7 +155,7 @@ class TrinityTestCase(unittest.TestCase):
         d(resourceId="com.trinity.sample:id/root_view", className="android.widget.RelativeLayout").click()
 
         # 点击下一步
-        # d(text="下一步").click()
+        d(text="下一步").click()
         time.sleep(80)
         # d.press("back")
         d.press("back")

@@ -32,7 +32,6 @@ static int message_callback(int fd, int events, void *data) {
             case message_stop:
 //                stop(context);
                 LOGE("message_stop");
-                change_status(context, IDEL);
                 if (context->on_complete) {
                     context->on_complete(context);
                 }
@@ -779,28 +778,31 @@ static int stop(AVPlayContext *context) {
     if ((context->av_track_flags & VIDEO_FLAG) > 0) {
         pthread_join(context->video_decode_thread, &thread_res);
         if (context->is_sw_decode) {
+            avcodec_close(context->video_codec_ctx);
             avcodec_free_context(&context->video_codec_ctx);
+        } else {
+            mediacodec_stop(context);
         }
     }
 
     if ((context->av_track_flags & AUDIO_FLAG) > 0) {
         pthread_join(context->audio_decode_thread, &thread_res);
+        avcodec_close(context->audio_codec_context);
         avcodec_free_context(&context->audio_codec_context);
-    }
-
-    if (!context->is_sw_decode) {
-        mediacodec_stop(context);
     }
 
     clean_queues(context);
     avformat_close_input(&context->format_context);
+    avformat_free_context(context->format_context);
     reset(context);
     LOGI("leave %s", __func__);
     return 0;
 }
 
 int av_play_stop(AVPlayContext* context) {
-    if (context == NULL || context->status == IDEL) return 0;
+    if (context == NULL || context->status == IDEL) {
+        return 0;
+    }
     context->error_code = -1;
     return stop(context);
 }

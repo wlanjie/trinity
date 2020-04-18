@@ -86,6 +86,7 @@ SLresult AudioRender::Pause() {
 
 SLresult AudioRender::Stop() {
     // Set the audio player state playing
+    LOGI("enter: %s", __func__);
     SLresult result = SetAudioPlayerStatePaused();
     if (SL_RESULT_SUCCESS != result) {
         return result;
@@ -94,6 +95,7 @@ SLresult AudioRender::Stop() {
     usleep(0.05 * 1000000);
     DestroyContext();
     play_position_ = 0;
+    LOGI("leave: %s", __func__);
     return SL_RESULT_SUCCESS;
 }
 
@@ -103,7 +105,6 @@ SLresult AudioRender::Play() {
         return SL_RESULT_SUCCESS;
     }
     SLuint32 state = SL_PLAYSTATE_PLAYING;
-    LOGE("state: %d", state);
     (*audio_player_play_)->GetPlayState(audio_player_play_, &state);
     if (state != SL_PLAYSTATE_PAUSED) {
         return SL_RESULT_SUCCESS;
@@ -139,9 +140,27 @@ SLresult AudioRender::Init(int channels, int accompanySampleRate, AudioPlayerCal
     context_ = ctx;
     audio_player_callback_ = produceDataCallback;
     SLresult result = SL_RESULT_UNKNOWN_ERROR;
-    OpenSLContext* openSLESContext = OpenSLContext::GetInstance();
-    engine_ = openSLESContext->GetEngine();
 
+    // OpenSL ES for Android is designed to be thread-safe,
+    // so this option request will be ignored, but it will
+    // make the source code portable to other platforms.
+    SLEngineOption engineOptions[] = {{(SLuint32) SL_ENGINEOPTION_THREADSAFE, (SLuint32) SL_BOOLEAN_TRUE}};
+
+    // Create the OpenSL ES engine object
+    result = slCreateEngine(&engine_object_, ARRAY_LEN(engineOptions), engineOptions, 0,
+                          0,
+                          0);
+    if (SL_RESULT_SUCCESS != result) {
+        return result;
+    }
+    result = (*engine_object_)->Realize(engine_object_, SL_BOOLEAN_FALSE);
+    if (SL_RESULT_SUCCESS != result) {
+        return result;
+    }
+    result = (*engine_object_)->GetInterface(engine_object_, SL_IID_ENGINE, &engine_);
+    if (SL_RESULT_SUCCESS != result) {
+        return result;
+    }
     if (engine_ == nullptr) {
         return result;
     }
@@ -236,6 +255,7 @@ void AudioRender::DestroyContext() {
     FreePlayerBuffer();
     // Destroy output mix object
     DestroyObject(output_mix_object_);
+    DestroyObject(engine_object_);
     LOGI("leave DestroyContext");
 }
 
