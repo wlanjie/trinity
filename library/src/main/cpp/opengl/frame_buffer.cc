@@ -87,6 +87,8 @@ void FrameBuffer::CompileFrameBuffer(int camera_width, int camera_height) {
 FrameBuffer::~FrameBuffer() {
     glDeleteTextures(1, &texture_id_);
     glDeleteFramebuffers(1, &frameBuffer_id_);
+    delete[] vertex_coordinate_;
+    delete[] texture_coordinate_;
 }
 
 void FrameBuffer::SetStartTime(int time) {

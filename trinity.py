@@ -106,22 +106,22 @@ class TrinityTestCase(unittest.TestCase):
         d(resourceId="com.trinity.sample:id/done", className="android.widget.ImageView").click()
 
         # 点击滤镜
-        d(text="滤镜").click()
-        # 遍历滤镜,所有滤镜切换一次
-        for num in range(1, 8):
-            for index in range(1, 8):
-                try:
-                    d.xpath('//*[@resource-id="com.trinity.sample:id/effect_list_filter"]/android.widget.RelativeLayout[' + str(index) +']').click()
-                    # 每个滤镜显示2秒
-                    time.sleep(2)
-                except Exception:
-                    print('click filter exception')
-                    self.runTest()
-            # 往左滑动
-            d.swipe_ext("left", box=(0, self.displayHeight - 200, self.displayWidth, self.displayHeight), scale=0.7)
+        # d(text="滤镜").click()
+        # # 遍历滤镜,所有滤镜切换一次
+        # for num in range(1, 8):
+        #     for index in range(1, 8):
+        #         try:
+        #             d.xpath('//*[@resource-id="com.trinity.sample:id/effect_list_filter"]/android.widget.RelativeLayout[' + str(index) +']').click()
+        #             # 每个滤镜显示2秒
+        #             time.sleep(2)
+        #         except Exception:
+        #             print('click filter exception')
+        #             self.runTest()
+        #     # 往左滑动
+        #     d.swipe_ext("left", box=(0, self.displayHeight - 200, self.displayWidth, self.displayHeight), scale=0.7)
 
-        # # 点击隐藏滤镜列表
-        d(resourceId="com.trinity.sample:id/root_view", className="android.widget.RelativeLayout").click()
+        # # # 点击隐藏滤镜列表
+        # d(resourceId="com.trinity.sample:id/root_view", className="android.widget.RelativeLayout").click()
 
         # 点击特效
         d(text="特效").click()

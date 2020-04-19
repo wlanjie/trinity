@@ -112,6 +112,14 @@ void ProcessBuffer::SetUniformMatrix4f(const char *name, int size, const GLfloat
 }
 
 void ProcessBuffer::Destroy() {
+    if (texture_id_ != 0) {
+        glDeleteTextures(1, &texture_id_);
+        texture_id_ = 0;
+    }
+    if (frame_buffer_id_ != 0) {
+        glDeleteFramebuffers(1, &frame_buffer_id_);
+        frame_buffer_id_ = 0;
+    }
     if (program_ != 0) {
         glDeleteProgram(program_);
         program_ = 0;

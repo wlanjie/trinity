@@ -688,16 +688,21 @@ void VideoExport::ProcessVideoExport() {
         // 回调合成进度给上层
         OnExportProgress(current_time_);
     }
-    av_play_context_->send_message(av_play_context_, message_stop);
     LOGE("export thread ===========> exit");
     encoder_->DestroyEncoder();
     delete encoder_;
     packet_thread_->Stop();
     delete packet_thread_;
 
+    egl_core_->MakeCurrent(egl_surface_);
     if (nullptr != image_process_) {
         delete image_process_;
         image_process_ = nullptr;
+    }
+
+    if (oes_texture_ != 0) {
+        glDeleteTextures(1, &oes_texture_);
+        oes_texture_ = 0;
     }
 
     if (image_texture_ != 0) {
@@ -728,12 +733,11 @@ void VideoExport::ProcessVideoExport() {
         packet_pool_->AbortRecordingVideoPacketQueue();
         packet_pool_->DestroyRecordingVideoPacketQueue();
     }
-
+    FreeResource();
     egl_core_->ReleaseSurface(egl_surface_);
     egl_core_->Release();
     egl_surface_ = EGL_NO_SURFACE;
     delete egl_core_;
-    FreeResource();
     if (cancel_) {
         OnCancel();
     } else {

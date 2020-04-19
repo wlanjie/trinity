@@ -513,6 +513,7 @@ SubEffect::~SubEffect() {
     }
     input_effect.clear();
     if (nullptr != process_buffer_) {
+        process_buffer_->Destroy();
         delete process_buffer_;
         process_buffer_ = nullptr;
     }
