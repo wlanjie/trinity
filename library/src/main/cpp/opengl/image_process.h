@@ -46,7 +46,7 @@ class ImageProcess {
     ImageProcess();
     ~ImageProcess();
 
-    int Process(int texture_id, uint64_t current_time,
+    GLuint Process(GLuint texture_id, int64_t current_time,
             int width, int height,
             int input_color_type, int output_color_type);
 
@@ -81,7 +81,7 @@ class ImageProcess {
      * @param height
      * @return
      */
-    int OnProcess(int texture_id, uint64_t current_time, int width, int height);
+    GLuint OnProcess(GLuint texture_id, int64_t current_time, int width, int height);
 
  private:
     std::map<int, Filter*> filters_;

@@ -78,7 +78,7 @@ void SoftEncoderAdapter::CreateEncoder(EGLCore *core) {
     LOGI("leave CreateEncoder");
 }
 
-void SoftEncoderAdapter::Encode(uint64_t time, int texture_id) {
+void SoftEncoderAdapter::Encode(int64_t time, int texture_id) {
     if (start_time_ == 0)
         start_time_ = getCurrentTime();
 

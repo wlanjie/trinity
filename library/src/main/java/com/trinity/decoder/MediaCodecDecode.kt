@@ -22,6 +22,7 @@ class MediaCodecDecode {
   private val mBuffer = ByteBuffer.allocateDirect(16)
   private val mChangeBuffer = ByteBuffer.allocateDirect(12)
   private val mMatrix = FloatArray(16)
+  private var mOnFrameAvailable = false
 
   init {
     mBuffer.order(ByteOrder.BIG_ENDIAN)
@@ -60,6 +61,9 @@ class MediaCodecDecode {
         }
       }
       mSurfaceTexture = SurfaceTexture(textureId)
+      mSurfaceTexture?.setOnFrameAvailableListener {
+        mOnFrameAvailable = true
+      }
       mOutputSurface = Surface(mSurfaceTexture)
       mMediaCodec?.configure(mFormat, mOutputSurface, null, 0)
       mMediaCodec?.start()
@@ -80,6 +84,7 @@ class MediaCodecDecode {
     mOutputSurface = null
     mMediaCodec = null
     mFormat = null
+    mOnFrameAvailable = false
     Log.i("trinity", "leave MediaCodec Stop")
   }
 
@@ -151,5 +156,9 @@ class MediaCodecDecode {
   fun getTransformMatrix(): FloatArray {
     mSurfaceTexture?.getTransformMatrix(mMatrix)
     return mMatrix
+  }
+
+  fun frameAvailable(): Boolean {
+    return mOnFrameAvailable
   }
 }

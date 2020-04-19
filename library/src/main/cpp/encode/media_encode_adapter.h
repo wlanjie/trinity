@@ -39,7 +39,7 @@ class MediaEncodeAdapter : public VideoEncoderAdapter {
 
     virtual void DestroyEncoder();
 
-    virtual void Encode(uint64_t time, int texture_id = 0);
+    virtual void Encode(int64_t time, int texture_id = 0);
 
     int DrainEncodeData();
 

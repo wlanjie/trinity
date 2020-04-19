@@ -220,10 +220,10 @@ class FaceMakeupV2Filter {
         , image_buffer(nullptr)
         , face_markup_render(nullptr)
         , z_position(0) {
-    
+        LOGI("enter: %s", __func__);
     }
     ~FaceMakeupV2Filter() {
-        printf("~FaceMarkupV2Filter\n");
+        LOGI("enter: %s", __func__);
         if (nullptr != filter_type) {
             delete[] filter_type;
             filter_type = nullptr;
@@ -256,10 +256,10 @@ class FaceMakeupV2 {
     FaceMakeupV2()
         : standard_face_width(0)
         , standard_face_height(0) {
-    
+        LOGI("enter: %s", __func__);
     }
     ~FaceMakeupV2() {
-        printf("~FaceMarkupV2\n");
+        LOGI("enter: %s", __func__);
         face_ids.clear();
         for (auto& filter : filters) {
             delete filter;

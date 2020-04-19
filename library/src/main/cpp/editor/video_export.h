@@ -79,7 +79,7 @@ class VideoExport {
             int target_width, int target_height, RenderFrame frame_type);
     void ProcessVideoExport();
     void ProcessAudioExport();
-    void OnExportProgress(uint64_t current_time);
+    void OnExportProgress(int64_t current_time);
     void OnExportComplete();
     void OnCancel();
     int Resample();

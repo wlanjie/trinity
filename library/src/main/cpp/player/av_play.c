@@ -488,10 +488,10 @@ void *read_thread(void *data) {
     prctl(PR_SET_NAME, __func__);
     AVPlayContext *context = (AVPlayContext *) data;
     AVPacket *packet = NULL;
-    int ret = 0;
     while (!context->abort_request) {
         if (context->seeking == 1) {
             context->seeking = 2;
+            mediacodec_seek(context);
             flush_packet_queue(context);
             int seek_ret = av_seek_frame(context->format_context, -1, (int64_t) (context->seek_to * AV_TIME_BASE),
                                          AVSEEK_FLAG_BACKWARD);
@@ -511,7 +511,7 @@ void *read_thread(void *data) {
             packet = packet_pool_get_packet(context->packet_pool);
         }
         // read data to packet
-        ret = av_read_frame(context->format_context, packet);
+        int ret = av_read_frame(context->format_context, packet);
         if (ret == 0) {
             context->timeout_start = 0;
             if (packet->stream_index == context->video_index) {

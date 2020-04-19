@@ -543,6 +543,31 @@ void mediacodec_flush(AVPlayContext *context) {
     pthread_mutex_unlock(&context->media_codec_mutex);
 }
 
+void mediacodec_seek(AVPlayContext* context) {
+    MediaCodecContext *media_codec_context = context->media_codec_context;
+    if (media_codec_context == NULL) {
+        return;
+    }
+    JNIEnv *env = NULL;
+    (*context->vm)->AttachCurrentThread(context->vm, &env, NULL);
+    while (1) {
+        JavaClass *java_class = context->java_class;
+        jobject deqret = (*env)->CallObjectMethod(env, java_class->media_codec_object,
+                                                  java_class->codec_dequeueOutputBufferIndex,
+                                                  (jlong) 0);
+        uint8_t *ret_buf = (*env)->GetDirectBufferAddress(env, deqret);
+        int out_index = get_int(ret_buf);
+        (*env)->DeleteLocalRef(env, deqret);
+        if (out_index >= 0) {
+            (*env)->CallVoidMethod(env, java_class->media_codec_object, java_class->codec_releaseOutPutBuffer,
+                                   out_index);
+        } else {
+            break;
+        }
+    }
+    (*context->vm)->DetachCurrentThread(context->vm);
+}
+
 void mediacodec_stop(AVPlayContext *context) {
     LOGE("enter %s", __func__);
     pthread_mutex_lock(&context->media_codec_mutex);
@@ -599,6 +624,23 @@ int mediacodec_get_texture_matrix(AVPlayContext* context, float* texture_matrix)
     (*context->vm)->DetachCurrentThread(context->vm);
     pthread_mutex_unlock(&context->media_codec_mutex);
     return 0;
+}
+
+bool mediacodec_frame_available(AVPlayContext* context) {
+    pthread_mutex_lock(&context->media_codec_mutex);
+    MediaCodecContext* media_codec_context = context->media_codec_context;
+    if (media_codec_context == NULL) {
+        pthread_mutex_unlock(&context->media_codec_mutex);
+        return false;
+    }
+    JNIEnv *env = NULL;
+    JavaClass* java_class = context->java_class;
+    (*context->vm)->AttachCurrentThread(context->vm, &env, NULL);
+    jboolean frame_available = (*env)->CallBooleanMethod(env,
+            java_class->media_codec_object, java_class->texture_frameAvailable);
+    (*context->vm)->DetachCurrentThread(context->vm);
+    pthread_mutex_unlock(&context->media_codec_mutex);
+    return frame_available;
 }
 
 #endif

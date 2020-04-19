@@ -40,7 +40,7 @@ ImageProcess::~ImageProcess() {
     ClearAction();
 }
 
-int ImageProcess::Process(int texture_id, uint64_t current_time, int width, int height, int input_color_type, int output_color_type) {
+GLuint ImageProcess::Process(GLuint texture_id, int64_t current_time, int width, int height, int input_color_type, int output_color_type) {
     return OnProcess(texture_id, current_time, width, height);
 }
 
@@ -48,24 +48,26 @@ int ImageProcess::Process(uint8_t *frame, uint64_t current_time, int width, int 
     return OnProcess(0, current_time, width, height);
 }
 
-int ImageProcess::OnProcess(int texture_id, uint64_t current_time, int width, int height) {
-    int texture = texture_id;
+GLuint ImageProcess::OnProcess(GLuint texture_id, int64_t current_time, int width, int height) {
+    GLuint texture = texture_id;
     // 执行滤镜操作
     for (auto& filter : filters_) {
         Filter* f = filter.second;
-        int process_texture = f->OnDrawFrame(texture, current_time);
+        GLuint process_texture = f->OnDrawFrame(texture, current_time);
         texture = process_texture;
     }
     if (action_id_ == -1) {
         for (auto& effect : effects_) {
-            texture = effect.second->OnDrawFrame(texture, width, height, current_time);
+            texture = static_cast<GLuint>(effect.second->OnDrawFrame(texture, width, height,
+                                                                     current_time));
         }
     } else {
         auto effect_iterator = effects_.find(action_id_);
         if (effect_iterator == effects_.end()) {
             return texture;
         }
-        texture = effect_iterator->second->OnDrawFrame(texture, width, height, current_time);
+        texture = static_cast<GLuint>(effect_iterator->second->OnDrawFrame(texture, width, height,
+                                                                           current_time));
     }
     return texture;
 }
@@ -149,6 +151,8 @@ void ImageProcess::RemoveAction(int action_id) {
 }
 
 void ImageProcess::ClearAction() {
+    int size = static_cast<int>(effects_.size());
+    LOGI("enter: %s action_size: %d", __func__, size);
     auto effect_iterator = effects_.begin();
     while (effect_iterator != effects_.end()) {
         delete effect_iterator->second;
@@ -159,6 +163,7 @@ void ImageProcess::ClearAction() {
         delete filter.second;
     }
     filters_.clear();
+    LOGI("leave: %s", __func__);
 }
 
 void ImageProcess::OnFilter(const char* config_path, int action_id, int start_time, int end_time) {

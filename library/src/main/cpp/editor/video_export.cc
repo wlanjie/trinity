@@ -652,7 +652,12 @@ void VideoExport::ProcessVideoExport() {
                                                                 AV_TIME_BASE_Q) / 1000;
             } else {
                 mediacodec_update_image(av_play_context_);
-                int ret = mediacodec_get_texture_matrix(av_play_context_, texture_matrix_);
+                mediacodec_get_texture_matrix(av_play_context_, texture_matrix_);
+                if (!mediacodec_frame_available(av_play_context_)) {
+                    LOGE("mediacodec frame is not available index: %d", frame->HW_BUFFER_ID);
+                    mediacodec_release_buffer(av_play_context_, av_play_context_->video_frame);
+                    continue;
+                }
                 media_codec_render_->ActiveProgram();
                 encode_texture_id_ = media_codec_render_->OnDrawFrame(oes_texture_,
                         crop_vertex_coordinate_, texture_coordinate_,
@@ -738,7 +743,7 @@ void VideoExport::ProcessVideoExport() {
     LOGI("leave %s", __func__);
 }
 
-void VideoExport::OnExportProgress(uint64_t current_time) {
+void VideoExport::OnExportProgress(int64_t current_time) {
     if (video_duration_ == 0) {
         LOGE("video_duration is 0");
         return;

@@ -343,9 +343,10 @@ int mediacodec_dequeue_input_buffer_index(AVPlayContext* context);
 int mediacodec_send_packet(AVPlayContext *context, AVPacket *packet, int buffer_index);
 void mediacodec_end_of_stream(AVPlayContext* context, int buffer_index);
 void mediacodec_flush(AVPlayContext *context);
+void mediacodec_seek(AVPlayContext* context);
 void mediacodec_start(AVPlayContext *context);
 void mediacodec_stop(AVPlayContext *context);
 void mediacodec_update_image(AVPlayContext* context);
 int mediacodec_get_texture_matrix(AVPlayContext* context, float* texture_matrix);
-
+bool mediacodec_frame_available(AVPlayContext* context);
 #endif  // media_codec_h

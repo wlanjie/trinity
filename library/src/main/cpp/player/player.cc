@@ -170,7 +170,7 @@ void Player::OnSurfaceCreated(ANativeWindow* window) {
 }
 
 void Player::OnSurfaceChanged(int width, int height) {
-    LOGI("enter: %s", __func__);
+    LOGI("enter: %s width: %d height: %d", __func__, width, height);
     surface_width_ = width;
     surface_height_ = height;
 
@@ -222,9 +222,11 @@ int Player::Start(MediaClip* clip, int video_count_duration) {
 }
 
 void Player::Seek(int start_time, int end_time) {
+    LOGI("enter: %s seek: %d end_time: %d", __func__, start_time, end_time);
     if (nullptr != av_play_context_) {
         av_play_seek(av_play_context_, start_time);
     }
+    LOGI("leave: %s", __func__);
 }
 
 void Player::Resume() {
@@ -835,10 +837,6 @@ int Player::DrawVideoFrame() {
     if (diff >= 1000000) {
         return -1;
     } else {
-        if (!av_play_context_->is_sw_decode) {
-            mediacodec_update_image(av_play_context_);
-            mediacodec_get_texture_matrix(av_play_context_, texture_matrix_);
-        }
         int width = MIN(av_play_context_->video_frame->linesize[0], av_play_context_->video_frame->width);
         int height = av_play_context_->video_frame->height;
         if (frame_width_ != width || frame_height_ != height) {
@@ -862,7 +860,7 @@ int Player::DrawVideoFrame() {
             }
         }
         if (diff > 0) {
-            usleep(diff);
+            usleep(static_cast<useconds_t>(diff));
         }
         if (av_play_context_->is_sw_decode) {
             draw_texture_id_ = yuv_render_->DrawFrame(av_play_context_->video_frame, vertex_coordinate_, texture_coordinate_);
@@ -870,6 +868,12 @@ int Player::DrawVideoFrame() {
                                          av_play_context_->format_context->streams[av_play_context_->video_index]->time_base,
                                          AV_TIME_BASE_Q) / 1000;
         } else {
+            if (!mediacodec_frame_available(av_play_context_)) {
+                LOGE("mediacodec frame is not available");
+                draw_texture_id_ = -1;
+            }
+            mediacodec_update_image(av_play_context_);
+            mediacodec_get_texture_matrix(av_play_context_, texture_matrix_);
             media_codec_render_->ActiveProgram();
             draw_texture_id_ = media_codec_render_->OnDrawFrame(oes_texture_, texture_matrix_);
             current_time_ = av_play_context_->video_frame->pts / 1000;
@@ -907,6 +911,7 @@ void Player::Draw(int texture_id) {
     }
     int texture = OnDrawFrame(texture_id, frame_width_, frame_height_);
     render_screen_->ActiveProgram();
+    render_screen_->SetOutput(surface_width_, surface_height_);
     render_screen_->ProcessImage(static_cast<GLuint>(texture > 0 ? texture : texture_id),
             vertex_coordinate_, texture_coordinate_);
     if (!core_->SwapBuffers(render_surface_)) {

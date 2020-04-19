@@ -174,6 +174,7 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
     } else {
       mVideoEditor.getVideoDuration() - duration < USE_ANIMATION_REMAIN_TIME
     }
+    mVideoEditor.seek(duration.toInt())
   }
 
   override fun onThumbLineBarSeekFinish(duration: Long) {
@@ -419,6 +420,16 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
 
   override fun onDestroy() {
     super.onDestroy()
+    if (mFilterId != -1) {
+      mVideoEditor.deleteFilter(mFilterId)
+    }
+    if (mMusicId != -1) {
+      mVideoEditor.deleteMusic(mMusicId)
+    }
+    mActionIds.forEach {
+      mVideoEditor.deleteAction(it.value)
+    }
+    mActionIds.clear()
     mVideoEditor.destroy()
 //    closeLog()
   }

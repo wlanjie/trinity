@@ -30,6 +30,7 @@ void jni_reflect_java_class(JavaClass ** p_jc, JNIEnv *env) {
     java_class->codec_dequeueOutputBufferIndex = (*env)->GetMethodID(env, media_codec_class, "dequeueOutputBufferIndex", "(J)Ljava/nio/ByteBuffer;");
     java_class->texture_updateTexImage = (*env)->GetMethodID(env, media_codec_class, "updateTexImage", "()V");
     java_class->texture_getTransformMatrix = (*env)->GetMethodID(env, media_codec_class, "getTransformMatrix",  "()[F");
+    java_class->texture_frameAvailable = (*env)->GetMethodID(env, media_codec_class, "frameAvailable", "()Z");
     (*env)->DeleteLocalRef(env, media_codec_object);
     (*env)->DeleteLocalRef(env, media_codec_class);
     *p_jc = java_class;

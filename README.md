@@ -1,6 +1,6 @@
 # trinity
 
-![中文文档](https://github.com/wlanjie/trinity/blob/master/README-zh.md)
+[中文文档](https://github.com/wlanjie/trinity/blob/master/README-zh.md)
 
 ![icon~](https://github.com/wlanjie/trinity/blob/master/trinity@2x.png)
 
@@ -9,11 +9,11 @@
 ![platform](https://img.shields.io/badge/platform-Android-orange.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-**trinity is an open source shooting and short video processing tool, written in kotlin and c ++, which implements most of the popular features of short video editing software.**
+**trinity is an open source shooting and short video processing tool, written in kotlin and c++, which implements most of the popular features of short video editing software.**
 
 [apk download](https://github.com/wlanjie/trinity/blob/master/trinity.apk)
 
-![演示](screen_shot.gif)
+![](screen_shot.gif)
 
 ## QQ exchange group
 ```
@@ -92,7 +92,7 @@ Support Android 4.3 And above
   </tr>
   <tr>
       <td>Microdermabrasion</td>
-      <td align="center">x</td>
+      <td align="center">√</td>
   </tr>
   <tr>
       <td>Custom resolution and bit rate</td>

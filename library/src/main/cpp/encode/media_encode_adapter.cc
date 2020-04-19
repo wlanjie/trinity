@@ -125,7 +125,7 @@ void MediaEncodeAdapter::DestroyEncoder() {
     LOGE("after DestroyEncoder");
 }
 
-void MediaEncodeAdapter::Encode(uint64_t time, int texture_id) {
+void MediaEncodeAdapter::Encode(int64_t time, int texture_id) {
     int expectedFrameCount = static_cast<int>(time / 1000.0F * frame_rate_ + 0.5F);
     if (expectedFrameCount < encode_frame_count_) {
         LOGE("drop frame encode_count: %d frame_count: %d", encode_frame_count_, expectedFrameCount);

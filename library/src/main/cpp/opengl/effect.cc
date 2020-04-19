@@ -28,10 +28,12 @@
 
 namespace trinity {
 
-GeneralSubEffect::GeneralSubEffect() {}
+GeneralSubEffect::GeneralSubEffect() {
+    LOGI("enter: %s", __func__);
+}
 
 GeneralSubEffect::~GeneralSubEffect() {
-    printf("~GeneralSubEffect\n");
+    LOGI("~GeneralSubEffect\n");
 }
 
 int GeneralSubEffect::OnDrawFrame(FaceDetection* face_detection,
@@ -120,10 +122,12 @@ StickerSubEffect::StickerSubEffect()
     , face_detect(false)
     , input_aspect(1.0F)
     , blend(nullptr)
-    , begin_frame_time(0) {}
+    , begin_frame_time(0) {
+    LOGI("enter: %s", __func__);
+}
 
 StickerSubEffect::~StickerSubEffect() {
-    printf("~StickerSubEffect\n");
+    LOGI("enter: %s", __func__);
     sticker_idxs.clear();
     for (auto& path : sticker_paths) {
         delete[] path;
@@ -192,9 +196,12 @@ glm::mat4 StickerSubEffect::VertexMatrix(FaceDetectionReport* face_detection, in
 }
 
 // StickerFace
-StickerFace::StickerFace() : frame_count(0) {}
+StickerFace::StickerFace() : frame_count(0) {
+    LOGI("enter: %s", __func__);
+}
 
 StickerFace::~StickerFace() {
+    LOGI("enter: %s", __func__);
     for (auto position : positions) {
         delete position;
     }
@@ -320,10 +327,12 @@ int StickerFace::OnDrawFrame(FaceDetection* face_detection,
 
 // StickerV3
 StickerV3SubEffect::StickerV3SubEffect()
-    : transform(nullptr) {}
+    : transform(nullptr) {
+    LOGI("enter: %s", __func__);
+}
 
 StickerV3SubEffect::~StickerV3SubEffect() {
-    printf("~StickerV3SubEffect\n");
+    LOGI("enter: %s", __func__);
     if (nullptr != transform) {
         delete transform;
         transform = nullptr;
@@ -408,10 +417,11 @@ FaceMakeupV2SubEffect::FaceMakeupV2SubEffect()
     : face_makeup_v2_(nullptr)
     , face_markup_render_(nullptr) {
     face_markup_render_ = new FaceMarkupRender();
+    LOGI("enter: %s", __func__);
 }
 
 FaceMakeupV2SubEffect::~FaceMakeupV2SubEffect() {
-    // TODO delete FaceMakeupV2Filter
+    LOGI("enter: %s", __func__);
     delete face_makeup_v2_;
     delete face_markup_render_;
 }
@@ -467,6 +477,7 @@ SubEffect::SubEffect()
     , param_value(0) {}
 
 SubEffect::~SubEffect() {
+    LOGI("enter: %s", __func__);
     if (nullptr != type) {
         delete[] type;
         type = nullptr;
@@ -497,15 +508,14 @@ SubEffect::~SubEffect() {
             vertex_uniform->float_values.clear();
     }
     vertex_uniforms.clear();
-    for (auto& input_effect : input_effect) {
-        delete[] input_effect;
+    for (auto& input_effect_name : input_effect) {
+        delete[] input_effect_name;
     }
     input_effect.clear();
     if (nullptr != process_buffer_) {
         delete process_buffer_;
         process_buffer_ = nullptr;
     }
-    printf("~SubEffect\n");
 }
 
 void SubEffect::InitProcessBuffer(char *vertex_shader, char *fragment_shader) {

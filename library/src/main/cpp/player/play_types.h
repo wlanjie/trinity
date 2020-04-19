@@ -41,6 +41,7 @@ typedef struct JavaClass {
     jmethodID codec_formatChange;
     jmethodID texture_updateTexImage;
     jmethodID texture_getTransformMatrix;
+    jmethodID texture_frameAvailable;
     __attribute__((unused))
     jmethodID codec_getOutputBuffer;
     jmethodID codec_releaseOutPutBuffer;

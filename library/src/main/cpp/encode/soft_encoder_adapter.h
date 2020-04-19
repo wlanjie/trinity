@@ -36,7 +36,7 @@ class SoftEncoderAdapter : public VideoEncoderAdapter {
 
     void CreateEncoder(EGLCore *eglCore);
 
-    void Encode(uint64_t time, int texture_id = 0);
+    void Encode(int64_t time, int texture_id = 0);
 
     void DestroyEncoder();
 

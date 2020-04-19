@@ -82,6 +82,7 @@ Blend::~Blend() {
         delete[] default_texture_coordinates_;
         default_texture_coordinates_ = nullptr;
     }
+    DeleteFrameBuffer();
     if (program_ != 0) {
         glDeleteProgram(program_);
         program_ = 0;

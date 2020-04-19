@@ -35,20 +35,6 @@
 
 namespace trinity {
 
-static const GLfloat defaultVertexCoordinates[] = {
-        -1.0f, -1.0f,
-        1.0f, -1.0f,
-        -1.0f, 1.0f,
-        1.0f, 1.0f,
-};
-
-static const GLfloat defaultTextureCoordinate[] = {
-        0.0f, 0.0f,
-        1.0f, 0.0f,
-        0.0f, 1.0f,
-        1.0f, 1.0f
-};
-
 OpenGL::OpenGL() {
     gl_observer_ = nullptr;
     type_ = TEXTURE_2D;
