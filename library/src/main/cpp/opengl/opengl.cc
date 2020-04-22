@@ -84,6 +84,7 @@ OpenGL::OpenGL(int width, int height, const char *vertex, const char *fragment) 
 }
 
 OpenGL::~OpenGL() {
+    LOGI("enter: %s program: %d", __func__, program_);
     if (program_ != 0) {
         glDeleteProgram(program_);
         program_ = 0;
@@ -96,6 +97,7 @@ OpenGL::~OpenGL() {
         delete[] default_texture_coordinates_;
         default_texture_coordinates_ = nullptr;
     }
+    LOGI("leave: %s", __func__);
 }
 
 void OpenGL::InitCoordinates() {
@@ -290,8 +292,7 @@ void OpenGL::CompileShader(const char *shader_string, GLuint shader) {
     glCompileShader(shader);
     GLint compiled = GL_FALSE;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
-    printf("%s\n", shader_string);
-    printf("==================\n");
+    LOGI("%s", shader_string);
     if (!compiled) {
         GLint infoLen;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
@@ -304,8 +305,7 @@ void OpenGL::CompileShader(const char *shader_string, GLuint shader) {
                 free(buf);
             }
             glDeleteShader(shader);
-        }
-    }
+        }}
 }
 
 void OpenGL::Link() {

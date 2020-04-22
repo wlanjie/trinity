@@ -34,7 +34,7 @@ enum VideoRenderMessage {
 Player::Player(JNIEnv* env, jobject object) : Handler()
     , message_queue_thread_()
     , message_queue_()
-    , av_play_context_()
+    , av_play_context_(nullptr)
     , vm_()
     , object_()
     , core_(nullptr)
@@ -905,6 +905,9 @@ void Player::Draw(int texture_id) {
         LOGE("nullptr == core_");
         return;
     }
+    if (nullptr == render_screen_) {
+        return;
+    }
     if (EGL_NO_SURFACE == render_surface_) {
         LOGE("EGL_NO_SURFACE == render_surface_");
         return;
@@ -930,7 +933,7 @@ void Player::ReleaseVideoFrame() {
 void Player::OnGLCreate() {
     LOGI("enter %s", __func__);
     core_ = new EGLCore();
-    auto result = core_->InitWithSharedContext();
+    auto result = core_->Init();
     if (!result) {
         LOGE("create EGLContext failed");
         return;

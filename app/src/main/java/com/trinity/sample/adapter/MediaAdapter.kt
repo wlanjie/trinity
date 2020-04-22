@@ -39,15 +39,15 @@ class MediaAdapter : RecyclerView.Adapter<MediaAdapter.ViewHolder>() {
 
   override fun onBindViewHolder(holder: ViewHolder, position: Int) {
     val item = mMedias[position]
-    val options = RequestOptions()
-        .diskCacheStrategy(DiskCacheStrategy.ALL)
-        .centerCrop()
-
-    Glide.with(holder.itemView.context)
-        .asBitmap()
-        .load(item.path)
-        .apply(options)
-        .into(holder.imageView)
+//    val options = RequestOptions()
+//        .diskCacheStrategy(DiskCacheStrategy.ALL)
+//        .centerCrop()
+//
+//    Glide.with(holder.itemView.context)
+//        .asBitmap()
+//        .load(item.path)
+//        .apply(options)
+//        .into(holder.imageView)
 
     var index = -1
     mSelectMedias.forEachIndexed { i, mediaItem ->

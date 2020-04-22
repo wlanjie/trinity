@@ -82,6 +82,8 @@ FrameQueue* frame_queue_create(unsigned int size){
 void frame_queue_free(FrameQueue *queue){
     pthread_mutex_destroy(queue->mutex);
     pthread_cond_destroy(queue->cond);
+    free(queue->mutex);
+    free(queue->cond);
     free(queue->frames);
     free(queue);
 }
@@ -229,6 +231,8 @@ void queue_set_duration(PacketQueue *queue, uint64_t max_duration) {
 void packet_queue_free(PacketQueue *queue) {
     pthread_mutex_destroy(queue->mutex);
     pthread_cond_destroy(queue->cond);
+    free(queue->mutex);
+    free(queue->cond);
     free(queue->packets);
     free(queue);
 }

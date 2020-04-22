@@ -33,7 +33,6 @@
 #include "soft_encoder_adapter.h"
 #include "image_process.h"
 #include "face_detection.h"
-#include "face_point.h"
 
 namespace trinity {
 
@@ -202,7 +201,6 @@ class CameraRecord : public Handler, public FaceDetection {
     ImageProcess* image_process_;
     int64_t render_time_;
     int64_t encode_time_;
-    FacePoint* face_point_;
     int camera_facing_id_;
 };
 

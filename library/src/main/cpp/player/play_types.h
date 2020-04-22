@@ -10,6 +10,7 @@
 #define play_types_h
 
 #include <stdbool.h>
+#include <pthread.h>
 #include <android/native_window_jni.h>
 #include <android/looper.h>
 #include "libavformat/avformat.h"

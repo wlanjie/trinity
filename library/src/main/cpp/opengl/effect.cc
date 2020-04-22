@@ -24,6 +24,7 @@
 #include "android_xlog.h"
 #else
 #define LOGE(format, ...) fprintf(stdout, format, __VA_ARGS__)
+#define LOGI(format, ...) fprintf(stdout, format, __VA_ARGS__)
 #endif
 
 namespace trinity {
@@ -33,7 +34,7 @@ GeneralSubEffect::GeneralSubEffect() {
 }
 
 GeneralSubEffect::~GeneralSubEffect() {
-    LOGI("~GeneralSubEffect\n");
+    LOGI("enter: %s", __func__);
 }
 
 int GeneralSubEffect::OnDrawFrame(FaceDetection* face_detection,

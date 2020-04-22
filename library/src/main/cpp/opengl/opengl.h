@@ -56,7 +56,7 @@ class OpenGL {
     OpenGL(int width, int height);
     OpenGL(const char* vertex, const char* fragment);
     OpenGL(int width, int height, const char* vertex, const char* fragment);
-    ~OpenGL();
+    virtual ~OpenGL();
     void InitCoordinates();
     void SetOnGLObserver(OnGLObserver* observer);
     void SetTextureType(TextureType type = TEXTURE_2D);

@@ -378,6 +378,7 @@ class TrinityRecord(
   override fun dispatchOnPreviewCallback(data: ByteArray, width: Int, height: Int, orientation: Int) {
     mCameraCallback?.dispatchOnPreviewCallback(data, width, height, orientation)
     if (mFaceDetection == null) {
+      onFrameAvailable(mHandle)
       return
     }
     val frontCamera = mCamera.getFacing() == Facing.FRONT

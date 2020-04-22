@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.widget.Button
 import com.github.florent37.runtimepermission.RuntimePermission
 import com.tencent.mars.xlog.Xlog
+import com.trinity.sample.entity.MediaItem
 
 class MainActivity : AppCompatActivity() {
 
@@ -31,6 +32,11 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.editor)
             .setOnClickListener {
                 val intent = Intent(this, EditorActivity::class.java)
+                val mediaItem = MediaItem("/sdcard/DCIM/Camera/no_audio.mp4", "", 540, 960)
+                mediaItem.duration = 14000
+                val mediaItems = mutableListOf<MediaItem>()
+                mediaItems.add(mediaItem)
+                intent.putExtra("medias", mediaItems.toTypedArray())
                 startActivity(intent)
             }
 

@@ -858,6 +858,9 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
 }
 
 JNIEXPORT void JNI_OnUnload(JavaVM *vm, void *reserved) {
+    auto packet_pool = trinity::PacketPool::GetInstance();
+    delete packet_pool;
+    delete AudioPacketPool::GetInstance();
 }
 
 #ifdef __cplusplus

@@ -23,7 +23,9 @@
 #ifndef TRINITY_AUDIO_RENDER_H
 #define TRINITY_AUDIO_RENDER_H
 
-#include "opensl_context.h"
+#include <SLES/OpenSLES.h>
+#include <SLES/OpenSLES_Android.h>
+
 #define DEFAULT_AUDIO_BUFFER_DURATION_IN_SECS 0.03
 #define PLAYING_STATE_STOPPED (0x00000001)
 #define PLAYING_STATE_PLAYING (0x00000002)

@@ -63,7 +63,6 @@ CameraRecord::CameraRecord(JNIEnv* env) : Handler()
     , image_process_(nullptr)
     , render_time_(0)
     , encode_time_(0)
-    , face_point_(nullptr)
     , camera_facing_id_(-1) {
     env->GetJavaVM(&vm_);
 }
@@ -248,12 +247,6 @@ void CameraRecord::Draw() {
     }
     render_screen_->ActiveProgram();
     render_screen_->ProcessImage(texture_id);
-
-//    std::vector<FaceDetectionReport*> face_detection_reports;
-//    GetFaceDetectionReports(face_detection_reports);
-//    face_point_->SetSourceSize(camera_width_, camera_height_);
-//    face_point_->SetTargetSize(screen_width_, screen_height_);
-//    face_point_->OnDrawFrame(face_detection_reports);
 
     if (!egl_core_->SwapBuffers(preview_surface_)) {
         LOGE("eglSwapBuffers(preview_surface_) returned error %d", eglGetError());
@@ -515,8 +508,6 @@ bool CameraRecord::Initialize() {
 
     delete image_process_;
 
-    delete face_point_;
-    face_point_ = new FacePoint();
     StartCameraPreview();
     ConfigCamera();
     image_process_ = new ImageProcess();

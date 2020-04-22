@@ -529,7 +529,7 @@ void VideoExport::SetFrame(int source_width, int source_height,
 void VideoExport::ProcessVideoExport() {
     LOGI("enter %s", __func__);
     egl_core_ = new EGLCore();
-    egl_core_->InitWithSharedContext();
+    egl_core_->Init();
     egl_surface_ = egl_core_->CreateOffscreenSurface(64, 64);
     if (nullptr == egl_surface_ || EGL_NO_SURFACE == egl_surface_) {
         return;

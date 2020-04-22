@@ -37,7 +37,6 @@ class EGLCore {
     virtual ~EGLCore();
     bool Init();
     bool Init(EGLContext sharedContext);
-    bool InitWithSharedContext();
     EGLSurface CreateWindowSurface(ANativeWindow *_window);
     EGLSurface CreateOffscreenSurface(int width, int height);
     bool MakeCurrent(EGLSurface eglSurface);

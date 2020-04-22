@@ -21,7 +21,6 @@
 
 #include "egl_core.h"
 #include "android_xlog.h"
-#include "egl_share_context.h"
 
 namespace trinity {
 
@@ -40,6 +39,8 @@ void EGLCore::Release() {
         LOGI("after eglMakeCurrent...");
         eglDestroyContext(display_, context_);
         LOGI("after eglDestroyContext...");
+        eglTerminate(display_);
+        eglReleaseThread();
     }
     display_ = EGL_NO_DISPLAY;
     context_ = EGL_NO_CONTEXT;
@@ -120,17 +121,8 @@ bool EGLCore::Init() {
     return this->Init(NULL);
 }
 
-bool EGLCore::InitWithSharedContext() {
-    EGLContext context = EGLShareContext::getSharedContext();
-
-    if (context == EGL_NO_CONTEXT) {
-        return false;
-    }
-
-    return Init(context);
-}
-
 bool EGLCore::Init(EGLContext sharedContext) {
+    LOGI("enter: %s", __func__);
     EGLint numConfigs;
     EGLint width;
     EGLint height;
@@ -154,7 +146,8 @@ bool EGLCore::Init(EGLContext sharedContext) {
     }
 
     EGLint eglContextAttributes[] = { EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE };
-    if (!(context_ = eglCreateContext(display_, config_, NULL == sharedContext ? EGL_NO_CONTEXT : sharedContext, eglContextAttributes))) {
+    context_ = eglCreateContext(display_, config_, NULL == sharedContext ? EGL_NO_CONTEXT : sharedContext, eglContextAttributes);
+    if (context_ == NULL) {
         LOGE("eglCreateContext() returned error %d", eglGetError());
         Release();
         return false;
@@ -165,6 +158,7 @@ bool EGLCore::Init(EGLContext sharedContext) {
         LOGE("eglPresentationTimeANDROID is not available!");
     }
 
+    LOGI("leave: %s", __func__);
     return true;
 }
 

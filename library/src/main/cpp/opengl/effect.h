@@ -55,6 +55,14 @@ extern "C" {
 #include "cJSON.h"
 };
 
+#if __ANDROID__
+#include "android_xlog.h"
+#elif __APPLE__
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#define LOGE(format, ...) fprintf(stdout, format, __VA_ARGS__) // NOLINT
+#define LOGI(format, ...) fprintf(stdout, format, __VA_ARGS__) // NOLINT
+#endif
+
 namespace trinity {
 
 enum ShaderUniformType {

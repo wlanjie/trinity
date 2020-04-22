@@ -23,6 +23,8 @@
 #include <unistd.h>
 #include "audio_render.h"
 #include "android_xlog.h"
+#include "tools.h"
+#include "opensl_util.h"
 
 namespace trinity {
 

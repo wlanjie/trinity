@@ -828,10 +828,15 @@ int av_play_release(AVPlayContext* context) {
     clock_free(context->video_clock);
     audio_filter_release(context->audio_filter_context);
     JNIEnv* env = NULL;
-    (*context->vm)->AttachCurrentThread(context->vm, &env, NULL);
+    int status = (*context->vm)->GetEnv(context->vm, (void**) &env, JNI_VERSION_1_6);
+    if (status < 0) {
+        (*context->vm)->AttachCurrentThread(context->vm, &env, NULL);
+    }
     (*env)->DeleteGlobalRef(env, context->play_object);
     jni_free(&context->java_class, env);
-    (*context->vm)->DetachCurrentThread(context->vm);
+    if (status < 0) {
+        (*context->vm)->DetachCurrentThread(context->vm);
+    }
     pthread_mutex_destroy(&context->media_codec_mutex);
     free(context);
     return 0;

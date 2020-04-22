@@ -88,9 +88,38 @@ class TrinityTestCase(unittest.TestCase):
             print('click record effect error')
             # self.runTest()    
 
+    def clickRecordMusic(self):
+        try:
+            d(resourceId="com.trinity.sample:id/music", className="android.widget.TextView").click()
+            time.sleep(2)
+            music_elements = d.xpath("//android.view.ViewGroup//androidx.recyclerview.widget.RecyclerView//android.widget.RelativeLayout").all()
+            music_size = len(music_elements)
+            if (music_size == 0):
+                return
+            music_index = random.randint(0, music_size - 1)
+            music_elements[music_index].click()
+            d(ressourceId="com.trinity.sample:id/close", className="android.widget.ImageView").click()
+        except Exception:
+            print('click record music error.')
+
+    def clickEditorMusic(self):
+        try:
+            d(resourceId="com.trinity.sample:id/music", className="android.widget.TextView").click()
+            time.sleep(2)
+            music_elements = d.xpath("//android.view.ViewGroup//androidx.recyclerview.widget.RecyclerView//android.widget.RelativeLayout").all()
+            music_size = len(music_elements)
+            if (music_size == 0):
+                return
+            music_index = random.randint(0, music_size - 1)
+            music_elements[music_index].click()
+            d(ressourceId="com.trinity.sample:id/close", className="android.widget.ImageView").click()
+        except Exception:
+            print('click record music error.')        
+
     def runApp(self):
         # 录制5段视频,每段5秒
         for num in range(0, 5): 
+            self.clickRecordMusic()
             # 随机去选一次相册中的视频
             album_random_value = random.randint(0, 5)
             if (album_random_value == num):
@@ -137,20 +166,8 @@ class TrinityTestCase(unittest.TestCase):
                     # 往左滑动
                     d.swipe_ext("left", box=(0, self.displayHeight - 500, self.displayWidth, self.displayHeight), scale=0.1) 
             except Exception:
-                self.runTest()
+                self.runTest()                      
 
-        # 遍历特效, 所有特效执行一次
-        # for effect_name in effects:
-        #     try:
-        #         # 每个特效显示2秒
-        #         d(text=effect_name).long_click(2)
-        #     except Exception:
-        #         print('click effect exception')
-        #         self.runTest()
-        #     # 往左滑动
-        #     d.swipe_ext("left", box=(0, self.displayHeight - 200, 260, self.displayHeight), scale=0.7)                        
-
-        time.sleep(40)
          # 点击隐藏特效列表
         d(resourceId="com.trinity.sample:id/root_view", className="android.widget.RelativeLayout").click()
 
