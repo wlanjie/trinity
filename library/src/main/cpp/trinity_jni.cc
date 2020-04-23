@@ -358,6 +358,7 @@ static void Android_JNI_audio_player_stop(JNIEnv* env, jobject object, jlong id)
     }
     auto* controller = reinterpret_cast<MusicDecoderController*>(id);
     controller->Stop();
+    controller->Destroy();
 }
 
 static void Android_JNI_audio_player_release(JNIEnv* env, jobject object, jlong id) {

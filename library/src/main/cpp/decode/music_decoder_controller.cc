@@ -26,16 +26,24 @@
 
 namespace trinity {
 
+enum MusicMessage {
+    kMusicInit,
+    kMusicStart,
+    kMusicResume,
+    kMusicPause,
+    kMusicStop,
+    kMusicDestroy
+};
+
 MusicDecoderController::MusicDecoderController()
     : running_(false)
     , lock_()
     , condition_()
-    , suspend_lock_()
-    , suspend_condition_()
+    , mutex_()
+    , cond_()
     , buffer_(nullptr)
     , buffer_size_(0)
     , accompany_type_(-1)
-    , suspend_flag_(false)
     , packet_pool_(nullptr)
     , decoder_(nullptr)
     , resample_(nullptr)
@@ -53,11 +61,85 @@ MusicDecoderController::MusicDecoderController()
     , buffer_queue_(nullptr) {
     buffer_size_ = 2048;
     buffer_ = new uint8_t[buffer_size_];
+
+    message_queue_ = new MessageQueue("Music Message Queue");
+    InitMessageQueue(message_queue_);
+
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+    pthread_create(&message_queue_thread_, &attr, MessageQueueThread, this);
 }
 
 MusicDecoderController::~MusicDecoderController() {
-    delete[] buffer_;
-    buffer_ = nullptr;
+    PostMessage(new Message(MESSAGE_QUEUE_LOOP_QUIT_FLAG));
+    pthread_join(message_queue_thread_, nullptr);
+
+    if (nullptr != message_queue_) {
+        delete message_queue_;
+        message_queue_ = nullptr;
+    }
+    if (nullptr != buffer_) {
+        delete[] buffer_;
+        buffer_ = nullptr;
+    }
+}
+
+void* MusicDecoderController::MessageQueueThread(void *arg) {
+    auto music_decoder_controller = reinterpret_cast<MusicDecoderController*>(arg);
+    music_decoder_controller->ProcessMessage();
+    pthread_exit(0);
+}
+
+void MusicDecoderController::ProcessMessage() {
+    LOGI("enter %s", __func__);
+    bool rendering = true;
+    while (rendering) {
+        Message* msg = nullptr;
+        if (message_queue_->DequeueMessage(&msg, true) > 0) {
+            if (nullptr != msg) {
+                if (MESSAGE_QUEUE_LOOP_QUIT_FLAG == msg->Execute()) {
+                    LOGE("MESSAGE_QUEUE_LOOP_QUIT_FLAG");
+                    rendering = false;
+                }
+                delete msg;
+            }
+        }
+    }
+    LOGI("leave %s", __func__);
+}
+
+void MusicDecoderController::HandleMessage(Message *msg) {
+    int what = msg->GetWhat();
+    void* obj = msg->GetObj();
+    switch (what) {
+        case kMusicInit:
+            InitWithMessage(0, msg->GetArg1());
+            break;
+
+        case kMusicStart:
+            StartWithMessage(reinterpret_cast<char*>(obj));
+            break;
+
+        case kMusicResume:
+            ResumeWithMessage();
+            break;
+
+        case kMusicPause:
+            PauseWithMessage();
+            break;
+
+        case kMusicStop:
+            StopWithMessage();
+            break;
+
+        case kMusicDestroy:
+            DestroyWithMessage();
+            break;
+
+        default:
+            break;
+    }
 }
 
 int MusicDecoderController::AudioCallback(uint8_t** buffer, int* buffer_size, void* context) {
@@ -72,6 +154,11 @@ int MusicDecoderController::AudioCallback(uint8_t** buffer, int* buffer_size, vo
 }
 
 void MusicDecoderController::Init(float packet_buffer_time_percent, int vocal_sample_rate) {
+    PostMessage(new Message(kMusicInit, vocal_sample_rate, 0));
+}
+
+void MusicDecoderController::InitWithMessage(float packet_buffer_time_percent,
+                                             int vocal_sample_rate) {
     LOGI("enter packet_buffer_time_percent: %f vocal_sample_rate: %d", packet_buffer_time_percent, vocal_sample_rate);
     volume_ = 1.0F;
     volume_max_ = 1.0F;
@@ -79,7 +166,7 @@ void MusicDecoderController::Init(float packet_buffer_time_percent, int vocal_sa
     accompany_packet_buffer_size_ = 2048;
     buffer_queue_cursor_ = 0;
     buffer_queue_size_ = static_cast<int>(MAX(accompany_packet_buffer_size_ * 4,
-            vocal_sample_rate * CHANNEL_PER_FRAME * 1.0f));
+                                              vocal_sample_rate * CHANNEL_PER_FRAME * 1.0f));
     buffer_queue_ = new short[buffer_queue_size_];
     silent_samples_ = new short[accompany_packet_buffer_size_];
     memset(silent_samples_, 0, accompany_packet_buffer_size_ * 2);
@@ -170,37 +257,52 @@ void MusicDecoderController::SetVolume(float volume, float volume_max) {
 }
 
 void MusicDecoderController::Start(const char* path) {
-//    SuspendDecodeThread();
-    usleep(200 * 1000);
-    if (InitDecoder(path) >= 0) {
-        ResumeDecodeThread();
-    }
+    char* music_path = new char[strlen(path) + 1];
+    strcpy(music_path, path);
+    PostMessage(new Message(kMusicStart, music_path));
+}
 
+void MusicDecoderController::StartWithMessage(char *path) {
+    LOGI("enter: %s path: %s", __FUNCTION__, path);
+    if (InitDecoder(path) >= 0) {
+        pthread_mutex_lock(&mutex_);
+        pthread_cond_signal(&cond_);
+        pthread_mutex_unlock(&mutex_);
+    }
+    delete path;
     InitRender();
     if (nullptr != audio_render_) {
         audio_render_->Start();
     }
+    LOGI("leave: %s", __func__);
 }
 
 void MusicDecoderController::Pause() {
+    PostMessage(new Message(kMusicPause));
+}
+
+void MusicDecoderController::PauseWithMessage() {
     if (nullptr != audio_render_) {
         audio_render_->Pause();
     }
-    LOGI("enter pause");
-    SuspendDecodeThread();
-    LOGI("leave pause");
 }
 
 void MusicDecoderController::Resume() {
+    PostMessage(new Message(kMusicResume));
+}
+
+void MusicDecoderController::ResumeWithMessage() {
     if (nullptr != audio_render_) {
         audio_render_->Play();
     }
-    ResumeDecodeThread();
 }
 
 void MusicDecoderController::Stop() {
+    PostMessage(new Message(kMusicStop));
+}
+
+void MusicDecoderController::StopWithMessage() {
     LOGI("enter stop");
-    SuspendDecodeThread();
     if (nullptr != audio_render_) {
         audio_render_->Stop();
     }
@@ -208,13 +310,20 @@ void MusicDecoderController::Stop() {
     DestroyResample();
     DestroyDecoder();
     DestroyRender();
+
+    pthread_mutex_lock(&mutex_);
+    pthread_cond_signal(&cond_);
+    pthread_mutex_unlock(&mutex_);
+
     LOGI("leave stop");
 }
 
 void MusicDecoderController::Destroy() {
+    PostMessage(new Message(kMusicDestroy));
+}
+
+void MusicDecoderController::DestroyWithMessage() {
     LOGI("enter MusicDecoderController::Destroy");
-    DestroyDecoderThread();
-    LOGI("after DestroyDecoderThread");
     packet_pool_->AbortDecoderAccompanyPacketQueue();
     packet_pool_->DestroyDecoderAccompanyPacketQueue();
     DestroyResample();
@@ -277,20 +386,17 @@ int MusicDecoderController::InitRender() {
 
 void *MusicDecoderController::StartDecoderThread(void *context) {
     auto* decoderController = reinterpret_cast<MusicDecoderController*>(context);
+    if (decoderController->decoder_ == nullptr) {
+        pthread_mutex_lock(&decoderController->mutex_);
+        pthread_cond_wait(&decoderController->cond_, &decoderController->mutex_);
+        pthread_mutex_unlock(&decoderController->mutex_);
+    }
     pthread_mutex_lock(&decoderController->lock_);
     while (decoderController->running_) {
-        if (decoderController->suspend_flag_) {
-            pthread_mutex_lock(&decoderController->suspend_lock_);
-            pthread_cond_signal(&decoderController->suspend_condition_);
-            pthread_mutex_unlock(&decoderController->suspend_lock_);
-
+        decoderController->DecodePacket();
+        if (decoderController->packet_pool_->GeDecoderAccompanyPacketQueueSize() > QUEUE_SIZE_MAX_THRESHOLD) {
+            decoderController->accompany_type_ = ACCOMPANY_TYPE_SONG_SAMPLE;
             pthread_cond_wait(&decoderController->condition_, &decoderController->lock_);
-        } else {
-            decoderController->DecodePacket();
-            if (decoderController->packet_pool_->GeDecoderAccompanyPacketQueueSize() > QUEUE_SIZE_MAX_THRESHOLD) {
-                decoderController->accompany_type_ = ACCOMPANY_TYPE_SONG_SAMPLE;
-                pthread_cond_wait(&decoderController->condition_, &decoderController->lock_);
-            }
         }
     }
     pthread_mutex_unlock(&decoderController->lock_);
@@ -299,11 +405,10 @@ void *MusicDecoderController::StartDecoderThread(void *context) {
 
 void MusicDecoderController::InitDecoderThread() {
     running_ = true;
-    suspend_flag_ = true;
     pthread_mutex_init(&lock_, nullptr);
     pthread_cond_init(&condition_, nullptr);
-    pthread_mutex_init(&suspend_lock_, nullptr);
-    pthread_cond_init(&suspend_condition_, nullptr);
+    pthread_mutex_init(&mutex_, nullptr);
+    pthread_cond_init(&cond_, nullptr);
     pthread_create(&decoder_thread_, nullptr, StartDecoderThread, this);
 }
 
@@ -343,43 +448,6 @@ void MusicDecoderController::DecodePacket() {
         }
     }
     packet_pool_->PushDecoderAccompanyPacketToQueue(accompanyPacket);
-}
-
-void MusicDecoderController::SuspendDecodeThread() {
-    pthread_mutex_lock(&suspend_lock_);
-    pthread_mutex_lock(&lock_);
-    suspend_flag_ = true;
-    pthread_cond_signal(&condition_);
-    pthread_mutex_unlock(&lock_);
-    pthread_cond_wait(&suspend_condition_, &suspend_lock_);
-    pthread_mutex_unlock(&suspend_lock_);
-}
-
-void MusicDecoderController::ResumeDecodeThread() {
-    LOGI("enter resume");
-    suspend_flag_ = false;
-    pthread_mutex_lock(&lock_);
-    pthread_cond_signal(&condition_);
-    pthread_mutex_unlock(&lock_);
-    LOGI("leave resume");
-}
-
-void MusicDecoderController::DestroyDecoderThread() {
-    running_ = false;
-    suspend_flag_ = false;
-    void* status;
-    pthread_mutex_lock(&lock_);
-    pthread_cond_signal(&condition_);
-    pthread_mutex_unlock(&lock_);
-    pthread_join(decoder_thread_, &status);
-    pthread_mutex_destroy(&lock_);
-    pthread_cond_destroy(&condition_);
-
-    pthread_mutex_lock(&suspend_lock_);
-    pthread_cond_signal(&suspend_condition_);
-    pthread_mutex_unlock(&suspend_lock_);
-    pthread_mutex_destroy(&suspend_lock_);
-    pthread_cond_destroy(&suspend_condition_);
 }
 
 void MusicDecoderController::DestroyResample() {

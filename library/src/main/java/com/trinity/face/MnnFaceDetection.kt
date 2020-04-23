@@ -23,6 +23,7 @@ import com.alibaba.android.mnnkit.entity.FaceDetectConfig
 import com.alibaba.android.mnnkit.entity.MNNCVImageFormat
 import com.alibaba.android.mnnkit.entity.MNNFlipType
 import com.alibaba.android.mnnkit.intf.InstanceCreatedListener
+import com.alibaba.android.mnnkit.monitor.MNNMonitor
 import com.tencent.mars.xlog.Log
 
 class MnnFaceDetection : FaceDetection {
@@ -31,6 +32,7 @@ class MnnFaceDetection : FaceDetection {
   private val mFaceDetectionReports = Array(20) { FaceDetectionReport() }
 
   override fun createFaceDetection(context: Context, type: Int): Int {
+    MNNMonitor.setMonitorEnable(false)
     val config = FaceDetector.FaceDetectorCreateConfig()
     config.mode = if (type == 0) FaceDetector.FaceDetectMode.MOBILE_DETECT_MODE_VIDEO else FaceDetector.FaceDetectMode.MOBILE_DETECT_MODE_IMAGE
     FaceDetector.createInstanceAsync(context, config, object: InstanceCreatedListener<FaceDetector> {

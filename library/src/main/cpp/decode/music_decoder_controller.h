@@ -25,6 +25,7 @@
 #include "resample.h"
 #include "music_decoder.h"
 #include "audio_render.h"
+#include "handler.h"
 
 #define CHANNEL_PER_FRAME    2
 #define BITS_PER_CHANNEL     16
@@ -38,7 +39,7 @@
 
 namespace trinity {
 
-class MusicDecoderController {
+class MusicDecoderController : public Handler {
  public:
     MusicDecoderController();
     virtual ~MusicDecoderController();
@@ -53,14 +54,21 @@ class MusicDecoderController {
     void Destroy();
 
  private:
+    static void* MessageQueueThread(void* arg);
+    void ProcessMessage();
+    void HandleMessage(Message* msg);
+
+    virtual void InitWithMessage(float packet_buffer_time_percent, int vocal_sample_rate);
+    virtual void StartWithMessage(char* path);
+    virtual void ResumeWithMessage();
+    virtual void PauseWithMessage();
+    virtual void StopWithMessage();
+    virtual void DestroyWithMessage();
     virtual int InitDecoder(const char* path);
     virtual int InitRender();
     static void* StartDecoderThread(void* context);
     virtual void InitDecoderThread();
     virtual void DecodePacket();
-    void SuspendDecodeThread();
-    void ResumeDecodeThread();
-    void DestroyDecoderThread();
     void DestroyResample();
     void DestroyDecoder();
     void DestroyRender();
@@ -68,16 +76,17 @@ class MusicDecoderController {
     int BuildSamples(short* samples);
     static int AudioCallback(uint8_t** buffer, int* buffer_size, void* context);
 
- public:
+ private:
+    pthread_t message_queue_thread_;
+    MessageQueue* message_queue_;
+
     bool running_;
     pthread_mutex_t lock_;
     pthread_cond_t condition_;
     int accompany_type_;
-    bool suspend_flag_;
-    pthread_mutex_t suspend_lock_;
-    pthread_cond_t suspend_condition_;
+    pthread_mutex_t mutex_;
+    pthread_cond_t cond_;
 
- private:
     uint8_t* buffer_;
     int buffer_size_;
     PacketPool* packet_pool_;
@@ -85,7 +94,6 @@ class MusicDecoderController {
     Resample* resample_;
     bool need_resample_;
     AudioRender* audio_render_;
-    /** 伴奏和原唱的采样频率与解码伴奏和原唱的每个packet的大小 **/
     int accompany_sample_rate_;
     short *silent_samples_;
     int accompany_packet_buffer_size_;

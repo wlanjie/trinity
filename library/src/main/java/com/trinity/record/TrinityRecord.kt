@@ -258,9 +258,10 @@ class TrinityRecord(
     if (!file.exists()) {
       return ErrorCode.FILE_NOT_EXISTS
     }
+    mMusicPlaying = false
+    mAudioPlayer?.stop()
+    mAudioPlayer?.release()
     mAudioPlayer = AudioPlayer()
-    // TODO seek
-//    mAudioPlayer?.seek()
     mMusicInfo = info
     return ErrorCode.SUCCESS
   }
@@ -618,6 +619,7 @@ class TrinityRecord(
    */
   fun release() {
     synchronized(this) {
+      mAudioPlayer?.stop()
       mAudioPlayer?.release()
       mTimer.release()
       mPlayerService?.stopAccompany()
