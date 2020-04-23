@@ -92,12 +92,9 @@ void MessageQueue::Flush() {
 
 int MessageQueue::EnqueueMessage(Message *msg) {
     if (abort_request_) {
-        delete msg;
         return -1;
     }
     auto *node = new MessageNode();
-    if (!node)
-        return -1;
     node->msg = msg;
     node->next = nullptr;
     pthread_mutex_lock(&lock_);
@@ -131,7 +128,6 @@ int MessageQueue::DequeueMessage(Message **msg, bool block) {
             packet_size_--;
             *msg = node->msg;
             delete node;
-            node = nullptr;
             ret = 1;
             break;
         } else if (!block) {
@@ -162,58 +158,6 @@ Message::Message() {
     obj = nullptr;
 }
 
-Message::Message(int what) {
-    handler_ = nullptr;
-    this->what = what;
-    arg1 = -1;
-    arg2 = -1;
-    arg3 = -1;
-    obj = nullptr;
-}
-
-Message::Message(int what, int arg1, int arg2) {
-    handler_ = nullptr;
-    this->what = what;
-    this->arg1 = arg1;
-    this->arg2 = arg2;
-    arg3 = -1;
-    obj = nullptr;
-}
-
-Message::Message(int what, int arg1, int arg2, int arg3) {
-    handler_ = nullptr;
-    this->what = what;
-    this->arg1 = arg1;
-    this->arg2 = arg2;
-    this->arg3 = arg3;
-    obj = nullptr;
-}
-
-Message::Message(int what, int arg1, int arg2, int arg3, void* obj) {
-    handler_ = nullptr;
-    this->what = what;
-    this->arg1 = arg1;
-    this->arg2 = arg2;
-    this->arg3 = arg3;
-    this->obj = obj;
-}
-
-Message::Message(int what, void* obj) {
-    handler_ = nullptr;
-    this->what = what;
-    arg1 = -1;
-    arg2 = -1;
-    arg3 = -1;
-    this->obj = obj;
-}
-Message::Message(int what, int arg1, int arg2, void* obj) {
-    handler_ = nullptr;
-    this->what = what;
-    this->arg1 = arg1;
-    this->arg2 = arg2;
-    arg3 = -1;
-    this->obj = obj;
-}
 Message::~Message() = default;
 
 int Message::Execute() {

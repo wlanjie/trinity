@@ -26,6 +26,7 @@
 #include "music_decoder.h"
 #include "audio_render.h"
 #include "handler.h"
+#include "buffer_pool.h"
 
 #define CHANNEL_PER_FRAME    2
 #define BITS_PER_CHANNEL     16
@@ -104,6 +105,7 @@ class MusicDecoderController : public Handler {
     int buffer_queue_size_;
     int buffer_queue_cursor_;
     short* buffer_queue_;
+    BufferPool* buffer_pool_;
 };
 
 }  // namespace trinity

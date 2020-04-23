@@ -34,6 +34,7 @@
 #include "yuv_render.h"
 #include "opengl.h"
 #include "gl.h"
+#include "buffer_pool.h"
 #include "player_event_observer.h"
 
 extern "C" {
@@ -153,6 +154,7 @@ class Player : public Handler {
     PlayerState player_state_;
     int64_t current_time_;
     int64_t previous_time_;
+    BufferPool* buffer_pool_;
 };
 
 }  // namespace trinity

@@ -71,6 +71,7 @@ Player::Player(JNIEnv* env, jobject object) : Handler()
     , player_state_(kNone)
     , current_time_(0)
     , previous_time_(0) {
+    buffer_pool_ = new BufferPool(sizeof(Message));
     texture_matrix_ = new float[16];
     pthread_mutex_init(&mutex_, nullptr);
     pthread_cond_init(&cond_, nullptr);
@@ -109,13 +110,19 @@ Player::Player(JNIEnv* env, jobject object) : Handler()
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
     pthread_create(&message_queue_thread_, &attr, MessageQueueThread, this);
-    PostMessage(new Message(kEGLCreate));
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kEGLCreate;
+    PostMessage(message);
 }
 
 Player::~Player() {
     LOGI("enter %s", __func__);
-    PostMessage(new Message(kEGLDestroy));
-    PostMessage(new Message(MESSAGE_QUEUE_LOOP_QUIT_FLAG));
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kEGLDestroy;
+    PostMessage(message);
+    auto msg = buffer_pool_->GetBuffer<Message>();
+    msg->what = MESSAGE_QUEUE_LOOP_QUIT_FLAG;
+    PostMessage(msg);
     pthread_join(message_queue_thread_, nullptr);
     Destroy();
     ReleasePlayContext();
@@ -143,6 +150,10 @@ Player::~Player() {
     }
     pthread_mutex_destroy(&mutex_);
     pthread_cond_destroy(&cond_);
+    if (nullptr != buffer_pool_) {
+        delete buffer_pool_;
+        buffer_pool_ = nullptr;
+    }
     LOGI("leave %s", __func__);
 }
 
@@ -165,7 +176,9 @@ void Player::OnSurfaceCreated(ANativeWindow* window) {
     if (nullptr != av_play_context_) {
         av_play_context_->window = window;
     }
-    PostMessage(new Message(kEGLWindowCreate));
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kEGLWindowCreate;
+    PostMessage(message);
     LOGI("leave: %s", __func__);
 }
 
@@ -180,20 +193,26 @@ void Player::OnSurfaceChanged(int width, int height) {
     if (frame_width_ != 0 && frame_height_ != 0) {
         SetFrame(frame_width_, frame_height_, surface_width_, surface_height_);
     }
-    PostMessage(new Message(kSurfaceChanged));
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kSurfaceChanged;
+    PostMessage(message);
     LOGI("leave: %s", __func__);
 }
 
 void Player::OnSurfaceDestroy() {
     LOGI("enter: %s", __func__);
-    PostMessage(new Message(kEGLWindowDestroy));
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kEGLWindowDestroy;
+    PostMessage(message);
     LOGI("leave: %s", __func__);
 }
 
 void Player::OnComplete(AVPlayContext *context) {
     LOGI("enter %s", __func__);
     auto* player = reinterpret_cast<Player *>(context->priv_data);
-    player->PostMessage(new Message(kPlayerStop));
+    auto message = player->buffer_pool_->GetBuffer<Message>();
+    message->what = kPlayerStop;
+    player->PostMessage(message);
     if (nullptr != player->player_event_observer_) {
         player->player_event_observer_->OnComplete();
     }
@@ -215,7 +234,10 @@ int Player::Start(MediaClip* clip, int video_count_duration) {
 
     video_count_duration_ = video_count_duration;
     if (window_created_) {
-        PostMessage(new Message(kPlayerStart, (void*) current_clip_));
+        auto message = buffer_pool_->GetBuffer<Message>();
+        message->what = kPlayerStart;
+        message->obj = current_clip_;
+        PostMessage(message);
     }
     LOGI("leave %s", __func__);
     return 0;
@@ -231,7 +253,9 @@ void Player::Seek(int start_time, int end_time) {
 
 void Player::Resume() {
     LOGI("Player Resume");
-    PostMessage(new Message(kPlayerResume));
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kPlayerResume;
+    PostMessage(message);
     if (nullptr != music_player_) {
         music_player_->Resume();
     }
@@ -239,7 +263,9 @@ void Player::Resume() {
 
 void Player::Pause() {
     LOGI("Player Pause");
-    PostMessage(new Message(kPlayerPause));
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kPlayerPause;
+    PostMessage(message);
     if (nullptr != music_player_) {
         music_player_->Pause();
     }
@@ -251,14 +277,18 @@ void Player::Stop() {
         delete current_clip_;
         current_clip_ = nullptr;
     }
-    PostMessage(new Message(kPlayerStop));
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kPlayerStop;
+    PostMessage(message);
     LOGI("leave %s", __func__);
 }
 
 void Player::Destroy() {
     LOGI("enter %s", __func__);
     Stop();
-    PostMessage(new Message(kPlayerRelease));
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kPlayerRelease;
+    PostMessage(message);
     FreeMusicPlayer();
     LOGI("leave %s", __func__);
 }
@@ -286,7 +316,10 @@ int Player::AddMusic(const char* music_config) {
     int actId = current_action_id_++;
     char *config = new char[strlen(music_config) + 1];
     sprintf(config, "%s%c", music_config, 0);
-    auto *message = new Message(kMusic, actId, 0, config);
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kMusic;
+    message->arg1 = actId;
+    message->obj = config;
     PostMessage(message);
     return actId;
 }
@@ -294,12 +327,18 @@ int Player::AddMusic(const char* music_config) {
 void Player::UpdateMusic(const char* music_config, int action_id) {
     char *config = new char[strlen(music_config) + 1];
     sprintf(config, "%s%c", music_config, 0);
-    auto *message = new Message(kMusicUpdate, action_id, 0, config);
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kMusicUpdate;
+    message->arg1 = action_id;
+    message->obj = config;
+    PostMessage(message);
     PostMessage(message);
 }
 
 void Player::DeleteMusic(int action_id) {
-    auto *message = new Message(kMusicDelete, action_id, 0);
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kMusicDelete;
+    message->arg1 = action_id;
     PostMessage(message);
 }
 
@@ -307,7 +346,10 @@ int Player::AddFilter(const char* filter_config) {
     int actId = current_action_id_++;
     char* config = new char[strlen(filter_config) + 1];
     sprintf(config, "%s%c", filter_config, 0);
-    auto* message = new Message(kFilter, actId, 0, config);
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kFilter;
+    message->arg1 = actId;
+    message->obj = config;
     PostMessage(message);
     return actId;
 }
@@ -315,12 +357,19 @@ int Player::AddFilter(const char* filter_config) {
 void Player::UpdateFilter(const char* filter_config, int start_time, int end_time, int action_id) {
     char* config = new char[strlen(filter_config) + 1];
     sprintf(config, "%s%c", filter_config, 0);
-    auto* message = new Message(kFilterUpdate, action_id, start_time, end_time, config);
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kFilterUpdate;
+    message->arg1 = action_id;
+    message->arg2 = start_time;
+    message->arg3 = end_time;
+    message->obj = config;
     PostMessage(message);
 }
 
 void Player::DeleteFilter(int action_id) {
-    auto* message = new Message(kFilterDelete, action_id, 0);
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kFilterDelete;
+    message->arg1 = action_id;
     PostMessage(message);
 }
 
@@ -328,18 +377,27 @@ int Player::AddAction(const char *effect_config) {
     int actId = current_action_id_++;
     char *config = new char[strlen(effect_config) + 1];
     sprintf(config, "%s%c", effect_config, 0);
-    auto *message = new Message(kEffect, actId, 0, config);
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kEffect;
+    message->arg1 = actId;
+    message->obj = config;
     PostMessage(message);
     return actId;
 }
 
 void Player::UpdateAction(int start_time, int end_time, int action_id) {
-    auto *message = new Message(kEffectUpdate, start_time, end_time, action_id);
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kEffectUpdate;
+    message->arg1 = start_time;
+    message->arg2 = end_time;
+    message->arg3 = action_id;
     PostMessage(message);
 }
 
 void Player::DeleteAction(int action_id) {
-    auto *message = new Message(kEffectDelete, action_id, 0);
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kEffectDelete;
+    message->arg1 = action_id;
     PostMessage(message);
 }
 
@@ -518,7 +576,9 @@ void Player::ProcessMessage() {
                     LOGE("MESSAGE_QUEUE_LOOP_QUIT_FLAG");
                     rendering = false;
                 }
-                delete msg;
+                if (nullptr != buffer_pool_) {
+                    buffer_pool_->ReleaseBuffer(msg);
+                }
             }
         }
     }
@@ -579,9 +639,13 @@ void Player::HandleMessage(Message *msg) {
                     audio_render_ = new AudioRender();
                     audio_render_->Init(channels, av_play_context_->sample_rate, AudioCallback, this);
                 }
-                PostMessage(new Message(kRenderVideoFrame));
+                auto message = buffer_pool_->GetBuffer<Message>();
+                message->what = kRenderVideoFrame;
+                PostMessage(message);
             } else if (clip->type == IMAGE) {
-                PostMessage(new Message(kRenderImageFrame));
+                auto message = buffer_pool_->GetBuffer<Message>();
+                message->what = kRenderImageFrame;
+                PostMessage(message);
             }
             player_state_ = kStart;
             LOGI("leave Start play");
@@ -606,9 +670,13 @@ void Player::HandleMessage(Message *msg) {
                 if (audio_render_ != nullptr) {
                     audio_render_->Play();
                 }
-                PostMessage(new Message(kRenderVideoFrame));
+                auto message = buffer_pool_->GetBuffer<Message>();
+                message->what = kRenderVideoFrame;
+                PostMessage(message);
             } else if (current_clip_->type == IMAGE) {
-                PostMessage(new Message(kRenderImageFrame));
+                auto message = buffer_pool_->GetBuffer<Message>();
+                message->what = kRenderImageFrame;
+                PostMessage(message);
             }
             player_state_ = window_created_ ? kResume : kNone;
             LOGI("leave kPlayerResume");
@@ -977,11 +1045,16 @@ void Player::OnGLWindowCreate() {
             started_ = player_state_ == kNone;
         }
         if (started_) {
-            PostMessage(new Message(kPlayerStart, (void *) current_clip_));
+            auto message = buffer_pool_->GetBuffer<Message>();
+            message->what = kPlayerStart;
+            message->obj = current_clip_;
+            PostMessage(message);
         }
     }
     if (av_play_context_->status == PAUSED) {
-        PostMessage(new Message(kRenderVideoFrame));
+        auto message = buffer_pool_->GetBuffer<Message>();
+        message->what = kRenderVideoFrame;
+        PostMessage(message);
     }
     pthread_cond_signal(&cond_);
     LOGI("leave %s", __func__);
@@ -996,10 +1069,14 @@ void Player::OnRenderVideoFrame() {
     if (av_play_context_->status == PLAYING) {
         int ret = DrawVideoFrame();
         if (ret == 0) {
-            PostMessage(new Message(kRenderVideoFrame));
+            auto message = buffer_pool_->GetBuffer<Message>();
+            message->what = kRenderVideoFrame;
+            PostMessage(message);
         } else if (ret == -1) {
             usleep(WAIT_FRAME_SLEEP_US);
-            PostMessage(new Message(kRenderVideoFrame));
+            auto message = buffer_pool_->GetBuffer<Message>();
+            message->what = kRenderVideoFrame;
+            PostMessage(message);
             return;
         } else if (ret == -2) {
             av_play_context_->send_message(av_play_context_, message_stop);
@@ -1008,7 +1085,9 @@ void Player::OnRenderVideoFrame() {
     } else if (av_play_context_->status == IDEL) {
         usleep(WAIT_FRAME_SLEEP_US);
     } else if (av_play_context_->status == BUFFER_EMPTY) {
-        PostMessage(new Message(kRenderVideoFrame));
+        auto message = buffer_pool_->GetBuffer<Message>();
+        message->what = kRenderVideoFrame;
+        PostMessage(message);
     }
 }
 
@@ -1098,7 +1177,9 @@ void Player::OnRenderImageFrame() {
     Draw(draw_texture_id_);
     // 图片按25帧刷新
     usleep(40 * 1000);
-    PostMessage(new Message(kRenderImageFrame));
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kRenderImageFrame;
+    PostMessage(message);
 }
 
 void Player::OnGLWindowDestroy() {

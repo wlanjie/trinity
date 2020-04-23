@@ -32,6 +32,7 @@
 #include "video_consumer_thread.h"
 #include "soft_encoder_adapter.h"
 #include "image_process.h"
+#include "buffer_pool.h"
 #include "face_detection.h"
 
 namespace trinity {
@@ -202,6 +203,7 @@ class CameraRecord : public Handler, public FaceDetection {
     int64_t render_time_;
     int64_t encode_time_;
     int camera_facing_id_;
+    BufferPool* message_pool_;
 };
 
 }  // namespace trinity

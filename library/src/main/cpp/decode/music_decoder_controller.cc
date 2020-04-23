@@ -62,6 +62,7 @@ MusicDecoderController::MusicDecoderController()
     buffer_size_ = 2048;
     buffer_ = new uint8_t[buffer_size_];
 
+    buffer_pool_ = new BufferPool(sizeof(Message));
     message_queue_ = new MessageQueue("Music Message Queue");
     InitMessageQueue(message_queue_);
 
@@ -72,7 +73,9 @@ MusicDecoderController::MusicDecoderController()
 }
 
 MusicDecoderController::~MusicDecoderController() {
-    PostMessage(new Message(MESSAGE_QUEUE_LOOP_QUIT_FLAG));
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = MESSAGE_QUEUE_LOOP_QUIT_FLAG;
+    PostMessage(message);
     pthread_join(message_queue_thread_, nullptr);
 
     if (nullptr != message_queue_) {
@@ -82,6 +85,10 @@ MusicDecoderController::~MusicDecoderController() {
     if (nullptr != buffer_) {
         delete[] buffer_;
         buffer_ = nullptr;
+    }
+    if (nullptr != buffer_pool_) {
+        delete buffer_pool_;
+        buffer_pool_ = nullptr;
     }
 }
 
@@ -102,7 +109,9 @@ void MusicDecoderController::ProcessMessage() {
                     LOGE("MESSAGE_QUEUE_LOOP_QUIT_FLAG");
                     rendering = false;
                 }
-                delete msg;
+                if (nullptr != buffer_pool_) {
+                    buffer_pool_->ReleaseBuffer(msg);
+                }
             }
         }
     }
@@ -154,7 +163,10 @@ int MusicDecoderController::AudioCallback(uint8_t** buffer, int* buffer_size, vo
 }
 
 void MusicDecoderController::Init(float packet_buffer_time_percent, int vocal_sample_rate) {
-    PostMessage(new Message(kMusicInit, vocal_sample_rate, 0));
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kMusicInit;
+    message->arg1 = vocal_sample_rate;
+    PostMessage(message);
 }
 
 void MusicDecoderController::InitWithMessage(float packet_buffer_time_percent,
@@ -259,7 +271,10 @@ void MusicDecoderController::SetVolume(float volume, float volume_max) {
 void MusicDecoderController::Start(const char* path) {
     char* music_path = new char[strlen(path) + 1];
     strcpy(music_path, path);
-    PostMessage(new Message(kMusicStart, music_path));
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kMusicStart;
+    message->obj = music_path;
+    PostMessage(message);
 }
 
 void MusicDecoderController::StartWithMessage(char *path) {
@@ -278,7 +293,9 @@ void MusicDecoderController::StartWithMessage(char *path) {
 }
 
 void MusicDecoderController::Pause() {
-    PostMessage(new Message(kMusicPause));
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kMusicPause;
+    PostMessage(message);
 }
 
 void MusicDecoderController::PauseWithMessage() {
@@ -288,7 +305,9 @@ void MusicDecoderController::PauseWithMessage() {
 }
 
 void MusicDecoderController::Resume() {
-    PostMessage(new Message(kMusicResume));
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kMusicResume;
+    PostMessage(message);
 }
 
 void MusicDecoderController::ResumeWithMessage() {
@@ -298,7 +317,9 @@ void MusicDecoderController::ResumeWithMessage() {
 }
 
 void MusicDecoderController::Stop() {
-    PostMessage(new Message(kMusicStop));
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kMusicStop;
+    PostMessage(message);
 }
 
 void MusicDecoderController::StopWithMessage() {
@@ -319,7 +340,9 @@ void MusicDecoderController::StopWithMessage() {
 }
 
 void MusicDecoderController::Destroy() {
-    PostMessage(new Message(kMusicDestroy));
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kMusicDestroy;
+    PostMessage(message);
 }
 
 void MusicDecoderController::DestroyWithMessage() {

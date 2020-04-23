@@ -65,9 +65,15 @@ CameraRecord::CameraRecord(JNIEnv* env) : Handler()
     , encode_time_(0)
     , camera_facing_id_(-1) {
     env->GetJavaVM(&vm_);
+    message_pool_ = new BufferPool(sizeof(Message));
 }
 
-CameraRecord::~CameraRecord() = default;
+CameraRecord::~CameraRecord() {
+    if (nullptr != message_pool_) {
+        delete message_pool_;
+        message_pool_ = nullptr;
+    }
+}
 
 void CameraRecord::PrepareEGLContext(
         jobject object, jobject surface,
@@ -109,14 +115,18 @@ void CameraRecord::PrepareEGLContext(
     packet_thread_ = new VideoConsumerThread();
     queue_ = new MessageQueue("CameraRecord message queue");
     InitMessageQueue(queue_);
-    PostMessage(new Message(MSG_EGL_THREAD_CREATE));
+    auto message = message_pool_->GetBuffer<Message>();
+    message->what = MSG_EGL_THREAD_CREATE;
+    PostMessage(message);
     pthread_create(&thread_id_, nullptr, ThreadStartCallback, this);
     LOGI("leave PrepareEGLContext");
 }
 
 void CameraRecord::NotifyFrameAvailable() {
     if (oes_texture_id_ > 0) {
-        PostMessage(new Message(MSG_RENDER_FRAME));
+        auto message = message_pool_->GetBuffer<Message>();
+        message->what = MSG_RENDER_FRAME;
+        PostMessage(message);
     }
 }
 
@@ -134,11 +144,16 @@ void CameraRecord::SetRenderType(int type) {
 
 void CameraRecord::SetFrame(int frame) {
     LOGI("SetFrame: %d", frame);
-    PostMessage(new Message(MSG_SET_FRAME, frame, 0));
+    auto message = message_pool_->GetBuffer<Message>();
+    message->what = MSG_SET_FRAME;
+    message->arg1 = frame;
+    PostMessage(message);
 }
 
 void CameraRecord::SwitchCameraFacing() {
-    PostMessage(new Message(MSG_SWITCH_CAMERA_FACING));
+    auto message = message_pool_->GetBuffer<Message>();
+    message->what = MSG_SWITCH_CAMERA_FACING;
+    PostMessage(message);
 }
 
 void CameraRecord::ResetRenderSize(int screen_width, int screen_height) {
@@ -149,8 +164,12 @@ void CameraRecord::ResetRenderSize(int screen_width, int screen_height) {
 
 void CameraRecord::DestroyEGLContext() {
     LOGI("%s enter", __FUNCTION__);
-    PostMessage(new Message(MSG_EGL_THREAD_EXIT));
-    PostMessage(new Message(MESSAGE_QUEUE_LOOP_QUIT_FLAG));
+    auto message = message_pool_->GetBuffer<Message>();
+    message->what = MSG_EGL_THREAD_EXIT;
+    PostMessage(message);
+    auto msg = message_pool_->GetBuffer<Message>();
+    msg->what = MESSAGE_QUEUE_LOOP_QUIT_FLAG;
+    PostMessage(msg);
     pthread_join(thread_id_, 0);
     if (nullptr != queue_) {
         queue_->Abort();
@@ -482,9 +501,12 @@ void CameraRecord::ProcessMessage() {
         if (queue_->DequeueMessage(&msg, true) > 0) {
             if (nullptr != msg) {
                 if (MESSAGE_QUEUE_LOOP_QUIT_FLAG == msg->Execute()) {
+                    LOGE("enter: %s MESSAGE_QUEUE_LOOP_QUIT_FLAG", __func__);
                     renderingEnabled = false;
                 }
-                delete msg;
+                if (nullptr != message_pool_) {
+                    message_pool_->ReleaseBuffer(msg);
+                }
             }
         }
     }
@@ -553,12 +575,16 @@ void CameraRecord::Destroy() {
 void CameraRecord::CreateWindowSurface(ANativeWindow *window) {
     if (nullptr != window_) {
         window_ = window;
-        PostMessage(new Message(MSG_EGL_CREATE_PREVIEW_SURFACE));
+        auto message = message_pool_->GetBuffer<Message>();
+        message->what = MSG_EGL_CREATE_PREVIEW_SURFACE;
+        PostMessage(message);
     }
 }
 
 void CameraRecord::DestroyWindowSurface() {
-    PostMessage(new Message(MSG_EGL_DESTROY_PREVIEW_SURFACE));
+    auto message = message_pool_->GetBuffer<Message>();
+    message->what = MSG_EGL_DESTROY_PREVIEW_SURFACE;
+    PostMessage(message);
 }
 
 void CameraRecord::CreatePreviewSurface() {
@@ -635,7 +661,9 @@ void CameraRecord::StartEncoding(const char* path,
         encoder_ = new SoftEncoderAdapter(vertex_coordinate_, texture_coordinate);
     }
     encoder_->Init(video_width, video_height, video_bit_rate * 1000, frame_rate);
-    PostMessage(new Message(MSG_START_RECORDING));
+    auto message = message_pool_->GetBuffer<Message>();
+    message->what = MSG_START_RECORDING;
+    PostMessage(message);
 }
 
 void CameraRecord::StartRecording() {
@@ -645,7 +673,9 @@ void CameraRecord::StartRecording() {
 
 void CameraRecord::StopEncoding() {
     LOGI("StopEncoding");
-    PostMessage(new Message(MSG_STOP_RECORDING));
+    auto message = message_pool_->GetBuffer<Message>();
+    message->what = MSG_STOP_RECORDING;
+    PostMessage(message);
 }
 
 void CameraRecord::StopRecording() {
@@ -698,7 +728,10 @@ int CameraRecord::AddFilter(const char *config_path) {
     size_t len = strlen(config_path) + 1;
     char* path = new char[len];
     memcpy(path, config_path, len);
-    auto* message = new Message(kFilter, action_id, 0, path);
+    auto message = message_pool_->GetBuffer<Message>();
+    message->what = kFilter;
+    message->arg1 = action_id;
+    message->obj = path;
     PostMessage(message);
     return action_id;
 }
@@ -707,12 +740,19 @@ void CameraRecord::UpdateFilter(const char *config_path, int start_time, int end
     size_t len = strlen(config_path) + 1;
     char* path = new char[len];
     memcpy(path, config_path, len);
-    auto* message = new Message(kFilterUpdate, action_id, start_time, end_time, path);
+    auto message = message_pool_->GetBuffer<Message>();
+    message->what = kFilterUpdate;
+    message->arg1 = action_id;
+    message->arg2 = start_time;
+    message->arg3 = end_time;
+    message->obj = path;
     PostMessage(message);
 }
 
 void CameraRecord::DeleteFilter(int action_id) {
-    auto* message = new Message(kFilterDelete, action_id, 0);
+    auto message = message_pool_->GetBuffer<Message>();
+    message->what = kFilterDelete;
+    message->arg1 = action_id;
     PostMessage(message);
 }
 
@@ -721,13 +761,20 @@ int CameraRecord::AddAction(const char *config_path) {
     size_t len = strlen(config_path) + 1;
     char* path = new char[len];
     memcpy(path, config_path, len);
-    auto* message = new Message(kEffect, action_id, 0, path);
+    auto message = message_pool_->GetBuffer<Message>();
+    message->what = kEffect;
+    message->arg1 = action_id;
+    message->obj = path;
     PostMessage(message);
     return action_id;
 }
 
 void CameraRecord::UpdateActionTime(int start_time, int end_time, int action_id) {
-    auto* message = new Message(kEffectUpdate, start_time, end_time, action_id);
+    auto message = message_pool_->GetBuffer<Message>();
+    message->what = kEffectUpdate;
+    message->arg1 = start_time;
+    message->arg2 = end_time;
+    message->arg3 = action_id;
     PostMessage(message);
 }
 
@@ -742,13 +789,17 @@ void CameraRecord::UpdateActionParam(int action_id, const char *effect_name, con
     param->param_name = new char[param_name_len];
     memcpy(param->param_name, param_name, param_name_len);
     param->value = value;
-    auto message = new Message(kEffectParamUpdate, param);
+    auto message = message_pool_->GetBuffer<Message>();
+    message->what = kEffectParamUpdate;
+    message->obj = param;
     PostMessage(message);
 }
 
 void CameraRecord::DeleteAction(int action_id) {
     LOGI("enter %s action_id: %d", __func__, action_id);
-    auto* message = new Message(kEffectDelete, action_id, 0);
+    auto message = message_pool_->GetBuffer<Message>();
+    message->what = kEffectDelete;
+    message->arg1 = action_id;
     PostMessage(message);
 }
 

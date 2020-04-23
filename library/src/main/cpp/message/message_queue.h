@@ -24,6 +24,7 @@
 #define TRINITY_MESSAGE_QUEUE_H
 
 #include <pthread.h>
+#include "buffer_pool.h"
 #define MESSAGE_QUEUE_LOOP_QUIT_FLAG        19900909
 
 namespace trinity {
@@ -31,21 +32,8 @@ namespace trinity {
 class Handler;
 
 class Message {
- private:
-    int what;
-    int arg1;
-    int arg2;
-    int arg3;
-    void* obj;
-
  public:
     Message();
-    explicit Message(int what);
-    Message(int what, int arg1, int arg2);
-    Message(int what, int arg1, int arg2, int arg3);
-    Message(int what, int arg1, int arg2, int arg3, void* obj);
-    Message(int what, void* obj);
-    Message(int what, int arg1, int arg2, void* obj);
     ~Message();
 
     int Execute();
@@ -65,6 +53,12 @@ class Message {
         return obj;
     }
     Handler* handler_;
+
+    int what;
+    int arg1;
+    int arg2;
+    int arg3;
+    void* obj;
 };
 
 typedef struct MessageNode {
