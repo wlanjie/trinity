@@ -59,6 +59,10 @@ include_directories(${FDKAAC_HEADER})
 #set(JPEG_TURBO_HEADER ${CMAKE_CURRENT_LIST_DIR}/../../../../extra/jpeg-turbo/${ANDROID_ABI}/include)
 #include_directories(${JPEG_TURBO_HEADER})
 
+#include png
+set(PNG_HEADER ${CMAKE_CURRENT_LIST_DIR}/../../../../extra/png/${ANDROID_ABI}/include)
+include_directories(${PNG_HEADER})
+
 #include xlog
 set(XLOG_HEADER ${CMAKE_CURRENT_LIST_DIR}/../../../../extra/xlogger/include)
 include_directories(${XLOG_HEADER})
@@ -146,6 +150,10 @@ set(X264 ${CMAKE_CURRENT_LIST_DIR}/../../../../extra/libx264/${ANDROID_ABI}/lib/
 add_library(x264 STATIC IMPORTED)
 set_target_properties(x264 PROPERTIES IMPORTED_LOCATION ${X264})
 
+set(PNG ${CMAKE_CURRENT_LIST_DIR}/../../../../extra/png/${ANDROID_ABI}/lib/libpng.a)
+add_library(png STATIC IMPORTED)
+set_target_properties(png PROPERTIES IMPORTED_LOCATION ${PNG})
+
 #set(JPEG_LIB ${CMAKE_CURRENT_LIST_DIR}/../../../../extra/jpeg-turbo/${ANDROID_ABI}/lib/libjpeg.a)
 #add_library(jpeg STATIC IMPORTED)
 #set_target_properties(jpeg PROPERTIES IMPORTED_LOCATION ${JPEG_LIB})
@@ -175,7 +183,8 @@ if (${CMAKE_SYSTEM_VERSION} MATCHES "21")
         avutil
         fdk-aac
         x264
-        xlog)
+        xlog
+        png)
 else (${CMAKE_SYSTEM_VERSION} LESS "21")
     target_link_libraries(trinity
         log
@@ -191,5 +200,6 @@ else (${CMAKE_SYSTEM_VERSION} LESS "21")
         avutil
         fdk-aac
         x264
-        xlog)
+        xlog
+        png)
 endif (${CMAKE_SYSTEM_VERSION} MATCHES "21")
