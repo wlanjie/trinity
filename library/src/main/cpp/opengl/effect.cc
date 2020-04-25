@@ -20,12 +20,17 @@
 //
 
 #include "effect.h"
+#include "png.h"
 #ifdef __ANDROID__
 #include "android_xlog.h"
 #else
 #define LOGE(format, ...) fprintf(stdout, format, __VA_ARGS__)
 #define LOGI(format, ...) fprintf(stdout, format, __VA_ARGS__)
 #endif
+
+namespace {
+static GLuint image_sticker_texture = 0;
+}
 
 namespace trinity {
 
@@ -46,7 +51,7 @@ int GeneralSubEffect::OnDrawFrame(FaceDetection* face_detection,
         return texture_id;
     }
     glBindFramebuffer(GL_FRAMEBUFFER, process_buffer->GetFrameBufferId());
-    process_buffer->SetOutput(720, 1280);
+    process_buffer->SetOutput(width, height);
     process_buffer->ActiveProgram();
     process_buffer->Clear();
     process_buffer->ActiveAttribute();
@@ -123,7 +128,8 @@ StickerSubEffect::StickerSubEffect()
     , face_detect(false)
     , input_aspect(1.0F)
     , blend(nullptr)
-    , begin_frame_time(0) {
+    , begin_frame_time(0)
+    , image_texture(0) {
     LOGI("enter: %s", __func__);
 }
 
@@ -134,12 +140,6 @@ StickerSubEffect::~StickerSubEffect() {
         delete[] path;
     }
     sticker_paths.clear();
-    auto image_buffer_iterator = image_buffers.begin();
-    while (image_buffer_iterator != image_buffers.end()) {
-        delete image_buffer_iterator->second;
-        image_buffer_iterator++;
-    }
-    image_buffers.clear();
     if (nullptr != blend) {
         delete blend;
         blend = nullptr;
@@ -153,43 +153,71 @@ int StickerSubEffect::OnDrawFrame(FaceDetection* face_detection,
     return texture_id;
 }
 
-ImageBuffer* StickerSubEffect::StickerBufferAtFrameTime(float time) {
-    auto count = sticker_idxs.size();
+/**
+ * 由于把所有道具texture放到内存中,会使OpenGL内存暴增,而stbi_image解析图片又比较耗时,
+ * 道具图片都是png, 所以这里换成libpng实时解析, 在华为p20上解析一次需要4ms,
+ * 其它手机暂时没测试
+ */
+GLuint StickerSubEffect::StickerBufferAtFrameTime(float time) {
+    int count = static_cast<int>(sticker_idxs.size());
     int index;
     if (fps == 0) {
-        index = pic_index % count;
+        index = static_cast<int>(pic_index % count);
         pic_index++;
     } else {
         float duration = 0;
         if (begin_frame_time == 0) {
-            begin_frame_time = time;
+            begin_frame_time = static_cast<int>(time);
         } else {
             duration = (time - begin_frame_time) * 1.0F / 1000;
         }
         index = static_cast<int>(duration * fps) % count;
     }
     int final_index = sticker_idxs.at(index);
-    auto image_buffer_iterator = image_buffers.find(final_index);
-    if (image_buffer_iterator != image_buffers.end()) {
-        return image_buffer_iterator->second;
-    }
     char* image_path = sticker_paths.at(final_index);
-    int sample_texture_width = 0;
-    int sample_texture_height = 0;
-    int channels = 0;
-    unsigned char* sample_texture_buffer = stbi_load(image_path,
-            &sample_texture_width, &sample_texture_height, &channels, STBI_rgb_alpha);
-    if (nullptr != sample_texture_buffer && sample_texture_width > 0 && sample_texture_height > 0) {
-//        stbi_write_png("/Users/wlanjie/Desktop/offscreen.png",
-//                       sample_texture_width, sample_texture_height, 4,
-//                       sample_texture_buffer + (sample_texture_width * 4 * (sample_texture_height - 1)),
-//                       -sample_texture_width * 4);
-        auto* image_buffer = new ImageBuffer(sample_texture_width, sample_texture_height, sample_texture_buffer);
-        stbi_image_free(sample_texture_buffer);
-        image_buffers.insert(std::pair<int, ImageBuffer*>(final_index, image_buffer));
-        return image_buffer;
+    png_image image;
+
+    /* Initialize the 'png_image' structure. */
+    memset(&image, 0, (sizeof image));
+    image.version = PNG_IMAGE_VERSION;
+    if (png_image_begin_read_from_file(&image, image_path) == 0) {
+        return 0;
     }
-    return nullptr;
+
+    /* Set the format in which to read the PNG file; this code chooses a
+     * simple sRGB format with a non-associated alpha channel, adequate to
+     * store most images.
+     */
+    image.format = PNG_FORMAT_RGBA;
+
+    /* Now allocate enough memory to hold the image in this format; the
+     * PNG_IMAGE_SIZE macro uses the information about the image (width,
+     * height and format) stored in 'image'.
+     */
+    png_bytep buffer = static_cast<png_bytep>(malloc(PNG_IMAGE_SIZE(image)));
+    png_image_finish_read(&image, NULL/*background*/, buffer,
+                          0/*row_stride*/, NULL/*colormap*/);
+
+    if (image_sticker_texture == 0) {
+        glGenTextures(1, &image_sticker_texture);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, image_sticker_texture);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        // 这里如果GL_REPEAT人脸道具会有好多重复显示
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    } else {
+        glBindTexture(GL_TEXTURE_2D, image_sticker_texture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                        buffer);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+    png_image_free(&image);
+    free(buffer);
+    return image_sticker_texture;
 }
 
 glm::mat4 StickerSubEffect::VertexMatrix(FaceDetectionReport* face_detection, int source_width, int source_height) {
@@ -314,12 +342,12 @@ int StickerFace::OnDrawFrame(FaceDetection* face_detection,
     if (nullptr != blend) {
         std::vector<FaceDetectionReport*> face_detections;
         face_detection->FaceDetector(face_detections);
-        ImageBuffer* image_buffer = StickerBufferAtFrameTime(current_time);
-        if (nullptr != image_buffer) {
+        GLuint image_texture = StickerBufferAtFrameTime(current_time);
+        if (image_texture != 0) {
             for (auto face_detection_report : face_detections) {
                 glm::mat4 matrix = VertexMatrix(face_detection_report, width, height);
                 float* m = const_cast<float*>(glm::value_ptr(matrix));
-                sticker_texture_id = blend->OnDrawFrame(sticker_texture_id, image_buffer->GetTextureId(), width, height, m, alpha_factor);
+                sticker_texture_id = blend->OnDrawFrame(sticker_texture_id, image_texture, width, height, m, alpha_factor);
             }
         }
     }
@@ -346,8 +374,8 @@ int StickerV3SubEffect::OnDrawFrame(FaceDetection* face_detection,
         int width, int height, uint64_t current_time) {
     int sticker_texture_id = texture_id;
     if (nullptr != blend) {
-        ImageBuffer* image_buffer = StickerBufferAtFrameTime(current_time);
-        if (nullptr != image_buffer) {
+        GLuint image_texture = StickerBufferAtFrameTime(current_time);
+        if (image_texture != 0) {
             float* matrix = nullptr;
             if (face_detect && nullptr != face_detection) {
                 std::vector<FaceDetectionReport*> face_reports;
@@ -358,14 +386,14 @@ int StickerV3SubEffect::OnDrawFrame(FaceDetection* face_detection,
                         if (has_face) {
                             glm::mat4 m = VertexMatrix(report, width, height);
                             matrix = const_cast<float*>(glm::value_ptr(m));
-                            sticker_texture_id = blend->OnDrawFrame(sticker_texture_id, image_buffer->GetTextureId(), 
+                            sticker_texture_id = blend->OnDrawFrame(sticker_texture_id, image_texture,
                                 width, height, matrix, alpha_factor);
                         }
                         delete report;
                     }
                 }
             } else {
-                sticker_texture_id = blend->OnDrawFrame(sticker_texture_id, image_buffer->GetTextureId(), 
+                sticker_texture_id = blend->OnDrawFrame(sticker_texture_id, image_texture,
                     width, height, matrix, alpha_factor);
             }
         }
@@ -645,6 +673,11 @@ Effect::~Effect() {
         delete sub_effect;
     }
     sub_effects_.clear();
+
+    if (image_sticker_texture != 0) {
+        glDeleteTextures(1, &image_sticker_texture);
+        image_sticker_texture = 0;
+    }
 }
 
 void Effect::SetFaceDetection(trinity::FaceDetection *face_detection) {

@@ -341,7 +341,7 @@ class StickerSubEffect : public SubEffect {
             std::list<SubEffect*> sub_effects,
             int origin_texture_id, int texture_id,
             int width, int height, uint64_t current_time) override;
-    ImageBuffer* StickerBufferAtFrameTime(float time);
+    GLuint StickerBufferAtFrameTime(float time);
  public:
     int blendmode;
     int width;
@@ -350,7 +350,7 @@ class StickerSubEffect : public SubEffect {
     float alpha_factor;
     std::vector<int> sticker_idxs;
     std::vector<char*> sticker_paths;
-    std::map<int, ImageBuffer*> image_buffers;
+    GLuint image_texture;
     int pic_index;
     bool face_detect;
     float input_aspect;
