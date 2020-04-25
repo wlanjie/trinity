@@ -64,6 +64,7 @@ class VideoExport {
 
     void Cancel();
  private:
+    void CreateEncode(bool media_codec_encode);
     static void OnCompleteEvent(AVPlayContext* context);
     static void OnStatusChanged(AVPlayContext* context, PlayStatus status);
     int OnComplete();
@@ -111,6 +112,7 @@ class VideoExport {
     int video_width_;
     int video_height_;
     int frame_rate_;
+    int video_bit_rate_;
     int frame_width_;
     int frame_height_;
     YuvRender* yuv_render_;

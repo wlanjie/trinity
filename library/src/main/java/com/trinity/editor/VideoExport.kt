@@ -131,12 +131,14 @@ class TrinityVideoExport(private val context: Context) : VideoExport {
    * @param frameRate 录制视频的帧率
    */
   @Suppress("unused")
-  private fun createMediaCodecSurfaceEncoderFromNative(width: Int, height: Int, videoBitRate: Int, frameRate: Int) {
-    try {
-      mSurfaceEncoder.start(width, height, videoBitRate, frameRate)
+  private fun createMediaCodecSurfaceEncoderFromNative(width: Int, height: Int, videoBitRate: Int, frameRate: Int): Int {
+    return try {
+      val ret = mSurfaceEncoder.start(width, height, videoBitRate, frameRate)
       mSurface = mSurfaceEncoder.getInputSurface()
+      ret
     } catch (e: Exception) {
       e.printStackTrace()
+      -1
     }
   }
 

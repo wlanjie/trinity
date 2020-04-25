@@ -34,11 +34,11 @@ class SoftEncoderAdapter : public VideoEncoderAdapter {
 
     virtual ~SoftEncoderAdapter();
 
-    void CreateEncoder(EGLCore *eglCore);
+    virtual int CreateEncoder(EGLCore *eglCore) override ;
 
-    void Encode(int64_t time, int texture_id = 0);
+    virtual void Encode(int64_t time, int texture_id = 0) override ;
 
-    void DestroyEncoder();
+    virtual void DestroyEncoder() override ;
 
  private:
     void StartEncode();

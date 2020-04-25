@@ -740,13 +740,14 @@ class TrinityRecord(
    * @param frameRate 录制视频的帧率
    */
   @Suppress("unused")
-  private fun createMediaCodecSurfaceEncoderFromNative(width: Int, height: Int, videoBitRate: Int, frameRate: Int) {
-    try {
-      // TODO return result, if result < 0, using soft encoder
-      mSurfaceEncoder.start(width, height, videoBitRate, frameRate)
+  private fun createMediaCodecSurfaceEncoderFromNative(width: Int, height: Int, videoBitRate: Int, frameRate: Int): Int {
+    return try {
+      val ret = mSurfaceEncoder.start(width, height, videoBitRate, frameRate)
       mSurface = mSurfaceEncoder.getInputSurface()
+      ret
     } catch (e: Exception) {
       e.printStackTrace()
+      -1
     }
   }
 

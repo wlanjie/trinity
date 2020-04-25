@@ -61,6 +61,7 @@ VideoExport::VideoExport(JNIEnv* env, jobject object)
     , video_width_(0)
     , video_height_(0)
     , frame_rate_(0)
+    , video_bit_rate_(0)
     , frame_width_(0)
     , frame_height_(0)
     , yuv_render_(nullptr)
@@ -379,6 +380,15 @@ void VideoExport::LoadImageTexture(MediaClip *clip) {
     }
 }
 
+void VideoExport::CreateEncode(bool media_codec_encode) {
+    if (media_codec_encode) {
+        encoder_ = new MediaEncodeAdapter(vm_, object_);
+    } else {
+        encoder_ = new SoftEncoderAdapter(vertex_coordinate_, texture_coordinate_);
+    }
+    encoder_->Init(video_width_, video_height_, video_bit_rate_ * 1000, frame_rate_);
+}
+
 int VideoExport::Export(const char *export_config, const char *path,
         int width, int height, int frame_rate, int video_bit_rate,
         int sample_rate, int channel_count, int audio_bit_rate,
@@ -441,6 +451,7 @@ int VideoExport::Export(const char *export_config, const char *path,
     video_width_ = static_cast<int>((floor(width / 16.0F)) * 16);
     video_height_ = static_cast<int>((floor(height / 16.0F)) * 16);
     frame_rate_ = frame_rate;
+    video_bit_rate_ = video_bit_rate;
 
     for (int i = 0; i < clip_size; i++) {
         cJSON* path_item = cJSON_GetObjectItem(item, "path");
@@ -462,15 +473,10 @@ int VideoExport::Export(const char *export_config, const char *path,
     current_media_clip_ = clip_deque_.at(0);
 
     free(buffer);
-    if (media_codec_encode) {
-        encoder_ = new MediaEncodeAdapter(vm_, object_);
-    } else {
-        encoder_ = new SoftEncoderAdapter(vertex_coordinate_, texture_coordinate_);
-    }
     media_codec_encode_ = media_codec_encode;
+    CreateEncode(media_codec_encode_);
     // 软解
     av_play_context_->force_sw_decode = !media_codec_decode;
-    encoder_->Init(width, height, video_bit_rate * 1000, frame_rate);
     audio_encoder_adapter_ = new AudioEncoderAdapter();
     audio_encoder_adapter_->Init(packet_pool_, 44100, 1, 128 * 1000, "libfdk_aac");
     pthread_create(&export_video_thread_, nullptr, ExportVideoThread, this);
@@ -556,7 +562,17 @@ void VideoExport::ProcessVideoExport() {
     // 添加config解析出来的特效
     OnEffect();
 
-    encoder_->CreateEncoder(egl_core_);
+    int ret = encoder_->CreateEncoder(egl_core_);
+    if (ret != 0) {
+        LOGE("Create encoder error: %d media_codec_encode: %d", ret, media_codec_encode_);
+        delete encoder_;
+        media_codec_encode_ = !media_codec_encode_;
+        CreateEncode(media_codec_encode_);
+        ret = encoder_->CreateEncoder(egl_core_);
+        if (ret != 0) {
+            export_ing_ = false;
+        }
+    }
     while (true) {
         if (!export_ing_) {
             break;
@@ -621,13 +637,13 @@ void VideoExport::ProcessVideoExport() {
                     if (nullptr != yuv_render_) {
                         delete yuv_render_;
                     }
-                    yuv_render_ = new YuvRender(0);
+                    yuv_render_ = new YuvRender();
                 } else {
                     if (nullptr != media_codec_render_) {
                         delete media_codec_render_;
                     }
                     media_codec_render_ = new FrameBuffer(frame_width_, frame_height_,
-                            media_codec_encode_ ? DEFAULT_VERTEX_MATRIX_SHADER : DEFAULT_VERTEX_SHADER,
+                            DEFAULT_VERTEX_MATRIX_SHADER,
                             DEFAULT_OES_FRAGMENT_SHADER);
                     media_codec_render_->SetTextureType(TEXTURE_OES);
                 }
@@ -635,6 +651,10 @@ void VideoExport::ProcessVideoExport() {
             // 如果是软编码, 使用YuvRender把AVFrame渲染成纹理
             // 硬编码时, 把OES纹理渲染成普通 的TEXTURE_2D纹理
             if (av_play_context_->is_sw_decode) {
+                // 有的视频会出现绿边, 使用矩阵放大, 去除绿边
+                auto ratio = av_play_context_->video_frame->width * 1.F / av_play_context_->video_frame->linesize[0];
+                glm::mat4 scale_matrix = glm::mat4(ratio);
+
                 // 硬编和软解时, yuv_render时需要旋做上下镜像处理
                 if (media_codec_encode_) {
                     GLfloat texture_coordinate[] = {
@@ -643,9 +663,11 @@ void VideoExport::ProcessVideoExport() {
                             0.0F, 0.0F,
                             1.0F, 0.0F
                     };
-                    encode_texture_id_ = yuv_render_->DrawFrame(frame, crop_vertex_coordinate_, texture_coordinate);
+                    encode_texture_id_ = yuv_render_->DrawFrame(frame, glm::value_ptr(scale_matrix),
+                            crop_vertex_coordinate_, texture_coordinate);
                 } else {
-                    encode_texture_id_ = yuv_render_->DrawFrame(frame, crop_vertex_coordinate_, texture_coordinate_);
+                    encode_texture_id_ = yuv_render_->DrawFrame(frame, glm::value_ptr(scale_matrix),
+                            crop_vertex_coordinate_, texture_coordinate_);
                 }
                 current_time_ = av_rescale_q(av_play_context_->video_frame->pts,
                                                                 av_play_context_->format_context->streams[av_play_context_->video_index]->time_base,
@@ -658,10 +680,23 @@ void VideoExport::ProcessVideoExport() {
                     mediacodec_release_buffer(av_play_context_, av_play_context_->video_frame);
                     continue;
                 }
+
+                GLfloat* texture_coordinate = texture_coordinate_;
+                if (!media_codec_encode_) {
+                    // 软编时硬解码需要做镜像处理
+                    static GLfloat coordinate[] = {
+                            0.0F, 1.0F,
+                            1.0F, 1.0F,
+                            0.0F, 0.0F,
+                            1.0F, 0.0F
+                    };
+                    texture_coordinate = coordinate;
+                }
+
                 media_codec_render_->ActiveProgram();
                 encode_texture_id_ = media_codec_render_->OnDrawFrame(oes_texture_,
-                        crop_vertex_coordinate_, texture_coordinate_,
-                        media_codec_encode_ ? texture_matrix_ : nullptr);
+                        crop_vertex_coordinate_, texture_coordinate,
+                        texture_matrix_);
                 current_time_ = av_play_context_->video_frame->pts / 1000;
                 mediacodec_release_buffer(av_play_context_, av_play_context_->video_frame);
             }

@@ -63,7 +63,12 @@ CameraRecord::CameraRecord(JNIEnv* env) : Handler()
     , image_process_(nullptr)
     , render_time_(0)
     , encode_time_(0)
-    , camera_facing_id_(-1) {
+    , camera_facing_id_(-1)
+    , media_codec_encode_(true)
+    , video_width_(0)
+    , video_height_(0)
+    , frame_rate_(0)
+    , video_bit_rate_(0) {
     env->GetJavaVM(&vm_);
     message_pool_ = new BufferPool(sizeof(Message));
 }
@@ -238,7 +243,17 @@ void CameraRecord::Draw() {
     // 开始录制, 创建编码器
     if (start_recording) {
         start_recording = false;
-        encoder_->CreateEncoder(egl_core_);
+        int ret = encoder_->CreateEncoder(egl_core_);
+        if (ret != 0) {
+            LOGE("Create encoder error: %d media_codec_encode: %d", ret, media_codec_encode_);
+            delete encoder_;
+            media_codec_encode_ = !media_codec_encode_;
+            CreateEncode(media_codec_encode_);
+            ret = encoder_->CreateEncoder(egl_core_);
+            if (ret != 0) {
+                // error notify
+            }
+        }
         encoding_ = true;
     }
     render_screen_->SetOutput(screen_width_, screen_height_);
@@ -513,6 +528,21 @@ void CameraRecord::ProcessMessage() {
     LOGI("leave %s", __FUNCTION__);
 }
 
+void CameraRecord::CreateEncode(bool media_codec_encode) {
+    if (media_codec_encode) {
+        encoder_ = new MediaEncodeAdapter(vm_, obj_);
+    } else {
+        GLfloat texture_coordinate[] = {
+                0.0F, 1.0F,
+                1.0F, 1.0F,
+                0.0F, 0.0F,
+                1.0F, 0.0F
+        };
+        encoder_ = new SoftEncoderAdapter(vertex_coordinate_, texture_coordinate);
+    }
+    encoder_->Init(video_width_, video_height_, video_bit_rate_ * 1000, frame_rate_);
+}
+
 bool CameraRecord::Initialize() {
     LOGI("enter %s", __FUNCTION__);
     texture_matrix_ = new GLfloat[16];
@@ -636,31 +666,23 @@ void CameraRecord::StartEncoding(const char* path,
         delete encoder_;
         encoder_ = nullptr;
     }
-    int video_width = static_cast<int>((floor(width / 16.0f)) * 16);
-    int video_height = static_cast<int>((floor(height / 16.0f)) * 16);
+    frame_rate_ = frame_rate;
+    video_bit_rate_ = video_bit_rate;
+    media_codec_encode_ = use_hard_encode;
+    video_width_ = static_cast<int>((floor(width / 16.0f)) * 16);
+    video_height_ = static_cast<int>((floor(height / 16.0f)) * 16);
     if (nullptr != packet_thread_) {
         PacketPool::GetInstance()->InitRecordingVideoPacketQueue();
         PacketPool::GetInstance()->InitAudioPacketQueue(44100);
         AudioPacketPool::GetInstance()->InitAudioPacketQueue();
         std::string audio_codec_name("libfdk_aac");
-        int ret = packet_thread_->Init(path, video_width, video_height, frame_rate,
+        int ret = packet_thread_->Init(path, video_width_, video_height_, frame_rate,
              video_bit_rate * 1000, audio_sample_rate, audio_channel, audio_bit_rate * 1000, audio_codec_name);
         if (ret >= 0) {
             packet_thread_->StartAsync();
         }
     }
-    if (use_hard_encode) {
-        encoder_ = new MediaEncodeAdapter(vm_, obj_);
-    } else {
-        GLfloat texture_coordinate[] = {
-                0.0F, 1.0F,
-                1.0F, 1.0F,
-                0.0F, 0.0F,
-                1.0F, 0.0F
-        };
-        encoder_ = new SoftEncoderAdapter(vertex_coordinate_, texture_coordinate);
-    }
-    encoder_->Init(video_width, video_height, video_bit_rate * 1000, frame_rate);
+    CreateEncode(media_codec_encode_);
     auto message = message_pool_->GetBuffer<Message>();
     message->what = MSG_START_RECORDING;
     PostMessage(message);

@@ -60,7 +60,7 @@ SoftEncoderAdapter::~SoftEncoderAdapter() {
     }
 }
 
-void SoftEncoderAdapter::CreateEncoder(EGLCore *core) {
+int SoftEncoderAdapter::CreateEncoder(EGLCore *core) {
     LOGI("enter CreateEncoder");
     core_ = new EGLCore();
     core_->Init(core->GetContext());
@@ -71,11 +71,12 @@ void SoftEncoderAdapter::CreateEncoder(EGLCore *core) {
     start_time_ = 0;
     fps_change_time_ = 0;
     encoder_ = new VideoX264Encoder(0);
-    encoder_->Init(video_width_, video_height_, video_bit_rate_, frame_rate_, packet_pool_);
+    int ret = encoder_->Init(video_width_, video_height_, video_bit_rate_, frame_rate_, packet_pool_);
     yuy_packet_pool_ = new VideoPacketQueue();
     Initialize();
     pthread_create(&x264_encoder_thread_, nullptr, StartEncodeThread, this);
     LOGI("leave CreateEncoder");
+    return ret;
 }
 
 void SoftEncoderAdapter::Encode(int64_t time, int texture_id) {

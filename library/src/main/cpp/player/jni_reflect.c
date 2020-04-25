@@ -18,7 +18,7 @@ void jni_reflect_java_class(JavaClass ** p_jc, JNIEnv *env) {
     jmethodID media_codec_construct_id_ = (*env)->GetMethodID(env, media_codec_class, "<init>", "()V");
     jobject media_codec_object = (*env)->NewObject(env, media_codec_class, media_codec_construct_id_);
     java_class->media_codec_object = (*env)->NewGlobalRef(env, media_codec_object);
-    java_class->codec_init = (*env)->GetMethodID(env, media_codec_class, "start", "(ILjava/lang/String;IILjava/nio/ByteBuffer;Ljava/nio/ByteBuffer;)V");
+    java_class->codec_init = (*env)->GetMethodID(env, media_codec_class, "start", "(ILjava/lang/String;IILjava/nio/ByteBuffer;Ljava/nio/ByteBuffer;)I");
     java_class->codec_stop = (*env)->GetMethodID(env, media_codec_class, "stop", "()V");
     java_class->codec_flush = (*env)->GetMethodID(env, media_codec_class, "flush",  "()V");
     java_class->codec_dequeueInputBuffer = (*env)->GetMethodID(env, media_codec_class, "dequeueInputBuffer", "(J)I");

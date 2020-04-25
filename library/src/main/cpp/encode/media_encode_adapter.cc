@@ -63,7 +63,7 @@ MediaEncodeAdapter::~MediaEncodeAdapter() {
     }
 }
 
-void MediaEncodeAdapter::CreateEncoder(EGLCore *core) {
+int MediaEncodeAdapter::CreateEncoder(EGLCore *core) {
     LOGI("enter: %s", __func__);
     core_ = new EGLCore();
     core_->Init(core->GetContext());
@@ -73,24 +73,25 @@ void MediaEncodeAdapter::CreateEncoder(EGLCore *core) {
     if (status < 0) {
         if (vm_->AttachCurrentThread(&env, nullptr) != JNI_OK) {
             LOGE("AttachCurrentThread failed.");
-            return;
+            return -1;
         }
         need_attach = true;
     }
-    CreateMediaEncoder(env);
+    int ret = CreateMediaEncoder(env);
     jbyteArray buffer = env->NewByteArray(video_width_ * video_height_ * 3 / 2);
     output_buffer_ = reinterpret_cast<jbyteArray>(env->NewGlobalRef(buffer));
     env->DeleteLocalRef(buffer);
     if (need_attach) {
         if (vm_->DetachCurrentThread() != JNI_OK) {
             LOGE("DetachCurrentThread failed.");
-            return;
+            return -1;
         }
     }
     start_time_ = 0;
     fps_change_time_ = -1;
     sps_write_flag_ = true;
     LOGI("leave: %s", __func__);
+    return ret;
 }
 
 void MediaEncodeAdapter::DestroyEncoder() {
@@ -270,14 +271,14 @@ int MediaEncodeAdapter::DrainEncodeData() {
     return size;
 }
 
-void MediaEncodeAdapter::CreateMediaEncoder(JNIEnv *env) {
+int MediaEncodeAdapter::CreateMediaEncoder(JNIEnv *env) {
     LOGI("enter: %s", __func__);
     jclass clazz = env->GetObjectClass(object_);
     jmethodID createMediaCodecSurfaceEncoderFunc = env->GetMethodID(clazz,
                                                                     "createMediaCodecSurfaceEncoderFromNative",
-                                                                    "(IIII)V");
-    env->CallVoidMethod(object_, createMediaCodecSurfaceEncoderFunc, video_width_, video_height_,
-                        video_bit_rate_, static_cast<int>(frame_rate_));
+                                                                    "(IIII)I");
+    int ret = env->CallIntMethod(object_, createMediaCodecSurfaceEncoderFunc, video_width_, video_height_,
+                        video_bit_rate_, frame_rate_);
     jmethodID getEncodeSurfaceFromNativeFunc = env->GetMethodID(clazz,
                                                                 "getEncodeSurfaceFromNative",
                                                                 "()Landroid/view/Surface;");
@@ -292,6 +293,7 @@ void MediaEncodeAdapter::CreateMediaEncoder(JNIEnv *env) {
     render_ = new OpenGL(DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
     render_->SetOutput(video_width_, video_height_);
     LOGI("leave: %s", __func__);
+    return ret;
 }
 
 void MediaEncodeAdapter::DestroyMediaEncoder(JNIEnv *env) {

@@ -854,7 +854,8 @@ int Player::DrawVideoFrame() {
         return -1;
     }
     if (av_play_context_->error_code == BUFFER_FLAG_END_OF_STREAM && av_play_context_->video_frame_queue->count == 0) {
-        LOGE("av_play_context_->error_code == BUFFER_FLAG_END_OF_STREAM size: %d count: %d", av_play_context_->video_frame_queue->size, av_play_context_->video_frame_queue->count);
+        LOGE("av_play_context_->error_code == BUFFER_FLAG_END_OF_STREAM size: %d count: %d",
+                av_play_context_->video_frame_queue->size, av_play_context_->video_frame_queue->count);
         return -2;
     }
     if (av_play_context_->video_frame == nullptr) {
@@ -914,7 +915,7 @@ int Player::DrawVideoFrame() {
                 if (nullptr != yuv_render_) {
                     delete yuv_render_;
                 }
-                yuv_render_ = new YuvRender(0);
+                yuv_render_ = new YuvRender();
             } else {
                 if (nullptr != media_codec_render_) {
                     delete media_codec_render_;
@@ -931,7 +932,17 @@ int Player::DrawVideoFrame() {
             usleep(static_cast<useconds_t>(diff));
         }
         if (av_play_context_->is_sw_decode) {
-            draw_texture_id_ = yuv_render_->DrawFrame(av_play_context_->video_frame, vertex_coordinate_, texture_coordinate_);
+            static GLfloat texture_coordinate[] = {
+                    0.F, 1.F,
+                    1.F, 1.F,
+                    0.F, 0.F,
+                    1.F, 0.F
+            };
+            // 有的视频会出现绿边, 使用矩阵放大, 去除绿边
+            auto ratio = av_play_context_->video_frame->width * 1.F / av_play_context_->video_frame->linesize[0];
+            glm::mat4 scale_matrix = glm::mat4(ratio);
+            draw_texture_id_ = yuv_render_->DrawFrame(av_play_context_->video_frame, glm::value_ptr(scale_matrix),
+                    DEFAULT_VERTEX_COORDINATE, texture_coordinate);
             current_time_ = av_rescale_q(av_play_context_->video_frame->pts,
                                          av_play_context_->format_context->streams[av_play_context_->video_index]->time_base,
                                          AV_TIME_BASE_Q) / 1000;
@@ -939,12 +950,18 @@ int Player::DrawVideoFrame() {
             if (!mediacodec_frame_available(av_play_context_)) {
                 LOGE("mediacodec frame is not available");
                 draw_texture_id_ = -1;
+            } else {
+                mediacodec_update_image(av_play_context_);
+                mediacodec_get_texture_matrix(av_play_context_, texture_matrix_);
+//                for (int i = 0; i < 16; i += 4) {
+//                    LOGE("m[%d]=%f [%d]=%f [%d]=%f [%d]=%f", i, texture_matrix_[i], i + 1,
+//                         texture_matrix_[i + 1], i + 2, texture_matrix_[i + 2], i + 3,
+//                         texture_matrix_[i + 3]);
+//                }
+                media_codec_render_->ActiveProgram();
+                draw_texture_id_ = media_codec_render_->OnDrawFrame(oes_texture_, texture_matrix_);
+                current_time_ = av_play_context_->video_frame->pts / 1000;
             }
-            mediacodec_update_image(av_play_context_);
-            mediacodec_get_texture_matrix(av_play_context_, texture_matrix_);
-            media_codec_render_->ActiveProgram();
-            draw_texture_id_ = media_codec_render_->OnDrawFrame(oes_texture_, texture_matrix_);
-            current_time_ = av_play_context_->video_frame->pts / 1000;
         }
         ReleaseVideoFrame();
 

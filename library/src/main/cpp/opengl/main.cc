@@ -347,7 +347,7 @@ int main() {
 
     clock_t start = clock();
     ImageProcess image_process;
-    char* name = "app/src/main/assets/effect/blackWhiteScreen";
+    char* name = "app/src/main/assets/effect/countDown";
     auto* detection = new MakeFaceDetection();
     image_process.OnAction(name, 0, detection);
     FacePoint face_point;

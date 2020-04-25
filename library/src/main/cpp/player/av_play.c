@@ -205,8 +205,7 @@ static int sw_codec_init(AVPlayContext* context) {
 
 static int hw_codec_init(AVPlayContext* context) {
     context->media_codec_context = create_mediacodec_context(context);
-    mediacodec_start(context);
-    return 0;
+    return mediacodec_start(context);
 }
 
 void* audio_decode_thread(void * data){
@@ -610,6 +609,16 @@ int av_play_play(const char *url, float time, AVPlayContext *context) {
             ret = sw_codec_init(context);
         } else {
             ret = hw_codec_init(context);
+        }
+
+        // 如果解码失败, 软硬切换,如果还是失败, 通知上层
+        if (ret != 0) {
+            context->is_sw_decode = !context->is_sw_decode;
+            if (context->is_sw_decode) {
+                ret = sw_codec_init(context);
+            } else {
+                ret = hw_codec_init(context);
+            }
         }
         if (ret != 0) {
             goto fail;

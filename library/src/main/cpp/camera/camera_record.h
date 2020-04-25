@@ -107,6 +107,8 @@ class CameraRecord : public Handler, public FaceDetection {
 
     virtual void FaceDetector(std::vector<FaceDetectionReport*>& face_detection);
  private:
+    void CreateEncode(bool media_codec_encode);
+
     virtual bool Initialize();
 
     virtual void Destroy();
@@ -204,6 +206,11 @@ class CameraRecord : public Handler, public FaceDetection {
     int64_t encode_time_;
     int camera_facing_id_;
     BufferPool* message_pool_;
+    bool media_codec_encode_;
+    int video_width_;
+    int video_height_;
+    int frame_rate_;
+    int video_bit_rate_;
 };
 
 }  // namespace trinity

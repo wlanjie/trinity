@@ -19,10 +19,9 @@ package com.trinity.encoder
 
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
+import android.media.MediaCodecList
 import android.media.MediaFormat
-import android.os.Build
 import android.view.Surface
-import androidx.annotation.RequiresApi
 import com.tencent.mars.xlog.Log
 import kotlin.experimental.and
 
@@ -60,6 +59,7 @@ class MediaCodecSurfaceEncoder {
       mEncoder?.start()
     } catch (e: Exception) {
       e.printStackTrace()
+      Log.e("trinity", e.message)
       return -1
     }
     return 0

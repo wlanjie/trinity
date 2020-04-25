@@ -30,7 +30,7 @@ class MediaCodecDecode {
   }
 
   fun start(textureId: Int, codecName: String, width: Int, height: Int,
-           csd0: ByteBuffer?, csd1: ByteBuffer?) {
+           csd0: ByteBuffer?, csd1: ByteBuffer?): Int {
     try {
       Log.i("trinity", "enter MediaCodec Start textureId: $textureId codecName: $codecName width: $width height: $height")
       mMediaCodec = MediaCodec.createDecoderByType(codecName)
@@ -69,8 +69,11 @@ class MediaCodecDecode {
       mMediaCodec?.start()
     } catch (e: IOException) {
       e.printStackTrace()
+      Log.e("trinity", e.message)
+      return -1
     }
     Log.i("trinity", "leave MediaCodec Start")
+    return 0
   }
 
   fun stop() {

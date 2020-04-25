@@ -13,7 +13,6 @@
 		702B75BF2313E4E40089082D /* pixel_late.cc in Sources */ = {isa = PBXBuildFile; fileRef = 702B75B92313E4E40089082D /* pixel_late.cc */; };
 		702B75C32314005D0089082D /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 702B75C22314005D0089082D /* OpenGL.framework */; };
 		702B75C5231400770089082D /* libglfw.3.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 702B75C4231400770089082D /* libglfw.3.2.dylib */; };
-		702B75D32314C9950089082D /* matrix.cc in Sources */ = {isa = PBXBuildFile; fileRef = 702B75D22314C9950089082D /* matrix.cc */; settings = {COMPILER_FLAGS = "-W"; }; };
 		7064C9E62318EEF700F5D22B /* gaussian_blur.cc in Sources */ = {isa = PBXBuildFile; fileRef = 7064C9E52318EEF700F5D22B /* gaussian_blur.cc */; };
 		7091C9D423A3D2B900E3D958 /* image_process.cc in Sources */ = {isa = PBXBuildFile; fileRef = 7091C9D323A3D2B900E3D958 /* image_process.cc */; };
 		70AA611223AB45D200F84CFD /* process_buffer.cc in Sources */ = {isa = PBXBuildFile; fileRef = 70AA611123AB45D200F84CFD /* process_buffer.cc */; };
@@ -51,7 +50,6 @@
 		702B75BC2313E4E40089082D /* yuv_render.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = yuv_render.cc; sourceTree = "<group>"; };
 		702B75C22314005D0089082D /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		702B75C4231400770089082D /* libglfw.3.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libglfw.3.2.dylib; path = ../../../../../../../../usr/local/Cellar/glfw/3.2.1/lib/libglfw.3.2.dylib; sourceTree = "<group>"; };
-		702B75D22314C9950089082D /* matrix.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = matrix.cc; path = util/matrix.cc; sourceTree = "<group>"; };
 		7048204B231A668B00FCE038 /* blur_split_screen.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = blur_split_screen.h; sourceTree = "<group>"; };
 		705552712314CCEA007D98BB /* gl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gl.h; sourceTree = "<group>"; };
 		7064C9E42318EEF700F5D22B /* gaussian_blur.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gaussian_blur.h; sourceTree = "<group>"; };
@@ -94,7 +92,6 @@
 			isa = PBXGroup;
 			children = (
 				70D885482362F1BF004E5C33 /* json */,
-				702B75D22314C9950089082D /* matrix.cc */,
 				702B75A52313E2390089082D /* opengl */,
 				702B75A42313E2390089082D /* Products */,
 				702B75C12314005D0089082D /* Frameworks */,
@@ -222,7 +219,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				702B75D32314C9950089082D /* matrix.cc in Sources */,
 				70D4CCA023B76A370040B68E /* blend.cc in Sources */,
 				70CCE876240D4B7E00CB63E9 /* face_markup_render.cc in Sources */,
 				702B75BF2313E4E40089082D /* pixel_late.cc in Sources */,

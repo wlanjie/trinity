@@ -67,7 +67,7 @@ class TrinityTestCase(unittest.TestCase):
                 if 'done' in attrib['resource-id']:
                     item.click()
         except Exception:
-            print('clickPhoto error: ' + str(e))
+            print('clickPhoto error')
             self.runTest()             
 
     def clickRecordEffect(self):

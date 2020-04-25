@@ -263,10 +263,10 @@ MediaCodecContext *create_mediacodec_context(
     return media_codec_context;
 }
 
-void mediacodec_start(AVPlayContext *context){
+int mediacodec_start(AVPlayContext *context){
     MediaCodecContext *media_codec_context = context->media_codec_context;
     if (media_codec_context == NULL) {
-        return;
+        return -1;
     }
     JNIEnv *env = NULL;
     int status = (*context->vm)->GetEnv(context->vm , (void**)(&env), JNI_VERSION_1_6);
@@ -279,6 +279,7 @@ void mediacodec_start(AVPlayContext *context){
     jobject csd_0 = NULL;
     jobject csd_1 = NULL;
     LOGI("enter %s", __func__);
+    int ret = 0;
     switch (media_codec_context->codec_id) {
         case AV_CODEC_ID_H264:
             codecName = (*env)->NewStringUTF(env, "video/avc");
@@ -294,14 +295,14 @@ void mediacodec_start(AVPlayContext *context){
                 }
                 csd_0 = (*env)->NewDirectByteBuffer(env, sps_buf, sps_size);
                 csd_1 = (*env)->NewDirectByteBuffer(env, pps_buf, pps_size);
-                (*env)->CallVoidMethod(env, java_class->media_codec_object, java_class->codec_init,
+                ret = (*env)->CallIntMethod(env, java_class->media_codec_object, java_class->codec_init,
                                                 context->media_codec_texture_id, codecName, media_codec_context->width, media_codec_context->height, csd_0, csd_1);
                 free(sps_buf);
                 free(pps_buf);
                 (*env)->DeleteLocalRef(env, csd_0);
                 (*env)->DeleteLocalRef(env, csd_1);
             } else {
-                (*env)->CallVoidMethod(env, java_class->media_codec_object, java_class->codec_init,
+                ret = (*env)->CallIntMethod(env, java_class->media_codec_object, java_class->codec_init,
                                                 context->media_codec_texture_id, codecName, media_codec_context->width, media_codec_context->height, NULL, NULL);
             }
             break;
@@ -312,19 +313,18 @@ void mediacodec_start(AVPlayContext *context){
                 size_t sps_pps_size = 0;
                 size_t convert_size = (size_t) (codecpar->extradata_size + 20);
                 uint8_t *convert_buf = (uint8_t *) malloc((size_t) convert_size);
-                if (0 !=
-                    convert_hevc_nal_units(codecpar->extradata, (size_t) codecpar->extradata_size,
+                if (0 != convert_hevc_nal_units(codecpar->extradata, (size_t) codecpar->extradata_size,
                                            convert_buf, convert_size, &sps_pps_size,
                                            &media_codec_context->nal_size)) {
                     LOGE("%s:convert_sps_pps: failed\n", __func__);
                 }
                 csd_0 = (*env)->NewDirectByteBuffer(env, convert_buf, sps_pps_size);
-                (*env)->CallVoidMethod(env, java_class->media_codec_object, java_class->codec_init,
+                ret = (*env)->CallIntMethod(env, java_class->media_codec_object, java_class->codec_init,
                                                 context->media_codec_texture_id, codecName, media_codec_context->width, media_codec_context->height, csd_0, NULL);
                 free(convert_buf);
                 (*env)->DeleteLocalRef(env, csd_0);
             }else{
-                (*env)->CallVoidMethod(env, java_class->media_codec_object, java_class->codec_init, codecName,
+                ret = (*env)->CallIntMethod(env, java_class->media_codec_object, java_class->codec_init, codecName,
                                                 context->media_codec_texture_id, media_codec_context->width, media_codec_context->height, NULL, NULL);
             }
             break;
@@ -332,25 +332,25 @@ void mediacodec_start(AVPlayContext *context){
             codecName = (*env)->NewStringUTF(env, "video/mp4v-es");
             csd_0 = (*env)->NewDirectByteBuffer(env, codecpar->extradata,
                                                    (jlong) (codecpar->extradata_size));
-            (*env)->CallVoidMethod(env, java_class->media_codec_object, java_class->codec_init,
+            ret = (*env)->CallIntMethod(env, java_class->media_codec_object, java_class->codec_init,
                     context->media_codec_texture_id, codecName, media_codec_context->width, media_codec_context->height, csd_0, NULL);
             (*env)->DeleteLocalRef(env, csd_0);
             break;
         case AV_CODEC_ID_VP8:
             codecName = (*env)->NewStringUTF(env, "video/x-vnd.on2.vp8");
-            (*env)->CallVoidMethod(env, java_class->media_codec_object, java_class->codec_init,
+            ret = (*env)->CallIntMethod(env, java_class->media_codec_object, java_class->codec_init,
                     context->media_codec_texture_id, codecName, media_codec_context->width, media_codec_context->height, NULL, NULL);
             break;
         case AV_CODEC_ID_VP9:
             codecName = (*env)->NewStringUTF(env, "video/x-vnd.on2.vp9");
-            (*env)->CallVoidMethod(env, java_class->media_codec_object, java_class->codec_init,
+            ret = (*env)->CallIntMethod(env, java_class->media_codec_object, java_class->codec_init,
                     context->media_codec_texture_id, codecName, media_codec_context->width, media_codec_context->height, NULL, NULL);
             break;
         case AV_CODEC_ID_H263:
             codecName = (*env)->NewStringUTF(env, "video/3gpp");
             csd_0 = (*env)->NewDirectByteBuffer(env, codecpar->extradata,
                                                    (jlong) (codecpar->extradata_size));
-            (*env)->CallVoidMethod(env, java_class->media_codec_object, java_class->codec_init,
+            ret = (*env)->CallIntMethod(env, java_class->media_codec_object, java_class->codec_init,
                     context->media_codec_texture_id, codecName, media_codec_context->width, media_codec_context->height, csd_0, NULL);
             (*env)->DeleteLocalRef(env, csd_0);
             break;
@@ -364,6 +364,7 @@ void mediacodec_start(AVPlayContext *context){
         (*context->vm)->DetachCurrentThread(context->vm);
     }
     LOGI("leave %s", __func__);
+    return ret;
 }
 
 void mediacodec_release_buffer(AVPlayContext *context, AVFrame *frame) {

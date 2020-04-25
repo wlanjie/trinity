@@ -327,7 +327,9 @@ void MusicDecoderController::StopWithMessage() {
     if (nullptr != audio_render_) {
         audio_render_->Stop();
     }
-    packet_pool_->ClearDecoderAccompanyPacketToQueue();
+    if (nullptr != packet_pool_) {
+        packet_pool_->ClearDecoderAccompanyPacketToQueue();
+    }
     DestroyResample();
     DestroyDecoder();
     DestroyRender();
@@ -347,18 +349,18 @@ void MusicDecoderController::Destroy() {
 
 void MusicDecoderController::DestroyWithMessage() {
     LOGI("enter MusicDecoderController::Destroy");
-    packet_pool_->AbortDecoderAccompanyPacketQueue();
-    packet_pool_->DestroyDecoderAccompanyPacketQueue();
+    if (nullptr != packet_pool_) {
+        packet_pool_->AbortDecoderAccompanyPacketQueue();
+        packet_pool_->DestroyDecoderAccompanyPacketQueue();
+        delete packet_pool_;
+        packet_pool_ = nullptr;
+    }
     DestroyResample();
     DestroyDecoder();
     DestroyRender();
     if (nullptr != silent_samples_) {
         delete[] silent_samples_;
         silent_samples_ = nullptr;
-    }
-    if (nullptr != packet_pool_) {
-        delete packet_pool_;
-        packet_pool_ = nullptr;
     }
     LOGI("leave MusicDecoderController::Destroy");
 }

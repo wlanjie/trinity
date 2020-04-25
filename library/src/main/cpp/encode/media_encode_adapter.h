@@ -35,11 +35,11 @@ class MediaEncodeAdapter : public VideoEncoderAdapter {
     MediaEncodeAdapter(JavaVM* vm, jobject object);
     virtual ~MediaEncodeAdapter();
 
-    virtual void CreateEncoder(EGLCore* core);
+    virtual int CreateEncoder(EGLCore* core) override ;
 
-    virtual void DestroyEncoder();
+    virtual void DestroyEncoder() override ;
 
-    virtual void Encode(int64_t time, int texture_id = 0);
+    virtual void Encode(int64_t time, int texture_id = 0) override ;
 
     int DrainEncodeData();
 
@@ -57,7 +57,7 @@ class MediaEncodeAdapter : public VideoEncoderAdapter {
     OpenGL* render_;
 
  private:
-    void CreateMediaEncoder(JNIEnv* env);
+    int CreateMediaEncoder(JNIEnv* env);
     void DestroyMediaEncoder(JNIEnv* env);
 };
 

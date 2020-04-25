@@ -41,7 +41,7 @@ class VideoEncoderAdapter {
 
     virtual void Init(int width, int height, int video_bit_rate, int frame_rate);
 
-    virtual void CreateEncoder(EGLCore* core) = 0;
+    virtual int CreateEncoder(EGLCore* core) = 0;
 
     virtual void Encode(int64_t time, int texture_id = 0) = 0;
 
