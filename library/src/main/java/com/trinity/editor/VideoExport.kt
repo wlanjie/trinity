@@ -20,9 +20,12 @@ package com.trinity.editor
 
 import android.content.Context
 import android.view.Surface
+import com.trinity.BuildConfig
 import com.trinity.encoder.MediaCodecSurfaceEncoder
 import com.trinity.listener.OnExportListener
 import com.trinity.util.Trinity
+import java.text.SimpleDateFormat
+import java.util.*
 
 /**
  * Created by wlanjie on 2019-07-30
@@ -36,13 +39,27 @@ class TrinityVideoExport(private val context: Context) : VideoExport {
   private var mSurface: Surface ?= null
   private var mListener: OnExportListener ?= null
 
+  private fun getNow(): String {
+    return if (android.os.Build.VERSION.SDK_INT >= 24) {
+      SimpleDateFormat("yyyy-MM-dd-HH-mm", Locale.US).format(Date())
+    } else {
+      val tms = Calendar.getInstance()
+      tms.get(Calendar.YEAR).toString() + "-" +
+              tms.get(Calendar.MONTH).toString() + "-" +
+              tms.get(Calendar.DAY_OF_MONTH).toString() + "-" +
+              tms.get(Calendar.HOUR_OF_DAY).toString() + "-" +
+              tms.get(Calendar.MINUTE).toString()
+    }
+  }
+
   override fun export(info: VideoExportInfo, l: OnExportListener): Int {
     mListener = l
+    val tag = "trinity-export-" + BuildConfig.VERSION_NAME + "-" + getNow()
     val resourcePath = context.externalCacheDir?.absolutePath + "/resource.json"
     return export(mHandle, resourcePath, info.path,
       info.width, info.height, info.frameRate, info.videoBitRate,
       info.sampleRate, info.channelCount, info.audioBitRate,
-      info.mediaCodecDecode, info.mediaCodecEncode)
+      info.mediaCodecDecode, info.mediaCodecEncode, tag)
   }
 
   override fun cancel() {
@@ -65,7 +82,8 @@ class TrinityVideoExport(private val context: Context) : VideoExport {
   private external fun export(handle: Long, resourcePath: String, path: String,
                               width: Int, height: Int, frameRate: Int,
                               videoBitRate: Int, sampleRate: Int, channelCount: Int,
-                              audioBitRate: Int, mediaCodecDecode: Boolean, mediaCodecEncode: Boolean): Int
+                              audioBitRate: Int, mediaCodecDecode: Boolean, mediaCodecEncode: Boolean,
+                              tag: String): Int
 
   private external fun cancel(handle: Long)
 

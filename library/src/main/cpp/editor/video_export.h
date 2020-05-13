@@ -46,12 +46,6 @@ extern "C" {
 
 namespace trinity {
 
-enum {
-    kStartNextExport
-};
-
-class VideoExportHandler;
-
 class VideoExport {
  public:
     VideoExport(JNIEnv* env, jobject object);
@@ -60,7 +54,8 @@ class VideoExport {
     int Export(const char* export_config, const char* path,
             int width, int height, int frame_rate, int video_bit_rate,
             int sample_rate, int channel_count, int audio_bit_rate,
-            bool media_codec_decode, bool media_codec_encode);
+            bool media_codec_decode, bool media_codec_encode,
+            const char* tag_name);
 
     void Cancel();
  private:

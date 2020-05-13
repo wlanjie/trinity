@@ -87,7 +87,8 @@ class CameraRecord : public Handler, public FaceDetection {
             bool use_hard_encode,
             int audio_sample_rate,
             int audio_channel,
-            int audio_bit_rate);
+            int audio_bit_rate,
+            const char* tag);
 
     void StopEncoding();
 

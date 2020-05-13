@@ -43,7 +43,8 @@ class Mp4Muxer {
     Mp4Muxer();
     virtual ~Mp4Muxer();
     virtual int Init(const char* path, int video_width, int video_height, int frame_rate, int video_bit_rate,
-            int audio_sample_rate, int audio_channels, int audio_bit_rate, std::string& audio_codec_name);
+            int audio_sample_rate, int audio_channels, int audio_bit_rate, std::string& audio_codec_name,
+            std::string& tag_name);
 
     virtual void RegisterAudioPacketCallback(int (*audio_packet)(AudioPacket**, void* context), void* context);
     virtual void RegisterVideoPacketCallback(int (*video_packet)(VideoPacket**, void* context), void* context);

@@ -177,18 +177,21 @@ static void
 Android_JNI_record_start(JNIEnv *env, jobject object, jlong handle, 
                          jstring path, jint width, jint height, jint video_bit_rate,
                          jint frame_rate, jboolean use_hard_encode,
-                         jint audio_sample_rate, jint audio_channel, jint audio_bit_rate) {
+                         jint audio_sample_rate, jint audio_channel, jint audio_bit_rate,
+                         jstring tag) {
     if (handle <= 0) {
         return;
     }
     const char* output = env->GetStringUTFChars(path, JNI_FALSE);
+    const char* tag_name = env->GetStringUTFChars(tag, JNI_FALSE);
     auto *record = reinterpret_cast<CameraRecord *>(handle);
     record->StartEncoding(
             output,
             width, height, video_bit_rate, frame_rate,
             use_hard_encode,
-            audio_sample_rate, audio_channel, audio_bit_rate);
+            audio_sample_rate, audio_channel, audio_bit_rate, tag_name);
     env->ReleaseStringUTFChars(path, output);
+    env->ReleaseStringUTFChars(tag, tag_name);
 }
 
 static void Android_JNI_record_stop(JNIEnv *env, jobject object, jlong handle) {
@@ -684,19 +687,22 @@ static jint Android_JNI_video_export_export(JNIEnv* env, jobject object,
                                             jstring export_path, jint width, jint height,
                                             jint frame_rate, jint video_bit_rate,
                                             jint sample_rate, jint channel_count, jint audio_bit_rate,
-                                            jboolean media_codec_decode, jboolean media_codec_encode) {
+                                            jboolean media_codec_decode, jboolean media_codec_encode,
+                                            jstring tag) {
     if (handle <= 0) {
         return 0;
     }
     auto* video_export = reinterpret_cast<VideoExport*>(handle);
     const char* config = env->GetStringUTFChars(export_config, JNI_FALSE);
     const char* path = env->GetStringUTFChars(export_path, JNI_FALSE);
+    const char* tag_name = env->GetStringUTFChars(tag, JNI_FALSE);
     int result = video_export->Export(config, path,
             width, height, frame_rate, video_bit_rate,
             sample_rate, channel_count, audio_bit_rate,
-            media_codec_decode, media_codec_encode);
+            media_codec_decode, media_codec_encode, tag_name);
     env->ReleaseStringUTFChars(export_path, path);
     env->ReleaseStringUTFChars(export_config, config);
+    env->ReleaseStringUTFChars(tag, tag_name);
     return result;
 }
 
@@ -729,7 +735,7 @@ static JNINativeMethod recordMethods[] = {
         {"updateTextureMatrix",  "(J[F)V",                          (void **) Android_JNI_updateTextureMatrix},
         {"destroyWindowSurface", "(J)V",                            (void **) Android_JNI_destroyWindowSurface},
         {"destroyEGLContext",    "(J)V",                            (void **) Android_JNI_destroyEGLContext},
-        {"startEncode",          "(JLjava/lang/String;IIIIZIII)V",  (void **) Android_JNI_record_start},
+        {"startEncode",          "(JLjava/lang/String;IIIIZIIILjava/lang/String;)V",  (void **) Android_JNI_record_start },
         {"stopEncode",           "(J)V",                            (void **) Android_JNI_record_stop},
         {"addFilter",            "(JLjava/lang/String;)I",          (void **) Android_JNI_record_addFilter},
         {"updateFilter",         "(JLjava/lang/String;III)V",       (void **) Android_JNI_record_updateFilter },
@@ -794,7 +800,7 @@ static JNINativeMethod videoEditorMethods[] = {
 
 static JNINativeMethod videoExportMethods[] = {
         {"create",              "()J",                                                   (void **) Android_JNI_video_export_create },
-        {"export",              "(JLjava/lang/String;Ljava/lang/String;IIIIIIIZZ)I",     (void **) Android_JNI_video_export_export },
+        {"export",              "(JLjava/lang/String;Ljava/lang/String;IIIIIIIZZLjava/lang/String;)I",     (void **) Android_JNI_video_export_export },
         {"cancel",              "(J)V",                                                  (void **) Android_JNI_video_export_cancel },
         {"release",             "(J)V",                                                  (void **) Android_JNI_video_export_release }
 };

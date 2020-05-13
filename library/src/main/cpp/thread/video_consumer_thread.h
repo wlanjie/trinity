@@ -37,7 +37,8 @@ class VideoConsumerThread {
     ~VideoConsumerThread();
 
     int Init(const char* path, int video_width, int video_height, int frame_rate, int video_bit_Rate,
-            int audio_sample_rate, int audio_channels, int audio_bit_rate, std::string& audio_codec_name);
+            int audio_sample_rate, int audio_channels, int audio_bit_rate, std::string& audio_codec_name,
+            std::string& tag_name);
 
     void Start();
     void StartAsync();

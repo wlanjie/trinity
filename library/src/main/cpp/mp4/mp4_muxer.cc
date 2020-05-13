@@ -57,7 +57,8 @@ Mp4Muxer::Mp4Muxer()
 Mp4Muxer::~Mp4Muxer() {}
 
 int Mp4Muxer::Init(const char *path, int video_width, int video_height, int frame_rate, int video_bit_rate,
-                            int audio_sample_rate, int audio_channels, int audio_bit_rate, std::string& audio_codec_name) {
+                            int audio_sample_rate, int audio_channels, int audio_bit_rate, std::string& audio_codec_name,
+                            std::string& tag_name) {
     duration_ = 0;
     format_context_ = nullptr;
     video_stream_ = nullptr;
@@ -77,6 +78,7 @@ int Mp4Muxer::Init(const char *path, int video_width, int video_height, int fram
     if (format_context_ == nullptr) {
         return 0;
     }
+    av_dict_set(&format_context_->metadata, "description", tag_name.c_str(), 0);
     ret = BuildVideoStream();
     if (ret != 0) {
         LOGE("add video stream error: %d", ret);

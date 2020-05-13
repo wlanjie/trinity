@@ -56,11 +56,14 @@ int VideoConsumerThread::GetAudioPacket(AudioPacket** packet) {
 }
 
 int VideoConsumerThread::Init(const char* path, int video_width, int video_height, int frame_rate, int video_bit_Rate,
-         int audio_sample_rate, int audio_channels, int audio_bit_rate, std::string& audio_codec_name) {
+         int audio_sample_rate, int audio_channels, int audio_bit_rate, std::string& audio_codec_name,
+         std::string& tag_name) {
     Init();
     if (nullptr == mp4_muxer_) {
         mp4_muxer_ = new Mp4Muxer();
-        int ret = mp4_muxer_->Init(path, video_width, video_height, frame_rate, video_bit_Rate, audio_sample_rate, audio_channels, audio_bit_rate, audio_codec_name);
+        int ret = mp4_muxer_->Init(path, video_width, video_height, frame_rate, video_bit_Rate,
+                audio_sample_rate, audio_channels, audio_bit_rate, audio_codec_name,
+                tag_name);
         if (ret < 0) {
             Release();
             return ret;

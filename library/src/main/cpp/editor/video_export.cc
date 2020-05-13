@@ -392,7 +392,8 @@ void VideoExport::CreateEncode(bool media_codec_encode) {
 int VideoExport::Export(const char *export_config, const char *path,
         int width, int height, int frame_rate, int video_bit_rate,
         int sample_rate, int channel_count, int audio_bit_rate,
-        bool media_codec_decode, bool media_codec_encode) {
+        bool media_codec_decode, bool media_codec_encode,
+        const char* tag_name) {
     LOGI("enter %s path: %s width: %d height: %d frame_rate: %d video_bit_rate: %d sample_rate: %d channel_count: %d audio_bit_rate: %d media_codec_decode: %d media_codec_encode: %d",
             __func__, path, width, height, frame_rate, video_bit_rate, sample_rate, channel_count, audio_bit_rate, media_codec_decode, media_codec_encode);
     FILE* file = fopen(export_config, "r");
@@ -439,7 +440,8 @@ int VideoExport::Export(const char *export_config, const char *path,
     vocal_sample_rate_ = sample_rate;
     packet_thread_ = new VideoConsumerThread();
     std::string audio_codec_name("libfdk_aac");
-    int ret = packet_thread_->Init(path, width, height, frame_rate, video_bit_rate * 1000, sample_rate, channel_count, audio_bit_rate * 1000, audio_codec_name);
+    std::string tag(tag_name);
+    int ret = packet_thread_->Init(path, width, height, frame_rate, video_bit_rate * 1000, sample_rate, channel_count, audio_bit_rate * 1000, audio_codec_name, tag);
     if (ret < 0) {
         return ret;
     }

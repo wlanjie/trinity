@@ -26,6 +26,7 @@ import android.provider.Settings.SettingNotFoundException
 import android.view.OrientationEventListener
 import android.view.Surface
 import com.tencent.mars.xlog.Log
+import com.trinity.BuildConfig
 import com.trinity.Constants
 import com.trinity.ErrorCode
 import com.trinity.OnRecordingListener
@@ -47,6 +48,8 @@ import com.trinity.record.service.RecorderService
 import com.trinity.record.service.impl.AudioRecordRecorderServiceImpl
 import com.trinity.util.Timer
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
 
 /**
  * Create by wlanjie on 2019/3/14-下午8:45
@@ -535,6 +538,19 @@ class TrinityRecord(
 
   }
 
+  private fun getNow(): String {
+    return if (android.os.Build.VERSION.SDK_INT >= 24){
+      SimpleDateFormat("yyyy-MM-dd-HH-mm", Locale.US).format(Date())
+    } else {
+      val tms = Calendar.getInstance()
+      tms.get(Calendar.YEAR).toString() + "-" +
+              tms.get(Calendar.MONTH).toString() + "-" +
+              tms.get(Calendar.DAY_OF_MONTH).toString() + "-" +
+              tms.get(Calendar.HOUR_OF_DAY).toString() + "-" +
+              tms.get(Calendar.MINUTE).toString()
+    }
+  }
+
   /**
    * 开始录制一段视频
    * @param path 录制的视频保存的地址
@@ -584,11 +600,12 @@ class TrinityRecord(
 
       mAudioRecordService.start()
       setSpeed(mHandle, 1.0f / mSpeed.value)
+      val tag = "trinity-" + BuildConfig.VERSION_NAME + "-" + getNow()
       startEncode(
         mHandle, path, width, height, videoBitRate, frameRate,
         useHardWareEncode,
-        audioSampleRate, audioChannel, audioBitRate
-      )
+        audioSampleRate, audioChannel, audioBitRate,
+        tag)
       mRecording = true
     }
     return ErrorCode.SUCCESS
@@ -897,7 +914,8 @@ class TrinityRecord(
                                    useHardWareEncode: Boolean,
                                    audioSampleRate: Int,
                                    audioChannel: Int,
-                                   audioBitRate: Int)
+                                   audioBitRate: Int,
+                                   tag: String)
 
   /**
    * 停止录制
