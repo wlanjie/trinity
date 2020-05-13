@@ -236,6 +236,7 @@ int Player::Start(MediaClip* clip, int video_count_duration) {
     if (window_created_) {
         auto message = buffer_pool_->GetBuffer<Message>();
         message->what = kPlayerStart;
+        message->arg1 = 0;
         message->obj = current_clip_;
         PostMessage(message);
     }
@@ -1064,6 +1065,7 @@ void Player::OnGLWindowCreate() {
         if (started_) {
             auto message = buffer_pool_->GetBuffer<Message>();
             message->what = kPlayerStart;
+            message->arg1 = 0;
             message->obj = current_clip_;
             PostMessage(message);
         }

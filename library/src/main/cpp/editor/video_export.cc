@@ -909,16 +909,31 @@ void VideoExport::ProcessAudioExport() {
 
         int audio_size = 0;
         // 如果是图片,或者是视频中没音频的,补空音频
-        if (current_media_clip_->type == IMAGE || av_play_context_->audio_index == -1) {
+        if (current_media_clip_->type == IMAGE) {
             if (audio_current_time_ < current_media_clip_->end_time) {
                 audio_size = FillMuteAudio();
             }
         } else if (current_media_clip_->type == VIDEO) {
-            audio_size = Resample();
+            if (av_play_context_->status != PLAYING) {
+                // 视频文件还没打开时,等待
+                pthread_mutex_lock(&audio_mutex_);
+                pthread_cond_wait(&audio_cond_, &audio_mutex_);
+                pthread_mutex_unlock(&audio_mutex_);
+            }
+
+            if (av_play_context_->audio_index == -1) {
+                // 视频文件无音频的情况,补全空音频
+                if (audio_current_time_ < current_media_clip_->end_time) {
+                    audio_size = FillMuteAudio();
+                }
+            } else {
+                audio_size = Resample();
+            }
         }
         if (export_index_ >= clip_deque_.size()) {
             break;
         }
+        // 当前视频或者补全图片的音频到时间了, 等待下一个视频
         if (audio_size <= 0) {
             pthread_mutex_lock(&audio_mutex_);
             pthread_cond_wait(&audio_cond_, &audio_mutex_);
@@ -1031,7 +1046,7 @@ int VideoExport::Resample() {
     }
     unsigned int audio_buf1_size = 0;
     int wanted_nb_sample = frame->nb_samples;
-    int resample_data_size;
+    int resample_data_size = 0;
     if (swr_context_) {
         const uint8_t **in = (const uint8_t **) frame->extended_data;
         uint8_t **out = &audio_buf1;

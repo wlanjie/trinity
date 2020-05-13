@@ -581,6 +581,7 @@ int av_play_play(const char *url, float time, AVPlayContext *context) {
 
     context->duration = context->format_context->duration / 1000;
 
+    LOGE("video duration: %lld", context->duration);
     if (context->av_track_flags & VIDEO_FLAG) {
         int64_t d = av_rescale_q(context->format_context->streams[context->video_index]->duration,
                 context->format_context->streams[context->video_index]->time_base
@@ -694,6 +695,7 @@ void av_play_pause(AVPlayContext* context) {
 }
 
 void av_play_seek(AVPlayContext* context, float seek_to) {
+    LOGE("enter: %s seek_to: %f", __func__, seek_to);
     float total_time = (float) context->format_context->duration / AV_TIME_BASE;
     seek_to = seek_to >= 0 ? seek_to : 0;
     seek_to = seek_to <= total_time ? seek_to : total_time;
