@@ -21,6 +21,10 @@
 
 #include "effect.h"
 #include "png.h"
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "IncompatibleTypes"
+#pragma ide diagnostic ignored "err_ovl_no_viable_member_function_in_call"
+#pragma ide diagnostic ignored "err_typecheck_invalid_operands"
 #ifdef __ANDROID__
 #include "android_xlog.h"
 #else
@@ -51,8 +55,7 @@ int GeneralSubEffect::OnDrawFrame(FaceDetection* face_detection,
         return texture_id;
     }
     glBindFramebuffer(GL_FRAMEBUFFER, process_buffer->GetFrameBufferId());
-    process_buffer->SetOutput(width, height);
-    process_buffer->ActiveProgram();
+    process_buffer->ActiveProgram(width, height);
     process_buffer->Clear();
     process_buffer->ActiveAttribute();
     if (nullptr != param_name) {
@@ -160,6 +163,9 @@ int StickerSubEffect::OnDrawFrame(FaceDetection* face_detection,
  */
 GLuint StickerSubEffect::StickerBufferAtFrameTime(float time) {
     int count = static_cast<int>(sticker_idxs.size());
+    if (count == 0) {
+        return 0;
+    }
     int index;
     if (fps == 0) {
         index = static_cast<int>(pic_index % count);
@@ -252,19 +258,27 @@ glm::mat4 StickerFace::VertexMatrix(FaceDetectionReport *face_detection, int sou
     if (!is_invalid) {
         return model_matrix;
     }
+    // 获取106人脸点
     float* land_marks = face_detection->key_points;
+    // 原视频帧比例
     float aspect = source_width * 1.0F / source_height;
+    // 人脸贴纸比例
     float sticker_aspect = width * 1.0F / height;
     StickerFace::Position* position1 = positions[0];
     StickerFace::Position* position2 = positions[positions.size() - 1];
+    // 贴纸开始点(x, y)
     glm::vec2 anchor_face_point1 = glm::vec2(land_marks[position1->index * 2] / source_width,
         land_marks[position1->index * 2 + 1] / source_height);
+    // 贴纸结束点(x, y)
     glm::vec2 anchor_face_point2 = glm::vec2(land_marks[position2->index * 2] / source_width,
-        land_marks[position2->index * 2 + 1] / source_height);    
+        land_marks[position2->index * 2 + 1] / source_height);
+    // 计算两点的距离
     float distance1 = glm::distance(anchor_face_point1, anchor_face_point2);
     float distance2 = fabs(position1->x - position2->x);
     float ratio = positions.size() == 1 ? sticker_aspect : distance1 / distance2;
+    // 中心点
     glm::vec2 sticker_center = glm::vec2(0.5, 0.5);
+
     sticker_center = glm::vec2(anchor_face_point2.x + (sticker_center.x - position2->x) * ratio,
         anchor_face_point2.y + (sticker_center.y - position2->y) / sticker_aspect * ratio);
     sticker_center = glm::vec2(sticker_center.x * 2 - 1, sticker_center.y * 2 - 1);
@@ -281,8 +295,11 @@ glm::mat4 StickerFace::VertexMatrix(FaceDetectionReport *face_detection, int sou
     float ndc_sticker_height = ndc_sticker_width / sticker_aspect;
     glm::vec2 rotation_center = glm::vec2(land_marks[43 * 2] / source_width * 2 - 1,
         land_marks[43 * 2 + 1] / source_height * 2 - 1);
+    // 点头
     float pitch_angle = face_detection->pitch;
+    // 摇头
     float yaw_angle = face_detection->yaw;
+    // 歪头
     float roll_angle = face_detection->roll;
     if (fabs(yaw_angle) > M_PI / 180.0 * 50.0) {
         yaw_angle = (yaw_angle / fabs(yaw_angle)) * M_PI / 180.0 * 50.0;
@@ -1725,3 +1742,5 @@ void Effect::ParseUniform(SubEffect *sub_effect, char *config_path, cJSON *unifo
 }
 
 }  // namespace trinity
+
+#pragma clang diagnostic pop

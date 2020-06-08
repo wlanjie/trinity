@@ -111,4 +111,5 @@ void audio_filter_change_speed(AVPlayContext *context, float speed) {
     pthread_mutex_unlock(audio_filter_context->mutex);
 //    avfilter_inout_free(&audio_filter_context->inputs);
 //    avfilter_inout_free(&audio_filter_context->outputs);
+    LOGI("leave: %s", __func__);
 }

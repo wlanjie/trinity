@@ -67,7 +67,7 @@ void frame_pool_unref_frame(FramePool *pool, AVFrame *frame){
 }
 
 FrameQueue* frame_queue_create(unsigned int size){
-    FrameQueue * queue = (FrameQueue *)malloc(sizeof(FrameQueue));
+    FrameQueue* queue = (FrameQueue *)malloc(sizeof(FrameQueue));
     queue->mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
     queue->cond = (pthread_cond_t *)malloc(sizeof(pthread_cond_t));
     pthread_mutex_init(queue->mutex, NULL);
@@ -106,7 +106,7 @@ AVFrame* frame_queue_get(FrameQueue *queue){
         pthread_mutex_unlock(queue->mutex);
         return NULL;
     }
-    AVFrame * frame = queue->frames[queue->read_index];
+    AVFrame* frame = queue->frames[queue->read_index];
     queue->read_index = (queue->read_index + 1) % queue->size;
     queue->count--;
     pthread_cond_signal(queue->cond);
@@ -114,10 +114,32 @@ AVFrame* frame_queue_get(FrameQueue *queue){
     return frame;
 }
 
+AVFrame* frame_queue_peek(FrameQueue* queue) {
+    pthread_mutex_lock(queue->mutex);
+    if (queue->count == 0) {
+        pthread_mutex_unlock(queue->mutex);
+        return NULL;
+    }
+    AVFrame* frame = queue->frames[queue->read_index];
+    pthread_mutex_unlock(queue->mutex);
+    return frame;
+}
+
+AVFrame* frame_queue_peek_last(FrameQueue* queue) {
+    pthread_mutex_lock(queue->mutex);
+    if (queue->count == 0) {
+        pthread_mutex_unlock(queue->mutex);
+        return NULL;
+    }
+    AVFrame* frame = queue->frames[queue->read_index];
+    pthread_mutex_unlock(queue->mutex);
+    return frame;
+}
+
 void frame_queue_flush(FrameQueue *queue, FramePool *pool){
     pthread_mutex_lock(queue->mutex);
     while (queue->count > 0) {
-        AVFrame * frame = queue->frames[queue->read_index];
+        AVFrame* frame = queue->frames[queue->read_index];
         if (frame != &queue->flush_frame) {
             frame_pool_unref_frame(pool, frame);
         }
@@ -173,15 +195,17 @@ void packet_pool_release(PacketPool *pool) {
     free(pool->packets);
     free(pool);
 }
-AVPacket * packet_pool_get_packet(PacketPool *pool) {
+
+AVPacket* packet_pool_get_packet(PacketPool *pool) {
     if (pool->count > pool->size / 2) {
         packet_pool_double_size(pool);
     }
     AVPacket* p = pool->packets[pool->index];
     pool->index = (pool->index + 1) % pool->size;
-    pool->count ++;
+    pool->count++;
     return p;
 }
+
 void packet_pool_unref_packet(PacketPool *pool, AVPacket *packet) {
     av_packet_unref(packet);
     pool->count--;
@@ -257,7 +281,7 @@ int packet_queue_put(PacketQueue *queue, AVPacket *packet) {
     return 0;
 }
 
-AVPacket *packet_queue_get(PacketQueue *queue) {
+AVPacket* packet_queue_get(PacketQueue *queue) {
     pthread_mutex_lock(queue->mutex);
     if (queue->count == 0) {
         pthread_mutex_unlock(queue->mutex);
@@ -272,6 +296,28 @@ AVPacket *packet_queue_get(PacketQueue *queue) {
     queue->duration -= packet->duration;
     queue->total_bytes -= packet->size;
     pthread_cond_signal(queue->cond);
+    pthread_mutex_unlock(queue->mutex);
+    return packet;
+}
+
+AVPacket* packet_queue_peek(PacketQueue* queue) {
+    pthread_mutex_lock(queue->mutex);
+    if (queue->count == 0) {
+        pthread_mutex_unlock(queue->mutex);
+        return NULL;
+    }
+    AVPacket* packet = queue->packets[queue->read_index];
+    pthread_mutex_unlock(queue->mutex);
+    return packet;
+}
+
+AVPacket* packet_queue_peek_last(PacketQueue* queue) {
+    pthread_mutex_lock(queue->mutex);
+    if (queue->count == 0) {
+        pthread_mutex_unlock(queue->mutex);
+        return NULL;
+    }
+    AVPacket* packet = queue->packets[queue->write_index - 1];
     pthread_mutex_unlock(queue->mutex);
     return packet;
 }

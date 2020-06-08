@@ -224,7 +224,15 @@ int64_t VideoEditor::GetClipTime(int index, int64_t video_time) {
 }
 
 int VideoEditor::GetClipIndex(int64_t time) {
-    return 0;
+    int index = 0;
+    int end_time = 0;
+    while (index < clip_deque_.size() && end_time < time) {
+        auto clip = clip_deque_.at(index);
+        auto duration = clip->end_time - clip->start_time;
+        end_time += duration;
+        index++;
+    }
+    return end_time > time ? index - 1 : -1;
 }
 
 int VideoEditor::AddFilter(const char *config) {
@@ -340,13 +348,18 @@ void VideoEditor::OnComplete() {
     MediaClip* clip = clip_deque_.at(static_cast<unsigned int>(play_index_));
     if (nullptr != player_) {
         player_->Start(clip, video_count_duration);
+        auto pre_load_index = (play_index_ + 1) % clip_deque_.size();
+        player_->PreLoading(clip_deque_.at(pre_load_index));
     }
     LOGE("leave %s", __func__);
 }
 
 void VideoEditor::Seek(int time) {
     if (nullptr != player_) {
-        player_->Seek(time, INT_MAX);
+        int index = GetClipIndex(time);
+        auto clip = index >= 0 ? clip_deque_.at(index) : nullptr;
+        int seek_time = static_cast<int>(GetVideoTime(index, 0));
+        player_->Seek(time - seek_time, clip, index >= 0 ? index : 0);
     }
 }
 
@@ -357,10 +370,13 @@ int VideoEditor::Play(bool repeat, JNIEnv* env, jobject object) {
     repeat_ = repeat;
     MediaClip* clip = clip_deque_.at(0);
 
+    int ret = 0;
     if (nullptr != player_) {
-        return player_->Start(clip);
+        ret = player_->Start(clip);
+        auto pre_load = (play_index_ + 1) % clip_deque_.size();
+        player_->PreLoading(clip_deque_.at(pre_load));
     }
-    return 0;
+    return ret;
 }
 
 void VideoEditor::Pause() {

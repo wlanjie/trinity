@@ -78,6 +78,11 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
     addTabLayout()
     mSurfaceContainer = findViewById(R.id.surface_container)
     mSurfaceView = findViewById(R.id.surface_view)
+    val widthPixels = resources.displayMetrics.widthPixels
+    val params = mSurfaceView.layoutParams
+    params.width = widthPixels
+    params.height = widthPixels * 16 / 9
+    mSurfaceView.layoutParams = params
     mPasterContainer = findViewById(R.id.paster_view)
     val gesture = GestureDetector(this, mOnGestureListener)
     mPasterContainer.setOnTouchListener { _, event -> gesture.onTouchEvent(event) }

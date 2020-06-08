@@ -5,7 +5,7 @@
 ![icon~](https://github.com/wlanjie/trinity/blob/master/trinity@2x.png)
 
 [![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-trinity-brightgreen.svg?style=flat)](https://android-arsenal.com/details/1/8010)
-[![Download](https://api.bintray.com/packages/wlanjie/maven/trinity/images/download.svg?version=0.2.7)](https://bintray.com/wlanjie/maven/trinity/0.2.7/link)
+[![Download](https://api.bintray.com/packages/wlanjie/maven/trinity/images/download.svg?version=0.2.8)](https://bintray.com/wlanjie/maven/trinity/0.2.8/link)
 ![platform](https://img.shields.io/badge/platform-Android-orange.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
@@ -250,7 +250,7 @@ Just enter the device name in the terminal
 ### Add jcenter dependency
 ``` gradle
 dependencies {
-    implementation 'com.github.wlanjie:trinity:0.2.7'
+    implementation 'com.github.wlanjie:trinity:0.2.8'
 }
 ```
 

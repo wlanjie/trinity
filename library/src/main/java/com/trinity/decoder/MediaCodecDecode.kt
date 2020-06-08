@@ -9,6 +9,7 @@ import android.view.Surface
 import com.tencent.mars.xlog.Log
 import java.io.IOException
 import java.lang.Exception
+import java.lang.IllegalStateException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -91,20 +92,32 @@ class MediaCodecDecode {
     Log.i("trinity", "leave MediaCodec Stop")
   }
 
-  fun flush() {
+  fun seek() {
     while (true) {
       val id = mMediaCodec?.dequeueOutputBuffer(mOutputBufferInfo, 0) ?: -1
       if (id < 0) {
         break
       }
       Log.i("trinity", "flush id: $id infoTime: ${mOutputBufferInfo.presentationTimeUs / 1000}")
-      mMediaCodec?.releaseOutputBuffer(id, true)
+      mMediaCodec?.releaseOutputBuffer(id, false)
     }
-    mMediaCodec?.flush()
+  }
+
+  fun flush() {
+    try {
+      mMediaCodec?.flush()
+    } catch (e: IllegalStateException) {
+      e.printStackTrace()
+    }
   }
 
   fun dequeueInputBuffer(timeout: Long): Int {
-    return mMediaCodec?.dequeueInputBuffer(timeout) ?: -1
+    return try {
+      mMediaCodec?.dequeueInputBuffer(timeout) ?: -1000
+    } catch (e: IllegalStateException) {
+      e.printStackTrace()
+      -1
+    }
   }
 
   fun getInputBuffer(id: Int): ByteBuffer? {
@@ -114,24 +127,35 @@ class MediaCodecDecode {
   }
 
   fun queueInputBuffer(id: Int, size: Int, pts: Long, flags: Int) {
-    mMediaCodec?.queueInputBuffer(id, 0, size, pts, flags)
+    try {
+      mMediaCodec?.queueInputBuffer(id, 0, size, pts, flags)
+    } catch (e: IllegalStateException) {
+      e.printStackTrace()
+    }
   }
 
   fun dequeueOutputBufferIndex(timeout: Long): ByteBuffer? {
-    val id = mMediaCodec?.dequeueOutputBuffer(mOutputBufferInfo, timeout) ?: -1
-    mBuffer.position(0)
-    mBuffer.putInt(id)
-    if (id >= 0) {
-      mBuffer.putInt(mOutputBufferInfo.flags)
-      mBuffer.putLong(mOutputBufferInfo.presentationTimeUs)
+    return try {
+      val id = mMediaCodec?.dequeueOutputBuffer(mOutputBufferInfo, timeout) ?: -1000
+      mBuffer.clear();
+      mBuffer.position(0)
+      mBuffer.putInt(id)
+      if (id >= 0) {
+//        Log.e("trinity", "output id: $id time: ${mOutputBufferInfo.presentationTimeUs / 1000} flags: ${mOutputBufferInfo.flags} buffer: ${mBuffer.remaining()}")
+        mBuffer.putInt(mOutputBufferInfo.flags)
+        mBuffer.putLong(mOutputBufferInfo.presentationTimeUs)
+      }
+      mBuffer
+    } catch (e: IllegalStateException) {
+      e.printStackTrace()
+      null
     }
-    return mBuffer
   }
 
   fun releaseOutputBuffer(id: Int) {
     try {
       mMediaCodec?.releaseOutputBuffer(id, true)
-    } catch (e: Exception) {
+    } catch (e: IllegalStateException) {
       e.printStackTrace()
     }
   }
