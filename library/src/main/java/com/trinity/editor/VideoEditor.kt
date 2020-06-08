@@ -51,6 +51,7 @@ class VideoEditor(
   }
 
   override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+    holder.setFixedSize(width, height)
     onSurfaceChanged(mId, width, height)
   }
 

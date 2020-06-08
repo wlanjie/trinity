@@ -14,6 +14,7 @@
 		702B75C32314005D0089082D /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 702B75C22314005D0089082D /* OpenGL.framework */; };
 		702B75C5231400770089082D /* libglfw.3.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 702B75C4231400770089082D /* libglfw.3.2.dylib */; };
 		7064C9E62318EEF700F5D22B /* gaussian_blur.cc in Sources */ = {isa = PBXBuildFile; fileRef = 7064C9E52318EEF700F5D22B /* gaussian_blur.cc */; };
+		707F78F0246ED70600245905 /* libpng16.16.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 707F78EF246ED70600245905 /* libpng16.16.dylib */; };
 		7091C9D423A3D2B900E3D958 /* image_process.cc in Sources */ = {isa = PBXBuildFile; fileRef = 7091C9D323A3D2B900E3D958 /* image_process.cc */; };
 		70AA611223AB45D200F84CFD /* process_buffer.cc in Sources */ = {isa = PBXBuildFile; fileRef = 70AA611123AB45D200F84CFD /* process_buffer.cc */; };
 		70AA611523ACCE2C00F84CFD /* effect.cc in Sources */ = {isa = PBXBuildFile; fileRef = 70AA611323ACCE2B00F84CFD /* effect.cc */; };
@@ -54,6 +55,7 @@
 		705552712314CCEA007D98BB /* gl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gl.h; sourceTree = "<group>"; };
 		7064C9E42318EEF700F5D22B /* gaussian_blur.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gaussian_blur.h; sourceTree = "<group>"; };
 		7064C9E52318EEF700F5D22B /* gaussian_blur.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = gaussian_blur.cc; sourceTree = "<group>"; };
+		707F78EF246ED70600245905 /* libpng16.16.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpng16.16.dylib; path = ../../../../../../../../usr/local/Cellar/libpng/1.6.37/lib/libpng16.16.dylib; sourceTree = "<group>"; };
 		7091C9D223A3D2B900E3D958 /* image_process.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = image_process.h; sourceTree = "<group>"; };
 		7091C9D323A3D2B900E3D958 /* image_process.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = image_process.cc; sourceTree = "<group>"; };
 		70AA611023AB45D200F84CFD /* process_buffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = process_buffer.h; sourceTree = "<group>"; };
@@ -80,6 +82,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				707F78F0246ED70600245905 /* libpng16.16.dylib in Frameworks */,
 				702B75C5231400770089082D /* libglfw.3.2.dylib in Frameworks */,
 				702B75C32314005D0089082D /* OpenGL.framework in Frameworks */,
 			);
@@ -146,6 +149,7 @@
 		702B75C12314005D0089082D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				707F78EF246ED70600245905 /* libpng16.16.dylib */,
 				702B75C4231400770089082D /* libglfw.3.2.dylib */,
 				702B75C22314005D0089082D /* OpenGL.framework */,
 			);
@@ -360,11 +364,13 @@
 					/usr/local/Cellar/glfw/3.2.1/include/GLFW,
 					"${PROJECT_DIR}/stb",
 					"${PROJECT_DIR}/../../../../extra/glm/glm",
+					/usr/local/Cellar/libpng/1.6.37/include/,
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					/usr/local/Cellar/glfw/3.2.1/lib,
 					/usr/local/Cellar/ffmpeg/4.2.1_1/lib,
+					/usr/local/Cellar/libpng/1.6.37/lib,
 				);
 				OTHER_CFLAGS = "";
 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
@@ -385,11 +391,13 @@
 					/usr/local/Cellar/glfw/3.2.1/include/GLFW,
 					"${PROJECT_DIR}/stb",
 					"${PROJECT_DIR}/../../../../extra/glm/glm",
+					/usr/local/Cellar/libpng/1.6.37/include/,
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					/usr/local/Cellar/glfw/3.2.1/lib,
 					/usr/local/Cellar/ffmpeg/4.2.1_1/lib,
+					/usr/local/Cellar/libpng/1.6.37/lib,
 				);
 				OTHER_CFLAGS = "";
 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";

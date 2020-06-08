@@ -51,10 +51,10 @@ static const char* DEFAULT_VERTEX_MATRIX_SHADER =
 static const char* DEFAULT_OES_FRAGMENT_SHADER =
         "#extension GL_OES_EGL_image_external : require                                         \n"
         "precision mediump float;                                                               \n"
-        "uniform samplerExternalOES yuvTexSampler;                                              \n"
+        "uniform samplerExternalOES inputImageTexture;                                              \n"
         "varying vec2 textureCoordinate;                                                        \n"
         "void main() {                                                                          \n"
-        "  gl_FragColor = texture2D(yuvTexSampler, textureCoordinate);                          \n"
+        "  gl_FragColor = texture2D(inputImageTexture, textureCoordinate);                          \n"
         "}                                                                                      \n";
 
 // 默认顶点shader

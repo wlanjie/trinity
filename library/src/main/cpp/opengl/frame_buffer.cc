@@ -85,8 +85,14 @@ void FrameBuffer::CompileFrameBuffer(int camera_width, int camera_height) {
 
 
 FrameBuffer::~FrameBuffer() {
-    glDeleteTextures(1, &texture_id_);
-    glDeleteFramebuffers(1, &frameBuffer_id_);
+    if (texture_id_ != 0) {
+        glDeleteTextures(1, &texture_id_);
+        texture_id_ = 0;
+    }
+    if (frameBuffer_id_ != 0) {
+        glDeleteFramebuffers(1, &frameBuffer_id_);
+        frameBuffer_id_ = 0;
+    }
     delete[] vertex_coordinate_;
     delete[] texture_coordinate_;
 }

@@ -320,7 +320,10 @@ void VideoExport::OnMusics() {
 void VideoExport::StartDecode(MediaClip *clip) {
     LOGI("enter %s path: %s start_time: %d export_index: %d", __func__, clip->file_name, clip->start_time, export_index_);
     if (clip->type == VIDEO) {
-        av_play_play(clip->file_name, clip->start_time, av_play_context_);
+        int ret = av_play_prepared(clip->file_name, clip->start_time, av_play_context_);
+        if (ret == 0) {
+            av_play_play(av_play_context_);
+        }
     } else if (clip->type == IMAGE) {
         load_image_texture_ = true;
     }

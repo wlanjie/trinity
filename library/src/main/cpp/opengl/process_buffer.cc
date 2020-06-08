@@ -47,32 +47,7 @@ int ProcessBuffer::Init(const char *vertex_shader, const char *fragment_shader) 
     default_texture_coordinates_[6] = 1.0F;
     default_texture_coordinates_[7] = 1.0F;
     CreateProgram(vertex_shader, fragment_shader);
-
-    glGenTextures(1, &texture_id_);
-    glGenFramebuffers(1, &frame_buffer_id_);
-    glBindTexture(GL_TEXTURE_2D, texture_id_);
-    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_id_);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 720, 1280, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_id_, 0);
-
-    int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (status != GL_FRAMEBUFFER_COMPLETE) {
-#if __ANDROID__
-        LOGE("frame buffer error");
-#endif
-    }
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     return 0;
-}
-
-void ProcessBuffer::SetOutput(int width, int height) {
-    this->width_ = width;
-    this->height_ = height;
 }
 
 void ProcessBuffer::SetInt(const char *name, int value) {
@@ -112,14 +87,7 @@ void ProcessBuffer::SetUniformMatrix4f(const char *name, int size, const GLfloat
 }
 
 void ProcessBuffer::Destroy() {
-    if (texture_id_ != 0) {
-        glDeleteTextures(1, &texture_id_);
-        texture_id_ = 0;
-    }
-    if (frame_buffer_id_ != 0) {
-        glDeleteFramebuffers(1, &frame_buffer_id_);
-        frame_buffer_id_ = 0;
-    }
+    DeleteFrameBuffer();
     if (program_ != 0) {
         glDeleteProgram(program_);
         program_ = 0;
@@ -134,9 +102,48 @@ void ProcessBuffer::Destroy() {
     }
 }
 
-void ProcessBuffer::ActiveProgram() {
+void ProcessBuffer::CreateFrameBuffer(int width, int height) {
+    glGenTextures(1, &texture_id_);
+    glGenFramebuffers(1, &frame_buffer_id_);
+    glBindTexture(GL_TEXTURE_2D, texture_id_);
+    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_id_);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_id_, 0);
+
+    int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE) {
+#if __ANDROID__
+        LOGE("frame buffer error");
+#endif
+    }
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void ProcessBuffer::DeleteFrameBuffer() {
+    if (texture_id_ != 0) {
+        glDeleteTextures(1, &texture_id_);
+        texture_id_ = 0;
+    }
+    if (frame_buffer_id_ != 0) {
+        glDeleteFramebuffers(1, &frame_buffer_id_);
+        frame_buffer_id_ = 0;
+    }
+}
+
+void ProcessBuffer::ActiveProgram(int width, int height) {
     if (program_ == 0) {
         return;
+    }
+    if (width_ != width || height != height_) {
+        width_ = width;
+        height_ = height;
+        DeleteFrameBuffer();
+        CreateFrameBuffer(width, height);
     }
     glUseProgram(program_);
 }
