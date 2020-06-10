@@ -169,9 +169,6 @@ typedef struct AVPlayContext {
     bool force_sw_decode;
     float read_timeout;
 
-    // 是否开启了播放线程
-    bool start_play_thread;
-
     // 播放器状态
     PlayStatus status;
 

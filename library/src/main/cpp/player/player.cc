@@ -244,7 +244,7 @@ void Player::OnSeeking(AVPlayContext *context) {
 }
 
 int Player::Start(MediaClip* clip, int video_count_duration) {
-    LOGI("enter %s file_name: %s start_time: %lld end_time: %lld window_created: %d",
+    LOGE("enter %s file_name: %s start_time: %lld end_time: %lld window_created: %d",
             __func__, clip->file_name, clip->start_time, clip->end_time, window_created_);
     player_state_ = kNone;
     current_clip_ = new MediaClip();
@@ -301,8 +301,10 @@ int Player::PreLoading(MediaClip *clip) {
 
 void Player::Seek(int start_time, MediaClip* clip, int index) {
     LOGE("enter: %s seek: %d index: %d", __func__, start_time, index);
+    FlushMessage();
     auto message = buffer_pool_->GetBuffer<Message>();
     message->what = kRenderSeek;
+    message->obj = clip;
     message->arg1 = start_time;
     message->arg2 = index;
     PostMessage(message);
@@ -618,6 +620,7 @@ int Player::GetAudioFrame() {
     if (frame_size > 0 && audio_buffer_ != nullptr) {
         memcpy(audio_buffer_, context->audio_frame->data[0], (size_t) frame_size);
     }
+//    LOGE("audio time_stamp: %lld", time_stamp / 1000);
     frame_pool_unref_frame(context->audio_frame_pool, context->audio_frame);
     clock_set(context->audio_clock, time_stamp);
     return 0;
@@ -649,6 +652,24 @@ void Player::ProcessMessage() {
         }
     }
     LOGI("leave %s", __func__);
+}
+
+void Player::CreateAudioRender() {
+    if (nullptr != audio_render_) {
+        return;
+    }
+    if (av_play_context_->av_track_flags & AUDIO_FLAG) {
+        audio_render_start_ = false;
+        int channels = av_play_context_->audio_codec_context->channels <= 2
+                       ? av_play_context_->audio_codec_context->channels : 2;
+        audio_render_ = new AudioRender();
+        auto result = audio_render_->Init(channels, av_play_context_->sample_rate, AudioCallback, this);
+        if (result != SL_RESULT_SUCCESS) {
+            audio_render_->Stop();
+            delete audio_render_;
+            audio_render_ = nullptr;
+        }
+    }
 }
 
 void Player::OnStop() {
@@ -723,10 +744,28 @@ void Player::HandleMessage(Message *msg) {
         case kRenderSeek: {
             int index = msg->arg2;
             int time = msg->GetArg1();
-            LOGE("enter message seek index: %d time: %d", index, time);
-            if (seek_index_ != index) {
-                OnRenderComplete();
+            LOGE("enter message seek index: %d seek_index: %d time: %d", index, seek_index_, time);
+            if (index != seek_index_) {
+                OnStop();
+                av_play_context_ = av_play_contexts_.at(av_play_index_ % av_play_contexts_.size());
+                MediaClip* clip = reinterpret_cast<MediaClip *>(obj);
+                if (!av_play_context_->format_context) {
+                    int ret = av_play_play(clip->file_name, av_play_context_);
+                    if (ret != 0) {
+                        LOGE("kRenderSeek file_name: %s error: %d", clip->file_name, ret);
+                        OnRenderComplete();
+                    }
+                }
+                // seek的时间段不是当前播放的
+//                if (index > seek_index_) {
+//                    // 下一段
+//                } else {
+//                    // 上一段
+//                }
             }
+//            if (seek_index_ != index) {
+//                OnRenderComplete();
+//            }
             seek_index_ = index;
             av_play_seek(av_play_context_, time);
             break;
@@ -753,9 +792,9 @@ void Player::HandleMessage(Message *msg) {
             if (next_clip->type == VIDEO) {
                 av_play_index_++;
                 auto context = av_play_contexts_.at(av_play_index_ % av_play_contexts_.size());
-                int ret = av_play_prepared(next_clip->file_name, 0, context);
-                if (ret == 0) {
-                    av_play_play(context);
+                int ret = av_play_play(next_clip->file_name, context);
+                if (ret != 0) {
+                    OnRenderComplete();
                 }
             }
             break;
@@ -764,7 +803,10 @@ void Player::HandleMessage(Message *msg) {
         case kPlayerPrepared: {
             MediaClip* clip = reinterpret_cast<MediaClip*>(obj);
             if (nullptr != av_play_context_) {
-                av_play_prepared(clip->file_name, 0, av_play_context_);
+                int ret = av_play_play(clip->file_name, av_play_context_);
+                if (ret != 0) {
+                    av_play_stop(av_play_context_);
+                }
             }
             break;
         }
@@ -773,18 +815,19 @@ void Player::HandleMessage(Message *msg) {
             MediaClip* clip = reinterpret_cast<MediaClip*>(obj);
             LOGI("enter Start play: %d file: %s type: %d", av_play_context_->is_sw_decode, clip->file_name, clip->type);
             if (clip->type == VIDEO) {
-                av_play_play(av_play_context_);
+                LOGE("kPlayerStart format_context: %p file: %s",av_play_context_->format_context, clip->file_name);
+                if (!av_play_context_->format_context) {
+                    int ret = av_play_play(clip->file_name, av_play_context_);
+                    if (ret != 0) {
+                        OnRenderComplete();
+                        return;
+                    }
+                }
                 if (nullptr != audio_render_) {
                     delete audio_render_;
                 }
 
-                if (av_play_context_->av_track_flags & AUDIO_FLAG) {
-                    audio_render_start_ = false;
-                    int channels = av_play_context_->audio_codec_context->channels <= 2
-                                   ? av_play_context_->audio_codec_context->channels : 2;
-                    audio_render_ = new AudioRender();
-                    audio_render_->Init(channels, av_play_context_->sample_rate, AudioCallback, this);
-                }
+                CreateAudioRender();
                 auto message = buffer_pool_->GetBuffer<Message>();
                 message->what = kRenderVideoFrame;
                 PostMessage(message);
@@ -808,12 +851,15 @@ void Player::HandleMessage(Message *msg) {
             if (nullptr == current_clip_) {
                 return;
             }
-            LOGI("enter kPlayerResume clip_type: %d window_create: %d status: %d", current_clip_->type, window_created_, av_play_context_->status);
+            LOGI("enter kPlayerResume clip_type: %d window_create: %d status: %d audio_render: %p", current_clip_->type, window_created_, av_play_context_->status, audio_render_);
             if (current_clip_->type == VIDEO) {
                 if (av_play_context_ != nullptr &&
-                   (av_play_context_->status == PAUSED || av_play_context_->status == SEEK_COMPLETE)) {
+                   (av_play_context_->status == PAUSED ||
+                    av_play_context_->status == SEEK_COMPLETE ||
+                    av_play_context_->status == SEEKING)) {
                     av_play_resume(av_play_context_);
                 }
+                CreateAudioRender();
                 if (audio_render_ != nullptr) {
                     audio_render_->Play();
                 }
@@ -1088,7 +1134,7 @@ int Player::DrawVideoFrame() {
         usleep(10000);
         return 0;
     }
-    if (!audio_render_start_ && av_play_context_->av_track_flags & AUDIO_FLAG) {
+    if (!audio_render_start_ && nullptr != audio_render_ && av_play_context_->av_track_flags & AUDIO_FLAG) {
         audio_render_start_ = true;
         audio_render_->Start();
     }
@@ -1291,6 +1337,7 @@ void Player::OnRenderSeekFrame() {
         RenderFrameBuffer();
     } else if (ret == -2) {
         // 播放完了
+        LOGE("OnRenderSeekFrame send message stop");
         av_play_context_->send_message(av_play_context_, message_stop);
     }
 }

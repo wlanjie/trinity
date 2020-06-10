@@ -217,6 +217,7 @@ class Player : public Handler {
     void ProcessMessage();
     static void* MessageQueueThread(void* args);
     virtual void HandleMessage(Message* msg);
+    void CreateAudioRender();
     void OnStop();
     void OnRenderComplete();
 

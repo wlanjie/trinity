@@ -80,7 +80,6 @@ static void reset(AVPlayContext* context) {
     context->video_codec_ctx = NULL;
     context->video_codec = NULL;
     context->end_of_stream = false;
-    context->start_play_thread = false;
     context->eof = false;
     context->av_track_flags = 0;
     context->just_audio = false;
@@ -240,7 +239,16 @@ void* audio_decode_thread(void * data){
                     if(filter_ret < 0 || filter_ret == AVERROR(EAGAIN) || filter_ret == AVERROR_EOF){
                         break;
                     }
-                    frame_queue_put(context->audio_frame_queue, frame);
+                    int64_t time_stamp = av_rescale_q(frame->pts,
+                                  context->format_context->streams[context->audio_index]->time_base,
+                                  AV_TIME_BASE_Q);
+//                    LOGE("audio packet pts: %lld", time_stamp);
+                    if (time_stamp < context->seek_to) {
+                        // 解码的音频还不到指定seek的位置, 丢掉
+                        frame_pool_unref_frame(context->audio_frame_pool, frame);
+                    } else {
+                        frame_queue_put(context->audio_frame_queue, frame);
+                    }
                     frame = frame_pool_get_frame(context->audio_frame_pool);
                 }
             } else {
@@ -272,6 +280,7 @@ void* audio_decode_thread(void * data){
             }
             // seek
             if (packet == &context->audio_packet_queue->flush_packet) {
+                LOGE("audio decode packet flush");
                 frame_queue_flush(context->audio_frame_queue, context->audio_frame_pool);
                 avcodec_flush_buffers(context->audio_codec_context);
                 continue;
@@ -390,6 +399,7 @@ void* video_decode_sw_thread(void* data){
 }
 
 void clear_frame_queue(AVPlayContext* context) {
+    LOGE("enter: %s", __func__);
     while (1) {
         if (context->video_frame_queue->count == 0) {
             break;
@@ -546,6 +556,7 @@ static int av_format_interrupt_cb(void *data) {
 }
 
 static inline void flush_packet_queue(AVPlayContext *context) {
+    LOGE("enter: %s", __func__);
     if (context->av_track_flags & VIDEO_FLAG) {
         packet_queue_flush(context->video_packet_queue, context->packet_pool);
     }
@@ -561,6 +572,7 @@ void *read_thread(void *data) {
     AVPacket *packet = NULL;
     while (!context->abort_request) {
         if (context->seeking == 1) {
+            LOGE("read seeking");
             clear_frame_queue(context);
             mediacodec_seek(context);
             context->seeking = 2;
@@ -595,6 +607,7 @@ void *read_thread(void *data) {
                 int64_t time_stamp = av_rescale_q(packet->pts,
                              context->format_context->streams[context->audio_index]->time_base,
                              AV_TIME_BASE_Q) / 1000;
+//                LOGE("audio read time_stamp: %lld seek_to: %lld file: %s", time_stamp, context->seek_to, context->format_context->filename);
                 if (time_stamp >= context->seek_to) {
                     packet_queue_put(context->audio_packet_queue, packet);
                 }
@@ -622,7 +635,7 @@ void *read_thread(void *data) {
     return NULL;
 }
 
-int av_play_prepared(const char* url, float time, AVPlayContext* context) {
+int av_play_play(const char* url, AVPlayContext *context) {
     LOGE("enter %s url: %s time: %f", __func__, url, time);
     reset(context);
     int ret = -1;
@@ -658,10 +671,7 @@ int av_play_prepared(const char* url, float time, AVPlayContext* context) {
             goto fail;
         }
     }
-
     context->duration = context->format_context->duration / 1000;
-
-    LOGE("video duration: %lld", context->duration);
     if (context->av_track_flags & VIDEO_FLAG) {
         int64_t d = av_rescale_q(context->format_context->streams[context->video_index]->duration,
                                  context->format_context->streams[context->video_index]->time_base
@@ -724,23 +734,9 @@ int av_play_prepared(const char* url, float time, AVPlayContext* context) {
         }
     }
     set_buffer_time(context);
-    LOGI("leave: %s", __func__);
-    return ret;
-
-    fail:
-    LOGE("%s error: %d", __func__, ret);
-    if (context->format_context) {
-        avformat_close_input(&context->format_context);
+    if (time > 0) {
+        av_play_seek(context, time);
     }
-    return ret;
-}
-
-int av_play_play(AVPlayContext *context) {
-    if (context->start_play_thread) {
-        return 0;
-    }
-    context->start_play_thread = true;
-    LOGE("enter %s context: %p file: %s", __func__, context, "");
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
@@ -757,7 +753,15 @@ int av_play_play(AVPlayContext *context) {
     }
     LOGE("context->change_status(context, PLAYING);");
     change_status(context, PLAYING);
-    return 0;
+    return ret;
+
+    fail:
+    if (context->format_context) {
+        avformat_close_input(&context->format_context);
+    }
+
+    LOGI("leave %s", __func__);
+    return ret;
 }
 
 void av_play_set_buffer_time(AVPlayContext* context, float buffer_time) {
@@ -785,9 +789,6 @@ void av_play_seek(AVPlayContext* context, int64_t seek_to) {
     if (seek_to >= context->duration) {
         return;
     }
-    if (!context->format_context) {
-        return;
-    }
     int64_t previous_seek_time =  context->seek_to;
     int64_t total_time = context->format_context->duration / 1000;
     LOGE("enter: %s seek_to: %lld pre_seek: %lld duration: %lld frame_size; %d max_size; %d pd: %lld pmd: %lld vc: %d", __func__,
@@ -804,6 +805,7 @@ void av_play_seek(AVPlayContext* context, int64_t seek_to) {
     if (context->end_of_stream) {
         mediacodec_flush(context);
     }
+    context->error_code = 0;
     context->eof = false;
     context->end_of_stream = false;
     context->precise_seek = previous_seek_time > seek_to;
@@ -811,23 +813,39 @@ void av_play_seek(AVPlayContext* context, int64_t seek_to) {
         flush_packet_queue(context);
         context->seeking = 1;
     } else {
-        // 刷出所有已经解码的音频
-        frame_queue_flush(context->audio_frame_queue, context->audio_frame_pool);
+        // 刷出小于seek值已经解码的音频
+        while (context->audio_frame_queue->count > 0) {
+            AVFrame* frame = frame_queue_get(context->audio_frame_queue);
+            int64_t time_stamp = av_rescale_q(frame->pts,
+                                              context->format_context->streams[context->audio_index]->time_base,
+                                              AV_TIME_BASE_Q) / 1000;
+            frame_pool_unref_frame(context->audio_frame_pool, frame);
+            if (time_stamp >= seek_to) {
+                break;
+            }
+        }
+//        frame_queue_flush(context->audio_frame_queue, context->audio_frame_pool);
     }
 
     // 刷出已经读取的音频packet
-    while (context->audio_packet_queue->count > 0) {
-        AVPacket* packet = packet_queue_get(context->audio_packet_queue);
-        if (!packet || packet == &context->audio_packet_queue->flush_packet) {
-            break;
-        }
-        int64_t time_stamp = av_rescale_q(packet->pts,
-                                          context->format_context->streams[context->audio_index]->time_base,
-                                          AV_TIME_BASE_Q) / 1000;
-        if (time_stamp >= seek_to) {
-            break;
-        }
-    }
+//    while (context->audio_packet_queue->count > 0) {
+//        AVPacket* packet = packet_queue_get(context->audio_packet_queue);
+//        if (!packet || packet == &context->audio_packet_queue->flush_packet) {
+//            break;
+//        }
+//        int64_t time_stamp = av_rescale_q(packet->pts,
+//                                          context->format_context->streams[context->audio_index]->time_base,
+//                                          AV_TIME_BASE_Q) / 1000;
+//
+//        AVPacket* p1 = packet_queue_peek_last(context->audio_packet_queue);
+//        int64_t time_stamp1 = av_rescale_q(p1->pts,
+//                                          context->format_context->streams[context->audio_index]->time_base,
+//                                          AV_TIME_BASE_Q) / 1000;
+//        LOGE("audio seek time_stamp: %lld audio packet size: %d last: %lld", time_stamp, context->audio_packet_queue->count, time_stamp1);
+//        if (time_stamp >= seek_to) {
+//            break;
+//        }
+//    }
 
     AVFrame* frame = frame_queue_peek(context->video_frame_queue);
     if (frame && frame != &context->video_frame_queue->flush_frame) {
@@ -859,6 +877,7 @@ void av_play_set_play_background(AVPlayContext* context, bool play_background) {
 }
 
 static inline void clean_queues(AVPlayContext* context) {
+    LOGE("enter: %s", __func__);
     AVPacket *packet;
     // clear context->audio_frame audio_frame_queue  audio_packet_queue
     if ((context->av_track_flags & AUDIO_FLAG) > 0) {
@@ -918,7 +937,7 @@ static int stop(AVPlayContext *context) {
     if (context->abort_request) {
         return -1;
     }
-    LOGI("enter %s", __func__);
+    LOGE("enter %s file: %s", __func__, context->format_context->filename);
     context->abort_request = true;
     // remove buffer call back
     context->audio_packet_queue->empty_cb = NULL;

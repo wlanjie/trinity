@@ -39,6 +39,7 @@ class Handler {
 
     void InitMessageQueue(MessageQueue *queue);
     int PostMessage(Message *msg);
+    void FlushMessage();
     int GetQueueSize();
     virtual void HandleMessage(Message *msg){}
 };
