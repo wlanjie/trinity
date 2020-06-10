@@ -36,6 +36,9 @@ enum VideoRenderMessage {
     kPlayAudio
 };
 
+// 图片刷新帧率
+#define IMAGE_RENDER_FRAME 25
+
 Player::Player(JNIEnv* env, jobject object) : Handler()
     , message_queue_thread_()
     , message_queue_()
@@ -60,7 +63,7 @@ Player::Player(JNIEnv* env, jobject object) : Handler()
     , texture_matrix_()
     , image_texture_(0)
     , image_frame_buffer_(nullptr)
-    , image_render_start_time_(0)
+    , image_render_count_(0)
     , image_process_(nullptr)
     , music_player_(nullptr)
     , mutex_()
@@ -302,6 +305,16 @@ int Player::PreLoading(MediaClip *clip) {
 void Player::Seek(int start_time, MediaClip* clip, int index) {
     LOGE("enter: %s seek: %d index: %d", __func__, start_time, index);
     FlushMessage();
+
+    if (nullptr != current_clip_) {
+        delete current_clip_;
+    }
+    current_clip_ = new MediaClip();
+    current_clip_->start_time = clip->start_time;
+    current_clip_->end_time = clip->end_time;
+    current_clip_->type = clip->type;
+    current_clip_->file_name = clip->file_name;
+
     auto message = buffer_pool_->GetBuffer<Message>();
     message->what = kRenderSeek;
     message->obj = clip;
@@ -696,7 +709,7 @@ void Player::OnStop() {
         delete image_frame_buffer_;
         image_frame_buffer_ = nullptr;
     }
-    image_render_start_time_ = 0;
+    image_render_count_ = 0;
     frame_width_ = 0;
     frame_height_ = 0;
     previous_time_ = current_time_;
@@ -744,30 +757,31 @@ void Player::HandleMessage(Message *msg) {
         case kRenderSeek: {
             int index = msg->arg2;
             int time = msg->GetArg1();
+            MediaClip* clip = reinterpret_cast<MediaClip *>(obj);
             LOGE("enter message seek index: %d seek_index: %d time: %d", index, seek_index_, time);
             if (index != seek_index_) {
                 OnStop();
-                av_play_context_ = av_play_contexts_.at(av_play_index_ % av_play_contexts_.size());
-                MediaClip* clip = reinterpret_cast<MediaClip *>(obj);
-                if (!av_play_context_->format_context) {
-                    int ret = av_play_play(clip->file_name, av_play_context_);
-                    if (ret != 0) {
-                        LOGE("kRenderSeek file_name: %s error: %d", clip->file_name, ret);
-                        OnRenderComplete();
+                if (clip->type == VIDEO) {
+                    av_play_context_ = av_play_contexts_.at(
+                            av_play_index_ % av_play_contexts_.size());
+                    if (!av_play_context_->format_context) {
+                        int ret = av_play_play(clip->file_name, av_play_context_);
+                        if (ret != 0) {
+                            LOGE("kRenderSeek file_name: %s error: %d", clip->file_name, ret);
+                            OnRenderComplete();
+                        }
                     }
                 }
-                // seek的时间段不是当前播放的
-//                if (index > seek_index_) {
-//                    // 下一段
-//                } else {
-//                    // 上一段
-//                }
             }
-//            if (seek_index_ != index) {
-//                OnRenderComplete();
-//            }
             seek_index_ = index;
-            av_play_seek(av_play_context_, time);
+            if (clip->type == VIDEO) {
+                av_play_seek(av_play_context_, time);
+            } else {
+                player_state_ = kPause;
+                int image_frame_time = 1000 / IMAGE_RENDER_FRAME;
+                image_render_count_ = time / image_frame_time;
+                OnRenderImageFrame();
+            }
             break;
         }
 
@@ -796,17 +810,21 @@ void Player::HandleMessage(Message *msg) {
                 if (ret != 0) {
                     OnRenderComplete();
                 }
+            } else if (next_clip->type == IMAGE) {
+                // image
             }
             break;
         }
 
         case kPlayerPrepared: {
             MediaClip* clip = reinterpret_cast<MediaClip*>(obj);
-            if (nullptr != av_play_context_) {
+            if (nullptr != av_play_context_ && clip->type == VIDEO) {
                 int ret = av_play_play(clip->file_name, av_play_context_);
                 if (ret != 0) {
                     av_play_stop(av_play_context_);
                 }
+            } else if (clip->type == IMAGE) {
+                // image
             }
             break;
         }
@@ -832,6 +850,7 @@ void Player::HandleMessage(Message *msg) {
                 message->what = kRenderVideoFrame;
                 PostMessage(message);
             } else if (clip->type == IMAGE) {
+                image_render_count_ = 0;
                 auto message = buffer_pool_->GetBuffer<Message>();
                 message->what = kRenderImageFrame;
                 PostMessage(message);
@@ -1346,7 +1365,7 @@ void Player::OnRenderImageFrame() {
     if (nullptr == current_clip_) {
         return;
     }
-    if (player_state_ == kPause || player_state_ == kStop || player_state_ == kNone) {
+    if (player_state_ == kStop || player_state_ == kNone) {
         return;
     }
     if (!core_->MakeCurrent(render_surface_)) {
@@ -1354,12 +1373,14 @@ void Player::OnRenderImageFrame() {
         return;
     }
     if (image_texture_ == 0) {
+        image_render_count_ = 0;
         int width = 0;
         int height = 0;
         int channels = 0;
 //        stbi_set_flip_vertically_on_load(1);
         auto image_data = stbi_load(current_clip_->file_name, &width, &height, &channels, STBI_rgb_alpha);
         if (width == 0 || height == 0 || nullptr == image_data) {
+            LOGE("load image error. width: %d height: %d file: %s", width, height, current_clip_->file_name);
             return;
         }
         LOGI("Decode image width: %d height: %d channels: %d", width, height, channels);
@@ -1399,11 +1420,8 @@ void Player::OnRenderImageFrame() {
         }
     }
 
-    if (image_render_start_time_ == 0) {
-        image_render_start_time_ = getCurrentTime();
-    }
 
-    auto current_time = getCurrentTime() - image_render_start_time_;
+    auto current_time = static_cast<int>(1.0f / IMAGE_RENDER_FRAME * image_render_count_ * 1000);
     if (current_time >= current_clip_->end_time) {
         OnComplete(av_play_context_);
         return;
@@ -1427,7 +1445,13 @@ void Player::OnRenderImageFrame() {
     }
     Draw(draw_texture_id_);
     // 图片按25帧刷新
-    usleep(40 * 1000);
+    usleep(1000 / IMAGE_RENDER_FRAME * 1000);
+    image_render_count_++;
+
+    if (player_state_ == kPause) {
+        // 暂停状态时不循环显示图片
+        return;
+    }
     auto message = buffer_pool_->GetBuffer<Message>();
     message->what = kRenderImageFrame;
     PostMessage(message);

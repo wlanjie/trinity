@@ -358,6 +358,9 @@ void VideoEditor::Seek(int time) {
     if (nullptr != player_) {
         int index = GetClipIndex(time);
         auto clip = index >= 0 ? clip_deque_.at(index) : nullptr;
+        if (nullptr == clip) {
+            return;
+        }
         int seek_time = static_cast<int>(GetVideoTime(index, 0));
         // seek时改变播放的片段索引, 播放结束时, 根据播放的索引播放下一个
         play_index_ = index;
