@@ -21,9 +21,9 @@ void av_play_set_buffer_time(AVPlayContext *context, float buffer_time);
 
 void av_play_set_buffer_size(AVPlayContext *context, int buffer_size);
 
-int av_play_prepared(const char* url, float time, AVPlayContext* context);
+//int av_play_prepared(const char* url, float time, AVPlayContext* context);
 
-int av_play_play(AVPlayContext *context);
+int av_play_play(const char* url, AVPlayContext *context);
 
 int av_play_resume(AVPlayContext *context);
 

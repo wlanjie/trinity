@@ -45,6 +45,13 @@ int Handler::PostMessage(Message *msg) {
     return queue_->EnqueueMessage(msg);
 }
 
+void Handler::FlushMessage() {
+    if (nullptr == queue_) {
+        return;
+    }
+    queue_->Flush();
+}
+
 int Handler::GetQueueSize() {
     if (nullptr == queue_) {
         return 0;

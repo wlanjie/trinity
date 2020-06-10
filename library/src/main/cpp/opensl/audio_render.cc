@@ -342,12 +342,18 @@ SLresult AudioRender::GetAudioPlayerPlayInterface() {
 
 SLresult AudioRender::SetAudioPlayerStatePlaying() {
     LOGI("SetAudioPlayerStatePlaying");
+    if (nullptr == audio_player_play_) {
+        return SL_RESULT_SUCCESS;
+    }
     SLresult result = (*audio_player_play_)->SetPlayState(audio_player_play_, SL_PLAYSTATE_PLAYING);
     return result;
 }
 
 SLresult AudioRender::SetAudioPlayerStatePaused() {
     LOGI("SetAudioPlayerStatePaused");
+    if (nullptr == audio_player_play_) {
+        return SL_RESULT_SUCCESS;
+    }
     SLresult result = (*audio_player_play_)->SetPlayState(audio_player_play_, SL_PLAYSTATE_PAUSED);
     return result;
 }
