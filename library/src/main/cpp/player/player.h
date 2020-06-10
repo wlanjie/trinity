@@ -264,7 +264,7 @@ class Player : public Handler {
     GLfloat* texture_matrix_;
     GLuint image_texture_;
     FrameBuffer* image_frame_buffer_;
-    int64_t image_render_start_time_;
+    int image_render_count_;
     MusicDecoderController* music_player_;
     PlayerEventObserver* player_event_observer_;
     pthread_mutex_t mutex_;
