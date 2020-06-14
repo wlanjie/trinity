@@ -5,13 +5,14 @@
 ![icon~](https://github.com/wlanjie/trinity/blob/master/trinity@2x.png)
 
 [![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-trinity-brightgreen.svg?style=flat)](https://android-arsenal.com/details/1/8010)
-[![Download](https://api.bintray.com/packages/wlanjie/maven/trinity/images/download.svg?version=0.2.8)](https://bintray.com/wlanjie/maven/trinity/0.2.8/link)
+[![Download](https://api.bintray.com/packages/wlanjie/maven/trinity/images/download.svg?version=0.2.9)](https://bintray.com/wlanjie/maven/trinity/0.2.9/link)
 ![platform](https://img.shields.io/badge/platform-Android-orange.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 **trinity is an open source shooting and short video processing tool, written in kotlin and c++, which implements most of the popular features of short video editing software.**
 
-[apk download](https://github.com/wlanjie/trinity/blob/master/trinity.apk)
+## Apk download
+- Please check actions options ci build result
 
 ![](screen_shot.gif)
 
@@ -27,7 +28,7 @@
 
 ## Code Specification
 - Kotlin indent using 2 spaces indent
-- C++ code follows  [google c ++ style guide](https://en-google-styleguide.readthedocs.io/en/latest/google-cpp-styleguide/)
+- C++ code follows  [google c++ style guide](https://en-google-styleguide.readthedocs.io/en/latest/google-cpp-styleguide/)
 
 ## System version
 
@@ -250,7 +251,7 @@ Just enter the device name in the terminal
 ### Add jcenter dependency
 ``` gradle
 dependencies {
-    implementation 'com.github.wlanjie:trinity:0.2.8'
+    implementation 'com.github.wlanjie:trinity:0.2.9'
 }
 ```
 

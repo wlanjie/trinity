@@ -5,13 +5,14 @@
 
 [![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-trinity-brightgreen.svg?style=flat)](https://android-arsenal.com/details/1/8010)
 [![Build Status](https://api.travis-ci.org/wlanjie/trinity.svg?branch=master)](https://travis-ci.org/wlanjie/trinity/)
-[![Download](https://api.bintray.com/packages/wlanjie/maven/trinity/images/download.svg?version=0.2.8)](https://bintray.com/wlanjie/maven/trinity/0.2.8/link)
+[![Download](https://api.bintray.com/packages/wlanjie/maven/trinity/images/download.svg?version=0.2.9)](https://bintray.com/wlanjie/maven/trinity/0.2.9/link)
 ![platform](https://img.shields.io/badge/platform-Android-orange.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 **trinity是一个开源的拍摄和短视频处理工具，用kotlin和c++编写，实现了大部分短视频编辑软件热门功能。**
 
-[apk下载](https://github.com/wlanjie/trinity/blob/master/trinity.apk)
+## Apk 下载
+- 请在Actions中每次commit ci编译的结果中下载
 
 ![演示](screen_shot.gif)
 
@@ -266,7 +267,7 @@ adb devices
 ### 添加jcenter依赖
 ``` gradle
 dependencies {
-    implementation 'com.github.wlanjie:trinity:0.2.8'
+    implementation 'com.github.wlanjie:trinity:0.2.9'
 }
 ```
 
