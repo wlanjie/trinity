@@ -347,7 +347,7 @@ int main() {
 
     clock_t start = clock();
     ImageProcess image_process;
-    char* name = "app/src/main/assets/effect/stickerMarkup";
+    char* name = "app/src/main/assets/effect/spaceBear";
     auto* detection = new MakeFaceDetection();
     image_process.OnAction(name, 0, detection);
     FacePoint face_point;
@@ -360,8 +360,13 @@ int main() {
         if (current_time == 200) {
 //            image_process.OnUpdateAction(0, 300, 0);
         }
+//        image_process.OnUpdateEffectParam(0, "spaceBear", "scale", 3.0f);
         int process_id = image_process.Process(texture_id, current_time, width, height, 0, 0);
 //        int process_id = face_point.OnDrawFrame(texture_id, prop_texture_id);
+        image_process.OnUpdateEffectParam(0, "spaceBear", "stickerWidth", 0.23f);
+        image_process.OnUpdateEffectParam(0, "spaceBear", "stickerX", 0.23f);
+        image_process.OnUpdateEffectParam(0, "spaceBear", "stickerY", 0.23f);
+        image_process.OnUpdateEffectParam(0, "spaceBear", "stickerRotate", (float)glfwGetTime() * 10);
         
         render_screen.ActiveProgram();
         render_screen.ProcessImage(process_id);

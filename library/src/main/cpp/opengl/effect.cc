@@ -120,6 +120,115 @@ glm::vec2 Transform::ScaleSize(float aspect, FaceDetectionReport* face_detection
     return glm::vec2(1.F, 1.F / aspect);
 }
 
+// InfoStickerSubEffect
+InfoStickerSubEffect::InfoStickerSubEffect()
+    : format(nullptr)
+    , image(nullptr)
+    , width(0)
+    , height(0)
+    , render_index(0)
+    , frame_rate_index(0)
+    , image_buffer(nullptr)
+    , blend(nullptr) {
+    blend = BlendFactory::CreateBlend(NORMAL_BLEND);
+}
+
+InfoStickerSubEffect::~InfoStickerSubEffect() {
+    if (nullptr != format) {
+        delete[] format;
+        format = nullptr;
+    }
+    if (nullptr != image) {
+        delete[] image;
+        image = nullptr;
+    }
+    if (nullptr != image_buffer) {
+        delete image_buffer;
+        image_buffer = nullptr;
+    }
+    
+    if (nullptr != blend) {
+        delete blend;
+        blend = nullptr;
+    }
+    
+    for (auto& info_sticker_frame : info_sticker_frames) {
+        delete info_sticker_frame;
+    }
+    info_sticker_frames.clear();
+}
+
+int InfoStickerSubEffect::OnDrawFrame(FaceDetection *face_detection, std::list<SubEffect *> sub_effects, int origin_texture_id, int texture_id, int width, int height, uint64_t current_time) {
+    int sticker_texture_id = texture_id;
+    if (nullptr == blend || nullptr == image_buffer) {
+        return sticker_texture_id;
+    }
+    if (info_sticker_frames.empty()) {
+        return blend->OnDrawFrame(sticker_texture_id, image_buffer->GetTextureId(), width, height, nullptr, 1.);
+    } else {
+        auto frame_rate = info_sticker_frames.size();
+        auto frame = info_sticker_frames.at(render_index % info_sticker_frames.size());
+        if (frame_rate_index % frame_rate == 0) {
+            render_index++;
+        }
+        frame_rate_index++;
+        float image_width = this->width;
+        float image_height = this->height;
+        GLfloat texture_coordinate[] = {
+            (float) frame->frame_x / image_width, (float) frame->frame_y / image_height,
+            (float) (frame->frame_x + frame->frame_width) / image_width, (float) frame->frame_y / image_height,
+            (float) frame->frame_x / image_width, (float) (frame->frame_y + frame->frame_height) / image_height,
+            (float) (frame->frame_x + frame->frame_width) / image_width, (float) (frame->frame_y + frame->frame_height) / image_height
+        };
+        GLfloat vertex_coordinate[] = {
+            -1.f, -1.f,
+            1.f, -1.f,
+            -1.f, 1.f,
+            1.f, 1.f
+        };
+        glm::mat4 matrix = glm::mat4(1);
+        if (!update_params.empty()) {
+            auto x = update_params["stickerX"] * width;
+            auto y = update_params["stickerY"] * -height;
+            auto sticker_width = update_params["stickerWidth"];
+            if (sticker_width < 0.000002) {
+                sticker_width = frame->frame_width / width;
+            }
+            sticker_width *= width;
+            float sticker_height = sticker_width * frame->frame_height / frame->frame_width;
+            float center_x = x + sticker_width / 2.f;
+            float center_y = y + sticker_height / 2.f;
+            
+            auto rotate = update_params["stickerRotate"];
+            glm::mat4 projection = glm::ortho(-1.f, width * 1.f, -1.f, height * 1.f, 1.f, 100.f);
+            // eyex, eyey,eyez 相机在世界坐标的位置
+            glm::vec3 position = glm::vec3(0, 0, 10.f);
+            // centerx,centery,centerz 相机镜头对准的物体在世界坐标的位置
+            glm::vec3 direction = glm::vec3(0, 0, -1);
+            // upx,upy,upz 相机向上的方向在世界坐标中的方向
+            glm::vec3 up = glm::vec3(0, 1, 0);
+            glm::mat4 view_matrix = glm::lookAt(position, direction, up);
+            vertex_coordinate[0] = x;
+            vertex_coordinate[1] = y;
+            vertex_coordinate[2] = x + sticker_width;
+            vertex_coordinate[3] = y;
+            vertex_coordinate[4] = x;
+            vertex_coordinate[5] = y + sticker_height;
+            vertex_coordinate[6] = x + sticker_width;
+            vertex_coordinate[7] = y + sticker_height;
+            matrix = glm::translate(matrix, glm::vec3(0, height - sticker_height, 0));
+            // 这里传到opengl执行的时候是先旋转在位移
+            if (rotate > 0) {
+                matrix = glm::translate(matrix, glm::vec3(center_x, center_y, 0));
+                matrix = glm::rotate(matrix, glm::radians(360 - rotate), glm::vec3(0.f, 0.f, 1.f));
+                matrix = glm::translate(matrix, glm::vec3(-center_x, -center_y, 0));
+            }
+            matrix = projection * view_matrix * matrix;
+        }
+        return blend->OnDrawFrame(sticker_texture_id, image_buffer->GetTextureId(), width, height, glm::value_ptr(matrix), vertex_coordinate, texture_coordinate, 1.);
+    }
+}
+
 // StickerSubEffect
 StickerSubEffect::StickerSubEffect()
     : blendmode(-1)
@@ -315,33 +424,36 @@ glm::mat4 StickerFace::VertexMatrix(FaceDetectionReport *face_detection, int sou
         glm::vec3(0, 0, -1), glm::vec3(0, 1, 0));
     model_matrix = glm::translate(model_matrix, glm::vec3(rotation_center.x, rotation_center.y, 0));
     // rotate z
-    float z_cos = cosf(roll_angle);
-    float z_sin = sinf(roll_angle);
-    glm::mat4 rotation_z = { z_cos, z_sin, 0.0F, 0.0F,
-                     -z_sin, z_cos, 0.0F, 0.0F,
-                     0.0F, 0.0F, 1.0F, 0.0F,
-                     0.0F, 0.0F, 0.0F, 1.0F};
-    model_matrix = model_matrix * rotation_z;
+    model_matrix = glm::rotate(model_matrix, glm::radians(roll_angle), glm::vec3(0.f, 0.f, 1.f));
+//    float z_cos = cosf(roll_angle);
+//    float z_sin = sinf(roll_angle);
+//    glm::mat4 rotation_z = { z_cos, z_sin, 0.0F, 0.0F,
+//                     -z_sin, z_cos, 0.0F, 0.0F,
+//                     0.0F, 0.0F, 1.0F, 0.0F,
+//                     0.0F, 0.0F, 0.0F, 1.0F};
+//    model_matrix = model_matrix * rotation_z;
     // rotate y
-    float y_cos = cosf(yaw_angle);
-    float y_sin = sinf(yaw_angle);
-    glm::mat4 rotation_y = {
-        y_cos, 0.0F, -y_sin, 0.0F,
-        0.0F, 1.0F, 0.0F, 0.0F,
-        y_sin, 0.0F, y_cos, 0.0F,
-        0.0F, 0.0F, 0.0F, 1.0F
-    };
-    model_matrix = model_matrix * rotation_y;
+//    float y_cos = cosf(yaw_angle);
+//    float y_sin = sinf(yaw_angle);
+//    glm::mat4 rotation_y = {
+//        y_cos, 0.0F, -y_sin, 0.0F,
+//        0.0F, 1.0F, 0.0F, 0.0F,
+//        y_sin, 0.0F, y_cos, 0.0F,
+//        0.0F, 0.0F, 0.0F, 1.0F
+//    };
+//    model_matrix = model_matrix * rotation_y;
+    model_matrix = glm::rotate(model_matrix, glm::radians(yaw_angle), glm::vec3(0.f, 1.f, 0.f));
     // rotate x
-    float x_cos = cosf(pitch_angle);
-    float x_sin = sinf(pitch_angle);
-    glm::mat4 rotation_x = {
-        1.0F, 0.0F, 0.0F, 0.0F,
-        0.0F, x_cos, x_sin, 0.0F,
-        0.0F, -x_sin, x_cos, 0.0F,
-        0.0F, 0.0F, 0.0F, 1.0F
-    };
-    model_matrix = model_matrix * rotation_x;
+//    float x_cos = cosf(pitch_angle);
+//    float x_sin = sinf(pitch_angle);
+//    glm::mat4 rotation_x = {
+//        1.0F, 0.0F, 0.0F, 0.0F,
+//        0.0F, x_cos, x_sin, 0.0F,
+//        0.0F, -x_sin, x_cos, 0.0F,
+//        0.0F, 0.0F, 0.0F, 1.0F
+//    };
+//    model_matrix = model_matrix * rotation_x;
+    model_matrix = glm::rotate(model_matrix, glm::radians(pitch_angle), glm::vec3(1.f, 0.f, 0.f));
     model_matrix = glm::translate(model_matrix, glm::vec3(-rotation_center.x, -rotation_center.y, 0));
     // 移动贴图到目标位置
     model_matrix = glm::translate(model_matrix, glm::vec3(sticker_center.x, -sticker_center.y, 0));
@@ -447,13 +559,14 @@ glm::mat4 StickerV3SubEffect::VertexMatrix(FaceDetectionReport* face_detection, 
     }
     glm::mat4 projection = glm::ortho(-1.0F, 1.0F, -1.0F / input_aspect, 1.0F / input_aspect, 0.F, 100.F);
     model_matrix = glm::translate(model_matrix, glm::vec3(center.x, center.y, 0));
-    float cos = cosf(roll_angle);
-    float sin = sinf(roll_angle);
-    glm::mat4 rotation_z = { cos, sin, 0.0F, 0.0F,
-                    -sin, cos, 0.0F, 0.0F,
-                    0.0F, 0.0F, 1.0F, 0.0F,
-                    0.0F, 0.0F, 0.0F, 1.0F};
-    model_matrix = model_matrix * rotation_z;
+//    float cos = cosf(roll_angle);
+//    float sin = sinf(roll_angle);
+//    glm::mat4 rotation_z = { cos, sin, 0.0F, 0.0F,
+//                    -sin, cos, 0.0F, 0.0F,
+//                    0.0F, 0.0F, 1.0F, 0.0F,
+//                    0.0F, 0.0F, 0.0F, 1.0F};
+    model_matrix = glm::rotate(model_matrix, roll_angle, glm::vec3(0.f, 0.f, 1.f));
+//    model_matrix = model_matrix * rotation_z;
     model_matrix = glm::scale(model_matrix, glm::vec3(scale.x, scale.y, 1.0F));
     glm::mat4 mvp = projection * model_matrix;
     return mvp;
@@ -724,20 +837,37 @@ void Effect::UpdateTime(int start_time, int end_time) {
 void Effect::UpdateParam(const char *effect_name, const char *param_name, float value) {
     for (auto iterator = sub_effects_.begin(); iterator != sub_effects_.end(); iterator++) {
         SubEffect* sub_effect = *iterator;
-        if (strcmp(effect_name, sub_effect->name) == 0) {
-            if (nullptr != sub_effect->param_name) {
-                delete[] sub_effect->param_name;
-            }
-            size_t len = strlen(param_name) + 1;
-            sub_effect->param_name = new char[len];
-            memcpy(sub_effect->param_name, param_name, len);
-            sub_effect->param_value = value;
-//            ProcessBuffer* process_buffer = sub_effect->GetProcessBuffer();
-//            if (nullptr != process_buffer) {
-//                process_buffer->SetFloat(param_name, value);
+        if (nullptr == sub_effect->name) {
+            continue;
+        }
+        if (strcasecmp(effect_name, sub_effect->name) == 0) {
+            std::string key(param_name);
+            sub_effect->update_params[key] = value;
+            
+            
+//            if (nullptr != sub_effect->param_name) {
+//                delete[] sub_effect->param_name;
 //            }
+//            size_t len = strlen(param_name) + 1;
+//            sub_effect->param_name = new char[len];
+//            memcpy(sub_effect->param_name, param_name, len);
+//            sub_effect->param_value = value;
         }
     }
+}
+
+void Effect::UpdateParam(const char *effect_name, const char *param_name, float *value, int length) {
+    for (auto iterator = sub_effects_.begin(); iterator != sub_effects_.end(); iterator++) {
+        SubEffect* sub_effect = *iterator;
+        if (nullptr == sub_effect->name) {
+            continue;
+        }
+        if (strcasecmp(effect_name, sub_effect->name) == 0) {
+            std::string key(param_name);
+            sub_effect->update_point_params[key] = value;
+            sub_effect->update_params["length"] = length;
+        }
+    }    
 }
 
 bool SortSubEffect(SubEffect* s1, SubEffect* s2) {
@@ -837,6 +967,14 @@ void Effect::ParseConfig(char *config_path) {
                 ConvertFilter(effect_item_json, config_path, filter_effect);
                 sub_effects_.push_back(filter_effect);
                 #endif
+            } else if (strcasecmp(type, "infoSticker") == 0) {
+                auto info_sticker_sub_effect = new InfoStickerSubEffect();
+                int ret = ConvertInfoStickerConfig(effect_item_json, config_path, info_sticker_sub_effect);
+                if (ret == 0) {
+                    sub_effects_.push_back(info_sticker_sub_effect);
+                } else {
+                    delete info_sticker_sub_effect;
+                }
             }
         }
     }
@@ -938,6 +1076,107 @@ void Effect::ConvertGeneralConfig(cJSON *effect_item_json, char* resource_root_p
     if (nullptr != vertex_uniforms_json) {
         ParseUniform(general_sub_effect, resource_root_path, vertex_uniforms_json, Vertex);
     }
+}
+
+// 普通贴纸信息解析
+int Effect::ConvertInfoStickerConfig(cJSON *effect_item_json, char *resource_root_path, InfoStickerSubEffect *info_sticker_sub_effect) {
+    cJSON* config_json = cJSON_GetObjectItem(effect_item_json, "config");
+    if (nullptr == config_json) {
+        LOGE("convert info sticker config error: %s", "no has config info");
+        return -1;
+    }
+    cJSON* name_json = cJSON_GetObjectItem(effect_item_json, "name");
+    if (nullptr != name_json) {
+        char* value = name_json->valuestring;
+        info_sticker_sub_effect->name = CopyValue(value);
+    }
+    std::string config_path;
+    config_path.append(resource_root_path)
+               .append("/")
+               .append(config_json->valuestring);
+    char* config_buffer = nullptr;
+    int ret = ReadFile(config_path, &config_buffer);
+    if (ret != 0 || config_buffer == nullptr) {
+        LOGE("read info sticker config error: %d", ret);
+        return -2;
+    }
+    cJSON* config_root_json = cJSON_Parse(config_buffer);
+    delete config_buffer;
+    cJSON* meta_json = cJSON_GetObjectItem(config_root_json, "meta");
+    if (nullptr == meta_json) {
+        LOGE("convert info sticker meta error: %s", "not exsit");
+        return -3;
+    }
+    cJSON* size_json = cJSON_GetObjectItem(meta_json, "size");
+    if (nullptr == size_json) {
+        return -4;
+    }
+    auto w_json = cJSON_GetObjectItem(size_json, "w");
+    if (nullptr == w_json) {
+        return -5;
+    }
+    info_sticker_sub_effect->width = w_json->valuedouble;
+    auto h_json = cJSON_GetObjectItem(size_json, "h");
+    if (nullptr == h_json) {
+        return -6;
+    }
+    info_sticker_sub_effect->height = h_json->valuedouble;
+    auto image_json = cJSON_GetObjectItem(meta_json, "image");
+    if (nullptr == image_json) {
+        return -7;
+    }
+    std::string image_path_string;
+    image_path_string.append(resource_root_path)
+                     .append("/")
+                     .append(image_json->valuestring);
+    
+    int sample_texture_width = 0;
+    int sample_texture_height = 0;
+    int channels = 0;
+    unsigned char* sample_texture_buffer = stbi_load(image_path_string.c_str(), &sample_texture_width,
+                                                      &sample_texture_height, &channels, STBI_rgb_alpha);
+    if (nullptr != sample_texture_buffer && sample_texture_width > 0 && sample_texture_height > 0) {
+         info_sticker_sub_effect->image_buffer = new ImageBuffer(sample_texture_width, sample_texture_height,
+                                              sample_texture_buffer);
+                                                    
+         stbi_image_free(sample_texture_buffer);
+    } else {
+        return -8;
+    }
+    auto frames_json = cJSON_GetObjectItem(config_root_json, "frames");
+    if (nullptr != frames_json) {
+        auto frame_length = cJSON_GetArraySize(frames_json);
+        for (int i = 0; i < frame_length; i++) {
+            auto info_sticker_frame = new InfoStickerFrame();
+            auto frame_item = cJSON_GetArrayItem(frames_json, i);
+            auto frame = cJSON_GetObjectItem(frame_item, "frame");
+            if (nullptr == frame) {
+                return -9;
+            }
+            auto frame_width_json = cJSON_GetObjectItem(frame, "w");
+            if (nullptr == frame_width_json) {
+                return -10;
+            }
+            info_sticker_frame->frame_width = frame_width_json->valuedouble;
+            auto frame_height_json = cJSON_GetObjectItem(frame, "h");
+            if (nullptr == frame_height_json) {
+                return -11;
+            }
+            info_sticker_frame->frame_height = frame_height_json->valuedouble;
+            auto frame_x_json = cJSON_GetObjectItem(frame, "x");
+            if (nullptr == frame_x_json) {
+                return -12;
+            }
+            info_sticker_frame->frame_x = frame_x_json->valuedouble;
+            auto frame_y_json = cJSON_GetObjectItem(frame, "y");
+            if (nullptr == frame_y_json) {
+                return -13;
+            }
+            info_sticker_frame->frame_y = frame_y_json->valuedouble;
+            info_sticker_sub_effect->info_sticker_frames.push_back(info_sticker_frame);
+        }
+    }
+    return 0;
 }
 
 void Effect::ParseFaceMakeupV2(cJSON *makeup_root_json, const std::string &resource_root_path, FaceMakeupV2* face_makeup) {

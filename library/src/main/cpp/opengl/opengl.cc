@@ -229,7 +229,7 @@ void OpenGL::ProcessImage(GLuint texture_id, const GLfloat *vertex_coordinate, c
                           GLfloat *texture_matrix) {
     if (program_ == 0) {
         // create program failed.
-        LOGE("program == 0");
+        LOGE("program error: %d", program_);
         return;
     }
     glUseProgram(program_);

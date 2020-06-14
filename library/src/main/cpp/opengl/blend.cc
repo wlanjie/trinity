@@ -133,88 +133,96 @@ void Blend::DeleteFrameBuffer() {
 }
 
 int Blend::OnDrawFrame(int texture_id, int sticker_texture_id, int width, int height, GLfloat* matrix, float alpha_factor) {
-    if (source_width_ != width && source_height_ != height) {
-        source_width_ = width;
-        source_height_ = height;
-        DeleteFrameBuffer();
-        CreateFrameBuffer(width, height);
-    }
-    int frame_buffer_texture_id =  frame_buffer_->OnDrawFrame(texture_id);
-    
-    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_id_);
-    glViewport(0, 0, width, height);
-    glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
-    glClear(GL_COLOR_BUFFER_BIT);
-    
-    glUseProgram(second_program_);
-//    glBlendFunc(GL_ONE_MINUS_DST_ALPHA, GL_ONE);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, frame_buffer_texture_id);
-    auto blend_input_image_texture_location = glGetUniformLocation(second_program_, "inputImageTexture");
-    glUniform1i(blend_input_image_texture_location, 2);
-    auto position2_location = glGetAttribLocation(second_program_, "position");
-    glEnableVertexAttribArray(position2_location);
-    glVertexAttribPointer(position2_location, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), default_vertex_coordinates_);
-    auto input_texture_coordinate2_locaiton = glGetAttribLocation(second_program_, "inputTextureCoordinate");
-    glEnableVertexAttribArray(input_texture_coordinate2_locaiton);
-    glVertexAttribPointer(input_texture_coordinate2_locaiton, 2, GL_FLOAT, GL_FALSE,
-            2 * sizeof(GLfloat), default_texture_coordinates_);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    glDisableVertexAttribArray(position2_location);
-    glDisableVertexAttribArray(input_texture_coordinate2_locaiton);
-    
-    glUseProgram(program_);
-    glEnable(GL_BLEND);
-//    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, frame_buffer_texture_id);
-    auto input_image_texture_location = glGetUniformLocation(program_, "inputImageTexture");
-    glUniform1i(input_image_texture_location, 2);
-    glActiveTexture(GL_TEXTURE3);
-    // bind 贴纸纹理
-    glBindTexture(GL_TEXTURE_2D, sticker_texture_id);
-    auto input_image_texture2_location = glGetUniformLocation(program_, "inputImageTexture2");
-    glUniform1i(input_image_texture2_location, 3);
-    auto alpha_factor_location = glGetUniformLocation(program_, "alphaFactor");
-    glUniform1f(alpha_factor_location, alpha_factor);
-    auto matrix_location = glGetUniformLocation(program_, "matrix");
-    
-    // 设置矩阵
-    if (nullptr == matrix) {
-        GLfloat m[16] = {
-            1, 0, 0, 0,
-            0, 1, 0, 0,
-            0, 0, 1, 0,
-            0, 0, 0, 1
-        };
-        glUniformMatrix4fv(matrix_location, 1, GL_FALSE, m);
-    } else {
-        glUniformMatrix4fv(matrix_location, 1, GL_FALSE, matrix);
-    }
+    return OnDrawFrame(texture_id, sticker_texture_id, width, height, matrix, default_vertex_coordinates_, default_texture_coordinates_, alpha_factor);
+}
 
-    auto position_location = glGetAttribLocation(program_, "position");
-    glEnableVertexAttribArray(position_location);
-    glVertexAttribPointer(position_location, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), default_vertex_coordinates_);
-    auto input_texture_coordinate_location = glGetAttribLocation(program_, "inputTextureCoordinate");
-    glEnableVertexAttribArray(input_texture_coordinate_location);
-    glVertexAttribPointer(input_texture_coordinate_location, 2, GL_FLOAT, GL_FALSE,
-            2 * sizeof(GLfloat), default_texture_coordinates_);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    
-//    char* buffer = reinterpret_cast<char*>(malloc(width * height * 4));
-//    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-//    stbi_write_png("/Users/wlanjie/Desktop/offscreen.png",
-//                   width, height, 4,
-//                   buffer + (width * 4 * (height - 1)),
-//                   -width * 4);
-//    free(buffer);
-    
-    glDisableVertexAttribArray(position_location);
-    glDisableVertexAttribArray(input_texture_coordinate_location);
-    glDisable(GL_BLEND);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    return frame_buffer_texture_id_;
+int Blend::OnDrawFrame(int texture_id, int sticker_texture_id, int width, int height, GLfloat *matrix, GLfloat *texture_coordinate, float alpha_factor) {
+    return OnDrawFrame(texture_id, sticker_texture_id, width, height, matrix, default_vertex_coordinates_, texture_coordinate, alpha_factor);
+}
+
+int Blend::OnDrawFrame(int texture_id, int sticker_texture_id, int width, int height, GLfloat *matrix, GLfloat *vertex_coordinate, GLfloat *texture_coordinate, float alpha_factor) {
+    if (source_width_ != width && source_height_ != height) {
+            source_width_ = width;
+            source_height_ = height;
+            DeleteFrameBuffer();
+            CreateFrameBuffer(width, height);
+        }
+        int frame_buffer_texture_id =  frame_buffer_->OnDrawFrame(texture_id);
+        
+        glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_id_);
+        glViewport(0, 0, width, height);
+        glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
+        glClear(GL_COLOR_BUFFER_BIT);
+        
+        glUseProgram(second_program_);
+    //    glBlendFunc(GL_ONE_MINUS_DST_ALPHA, GL_ONE);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, frame_buffer_texture_id);
+        auto blend_input_image_texture_location = glGetUniformLocation(second_program_, "inputImageTexture");
+        glUniform1i(blend_input_image_texture_location, 2);
+        auto position2_location = glGetAttribLocation(second_program_, "position");
+        glEnableVertexAttribArray(position2_location);
+        glVertexAttribPointer(position2_location, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), default_vertex_coordinates_);
+        auto input_texture_coordinate2_locaiton = glGetAttribLocation(second_program_, "inputTextureCoordinate");
+        glEnableVertexAttribArray(input_texture_coordinate2_locaiton);
+        glVertexAttribPointer(input_texture_coordinate2_locaiton, 2, GL_FLOAT, GL_FALSE,
+                2 * sizeof(GLfloat), default_texture_coordinates_);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        glDisableVertexAttribArray(position2_location);
+        glDisableVertexAttribArray(input_texture_coordinate2_locaiton);
+        
+        glUseProgram(program_);
+        glEnable(GL_BLEND);
+    //    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, frame_buffer_texture_id);
+        auto input_image_texture_location = glGetUniformLocation(program_, "inputImageTexture");
+        glUniform1i(input_image_texture_location, 2);
+        glActiveTexture(GL_TEXTURE3);
+        // bind 贴纸纹理
+        glBindTexture(GL_TEXTURE_2D, sticker_texture_id);
+        auto input_image_texture2_location = glGetUniformLocation(program_, "inputImageTexture2");
+        glUniform1i(input_image_texture2_location, 3);
+        auto alpha_factor_location = glGetUniformLocation(program_, "alphaFactor");
+        glUniform1f(alpha_factor_location, alpha_factor);
+        auto matrix_location = glGetUniformLocation(program_, "matrix");
+        
+        // 设置矩阵
+        if (nullptr == matrix) {
+            GLfloat m[16] = {
+                1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 1, 0,
+                0, 0, 0, 1
+            };
+            glUniformMatrix4fv(matrix_location, 1, GL_FALSE, m);
+        } else {
+            glUniformMatrix4fv(matrix_location, 1, GL_FALSE, matrix);
+        }
+
+        auto position_location = glGetAttribLocation(program_, "position");
+        glEnableVertexAttribArray(position_location);
+        glVertexAttribPointer(position_location, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), vertex_coordinate);
+        auto input_texture_coordinate_location = glGetAttribLocation(program_, "inputTextureCoordinate");
+        glEnableVertexAttribArray(input_texture_coordinate_location);
+        glVertexAttribPointer(input_texture_coordinate_location, 2, GL_FLOAT, GL_FALSE,
+                2 * sizeof(GLfloat), texture_coordinate);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        
+    //    char* buffer = reinterpret_cast<char*>(malloc(width * height * 4));
+    //    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+    //    stbi_write_png("/Users/wlanjie/Desktop/offscreen.png",
+    //                   width, height, 4,
+    //                   buffer + (width * 4 * (height - 1)),
+    //                   -width * 4);
+    //    free(buffer);
+        
+        glDisableVertexAttribArray(position_location);
+        glDisableVertexAttribArray(input_texture_coordinate_location);
+        glDisable(GL_BLEND);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        return frame_buffer_texture_id_;
 }
 
 int Blend::CreateProgram(const char *vertex, const char *fragment) {

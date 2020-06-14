@@ -1,5 +1,11 @@
 [
   {
+    "id": 0,
+    "name": "太空熊",
+    "color": "#cc23bdb1",
+    "effect": "effect/spaceBear"
+  },
+  {
     "id": 1,
     "name": "玫瑰眼妆",
     "color": "#cc23bdb1",
