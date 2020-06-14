@@ -57,6 +57,7 @@ class ImageProcess {
     void OnAction(char* config_path, int action_id, FaceDetection* face_detection = nullptr);
     void OnUpdateActionTime(int start_time, int end_time, int action_id);
     void OnUpdateEffectParam(int action_id, const char* effect_name, const char* param_name, float value);
+    void OnUpdateEffectParam(int action_id, const char* effect_name, const char* param_name, float* value, int length);
     void RemoveAction(int action_id);
     void ClearAction();
 

@@ -101,6 +101,15 @@ void ImageProcess::OnUpdateEffectParam(int action_id, const char *effect_name, c
     }
 }
 
+void ImageProcess::OnUpdateEffectParam(int action_id, const char *effect_name, const char *param_name, float *value, int length) {
+    if (!effects_.empty() && action_id != -1) {
+        auto effect_iterator = effects_.find(action_id);
+        if (effect_iterator != effects_.end()) {
+            effect_iterator->second->UpdateParam(effect_name, param_name, value, length);
+        }
+    }
+}
+
 int ImageProcess::ReadFile(char *path, char **buffer) {
     FILE *file = fopen(path, "r");
     printf("path: %s\n", path);

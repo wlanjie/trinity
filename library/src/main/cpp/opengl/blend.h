@@ -351,6 +351,10 @@ class Blend {
     explicit Blend(const char* fragment_shader);
     virtual ~Blend();
     int OnDrawFrame(int texture_id, int sticker_texture_id, int width, int height, GLfloat* matrix, float alpha_factor);
+    int OnDrawFrame(int texture_id, int sticker_texture_id, int width, int height, GLfloat* matrix, 
+                    GLfloat* texture_coordinate, float alpha_factor);
+    int OnDrawFrame(int texture_id, int sticker_texture_id, int width, int height, GLfloat* matrix, 
+                    GLfloat* vertex_coordinate, GLfloat* texture_coordinate, float alpha_factor);
  private:
     void CreateFrameBuffer(int width, int height);
     void DeleteFrameBuffer();

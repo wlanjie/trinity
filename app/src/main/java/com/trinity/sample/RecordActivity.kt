@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.PointF
 import android.os.Bundle
-import android.util.TypedValue
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -212,6 +211,23 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
           } else {
             val effectPath = effect.effect
             mIdentifyId = mRecord.addAction(externalCacheDir?.absolutePath + "/" + effectPath)
+            if (effectPath == "effect/spaceBear") {
+              // 贴纸显示的宽, 0~1.0
+              // 参数解释: spaceBear为effectName, 是在解析effect数组中的type为intoSticker中的name
+              // stickerWidth 为固定的, 如果想更新显示区域则必须为stickerWidth
+              mRecord.updateActionParam(mIdentifyId, "spaceBear", "stickerWidth", 0.23f)
+              // 贴纸距离屏幕左边的距离, 左上角为原点, 0~1.0
+              mRecord.updateActionParam(mIdentifyId, "spaceBear", "stickerX", 0.13f)
+              // 贴纸距离屏幕上边的距离, 左上角为原点, 0~1.0
+              mRecord.updateActionParam(mIdentifyId, "spaceBear", "stickerY", 0.13f)
+              // 贴纸旋转的角度, 顺时针 0~360度
+              mRecord.updateActionParam(
+                mIdentifyId,
+                "spaceBear",
+                "stickerRotate",
+                0f
+              )
+            }
           }
         }
       })
