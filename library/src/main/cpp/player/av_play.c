@@ -742,7 +742,7 @@ int av_play_play(const char* url, AVPlayContext *context) {
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
     pthread_create(&context->read_stream_thread, &attr, read_thread, context);
-    LOGE("context->is_sw_decode: %d", context->is_sw_decode);
+    LOGE("context->is_sw_decode: %d rotate: %d", context->is_sw_decode, context->frame_rotation);
     if (context->av_track_flags & VIDEO_FLAG) {
         if (context->is_sw_decode) {
             pthread_create(&context->video_decode_thread, &attr, video_decode_sw_thread, context);
@@ -970,6 +970,7 @@ static int stop(AVPlayContext *context) {
     clean_queues(context);
     avformat_close_input(&context->format_context);
     avformat_free_context(context->format_context);
+    context->format_context = NULL;
     reset(context);
     LOGI("leave %s", __func__);
     return 0;

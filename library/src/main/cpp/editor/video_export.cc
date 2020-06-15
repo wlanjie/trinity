@@ -27,6 +27,7 @@
 #include "android_xlog.h"
 #include "tools.h"
 #include "gl.h"
+#include "rotate_coordinate.h"
 
 #define MAX_IMAGE_WIDTH 1080
 #define MAX_IMAGE_HEIGHT 1920
@@ -650,7 +651,7 @@ void VideoExport::ProcessVideoExport() {
                     if (nullptr != yuv_render_) {
                         delete yuv_render_;
                     }
-                    yuv_render_ = new YuvRender(rotation);
+                    yuv_render_ = new YuvRender();
                 } else {
                     if (nullptr != media_codec_render_) {
                         delete media_codec_render_;
@@ -670,17 +671,13 @@ void VideoExport::ProcessVideoExport() {
 
                 // 硬编和软解时, yuv_render时需要旋做上下镜像处理
                 if (media_codec_encode_) {
-                    GLfloat texture_coordinate[] = {
-                            0.0F, 1.0F,
-                            1.0F, 1.0F,
-                            0.0F, 0.0F,
-                            1.0F, 0.0F
-                    };
+                    auto texture_coordinate = rotate_soft_decode_media_encode_coordinate(av_play_context_->frame_rotation);
                     encode_texture_id_ = yuv_render_->DrawFrame(frame, glm::value_ptr(scale_matrix),
                             crop_vertex_coordinate_, texture_coordinate);
                 } else {
+                    auto texture_coordinate = rotate_soft_decode_encode_coordinate(av_play_context_->frame_rotation);
                     encode_texture_id_ = yuv_render_->DrawFrame(frame, glm::value_ptr(scale_matrix),
-                            crop_vertex_coordinate_, texture_coordinate_);
+                            crop_vertex_coordinate_, texture_coordinate);
                 }
                 current_time_ = av_rescale_q(av_play_context_->video_frame->pts,
                                                                 av_play_context_->format_context->streams[av_play_context_->video_index]->time_base,
@@ -694,24 +691,12 @@ void VideoExport::ProcessVideoExport() {
                     continue;
                 }
 
-                GLfloat* texture_coordinate = texture_coordinate_;
-//                if (!media_codec_encode_) {
-//                    // 软编时硬解码需要做镜像处理
-//                    static GLfloat coordinate[] = {
-//                            0.0F, 1.0F,
-//                            1.0F, 1.0F,
-//                            0.0F, 0.0F,
-//                            1.0F, 0.0F
-//                    };
-//                    texture_coordinate = coordinate;
-//                }
-
-                if (av_play_context_->video_frame->FRAME_ROTATION == ROTATION_90) {
-                    texture_coordinate = TEXTURE_COORDINATE_ROTATED_90;
-                } else if (av_play_context_->video_frame->FRAME_ROTATION == ROTATION_180) {
-                    texture_coordinate = TEXTURE_COORDINATE_ROTATED_180;
-                } else if (av_play_context_->video_frame->FRAME_ROTATION == ROTATION_270) {
-                    texture_coordinate = TEXTURE_COORDINATE_ROTATED_270;
+                GLfloat* texture_coordinate;
+                // 软编时硬解码需要做镜像处理
+                if (!media_codec_encode_) {
+                    texture_coordinate = rotate_mirror_coordinate(av_play_context_->frame_rotation);
+                } else {
+                    texture_coordinate = rotate_coordinate(av_play_context_->frame_rotation);
                 }
                 media_codec_render_->ActiveProgram();
                 encode_texture_id_ = media_codec_render_->OnDrawFrame(oes_texture_,

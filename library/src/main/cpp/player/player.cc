@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include "player.h"
 #include "tools.h"
+#include "rotate_coordinate.h"
 
 #define MAX_IMAGE_WIDTH 1080
 #define MAX_IMAGE_HEIGHT 1920
@@ -188,6 +189,7 @@ void Player::ReleasePlayContext() {
         av_play_release(context);
     }
     av_play_contexts_.clear();
+    av_play_context_ = nullptr;
 
     if (nullptr != pre_load_clip_) {
         delete pre_load_clip_;
@@ -1074,7 +1076,7 @@ void Player::CreateRenderFrameBuffer() {
             if (nullptr != yuv_render_) {
                 delete yuv_render_;
             }
-            yuv_render_ = new YuvRender(rotation);
+            yuv_render_ = new YuvRender();
         } else {
             if (nullptr != media_codec_render_) {
                 delete media_codec_render_;
@@ -1098,12 +1100,7 @@ void Player::RenderFrameBuffer() {
         return;
     }
     if (av_play_context_->is_sw_decode) {
-        static GLfloat texture_coordinate[] = {
-                0.F, 1.F,
-                1.F, 1.F,
-                0.F, 0.F,
-                1.F, 0.F
-        };
+        auto texture_coordinate = rotate_soft_decode_media_encode_coordinate(av_play_context_->frame_rotation);
         // 有的视频会出现绿边, 使用矩阵放大, 去除绿边
         auto ratio = av_play_context_->video_frame->width * 1.F / av_play_context_->video_frame->linesize[0];
         glm::mat4 scale_matrix = glm::mat4(ratio);
@@ -1117,14 +1114,7 @@ void Player::RenderFrameBuffer() {
             LOGE("mediacodec frame is not available");
             draw_texture_id_ = -1;
         } else {
-            float* texture_coordinate = TEXTURE_COORDINATE_NO_ROTATION;
-            if (av_play_context_->video_frame->FRAME_ROTATION == ROTATION_90) {
-                texture_coordinate = TEXTURE_COORDINATE_ROTATED_90;
-            } else if (av_play_context_->video_frame->FRAME_ROTATION == ROTATION_180) {
-                texture_coordinate = TEXTURE_COORDINATE_ROTATED_180;
-            } else if (av_play_context_->video_frame->FRAME_ROTATION == ROTATION_270) {
-                texture_coordinate = TEXTURE_COORDINATE_ROTATED_270;
-            }
+            float* texture_coordinate = rotate_coordinate(av_play_context_->frame_rotation);
             mediacodec_update_image(av_play_context_);
             mediacodec_get_texture_matrix(av_play_context_, texture_matrix_);
             draw_texture_id_ = media_codec_render_->OnDrawFrame(av_play_context_->media_codec_texture_id,
@@ -1275,15 +1265,16 @@ void Player::OnGLWindowCreate() {
         image_process_ = new ImageProcess();
     }
     for (auto& context : av_play_contexts_) {
-        glGenTextures(1, &context->media_codec_texture_id);
-        glBindTexture(GL_TEXTURE_EXTERNAL_OES, context->media_codec_texture_id);
-        glTexParameterf(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameterf(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glBindTexture(GL_TEXTURE_EXTERNAL_OES, 0);
+        if (context->media_codec_texture_id == 0) {
+            glGenTextures(1, &context->media_codec_texture_id);
+            glBindTexture(GL_TEXTURE_EXTERNAL_OES, context->media_codec_texture_id);
+            glTexParameterf(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameterf(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glBindTexture(GL_TEXTURE_EXTERNAL_OES, 0);
+        }
     }
-//    av_play_context_->media_codec_texture_id = current_play_context_->media_codec_texture_id;
     window_created_ = true;
     if (nullptr != current_clip_) {
         bool started_ = false;

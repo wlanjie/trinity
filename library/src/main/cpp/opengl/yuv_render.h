@@ -44,7 +44,7 @@ namespace trinity {
 
 class YuvRender {
  public:
-    YuvRender(int rotate);
+    YuvRender();
     ~YuvRender();
     virtual GLuint DrawFrame(AVFrame* frame, const GLfloat* matrix,
             const GLfloat* vertex_coordinate, const GLfloat* texture_coordinate);
@@ -66,8 +66,6 @@ class YuvRender {
     GLuint texture_coordinate_location_;
     GLuint matrix_location_;
     GLint uniform_samplers_[3];
-    GLfloat* vertex_coordinate_;
-    GLfloat* texture_coordinate_;
 };
 
 }  // namespace trinity

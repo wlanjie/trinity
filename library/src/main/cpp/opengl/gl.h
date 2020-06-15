@@ -63,6 +63,7 @@ static float TEXTURE_COORDINATE_ROTATED_180[8] = {
         0.0f, 0.0f,
         1.0f, 0.0f,
 };
+
 static float TEXTURE_COORDINATE_ROTATED_270[8] = {
         0.0f, 1.0f,
         0.0f, 0.0f,
