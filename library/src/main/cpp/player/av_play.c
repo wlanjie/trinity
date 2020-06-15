@@ -341,6 +341,7 @@ void* video_decode_sw_thread(void* data){
     AVPlayContext* context = (AVPlayContext *)data;
     int ret;
     AVFrame* frame = frame_pool_get_frame(context->video_frame_pool);
+    LOGE("enter: %s abort_request: %d", __func__, context->abort_request);
     while (!context->abort_request) {
         if (context->just_audio) {
             // 如果只播放音频  按照音视频同步的速度丢包
@@ -381,13 +382,16 @@ void* video_decode_sw_thread(void* data){
                 ret = avcodec_send_packet(context->video_codec_ctx, packet);
                 packet_pool_unref_packet(context->packet_pool, packet);
                 if (ret < 0) {
+                    LOGE("%s send packet error: %d", __func__, ret);
                     context->on_error(context, ERROR_VIDEO_SW_DECODE_SEND_PACKET);
                     break;
                 }
             } else if (ret == AVERROR(EINVAL)) {
+                LOGE("%s avcodec_receive_frame AVERROR(EINVAL)", __func__);
                 context->on_error(context, ERROR_VIDEO_SW_DECODE_CODEC_NOT_OPENED);
                 break;
             } else {
+                LOGE("%s avcodec_receive_frame ret: %d", __func__, ret);
                 context->on_error(context, ERROR_VIDEO_SW_DECODE_RECIVE_FRAME);
                 break;
             }
@@ -734,13 +738,11 @@ int av_play_play(const char* url, AVPlayContext *context) {
         }
     }
     set_buffer_time(context);
-    if (time > 0) {
-        av_play_seek(context, time);
-    }
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
     pthread_create(&context->read_stream_thread, &attr, read_thread, context);
+    LOGE("context->is_sw_decode: %d", context->is_sw_decode);
     if (context->av_track_flags & VIDEO_FLAG) {
         if (context->is_sw_decode) {
             pthread_create(&context->video_decode_thread, &attr, video_decode_sw_thread, context);
@@ -937,7 +939,7 @@ static int stop(AVPlayContext *context) {
     if (context->abort_request) {
         return -1;
     }
-    LOGE("enter %s file: %s", __func__, context->format_context->filename);
+    LOGE("enter %s file: %s %p", __func__, context->format_context->filename, context);
     context->abort_request = true;
     // remove buffer call back
     context->audio_packet_queue->empty_cb = NULL;

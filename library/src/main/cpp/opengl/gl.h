@@ -36,6 +36,40 @@ static const float DEFAULT_TEXTURE_COORDINATE[] = {
         1.F, 1.F
 };
 
+static float VERTEX_COORDINATE[8] = {
+        -1.0f, -1.0f,
+        1.0f, -1.0f,
+        -1.0f, 1.0f,
+        1.0f, 1.0f,
+};
+
+static float TEXTURE_COORDINATE_NO_ROTATION[8] = {
+        0.0f, 0.0f,
+        1.0f, 0.0f,
+        0.0f, 1.0f,
+        1.0f, 1.0f
+};
+
+static float TEXTURE_COORDINATE_ROTATED_90[8] = {
+        1.0f, 0.0f,
+        1.0f, 1.0f,
+        0.0f, 0.0f,
+        0.0f, 1.0f
+};
+
+static float TEXTURE_COORDINATE_ROTATED_180[8] = {
+        0.0f, 1.0f,
+        1.0f, 1.0f,
+        0.0f, 0.0f,
+        1.0f, 0.0f,
+};
+static float TEXTURE_COORDINATE_ROTATED_270[8] = {
+        0.0f, 1.0f,
+        0.0f, 0.0f,
+        1.0f, 1.0f,
+        1.0f, 0.0f
+};
+
 // 默认带matrix的顶点shader
 static const char* DEFAULT_VERTEX_MATRIX_SHADER =
         "attribute vec4 position;                                                               \n"

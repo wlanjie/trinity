@@ -60,41 +60,7 @@ const char* NV21_FRAGMENT_SHADER =
         "   gl_FragColor = vec4(r, g, b, 1.0);\n"
         "}\n";
 
-static GLfloat VERTEX_COORDINATE[8] = {
-        -1.0f, -1.0f,
-        1.0f, -1.0f,
-        -1.0f, 1.0f,
-        1.0f, 1.0f,
-};
-
-static GLfloat TEXTURE_COORDINATE_NO_ROTATION[8] = {
-        0.0f, 0.0f,
-        1.0f, 0.0f,
-        0.0f, 1.0f,
-        1.0f, 1.0f
-};
-
-static GLfloat TEXTURE_COORDINATE_ROTATED_90[8] = {
-        0.0f, 1.0f,
-        0.0f, 0.0f,
-        1.0f, 1.0f,
-        1.0f, 0.0f
-};
-
-static GLfloat TEXTURE_COORDINATE_ROTATED_180[8] = {
-        1.0, 1.0,
-        0.0, 1.0,
-        1.0, 0.0,
-        0.0, 0.0,
-};
-static GLfloat TEXTURE_COORDINATE_ROTATED_270[8] = {
-        1.0f, 0.0f,
-        1.0f, 1.0f,
-        0.0f, 0.0f,
-        0.0f, 1.0f
-};
-
-YuvRender::YuvRender()
+YuvRender::YuvRender(int rotate)
     : program_(0)
     , texture_id_(0)
     , frame_buffer_id_(0)
@@ -102,29 +68,51 @@ YuvRender::YuvRender()
     , uniform_samplers_()
     , vertex_coordinate_location_(0)
     , texture_coordinate_location_(0)
-    , matrix_location_(0)
-    , y(nullptr)
-    , u(nullptr)
-    , v(nullptr) {
-    y_size_ = 0;
-    u_size_ = 0;
-    v_size_ = 0;
+    , matrix_location_(0) {
+    vertex_coordinate_ = new GLfloat[VERTEX_COORDINATE_COUNT];
+    texture_coordinate_ = new GLfloat[VERTEX_COORDINATE_COUNT];
+
+    memcpy(vertex_coordinate_, VERTEX_COORDINATE, sizeof(GLfloat) * VERTEX_COORDINATE_COUNT);
+    memcpy(texture_coordinate_, TEXTURE_COORDINATE_NO_ROTATION, sizeof(GLfloat) * VERTEX_COORDINATE_COUNT);
+    if (rotate == 0) {
+        GLfloat texture_coordinate[8] = {
+                0.f, 1.f,
+                1.f, 1.f,
+                0.f, 0.f,
+                1.f, 0.f
+        };
+        memcpy(texture_coordinate_, texture_coordinate, sizeof(GLfloat) * VERTEX_COORDINATE_COUNT);
+    } else if (rotate == 90) {
+        GLfloat texture_coordinate[8] = {
+                1.f, 1.f,
+                1.f, 0.f,
+                0.f, 1.0f,
+                0.f, 0.f
+        };
+        memcpy(texture_coordinate_, texture_coordinate, sizeof(GLfloat) * VERTEX_COORDINATE_COUNT);
+    } else if (rotate == 180) {
+        GLfloat texture_coordinate[8] = {
+                1.f, 0.f,
+                0.f, 0.f,
+                1.f, 1.f,
+                0.f, 1.f
+        };
+        memcpy(texture_coordinate_, texture_coordinate, sizeof(GLfloat) * VERTEX_COORDINATE_COUNT);
+    } else if (rotate == 270) {
+        GLfloat texture_coordinate[8] = {
+                0.f, 0.f,
+                0.f, 1.f,
+                1.f, 0.f,
+                1.f, 1.f
+        };
+        memcpy(texture_coordinate_, texture_coordinate, sizeof(GLfloat) * VERTEX_COORDINATE_COUNT);
+    }
 }
 
 YuvRender::~YuvRender() {
     Destroy();
-    if (nullptr != y) {
-        delete[] y;
-        y = nullptr;
-    }
-    if (nullptr != u) {
-        delete[] u;
-        u = nullptr;
-    }
-    if (nullptr != v) {
-        delete[] v;
-        v = nullptr;
-    }
+    delete[] vertex_coordinate_;
+    delete[] texture_coordinate_;
 }
 
 int YuvRender::Initialize(int width, int height, const char* fragment_shader) {
@@ -306,9 +294,9 @@ GLuint YuvRender::DrawFrame(AVFrame* frame, const GLfloat* matrix,
             break;
     }
 
-    glVertexAttribPointer(vertex_coordinate_location_, 2, GL_FLOAT, GL_FALSE, 0, vertex_coordinate);
+    glVertexAttribPointer(vertex_coordinate_location_, 2, GL_FLOAT, GL_FALSE, 0, vertex_coordinate_);
     glEnableVertexAttribArray(vertex_coordinate_location_);
-    glVertexAttribPointer(texture_coordinate_location_, 2, GL_FLOAT, GL_FALSE, 0, texture_coordinate);
+    glVertexAttribPointer(texture_coordinate_location_, 2, GL_FLOAT, GL_FALSE, 0, texture_coordinate_);
     glEnableVertexAttribArray(texture_coordinate_location_);
     glUniformMatrix4fv(matrix_location_, 1, GL_FALSE, matrix);
     for (int i = 0; i < 3; i++) {

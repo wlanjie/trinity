@@ -35,9 +35,9 @@
 #define PIX_FMT_EGL_EXT 10000
 
 #define ROTATION_0 0
-#define ROTATION_90 1
-#define ROTATION_180 2
-#define ROTATION_270 3
+#define ROTATION_90 90
+#define ROTATION_180 180
+#define ROTATION_270 270
 
 //////// rename avframe fields
 #define HW_BUFFER_ID pkt_pos

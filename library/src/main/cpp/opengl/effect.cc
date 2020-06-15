@@ -565,7 +565,7 @@ glm::mat4 StickerV3SubEffect::VertexMatrix(FaceDetectionReport* face_detection, 
 //                    -sin, cos, 0.0F, 0.0F,
 //                    0.0F, 0.0F, 1.0F, 0.0F,
 //                    0.0F, 0.0F, 0.0F, 1.0F};
-    model_matrix = glm::rotate(model_matrix, roll_angle, glm::vec3(0.f, 0.f, 1.f));
+    model_matrix = glm::rotate(model_matrix, glm::radians(roll_angle), glm::vec3(0.f, 0.f, 1.f));
 //    model_matrix = model_matrix * rotation_z;
     model_matrix = glm::scale(model_matrix, glm::vec3(scale.x, scale.y, 1.0F));
     glm::mat4 mvp = projection * model_matrix;

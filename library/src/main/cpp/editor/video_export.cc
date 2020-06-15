@@ -132,6 +132,7 @@ VideoExport::VideoExport(JNIEnv* env, jobject object)
     av_play_context_->on_complete = OnCompleteEvent;
     av_play_context_->change_status = OnStatusChanged;
     av_play_set_buffer_time(av_play_context_, 5);
+    LOGE("export av_play_context: %p", av_play_context_);
 
     packet_pool_ = PacketPool::GetInstance();
 }
@@ -321,7 +322,7 @@ void VideoExport::StartDecode(MediaClip *clip) {
     LOGI("enter %s path: %s start_time: %d export_index: %d", __func__, clip->file_name, clip->start_time, export_index_);
     if (clip->type == VIDEO) {
         int ret = av_play_play(clip->file_name, av_play_context_);
-        if (ret == 0) {
+        if (ret != 0) {
             av_play_stop(av_play_context_);
             return;
         }
@@ -631,8 +632,14 @@ void VideoExport::ProcessVideoExport() {
             }
 
             AVFrame* frame = av_play_context_->video_frame;
-            int width = MIN(frame->linesize[0], frame->width);
-            int height = frame->height;
+            int rotation = av_play_context_->frame_rotation;
+            int width = MIN(av_play_context_->video_frame->linesize[0], av_play_context_->video_frame->width);
+            int height = av_play_context_->video_frame->height;
+            // rotation size
+            if (rotation == ROTATION_90 || rotation == ROTATION_270) {
+                width = av_play_context_->video_frame->height;
+                height = MIN(av_play_context_->video_frame->linesize[0], av_play_context_->video_frame->width);
+            }
             // 如果当前记录的视频的宽和高不相等时,重建各个FrameBuffer
             if (frame_width_ != width || frame_height_ != height) {
                 frame_width_ = width;
@@ -643,7 +650,7 @@ void VideoExport::ProcessVideoExport() {
                     if (nullptr != yuv_render_) {
                         delete yuv_render_;
                     }
-                    yuv_render_ = new YuvRender();
+                    yuv_render_ = new YuvRender(rotation);
                 } else {
                     if (nullptr != media_codec_render_) {
                         delete media_codec_render_;
@@ -688,17 +695,24 @@ void VideoExport::ProcessVideoExport() {
                 }
 
                 GLfloat* texture_coordinate = texture_coordinate_;
-                if (!media_codec_encode_) {
-                    // 软编时硬解码需要做镜像处理
-                    static GLfloat coordinate[] = {
-                            0.0F, 1.0F,
-                            1.0F, 1.0F,
-                            0.0F, 0.0F,
-                            1.0F, 0.0F
-                    };
-                    texture_coordinate = coordinate;
-                }
+//                if (!media_codec_encode_) {
+//                    // 软编时硬解码需要做镜像处理
+//                    static GLfloat coordinate[] = {
+//                            0.0F, 1.0F,
+//                            1.0F, 1.0F,
+//                            0.0F, 0.0F,
+//                            1.0F, 0.0F
+//                    };
+//                    texture_coordinate = coordinate;
+//                }
 
+                if (av_play_context_->video_frame->FRAME_ROTATION == ROTATION_90) {
+                    texture_coordinate = TEXTURE_COORDINATE_ROTATED_90;
+                } else if (av_play_context_->video_frame->FRAME_ROTATION == ROTATION_180) {
+                    texture_coordinate = TEXTURE_COORDINATE_ROTATED_180;
+                } else if (av_play_context_->video_frame->FRAME_ROTATION == ROTATION_270) {
+                    texture_coordinate = TEXTURE_COORDINATE_ROTATED_270;
+                }
                 media_codec_render_->ActiveProgram();
                 encode_texture_id_ = media_codec_render_->OnDrawFrame(oes_texture_,
                         crop_vertex_coordinate_, texture_coordinate,

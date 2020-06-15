@@ -1059,8 +1059,14 @@ void Player::CreateRenderFrameBuffer() {
     if (CheckVideoFrame()) {
         return;
     }
+    int rotation = av_play_context_->frame_rotation;
     int width = MIN(av_play_context_->video_frame->linesize[0], av_play_context_->video_frame->width);
     int height = av_play_context_->video_frame->height;
+    // rotation size
+    if (rotation == ROTATION_90 || rotation == ROTATION_270) {
+        width = av_play_context_->video_frame->height;
+        height = MIN(av_play_context_->video_frame->linesize[0], av_play_context_->video_frame->width);
+    }
     if (frame_width_ != width || frame_height_ != height) {
         frame_width_ = width;
         frame_height_ = height;
@@ -1068,7 +1074,7 @@ void Player::CreateRenderFrameBuffer() {
             if (nullptr != yuv_render_) {
                 delete yuv_render_;
             }
-            yuv_render_ = new YuvRender();
+            yuv_render_ = new YuvRender(rotation);
         } else {
             if (nullptr != media_codec_render_) {
                 delete media_codec_render_;
@@ -1111,16 +1117,18 @@ void Player::RenderFrameBuffer() {
             LOGE("mediacodec frame is not available");
             draw_texture_id_ = -1;
         } else {
+            float* texture_coordinate = TEXTURE_COORDINATE_NO_ROTATION;
+            if (av_play_context_->video_frame->FRAME_ROTATION == ROTATION_90) {
+                texture_coordinate = TEXTURE_COORDINATE_ROTATED_90;
+            } else if (av_play_context_->video_frame->FRAME_ROTATION == ROTATION_180) {
+                texture_coordinate = TEXTURE_COORDINATE_ROTATED_180;
+            } else if (av_play_context_->video_frame->FRAME_ROTATION == ROTATION_270) {
+                texture_coordinate = TEXTURE_COORDINATE_ROTATED_270;
+            }
             mediacodec_update_image(av_play_context_);
             mediacodec_get_texture_matrix(av_play_context_, texture_matrix_);
-//                for (int i = 0; i < 16; i += 4) {
-//                    LOGE("m[%d]=%f [%d]=%f [%d]=%f [%d]=%f", i, texture_matrix_[i], i + 1,
-//                         texture_matrix_[i + 1], i + 2, texture_matrix_[i + 2], i + 3,
-//                         texture_matrix_[i + 3]);
-//                }
-//            media_codec_render_->ActiveProgram();
             draw_texture_id_ = media_codec_render_->OnDrawFrame(av_play_context_->media_codec_texture_id,
-                    texture_matrix_);
+                                            DEFAULT_VERTEX_COORDINATE, texture_coordinate, texture_matrix_);
             current_time_ = av_play_context_->video_frame->pts / 1000;
         }
     }
