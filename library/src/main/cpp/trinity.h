@@ -52,6 +52,7 @@ typedef enum {
     kMusicDelete,
     kFilter,
     kFilterUpdate,
+    kFilterIntensity,
     kFilterDelete,
 } EffectMessage;
 

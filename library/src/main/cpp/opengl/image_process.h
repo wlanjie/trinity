@@ -54,14 +54,15 @@ class ImageProcess {
             int width, int height,
             int input_color_type, int output_color_type);
 
-    void OnAction(char* config_path, int action_id, FaceDetection* face_detection = nullptr);
+    void OnEffect(char* config_path, int action_id, FaceDetection* face_detection = nullptr);
     void OnUpdateActionTime(int start_time, int end_time, int action_id);
     void OnUpdateEffectParam(int action_id, const char* effect_name, const char* param_name, float value);
     void OnUpdateEffectParam(int action_id, const char* effect_name, const char* param_name, float* value, int length);
-    void RemoveAction(int action_id);
-    void ClearAction();
+    void RemoveEffect(int action_id);
+    void ClearEffect();
 
     void OnFilter(const char* config_path, int action_id, int start_time = 0, int end_time = INT32_MAX);
+    void OnFilterIntensity(float intensity, int action_id);
     void OnDeleteFilter(int action_id);
 
  private:

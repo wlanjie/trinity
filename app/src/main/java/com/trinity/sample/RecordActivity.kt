@@ -25,6 +25,7 @@ import com.trinity.camera.Flash
 import com.trinity.camera.TrinityPreviewView
 import com.trinity.core.Frame
 import com.trinity.core.MusicInfo
+import com.trinity.editor.VideoExportInfo
 import com.trinity.face.MnnFaceDetection
 import com.trinity.listener.OnRenderListener
 import com.trinity.record.PreviewResolution
@@ -103,6 +104,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     mRecord.setOnRecordingListener(this)
     mRecord.setCameraCallback(this)
     mRecord.setCameraFacing(Facing.FRONT)
+    mRecord.setFrame(Frame.CROP)
     val faceDetection = MnnFaceDetection()
     mRecord.setFaceDetection(faceDetection)
     val recordButton = findViewById<RecordButton>(R.id.record_button)
@@ -207,21 +209,21 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
       effectFragment.setCallback(object: IdentifyFragment.Callback {
         override fun onIdentifyClick(effect: Effect?) {
           if (effect == null) {
-            mRecord.deleteAction(mIdentifyId)
+            mRecord.deleteEffect(mIdentifyId)
           } else {
             val effectPath = effect.effect
-            mIdentifyId = mRecord.addAction(externalCacheDir?.absolutePath + "/" + effectPath)
+            mIdentifyId = mRecord.addEffect(externalCacheDir?.absolutePath + "/" + effectPath)
             if (effectPath == "effect/spaceBear") {
               // 贴纸显示的宽, 0~1.0
               // 参数解释: spaceBear为effectName, 是在解析effect数组中的type为intoSticker中的name
               // stickerWidth 为固定的, 如果想更新显示区域则必须为stickerWidth
-              mRecord.updateActionParam(mIdentifyId, "spaceBear", "stickerWidth", 0.23f)
+              mRecord.updateEffectParam(mIdentifyId, "spaceBear", "stickerWidth", 0.23f)
               // 贴纸距离屏幕左边的距离, 左上角为原点, 0~1.0
-              mRecord.updateActionParam(mIdentifyId, "spaceBear", "stickerX", 0.13f)
+              mRecord.updateEffectParam(mIdentifyId, "spaceBear", "stickerX", 0.13f)
               // 贴纸距离屏幕上边的距离, 左上角为原点, 0~1.0
-              mRecord.updateActionParam(mIdentifyId, "spaceBear", "stickerY", 0.13f)
+              mRecord.updateEffectParam(mIdentifyId, "spaceBear", "stickerY", 0.13f)
               // 贴纸旋转的角度, 顺时针 0~360度
-              mRecord.updateActionParam(
+              mRecord.updateEffectParam(
                 mIdentifyId,
                 "spaceBear",
                 "stickerRotate",
@@ -252,9 +254,9 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
       beautyFragment.setCallback(object: BeautyFragment.Callback {
         override fun onBeautyParam(value: Int, position: Int) {
           if (mBeautyId == -1) {
-            mBeautyId = mRecord.addAction(externalCacheDir?.absolutePath + "/effect/beauty")
+            mBeautyId = mRecord.addEffect(externalCacheDir?.absolutePath + "/effect/beauty")
           } else {
-            mRecord.updateActionParam(mBeautyId, "smoother", "intensity", value * 1.0F / 100)
+            mRecord.updateEffectParam(mBeautyId, "smoother", "intensity", value * 1.0F / 100)
           }
         }
       })
@@ -438,9 +440,15 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
         height = 640
       }
     }
-    mRecord.startRecording(path, width, height,
-      mVideoBitRate, mFrameRate, mHardwareEncode,
-      mSampleRate, mChannels, mAudioBitRate, mRecordDuration)
+    val info = VideoExportInfo(path)
+    info.width = width
+    info.height = height
+    info.videoBitRate = mVideoBitRate
+    info.frameRate = mFrameRate
+    info.sampleRate = mSampleRate
+    info.channelCount = mChannels
+    info.audioBitRate = mAudioBitRate
+    mRecord.startRecording(info, mRecordDuration)
     val media = MediaItem(path, "video", width, height)
     mMedias.add(media)
   }

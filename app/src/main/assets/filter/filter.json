@@ -3,288 +3,384 @@
       "name": "白皙",
       "thumbnail": "baizan/thumbnail.jpg",
       "config": "baizan",
-      "lut": "baizan/lut_117/lut_117.png"
+      "lut": "baizan/lut_117/lut_117.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/baizan.zip"
     },
     {
       "name": "白雪",
       "thumbnail": "baixue/thumbnail.jpg",
       "config": "baixue",
-      "lut": "baixue/snow/snow.png"
+      "lut": "baixue/snow/snow.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/baixue.zip"
     },
     {
       "name": "茶灰",
       "thumbnail": "chahui/thumbnail.jpg",
       "config": "chahui",
-      "lut": "chahui/lut_124/lut_124.png"
+      "lut": "chahui/lut_124/lut_124.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/chahui.zip"
     },
     {
       "name": "城市",
       "thumbnail": "chengshi/thumbnail.jpg",
       "config": "chengshi",
-      "lut": "chengshi/lut_149/lut_149.png"
+      "lut": "chengshi/lut_149/lut_149.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/chengshi.zip"
     },
     {
       "name": "初恋",
       "thumbnail": "chulian/thumbnail.jpg",
       "config": "chulian",
-      "lut": "chulian/lut_118/lut_118.png"
+      "lut": "chulian/lut_118/lut_118.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/chulian.zip"
     },
     {
       "name": "初心",
       "thumbnail": "chuxin/thumbnail.jpg",
       "config": "chuxin",
-      "lut": "chuxin/lut137/lut137.png"
+      "lut": "chuxin/lut137/lut137.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/chuxin.zip"
     },
     {
       "name": "纯净",
       "thumbnail": "chunjing/thumbnail.jpg",
       "config": "chunjing",
-      "lut": "chunjing/pure/pure.png"
+      "lut": "chunjing/pure/pure.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/chunjing.zip"
     },
     {
       "name": "纯真",
       "thumbnail": "chunzhen/thumbnail.jpg",
       "config": "chunzhen",
-      "lut": "chunzhen/sincere/sincere.png"
+      "lut": "chunzhen/sincere/sincere.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/chunzhen.zip"
     },
     {
       "name": "单色",
       "thumbnail": "danse/thumbnail.jpg",
       "config": "danse",
-      "lut": "danse/lut_114/lut_114.png"
+      "lut": "danse/lut_114/lut_114.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/danse.zip"
     },
     {
       "name": "岛屿",
       "thumbnail": "daoyu/thumbnail.jpg",
       "config": "daoyu",
-      "lut": "daoyu/lut_151/lut_151.png"
+      "lut": "daoyu/lut_151/lut_151.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/daoyu.zip"
     },
     {
       "name": "动人",
       "thumbnail": "dongren/thumbnail.jpg",
       "config": "dongren",
-      "lut": "dongren/vivid_4/vivid_4.png"
+      "lut": "dongren/vivid_4/vivid_4.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/dongren.zip"
     },
     {
       "name": "独角兽",
       "thumbnail": "dujiaoshou/thumbnail.jpg",
       "config": "dujiaoshou",
-      "lut": "dujiaoshou/lut_155/lut_155.png"
+      "lut": "dujiaoshou/lut_155/lut_155.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/dujiaoshou.zip"
     },
     {
       "name": "反差色",
       "thumbnail": "fanchase/thumbnail.jpg",
       "config": "fanchase",
-      "lut": "fanchase/lut_112/lut_112.png"
+      "lut": "fanchase/lut_112/lut_112.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/fanchase.zip"
     },
     {
       "name": "非凡",
       "thumbnail": "feifan/thumbnail.jpg",
       "config": "feifan",
-      "lut": "feifan/uncommon/uncommon.png"
+      "lut": "feifan/uncommon/uncommon.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/feifan.zip"
     },
     {
       "name": "过往",
       "thumbnail": "guowang/thumbnail.jpg",
       "config": "guowang",
-      "lut": "guowang/beyond/beyond.png"
+      "lut": "guowang/beyond/beyond.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/guowang.zip"
     },
     {
       "name": "海棠",
       "thumbnail": "haitang/thumbnail.jpg",
       "config": "haitang",
-      "lut": "haitang/lut_146/lut_146.png"
+      "lut": "haitang/lut_146/lut_146.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/haitang.zip"
     },
     {
       "name": "红色",
       "thumbnail": "hongse/thumbnail.jpg",
       "config": "hongse",
-      "lut": "hongse/lut_115/lut_115.png"
+      "lut": "hongse/lut_115/lut_115.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/hongse.zip"
     },
     {
       "name": "琥珀",
       "thumbnail": "hupo/thumbnail.jpg",
       "config": "hupo",
-      "lut": "hupo/lut_147/lut_147.png"
+      "lut": "hupo/lut_147/lut_147.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/hupo.zip"
     },
     {
       "name": "焦糖",
       "thumbnail": "jiaotang/thumbnail.jpg",
       "config": "jiaotang",
-      "lut": "jiaotang/lut139/lut139.png"
+      "lut": "jiaotang/lut139/lut139.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/jiaotang.zip"
     },
     {
       "name": "可口",
       "thumbnail": "kekou/thumbnail.jpg",
       "config": "kekou",
-      "lut": "kekou/lut100/lut100.png"
+      "lut": "kekou/lut100/lut100.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/kekou.zip"
     },
     {
       "name": "罗密欧",
       "thumbnail": "luomio/thumbnail.jpg",
       "config": "luomio",
-      "lut": "luomio/romeo/romeo.png"
+      "lut": "luomio/romeo/romeo.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/luomio.zip"
     },
     {
       "name": "美味",
       "thumbnail": "meiwei/thumbnail.jpg",
       "config": "meiwei",
-      "lut": "meiwei/lut120/lut120.png"
+      "lut": "meiwei/lut120/lut120.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/meiwei.zip"
     },
     {
       "name": "蜜粉桃",
       "thumbnail": "mifentao/thumbnail.jpg",
       "config": "mifentao",
-      "lut": "mifentao/lut_130/lut_130.png"
+      "lut": "mifentao/lut_130/lut_130.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/mifentao.zip"
     },
     {
       "name": "摩卡",
       "thumbnail": "moka/thumbnail.jpg",
       "config": "moka",
-      "lut": "moka/lut_144/lut_144.png"
+      "lut": "moka/lut_144/lut_144.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/moka.zip"
     },
     {
       "name": "慕斯",
       "thumbnail": "musi/thumbnail.jpg",
       "config": "musi",
-      "lut": "musi/lut_119/lut_119.png"
+      "lut": "musi/lut_119/lut_119.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/musi.zip"
     },
     {
       "name": "奶茶",
       "thumbnail": "naicha/thumbnail.jpg",
       "config": "naicha",
-      "lut": "naicha/lut142/lut142.png"
+      "lut": "naicha/lut142/lut142.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/naicha.zip"
     },
     {
       "name": "年华",
       "thumbnail": "nianhua/thumbnail.jpg",
       "config": "nianhua",
-      "lut": "nianhua/years/years.png"
+      "lut": "nianhua/years/years.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/nianhua.zip"
     },
     {
       "name": "拍立得",
       "thumbnail": "pailide/thumbnail.jpg",
       "config": "pailide",
-      "lut": "pailide/lut_113/lut_113.png"
+      "lut": "pailide/lut_113/lut_113.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/pailide.zip"
     },
     {
       "name": "沛蓝",
       "thumbnail": "peilan/thumbnail.jpg",
       "config": "peilan",
-      "lut": "peilan/lut125/lut125.png"
+      "lut": "peilan/lut125/lut125.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/peilan.zip"
     },
     {
       "name": "蔷薇",
       "thumbnail": "qiangwei/thumbnail.jpg",
       "config": "qiangwei",
-      "lut": "qiangwei/rose/rose.png"
+      "lut": "qiangwei/rose/rose.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/qiangwei.zip"
     },
     {
       "name": "清纯",
       "thumbnail": "qingchun/thumbnail.jpg",
       "config": "qingchun",
-      "lut": "qingchun/teen/teen.png"
+      "lut": "qingchun/teen/teen.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/qingchun.zip"
     },
     {
       "name": "清凉",
       "thumbnail": "qingliang/thumbnail.jpg",
       "config": "qingliang",
-      "lut": "qingliang/lut_145/lut_145.png"
+      "lut": "qingliang/lut_145/lut_145.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/qingliang.zip"
     },
     {
       "name": "清新",
       "thumbnail": "qingxin/thumbnail.jpg",
       "config": "qingxin",
-      "lut": "qingxin/lut102/lut102.png"
+      "lut": "qingxin/lut102/lut102.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/qingxin.zip"
     },
     {
       "name": "曲奇",
       "thumbnail": "quqi/thumbnail.jpg",
       "config": "quqi",
-      "lut": "quqi/beach_15/beach_15.png"
+      "lut": "quqi/beach_15/beach_15.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/quqi.zip"
     },
     {
       "name": "日系",
       "thumbnail": "rixi/thumbnail.jpg",
       "config": "rixi",
-      "lut": "rixi/fresh_5/fresh_5.png"
+      "lut": "rixi/fresh_5/fresh_5.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/rixi.zip"
     },
     {
       "name": "日杂",
       "thumbnail": "riza/thumbnail.jpg",
       "config": "riza",
-      "lut": "riza/lut_125/lut_125.png"
+      "lut": "riza/lut_125/lut_125.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/riza.zip"
     },
     {
       "name": "闪酷橘",
       "thumbnail": "shankuju/thumbnail.jpg",
       "config": "shankuju",
-      "lut": "shankuju/lut_154/lut_154.png"
+      "lut": "shankuju/lut_154/lut_154.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/shankuju.zip"
     },
     {
       "name": "深黑",
       "thumbnail": "shenhei/thumbnail.jpg",
       "config": "shenhei",
-      "lut": "shenhei/lut111/lut111.png"
+      "lut": "shenhei/lut111/lut111.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/shenhei.zip"
     },
     {
       "name": "曙光",
       "thumbnail": "shuguang/thumbnail.jpg",
       "config": "shuguang",
-      "lut": "shuguang/lut_152/lut_152.png"
+      "lut": "shuguang/lut_152/lut_152.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/shuguang.zip"
     },
     {
       "name": "素净",
       "thumbnail": "sujing/thumbnail.jpg",
       "config": "sujing",
-      "lut": "sujing/lut123/lut123.png"
+      "lut": "sujing/lut123/lut123.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/sujing.zip"
     },
     {
       "name": "酸奶",
       "thumbnail": "suannai/thumbnail.jpg",
       "config": "suannai",
-      "lut": "suannai/lut_140/lut_140.png"
+      "lut": "suannai/lut_140/lut_140.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/suannai.zip"
     },
     {
       "name": "蔚蓝",
       "thumbnail": "weilan/thumbnail.jpg",
       "config": "weilan",
-      "lut": "weilan/lut110/lut110.png"
+      "lut": "weilan/lut110/lut110.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/weilan.zip"
     },
     {
       "name": "乌邦托",
       "thumbnail": "wubangtuo/thumbnail.jpg",
       "config": "wubangtuo",
-      "lut": "wubangtuo/lut_153/lut_153.png"
+      "lut": "wubangtuo/lut_153/lut_153.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/wubangtuo.zip"
     },
     {
       "name": "西柚",
       "thumbnail": "xiyou/thumbnail.jpg",
       "config": "xiyou",
-      "lut": "xiyou/lut_143/lut_143.png"
+      "lut": "xiyou/lut_143/lut_143.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/xiyou.zip"
     },
     {
       "name": "鲜嫩",
       "thumbnail": "xiannei/thumbnail.jpg",
       "config": "xiannei",
-      "lut": "xiannei/lut141/lut141.png"
+      "lut": "xiannei/lut141/lut141.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/xiannei.zip"
     },
     {
       "name": "芝士",
       "thumbnail": "zhishi/thumbnail.jpg",
       "config": "zhishi",
-      "lut": "zhishi/lut129/lut129.png"
+      "lut": "zhishi/lut129/lut129.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/zhishi.zip"
     },
     {
       "name": "仲夏",
       "thumbnail": "zhongxia/thumbnail.jpg",
       "config": "zhongxia",
-      "lut": "zhongxia/lut_148/lut_148.png"
+      "lut": "zhongxia/lut_148/lut_148.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/zhongxia.zip"
     },
     {
       "name": "自然",
       "thumbnail": "ziran/thumbnail.jpg",
       "config": "ziran",
-      "lut": "ziran/normal_android/normal_android.png"
+      "lut": "ziran/normal_android/normal_android.png",
+      "updateTime": 1592479912,
+      "downloadUrl": "https://videofactory.oss-cn-shanghai.aliyuncs.com/filter/ziran.zip"
     }
   ]

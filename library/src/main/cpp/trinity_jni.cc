@@ -93,7 +93,7 @@ static void Android_JNI_createWindowSurface(JNIEnv *env, jobject object, jlong i
     }
 }
 
-static void Android_JNI_resetRenderSize(JNIEnv *env, jobject object, long id, jint width, jint height) {
+static void Android_JNI_resetRenderSize(JNIEnv *env, jobject object, jlong id, jint width, jint height) {
     if (id <= 0) {
         return;
     }
@@ -225,6 +225,16 @@ static void Android_JNI_record_updateFilter(JNIEnv* env, jobject object,
     env->ReleaseStringUTFChars(config_path, filter_config);
 }
 
+static void Android_JNI_record_updateFilterIntensity(JNIEnv* env, jobject object,
+        jlong handle, jfloat intensity, int action_id) {
+    LOGE("Android_JNI_record_updateFilterIntensity");
+    if (handle <= 0) {
+        return;
+    }
+    auto* camera_record = reinterpret_cast<CameraRecord*>(handle);
+    camera_record->UpdateFilterIntensity(intensity, action_id);
+}
+
 static void Android_JNI_record_deleteFilter(JNIEnv* env, jobject object,
         jlong handle, jint action_id) {
     if (handle <= 0) {
@@ -234,27 +244,27 @@ static void Android_JNI_record_deleteFilter(JNIEnv* env, jobject object,
     camera_record->DeleteFilter(action_id);
 }
 
-static int Android_JNI_record_addAction(JNIEnv* env, jobject object, jlong handle, jstring config) {
+static int Android_JNI_record_addEffect(JNIEnv* env, jobject object, jlong handle, jstring config) {
     if (handle <= 0) {
         return -1;
     }
     const char* config_buffer = env->GetStringUTFChars(config, JNI_FALSE);
     auto* camera_record = reinterpret_cast<CameraRecord*>(handle);
-    int actionId = camera_record->AddAction(config_buffer);
+    int actionId = camera_record->AddEffect(config_buffer);
     env->ReleaseStringUTFChars(config, config_buffer);
     return actionId;
 }
 
-static void Android_JNI_record_updateActionTime(JNIEnv* env, jobject object,
+static void Android_JNI_record_updateEffectTime(JNIEnv* env, jobject object,
         jlong handle, jint start_time, jint end_time, jint action_id) {
     if (handle <= 0) {
         return;
     }
     auto camera_record = reinterpret_cast<CameraRecord*>(handle);
-    camera_record->UpdateActionTime(start_time, end_time, action_id);
+    camera_record->UpdateEffectTime(start_time, end_time, action_id);
 }
 
-static void Android_JNI_record_updateActionParam(JNIEnv* env, jobject object,
+static void Android_JNI_record_updateEffectParam(JNIEnv* env, jobject object,
         jlong handle, jint action_id, jstring effect_name,
         jstring param_name, jfloat value) {
     if (handle <= 0) {
@@ -263,17 +273,17 @@ static void Android_JNI_record_updateActionParam(JNIEnv* env, jobject object,
     auto camera_record = reinterpret_cast<CameraRecord*>(handle);
     const char* effect_name_char = env->GetStringUTFChars(effect_name, JNI_FALSE);
     const char* param_name_char = env->GetStringUTFChars(param_name, JNI_FALSE);
-    camera_record->UpdateActionParam(action_id, effect_name_char, param_name_char, value);
+    camera_record->UpdateEffectParam(action_id, effect_name_char, param_name_char, value);
     env->ReleaseStringUTFChars(param_name, param_name_char);
     env->ReleaseStringUTFChars(effect_name, effect_name_char);
 }
 
-static void Android_JNI_record_deleteAction(JNIEnv* env, jobject object, jlong handle, jint action_id) {
+static void Android_JNI_record_deleteEffect(JNIEnv* env, jobject object, jlong handle, jint action_id) {
     if (handle <= 0) {
         return;
     }
     auto* camera_record = reinterpret_cast<CameraRecord*>(handle);
-    camera_record->DeleteAction(action_id);
+    camera_record->DeleteEffect(action_id);
 }
 
 static void Android_JNI_releaseNative(JNIEnv *env, jobject object, jlong id) {
@@ -739,11 +749,12 @@ static JNINativeMethod recordMethods[] = {
         {"stopEncode",           "(J)V",                            (void **) Android_JNI_record_stop},
         {"addFilter",            "(JLjava/lang/String;)I",          (void **) Android_JNI_record_addFilter},
         {"updateFilter",         "(JLjava/lang/String;III)V",       (void **) Android_JNI_record_updateFilter },
+        {"updateFilterIntensity","(JFI)V",                          (void **) Android_JNI_record_updateFilterIntensity },
         {"deleteFilter",         "(JI)V",                           (void **) Android_JNI_record_deleteFilter },
-        {"addAction",            "(JLjava/lang/String;)I",          (void **) Android_JNI_record_addAction },
-        {"updateActionTime",     "(JIII)V",                         (void **) Android_JNI_record_updateActionTime },
-        {"updateActionParam",    "(JILjava/lang/String;Ljava/lang/String;F)V", (void **) Android_JNI_record_updateActionParam},
-        {"deleteAction",         "(JI)V",                           (void **) Android_JNI_record_deleteAction },
+        {"addEffect",            "(JLjava/lang/String;)I",          (void **) Android_JNI_record_addEffect },
+        {"updateEffectTime",     "(JIII)V",                         (void **) Android_JNI_record_updateEffectTime },
+        {"updateEffectParam",    "(JILjava/lang/String;Ljava/lang/String;F)V", (void **) Android_JNI_record_updateEffectParam},
+        {"deleteEffect",         "(JI)V",                           (void **) Android_JNI_record_deleteEffect },
         {"release",              "(J)V",                            (void **) Android_JNI_releaseNative}
 };
 

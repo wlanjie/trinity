@@ -105,7 +105,8 @@ static void reset(AVPlayContext* context) {
 }
 
 static inline void set_buffer_time(AVPlayContext* context) {
-    float buffer_time_length = context->buffer_time_length;
+    int64_t duration = context->duration / 1000;
+    float buffer_time_length = context->buffer_time_length > duration ? duration : context->buffer_time_length;
     AVRational time_base;
     if (context->av_track_flags & AUDIO_FLAG) {
         time_base = context->format_context->streams[context->audio_index]->time_base;
@@ -668,14 +669,13 @@ int av_play_play(const char* url, AVPlayContext *context) {
     }
     AVCodecParameters *codecpar;
 
-    float buffer_time_length = context->buffer_time_length;
+    context->duration = context->format_context->duration / 1000;
     if (context->av_track_flags & AUDIO_FLAG) {
         ret = audio_codec_init(context);
         if (ret != 0) {
             goto fail;
         }
     }
-    context->duration = context->format_context->duration / 1000;
     if (context->av_track_flags & VIDEO_FLAG) {
         int64_t d = av_rescale_q(context->format_context->streams[context->video_index]->duration,
                                  context->format_context->streams[context->video_index]->time_base

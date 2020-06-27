@@ -25,18 +25,26 @@
 
 #include "frame_buffer.h"
 #include "gl.h"
+#if __ANDROID__
+#include "android_xlog.h"
+#elif __APPLE__
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#define LOGE(format, ...) fprintf(stdout, format, __VA_ARGS__) // NOLINT
+#define LOGI(format, ...) fprintf(stdout, format, __VA_ARGS__) // NOLINT
+#endif
 
 namespace trinity {
 
 static const char* FILTER_FRAGMENT_SHADER =
         "#ifdef GL_ES                                                                                \n"
         "precision highp float;                                                                      \n"
+        "#else                                                                                       \n"
+        "#define highp                                                                               \n"
+        "#define mediump                                                                             \n"
+        "#define lowp                                                                                \n"
+        "#endif                                                                                      \n"
         "varying highp vec2 textureCoordinate;                                                       \n"
         "varying highp vec2 textureCoordinate2;                                                      \n"
-        "#else                                                                                       \n"
-        "varying vec2 textureCoordinate;                                                             \n"
-        "varying vec2 textureCoordinate2;                                                            \n"
-        "#endif                                                                                      \n"
         "uniform sampler2D inputImageTexture;                                                        \n"
         "uniform sampler2D inputImageTextureLookup;                                                  \n"
         "uniform float intensity;                                                                    \n"

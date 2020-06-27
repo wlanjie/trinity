@@ -156,6 +156,7 @@ void OpenGL::SetFrame(int source_width, int source_height, int target_width, int
             scale_height = target_ratio / source_ratio;
         }
     }
+    LOGE("scale_width: %f scale_height: %f", scale_width, scale_height);
     default_vertex_coordinates_[0] = -scale_width;
     default_vertex_coordinates_[1] = -scale_height;
     default_vertex_coordinates_[2] = scale_width;

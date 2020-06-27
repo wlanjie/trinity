@@ -479,7 +479,7 @@ void Player::DeleteAction(int action_id) {
 void Player::OnAddAction(char *config, int action_id) {
     if (nullptr != image_process_) {
         LOGI("add action id: %d config: %s", action_id, config);
-        image_process_->OnAction(config, action_id);
+        image_process_->OnEffect(config, action_id);
     }
     delete[] config;
 }
@@ -497,7 +497,7 @@ void Player::OnDeleteAction(int action_id) {
         return;
     }
     LOGI("delete action id: %d", action_id);
-    image_process_->RemoveAction(action_id);
+    image_process_->RemoveEffect(action_id);
 }
 
 void Player::OnAddMusic(char *config, int action_id) {

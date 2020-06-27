@@ -34,6 +34,7 @@ import com.trinity.camera.*
 import com.trinity.core.Frame
 import com.trinity.core.MusicInfo
 import com.trinity.core.RenderType
+import com.trinity.editor.VideoExportInfo
 import com.trinity.encoder.MediaCodecSurfaceEncoder
 import com.trinity.face.FaceDetection
 import com.trinity.face.FaceDetectionImageType
@@ -453,6 +454,17 @@ class TrinityRecord(
   }
 
   /**
+   * 更新滤镜透明度
+   * @param intensity Float 滤镜透明度 0.0 ~ 1.0
+   * @param actionId Int addAction时返回的id
+   */
+  fun updateFilterIntensity(intensity: Float, actionId: Int) {
+    updateFilterIntensity(mHandle, intensity, actionId)
+  }
+
+  private external fun updateFilterIntensity(handle: Long, intensity: Float, actionId: Int)
+
+  /**
    * 删除滤镜
    * @param actionId 需要删除哪个滤镜, 必须为addFilter时返回的actionId
    */
@@ -468,14 +480,14 @@ class TrinityRecord(
    * @param configPath 滤镜config.json的父目录
    * @return 返回当前特效的唯一id
    */
-  fun addAction(configPath: String): Int {
+  fun addEffect(configPath: String): Int {
     if (mHandle <= 0) {
       return -1
     }
-    return addAction(mHandle, configPath)
+    return addEffect(mHandle, configPath)
   }
 
-  private external fun addAction(handle: Long, config: String): Int
+  private external fun addEffect(handle: Long, config: String): Int
 
   /**
    * 更新指定特效
@@ -483,14 +495,14 @@ class TrinityRecord(
    * @param endTime 特效的结束时间
    * @param actionId 需要更新哪个特效, 必须为addAction返回的actionId
    */
-  fun updateActionTime(startTime: Int, endTime: Int, actionId: Int) {
+  fun updateEffectTime(startTime: Int, endTime: Int, actionId: Int) {
     if (mHandle <= 0) {
       return
     }
-    updateActionTime(mHandle, startTime, endTime, actionId)
+    updateEffectTime(mHandle, startTime, endTime, actionId)
   }
 
-  private external fun updateActionTime(handle: Long, startTime: Int, endTime: Int, actionId: Int)
+  private external fun updateEffectTime(handle: Long, startTime: Int, endTime: Int, actionId: Int)
 
   /**
    * 更新指定特效的参数
@@ -499,11 +511,11 @@ class TrinityRecord(
    * @param paramName String 更新OpenGL shader中的参数值
    * @param value Float 具体的参数值 0.0 ~ 1.0
    */
-  fun updateActionParam(actionId: Int, effectName: String, paramName: String, value: Float) {
-    updateActionParam(mHandle, actionId, effectName, paramName, value)
+  fun updateEffectParam(actionId: Int, effectName: String, paramName: String, value: Float) {
+    updateEffectParam(mHandle, actionId, effectName, paramName, value)
   }
 
-  private external fun updateActionParam(handle: Long, actionId: Int, effectName: String, paramName: String, value: Float)
+  private external fun updateEffectParam(handle: Long, actionId: Int, effectName: String, paramName: String, value: Float)
 
 //  /**
 //   * 更新指定特效的参数
@@ -522,14 +534,14 @@ class TrinityRecord(
    * 删除一个特效
    * @param actionId 需要删除哪个特效, 必须为addAction返回的actionId
    */
-  fun deleteAction(actionId: Int) {
+  fun deleteEffect(actionId: Int) {
     if (mHandle <= 0) {
       return
     }
-    deleteAction(mHandle, actionId)
+    deleteEffect(mHandle, actionId)
   }
 
-  private external fun deleteAction(handle: Long, actionId: Int)
+  private external fun deleteEffect(handle: Long, actionId: Int)
 
 
   /**
@@ -580,14 +592,7 @@ class TrinityRecord(
    * @throws InitRecorderFailException
    */
   @Throws(InitRecorderFailException::class)
-  fun startRecording(path: String,
-                  width: Int, height: Int,
-                  videoBitRate: Int, frameRate: Int,
-                  useHardWareEncode: Boolean,
-                  audioSampleRate: Int,
-                  audioChannel: Int,
-                  audioBitRate: Int,
-                  duration: Int): Int {
+  fun startRecording(info: VideoExportInfo, duration: Int): Int {
     synchronized(this) {
       if (mRecording) {
         return ErrorCode.RECORDING
@@ -615,9 +620,9 @@ class TrinityRecord(
       setSpeed(mHandle, 1.0f / mSpeed.value)
       val tag = "trinity-" + BuildConfig.VERSION_NAME + "-" + getNow()
       startEncode(
-        mHandle, path, width, height, videoBitRate, frameRate,
-        useHardWareEncode,
-        audioSampleRate, audioChannel, audioBitRate,
+        mHandle, info.path, info.width, info.height, info.videoBitRate, info.frameRate,
+        info.mediaCodecEncode,
+        info.sampleRate, info.channelCount, info.audioBitRate,
         tag)
       mRecording = true
     }

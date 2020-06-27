@@ -349,7 +349,7 @@ int main() {
     ImageProcess image_process;
     char* name = "app/src/main/assets/effect/spaceBear";
     auto* detection = new MakeFaceDetection();
-    image_process.OnAction(name, 0, detection);
+    image_process.OnEffect(name, 0, detection);
     FacePoint face_point;
     face_point.SetSourceSize(512, 512);
     face_point.SetTargetSize(512, 512);

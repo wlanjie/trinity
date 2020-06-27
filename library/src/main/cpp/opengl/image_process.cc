@@ -37,7 +37,7 @@ ImageProcess::ImageProcess()
     : action_id_(-1) {}
 
 ImageProcess::~ImageProcess() {
-    ClearAction();
+    ClearEffect();
 }
 
 GLuint ImageProcess::Process(GLuint texture_id, int64_t current_time, int width, int height, int input_color_type, int output_color_type) {
@@ -72,7 +72,7 @@ GLuint ImageProcess::OnProcess(GLuint texture_id, int64_t current_time, int widt
     return texture;
 }
 
-void ImageProcess::OnAction(char* config_path, int action_id, FaceDetection* face_detection) {
+void ImageProcess::OnEffect(char* config_path, int action_id, FaceDetection* face_detection) {
     auto* effect = new Effect();
     effect->SetFaceDetection(face_detection);
     effect->ParseConfig(config_path);
@@ -137,7 +137,7 @@ int ImageProcess::ReadFile(char *path, char **buffer) {
     return 0;
 }
 
-void ImageProcess::RemoveAction(int action_id) {
+void ImageProcess::RemoveEffect(int action_id) {
     if (action_id == -1) {
         return;
     }
@@ -159,7 +159,7 @@ void ImageProcess::RemoveAction(int action_id) {
     }
 }
 
-void ImageProcess::ClearAction() {
+void ImageProcess::ClearEffect() {
     int size = static_cast<int>(effects_.size());
     LOGI("enter: %s action_size: %d", __func__, size);
     auto effect_iterator = effects_.begin();
@@ -233,6 +233,14 @@ void ImageProcess::OnFilter(const char* config_path, int action_id, int start_ti
         stbi_image_free(lut_buffer);
     }
     cJSON_Delete(json);
+}
+
+void ImageProcess::OnFilterIntensity(float intensity, int action_id) {
+    auto result = filters_.find(action_id);
+    if (result != filters_.end()) {
+        Filter* filter = filters_[action_id];
+        filter->SetIntensity(intensity);
+    }
 }
 
 void ImageProcess::OnDeleteFilter(int action_id) {
