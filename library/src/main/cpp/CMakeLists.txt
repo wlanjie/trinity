@@ -124,7 +124,8 @@ add_library(
         ${FILES_OPENGL}/process_buffer.cc
         ${FILES_OPENGL}/effect.cc
         ${FILES_OPENGL}/blend.cc
-        ${FILES_OPENGL}/face_markup_render.cc)
+        ${FILES_OPENGL}/face_markup_render.cc
+        ${FILES_OPENGL}/background.cc)
 
 set(FFMPEG_LIB ${CMAKE_CURRENT_LIST_DIR}/../../../../extra/ffmpeg/${ANDROID_ABI})
 add_library(avcodec STATIC IMPORTED)

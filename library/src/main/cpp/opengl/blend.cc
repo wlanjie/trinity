@@ -247,8 +247,6 @@ void Blend::CompileShader(const char *shader_string, GLuint shader) {
     glCompileShader(shader);
     GLint compiled = GL_FALSE;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
-    printf("%s\n", shader_string);
-    printf("==================\n");
     if (!compiled) {
         GLint infoLen;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);

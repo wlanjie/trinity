@@ -28,6 +28,9 @@
 #define IMAGE 10
 #define VIDEO 11
 
+#define BACKGROUND_COLOR 0
+#define BACKGROUND_IMAGE 1
+
 typedef struct {
     char* file_name;
     int64_t start_time;
@@ -54,6 +57,8 @@ typedef enum {
     kFilterUpdate,
     kFilterIntensity,
     kFilterDelete,
+    kBackgroundColor,
+    kBackgroundImage
 } EffectMessage;
 
 #endif  // TRINITY_TRINITY_H

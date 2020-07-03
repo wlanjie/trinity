@@ -296,7 +296,7 @@ void VideoEditor::DeleteMusic(int action_id) {
 
 int VideoEditor::AddAction(const char *effect_config) {
     if (nullptr != player_) {
-        auto action_id = player_->AddAction(effect_config);
+        auto action_id = player_->AddEffect(effect_config);
         if (nullptr != editor_resource_) {
             editor_resource_->AddAction(effect_config, action_id);
         }
@@ -307,7 +307,7 @@ int VideoEditor::AddAction(const char *effect_config) {
 
 void VideoEditor::UpdateAction(int start_time, int end_time, int action_id) {
     if (nullptr != player_) {
-        player_->UpdateAction(start_time, end_time, action_id);
+        player_->UpdateEffect(start_time, end_time, action_id);
         if (nullptr != editor_resource_) {
             editor_resource_->UpdateAction(start_time, end_time, action_id);
         }
@@ -316,10 +316,42 @@ void VideoEditor::UpdateAction(int start_time, int end_time, int action_id) {
 
 void VideoEditor::DeleteAction(int action_id) {
     if (nullptr != player_) {
-        player_->DeleteAction(action_id);
+        player_->DeleteEffect(action_id);
     }
     if (nullptr != editor_resource_) {
         editor_resource_->DeleteAction(action_id);
+    }
+}
+
+void VideoEditor::SetBackgroundColor(int clip_index, int red, int green, int blue, int alpha) {
+    if (nullptr != editor_resource_) {
+        editor_resource_->SetBackgroundColor(clip_index, red, green, blue, alpha);
+    }
+    if (nullptr != player_) {
+        player_->SetBackgroundColor(clip_index, red, green, blue, alpha);
+    }
+}
+
+int VideoEditor::SetBackgroundImage(int clip_index, const char *image_path) {
+    MediaClip clip;
+    clip.file_name = const_cast<char *>(image_path);
+    auto result = CheckFileType(&clip);
+    LOGE("clip.type: %d result: %d", clip.type, result);
+    if (clip.type != IMAGE) {
+        return -2;
+    }
+    if (nullptr != editor_resource_) {
+        editor_resource_->SetBackgroundImage(clip_index, image_path);
+    }
+    if (nullptr != player_) {
+        player_->SetBackgroundImage(clip_index, image_path);
+    }
+    return 0;
+}
+
+void VideoEditor::SetFrameSize(int width, int height) {
+    if (nullptr != player_) {
+        player_->SetFrameSize(width, height);
     }
 }
 

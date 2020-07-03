@@ -49,6 +49,8 @@ class EditorResource {
     void AddFilter(const char* config, int action_id);
     void UpdateFilter(const char* config, int start_time, int end_time, int action_id);
     void DeleteFilter(int action_id);
+    void SetBackgroundColor(int clip_index, int red, int green, int blue, int alpha);
+    void SetBackgroundImage(int clip_index, const char* path);
 
  private:
     FILE* resource_file_;
@@ -57,6 +59,7 @@ class EditorResource {
     cJSON* effect_json_;
     cJSON* music_json_;
     cJSON* filter_json_;
+    cJSON* background_json_;
 };
 
 }  // namespace trinity

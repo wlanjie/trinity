@@ -163,7 +163,6 @@ typedef struct AVPlayContext {
     JavaClass *java_class;
     ANativeWindow* window;
 
-    //用户设置
     int buffer_size_max;
     float buffer_time_length;
     bool force_sw_decode;
@@ -176,6 +175,10 @@ typedef struct AVPlayContext {
     pthread_t read_stream_thread;
     pthread_t audio_decode_thread;
     pthread_t video_decode_thread;
+
+    // eof cond
+    pthread_cond_t eof_cond_t;
+    pthread_mutex_t eof_mutex_t;
 
     // 封装
     AVFormatContext *format_context;

@@ -290,6 +290,28 @@ class VideoEditor(
 
   private external fun deleteAction(handle: Long, actionId: Int)
 
+  override fun setBackgroundColor(clipIndex: Int, red: Int, green: Int, blue: Int, alpha: Int) {
+    setBackgroundColor(mId, clipIndex, red, green, blue, alpha)
+  }
+
+  private external fun setBackgroundColor(handle: Long, clipIndex: Int, red: Int, green: Int, blue: Int, alpha: Int)
+
+  override fun setBackgroundImage(clipIndex: Int, path: String): Int {
+    val file = File(path)
+    if (!file.exists() || file.length() <= 0) {
+      return -1
+    }
+    return setBackgroundImage(mId, clipIndex, path)
+  }
+
+  private external fun setBackgroundImage(handle: Long, clipIndex: Int, path: String): Int
+
+  override fun setFrameSize(width: Int, height: Int) {
+    setFrameSize(mId, width, height)
+  }
+
+  private external fun setFrameSize(handle: Long, width: Int, height: Int)
+
   override fun setOnRenderListener(l: OnRenderListener) {
     mOnRenderListener = l
   }

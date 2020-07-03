@@ -35,6 +35,7 @@
 #include "opengl.h"
 #include "gl.h"
 #include "buffer_pool.h"
+#include "background.h"
 #include "player_event_observer.h"
 
 extern "C" {
@@ -179,7 +180,7 @@ class Player : public Handler {
      * @param effect_config 特效配置
      * @return 特效对应的id, 后续的更新和删除都以这个id为准
      */
-    int AddAction(const char* effect_config);
+    int AddEffect(const char* effect_config);
 
     /**
      * 更新一个特效
@@ -187,13 +188,37 @@ class Player : public Handler {
      * @param end_time 特效的结束时间
      * @param action_id 特效对应的id, 在AddAction时返回
      */
-    void UpdateAction(int start_time, int end_time, int action_id);
+    void UpdateEffect(int start_time, int end_time, int action_id);
 
     /**
      * 删除一个特效
      * @param action_id 特效对应的id, 在AddAction时返回
      */
-    void DeleteAction(int action_id);
+    void DeleteEffect(int action_id);
+
+    /**
+     * 设置背景颜色
+     * @param clip_index 应用的当前片段
+     * @param red 红色 255
+     * @param green 绿色 255
+     * @param blue 蓝色 255
+     * @param alpha 透明色
+     */
+    void SetBackgroundColor(int clip_index, int red, int green, int blue, int alpha);
+
+    /**
+     * 设置背景图片
+     * @param clip_index 应用的当前片段
+     * @param image_path 图片的地址
+     */
+    void SetBackgroundImage(int clip_index, const char* image_path);
+
+    /**
+     * 设置显示区域大小
+     * @param width 需要显示的宽
+     * @param height 需要显示的高
+     */
+    void SetFrameSize(int width, int height);
 
  private:
     AVPlayContext* CreatePlayContext(JNIEnv* env);
@@ -207,6 +232,8 @@ class Player : public Handler {
     void OnAddFilter(char* config, int action_id);
     void OnUpdateFilter(char* config, int start_time, int end_time, int action_id);
     void OnDeleteFilter(int action_id);
+    void OnBackgroundColor(int clip_index, int red, int green, int blue, int alpha);
+    void OnBackgroundImage(int clip_index, char* image_path);
     void FreeMusicPlayer();
     int GetAudioFrame();
     static int AudioCallback(uint8_t** buffer, int *buffer_size, void* context);
@@ -285,6 +312,7 @@ class Player : public Handler {
     int64_t current_time_;
     int64_t previous_time_;
     BufferPool* buffer_pool_;
+    Background* background_;
 };
 
 }  // namespace trinity

@@ -638,6 +638,34 @@ static void Android_JNI_video_editor_deleteAction(JNIEnv* env, jobject object, j
     editor->DeleteAction(action_id);
 }
 
+static void Android_JNI_video_editor_setBackgroundColor(JNIEnv* env, jobject object, jlong handle,
+        jint clip_index, jint red, jint green, jint blue, jint alpha) {
+    if (handle <= 0) {
+        return;
+    }
+    auto* editor = reinterpret_cast<VideoEditor*>(handle);
+    editor->SetBackgroundColor(clip_index, red, green, blue, alpha);
+}
+
+static jint Android_JNI_video_editor_setBackgroundImage(JNIEnv* env, jobject object, jlong handle, jint clip_index, jstring path) {
+    if (handle <= 0) {
+        return -1;
+    }
+    auto* editor = reinterpret_cast<VideoEditor*>(handle);
+    const char* image_path = env->GetStringUTFChars(path, JNI_FALSE);
+    int result = editor->SetBackgroundImage(clip_index, image_path);
+    env->ReleaseStringUTFChars(path, image_path);
+    return result;
+}
+
+static void Android_JNI_video_editor_setFrameSize(JNIEnv* env, jobject object, jlong handle, jint width, int height) {
+    if (handle <= 0) {
+        return;
+    }
+    auto* editor = reinterpret_cast<VideoEditor*>(handle);
+    editor->SetFrameSize(width, height);
+}
+
 static void Android_JNI_video_editor_seek(JNIEnv* env, jobject object, jlong handle, jint time) {
     if (handle <= 0) {
         return;
@@ -801,6 +829,9 @@ static JNINativeMethod videoEditorMethods[] = {
         {"addAction",           "(JLjava/lang/String;)I",                                (void **) Android_JNI_video_editor_addAction },
         {"updateAction",        "(JIII)V",                                               (void **) Android_JNI_video_editor_updateAction },
         {"deleteAction",        "(JI)V",                                                 (void **) Android_JNI_video_editor_deleteAction },
+        {"setBackgroundColor",  "(JIIIII)V",                                             (void **) Android_JNI_video_editor_setBackgroundColor },
+        {"setBackgroundImage",  "(JILjava/lang/String;)I",                               (void **) Android_JNI_video_editor_setBackgroundImage },
+        {"setFrameSize",        "(JII)V",                                                (void **) Android_JNI_video_editor_setFrameSize },
         {"seek",                "(JI)V",                                                 (void **) Android_JNI_video_editor_seek },
         {"play",                "(JZ)I",                                                 (void **) Android_JNI_video_editor_play },
         {"pause",               "(J)V",                                                  (void **) Android_JNI_video_editor_pause },

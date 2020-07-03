@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		70141DE024ADC82400FD78F8 /* background.cc in Sources */ = {isa = PBXBuildFile; fileRef = 70141DDF24ADC82400FD78F8 /* background.cc */; };
 		702B75B22313E40B0089082D /* main.cc in Sources */ = {isa = PBXBuildFile; fileRef = 702B75B12313E40B0089082D /* main.cc */; };
 		702B75BD2313E4E40089082D /* opengl.cc in Sources */ = {isa = PBXBuildFile; fileRef = 702B75B42313E4E40089082D /* opengl.cc */; settings = {COMPILER_FLAGS = "-Wdeprecated-declarations"; }; };
 		702B75BE2313E4E40089082D /* frame_buffer.cc in Sources */ = {isa = PBXBuildFile; fileRef = 702B75B62313E4E40089082D /* frame_buffer.cc */; settings = {COMPILER_FLAGS = "-Wdeprecated-declarations"; }; };
@@ -37,6 +38,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		70141DDE24ADC82400FD78F8 /* background.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = background.h; sourceTree = "<group>"; };
+		70141DDF24ADC82400FD78F8 /* background.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = background.cc; sourceTree = "<group>"; };
 		702B75A32313E2390089082D /* opengl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = opengl; sourceTree = BUILT_PRODUCTS_DIR; };
 		702B75B12313E40B0089082D /* main.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cc; sourceTree = "<group>"; };
 		702B75B32313E4E40089082D /* frame_buffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = frame_buffer.h; sourceTree = "<group>"; };
@@ -112,6 +115,8 @@
 		702B75A52313E2390089082D /* opengl */ = {
 			isa = PBXGroup;
 			children = (
+				70141DDF24ADC82400FD78F8 /* background.cc */,
+				70141DDE24ADC82400FD78F8 /* background.h */,
 				70CCE875240D4B7E00CB63E9 /* face_detection.h */,
 				70CCE872240D4B7E00CB63E9 /* face_markup_render.cc */,
 				70CCE873240D4B7E00CB63E9 /* face_markup_render.h */,
@@ -231,6 +236,7 @@
 				70D8854E2362F1BF004E5C33 /* cJSON_Utils.c in Sources */,
 				7064C9E62318EEF700F5D22B /* gaussian_blur.cc in Sources */,
 				70AA611523ACCE2C00F84CFD /* effect.cc in Sources */,
+				70141DE024ADC82400FD78F8 /* background.cc in Sources */,
 				70D8854D2362F1BF004E5C33 /* cJSON.c in Sources */,
 				702B75B22313E40B0089082D /* main.cc in Sources */,
 				7091C9D423A3D2B900E3D958 /* image_process.cc in Sources */,

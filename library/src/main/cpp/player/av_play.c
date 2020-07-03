@@ -150,6 +150,8 @@ AVPlayContext* av_play_create(JNIEnv *env, jobject instance, int play_create, in
     context->audio_clock = clock_create();
     context->video_clock = clock_create();
     pthread_mutex_init(&context->media_codec_mutex, NULL);
+    pthread_mutex_init(&context->eof_mutex_t, NULL);
+    pthread_cond_init(&context->eof_cond_t, NULL);
     av_register_all();
     avfilter_register_all();
     context->audio_filter_context = audio_filter_create();
@@ -480,7 +482,7 @@ void* video_decode_hw_thread(void* data){
                     } else {
                         seek_time = 0;
                     }
-//                    LOGE("frame count: %d size: %d", context->video_frame_queue->count, context->video_frame_queue->size);
+//                    LOGE("frame count: %d size: %d width: %d line_size: %d height: %d", context->video_frame_queue->count, context->video_frame_queue->size, frame->width, frame->linesize[0], frame->height);
                     frame->FRAME_ROTATION = context->frame_rotation;
                     frame_queue_put(context->video_frame_queue, frame);
                     frame = frame_pool_get_frame(context->video_frame_pool);
@@ -600,6 +602,8 @@ void *read_thread(void *data) {
         }
         // read data to packet
         int ret = av_read_frame(context->format_context, packet);
+//        LOGE("context: %p file: %s video_size: %d queue->duration: %lld max_duration: %lld status: %d ret: %d",
+//                context->format_context, context->format_context->filename, context->video_packet_queue->count, context->video_packet_queue->duration, context->video_packet_queue->max_duration, context->status,ret);
         if (ret == 0) {
             context->timeout_start = 0;
             if (packet->stream_index == context->video_index) {
@@ -628,7 +632,10 @@ void *read_thread(void *data) {
             if (context->status == BUFFER_EMPTY) {
                 context->send_message(context, message_buffer_full);
             }
-            usleep(1000);
+            // 文件读取结束时, 等待seek和stop通知
+            pthread_mutex_lock(&context->eof_mutex_t);
+            pthread_cond_wait(&context->eof_cond_t, &context->eof_mutex_t);
+            pthread_mutex_unlock(&context->eof_mutex_t);
         } else {
             // error
             context->on_error(context, ret);
@@ -742,7 +749,7 @@ int av_play_play(const char* url, AVPlayContext *context) {
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
     pthread_create(&context->read_stream_thread, &attr, read_thread, context);
-    LOGE("context->is_sw_decode: %d rotate: %d", context->is_sw_decode, context->frame_rotation);
+    LOGE("context->is_sw_decode: %d rotate: %d width: %d height: %d", context->is_sw_decode, context->frame_rotation, context->width, context->height);
     if (context->av_track_flags & VIDEO_FLAG) {
         if (context->is_sw_decode) {
             pthread_create(&context->video_decode_thread, &attr, video_decode_sw_thread, context);
@@ -865,6 +872,11 @@ void av_play_seek(AVPlayContext* context, int64_t seek_to) {
     }
 
     change_status(context, SEEKING);
+
+    // seek之后通知av_read_frame线程继续读取packet
+    pthread_mutex_lock(&context->eof_mutex_t);
+    pthread_cond_signal(&context->eof_cond_t);
+    pthread_mutex_unlock(&context->eof_mutex_t);
 }
 
 void av_play_set_play_background(AVPlayContext* context, bool play_background) {
@@ -948,6 +960,12 @@ static int stop(AVPlayContext *context) {
     context->video_packet_queue->full_cb = NULL;
 
     clean_queues(context);
+
+    // 通知read线程解锁wait操作
+    pthread_mutex_lock(&context->eof_mutex_t);
+    pthread_cond_signal(&context->eof_cond_t);
+    pthread_mutex_unlock(&context->eof_mutex_t);
+
     // 停止各个thread
     void *thread_res;
     pthread_join(context->read_stream_thread, &thread_res);
@@ -1015,6 +1033,8 @@ int av_play_release(AVPlayContext* context) {
         (*context->vm)->DetachCurrentThread(context->vm);
     }
     pthread_mutex_destroy(&context->media_codec_mutex);
+    pthread_mutex_destroy(&context->eof_mutex_t);
+    pthread_cond_destroy(&context->eof_cond_t);
     free(context);
     return 0;
 }

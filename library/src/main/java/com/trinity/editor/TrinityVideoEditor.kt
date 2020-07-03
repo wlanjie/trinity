@@ -199,6 +199,31 @@ interface TrinityVideoEditor {
    */
   fun deleteAction(actionId: Int)
 
+  /**
+   * 设置背景颜色 255 255 255 0 白色
+   * @param clipIndex 需要更新哪一个片段
+   * @param red Int 红色
+   * @param green Int 绿色
+   * @param blue Int 蓝色
+   * @param alpha Int 透明色
+   */
+  fun setBackgroundColor(clipIndex: Int, red: Int, green: Int, blue: Int, alpha: Int)
+
+  /**
+   * 设置视频背景图片
+   * @param clipIndex 需要更新哪一个片段
+   * @param path String 图片地址
+   * @return 0 success other failed
+   */
+  fun setBackgroundImage(clipIndex: Int, path: String): Int
+
+  /**
+   * 设置显示大小
+   * @param width Int 需要显示的宽
+   * @param height Int 需要显示的高
+   */
+  fun setFrameSize(width: Int, height: Int)
+
   fun setOnRenderListener(l: OnRenderListener)
 
   /**

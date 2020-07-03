@@ -82,7 +82,8 @@ Player::Player(JNIEnv* env, jobject object) : Handler()
     , draw_texture_id_(0)
     , player_state_(kNone)
     , current_time_(0)
-    , previous_time_(0) {
+    , previous_time_(0)
+    , background_(nullptr) {
     buffer_pool_ = new BufferPool(sizeof(Message));
     texture_matrix_ = new float[16];
     pthread_mutex_init(&mutex_, nullptr);
@@ -448,7 +449,7 @@ void Player::DeleteFilter(int action_id) {
     PostMessage(message);
 }
 
-int Player::AddAction(const char *effect_config) {
+int Player::AddEffect(const char *effect_config) {
     int actId = current_action_id_++;
     char *config = new char[strlen(effect_config) + 1];
     sprintf(config, "%s%c", effect_config, 0);
@@ -460,7 +461,7 @@ int Player::AddAction(const char *effect_config) {
     return actId;
 }
 
-void Player::UpdateAction(int start_time, int end_time, int action_id) {
+void Player::UpdateEffect(int start_time, int end_time, int action_id) {
     auto message = buffer_pool_->GetBuffer<Message>();
     message->what = kEffectUpdate;
     message->arg1 = start_time;
@@ -469,10 +470,42 @@ void Player::UpdateAction(int start_time, int end_time, int action_id) {
     PostMessage(message);
 }
 
-void Player::DeleteAction(int action_id) {
+void Player::DeleteEffect(int action_id) {
     auto message = buffer_pool_->GetBuffer<Message>();
     message->what = kEffectDelete;
     message->arg1 = action_id;
+    PostMessage(message);
+}
+
+void Player::SetBackgroundColor(int clip_index, int red, int green, int blue, int alpha) {
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kBackgroundColor;
+    message->arg1 = clip_index;
+    message->arg2 = red;
+    message->arg3 = green;
+    message->arg4 = blue;
+    message->arg5 = alpha;
+    PostMessage(message);
+}
+
+void Player::SetBackgroundImage(int clip_index, const char *image_path) {
+    char *path = new char[strlen(image_path) + 1];
+    sprintf(path, "%s%c", image_path, 0);
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kBackgroundImage;
+    message->obj = path;
+    message->arg1 = clip_index;
+    PostMessage(message);
+}
+
+void Player::SetFrameSize(int width, int height) {
+    surface_width_ = width;
+    surface_height_ = height;
+    if (frame_width_ != 0 && frame_height_ != 0) {
+        SetFrame(frame_width_, frame_height_, surface_width_, surface_height_);
+    }
+    auto message = buffer_pool_->GetBuffer<Message>();
+    message->what = kSurfaceChanged;
     PostMessage(message);
 }
 
@@ -574,6 +607,35 @@ void Player::OnDeleteFilter(int action_id) {
     LOGI("enter %s action_id: %d", __func__, action_id);
     image_process_->OnDeleteFilter(action_id);
     LOGI("leave %s", __func__);
+}
+
+void Player::OnBackgroundColor(int clip_index, int red, int green, int blue, int alpha) {
+    LOGI("enter: %s clip_index: %d red: %d green: %d blue: %d alpha: %d", __func__, clip_index, red, green, blue, alpha);
+    if (nullptr == background_) {
+        background_ = new Background();
+    }
+    background_->SetColor(red, green, blue, alpha);
+    Draw(draw_texture_id_);
+}
+
+void Player::OnBackgroundImage(int clip_index, char *image_path) {
+    LOGI("enter: %s clip_index: %d image_path: %s", __func__, clip_index, image_path);
+    stbi_set_flip_vertically_on_load(true);
+    int width;
+    int height;
+    int channels;
+
+    unsigned char *data = stbi_load(image_path, &width, &height, &channels, 0);
+    if (width == 0 || height == 0) {
+        return;
+    }
+    if (nullptr == background_) {
+        background_ = new Background();
+    }
+    background_->SetImage(data, width, height);
+    stbi_image_free(data);
+    delete[] image_path;
+    Draw(draw_texture_id_);
 }
 
 int Player::GetAudioFrame() {
@@ -804,8 +866,9 @@ void Player::HandleMessage(Message *msg) {
             break;
 
         case kPlayerPreLoad: {
-            MediaClip *next_clip = reinterpret_cast<MediaClip *>(obj);
+            auto *next_clip = reinterpret_cast<MediaClip *>(obj);
             if (next_clip->type == VIDEO) {
+                LOGE("enter: kPlayerPreLoad: %s", next_clip->file_name);
                 av_play_index_++;
                 auto context = av_play_contexts_.at(av_play_index_ % av_play_contexts_.size());
                 int ret = av_play_play(next_clip->file_name, context);
@@ -815,11 +878,12 @@ void Player::HandleMessage(Message *msg) {
             } else if (next_clip->type == IMAGE) {
                 // image
             }
+            pre_loaded_ = false;
             break;
         }
 
         case kPlayerPrepared: {
-            MediaClip* clip = reinterpret_cast<MediaClip*>(obj);
+            auto* clip = reinterpret_cast<MediaClip*>(obj);
             if (nullptr != av_play_context_ && clip->type == VIDEO) {
                 int ret = av_play_play(clip->file_name, av_play_context_);
                 if (ret != 0) {
@@ -832,7 +896,7 @@ void Player::HandleMessage(Message *msg) {
         }
 
         case kPlayerStart: {
-            MediaClip* clip = reinterpret_cast<MediaClip*>(obj);
+            auto* clip = reinterpret_cast<MediaClip*>(obj);
             LOGI("enter Start play: %d file: %s type: %d", av_play_context_->is_sw_decode, clip->file_name, clip->type);
             if (clip->type == VIDEO) {
                 LOGE("kPlayerStart format_context: %p file: %s",av_play_context_->format_context, clip->file_name);
@@ -843,10 +907,7 @@ void Player::HandleMessage(Message *msg) {
                         return;
                     }
                 }
-                if (nullptr != audio_render_) {
-                    delete audio_render_;
-                }
-
+                delete audio_render_;
                 CreateAudioRender();
                 auto message = buffer_pool_->GetBuffer<Message>();
                 message->what = kRenderVideoFrame;
@@ -937,6 +998,14 @@ void Player::HandleMessage(Message *msg) {
 
         case kEffectDelete:
             OnDeleteAction(msg->GetArg1());
+            break;
+
+        case kBackgroundColor:
+            OnBackgroundColor(msg->arg1, msg->arg2, msg->arg3, msg->arg4, msg->arg5);
+            break;
+
+        case kBackgroundImage:
+            OnBackgroundImage(msg->arg1, static_cast<char *>(msg->obj));
             break;
 
         case kMusic:
@@ -1070,6 +1139,8 @@ void Player::CreateRenderFrameBuffer() {
         height = MIN(av_play_context_->video_frame->linesize[0], av_play_context_->video_frame->width);
     }
     if (frame_width_ != width || frame_height_ != height) {
+//        LOGE("frame_width: %d frame_height: %d width: %d line_size: %d height: %d file: %s", frame_width_, frame_height_, av_play_context_->video_frame->width,
+//                av_play_context_->video_frame->linesize[0], av_play_context_->video_frame->height, av_play_context_->format_context->filename);
         frame_width_ = width;
         frame_height_ = height;
         if (av_play_context_->is_sw_decode) {
@@ -1210,15 +1281,21 @@ void Player::Draw(int texture_id) {
         return;
     }
     if (nullptr == render_screen_) {
+        LOGE("nullptr == render_screen_");
         return;
     }
     if (EGL_NO_SURFACE == render_surface_) {
         LOGE("EGL_NO_SURFACE == render_surface_");
         return;
     }
+
+    if (nullptr != background_) {
+        texture_id = background_->OnDrawFrame(texture_id, surface_width_, surface_height_, vertex_coordinate_);
+    }
+
     int texture = OnDrawFrame(texture_id, frame_width_, frame_height_);
     render_screen_->ProcessImage(static_cast<GLuint>(texture > 0 ? texture : texture_id),
-            vertex_coordinate_, texture_coordinate_);
+            background_ != nullptr ? DEFAULT_VERTEX_COORDINATE : vertex_coordinate_, texture_coordinate_);
     if (!core_->SwapBuffers(render_surface_)) {
         LOGE("eglSwapBuffers error: %d", eglGetError());
     }
@@ -1247,7 +1324,7 @@ void Player::OnGLCreate() {
 }
 
 void Player::OnGLWindowCreate() {
-    LOGI("enter %s core_: %p", __func__, core_);
+    LOGE("enter %s core_: %p", __func__, core_);
     render_surface_ = core_->CreateWindowSurface(window_);
     if (nullptr != render_surface_ && EGL_NO_SURFACE != render_surface_) {
         auto result = core_->MakeCurrent(render_surface_);
@@ -1257,9 +1334,7 @@ void Player::OnGLWindowCreate() {
         }
     }
     if (nullptr == render_screen_) {
-        render_screen_ = new OpenGL(surface_width_, surface_height_, DEFAULT_VERTEX_SHADER,
-                                    DEFAULT_FRAGMENT_SHADER);
-        render_screen_->SetOutput(surface_width_, surface_height_);
+        render_screen_ = new OpenGL(surface_width_, surface_height_, DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
     }
     if (nullptr == image_process_) {
         image_process_ = new ImageProcess();
@@ -1284,6 +1359,7 @@ void Player::OnGLWindowCreate() {
             started_ = player_state_ == kNone;
         }
         if (started_) {
+            LOGE("enter: %s start file: %s", __func__, current_clip_->file_name);
             auto prepared_message = buffer_pool_->GetBuffer<Message>();
             prepared_message->obj = current_clip_;
             prepared_message->arg1 = 0;
@@ -1298,6 +1374,7 @@ void Player::OnGLWindowCreate() {
         }
     }
     if (pre_loaded_) {
+        LOGE("enter: %s pre_loaded file: %s", __func__, pre_load_clip_->file_name);
         pre_loaded_ = false;
         auto message = buffer_pool_->GetBuffer<Message>();
         message->what = kPlayerPreLoad;
@@ -1310,7 +1387,7 @@ void Player::OnGLWindowCreate() {
         PostMessage(message);
     }
     pthread_cond_signal(&cond_);
-    LOGI("leave %s", __func__);
+    LOGE("leave %s", __func__);
 }
 
 void Player::OnRenderVideoFrame() {
@@ -1457,7 +1534,7 @@ void Player::OnRenderImageFrame() {
 }
 
 void Player::OnGLWindowDestroy() {
-    LOGI("enter %s", __func__);
+    LOGE("enter %s", __func__);
     if (nullptr != core_ && EGL_NO_SURFACE != render_surface_) {
         core_->ReleaseSurface(render_surface_);
         render_surface_ = EGL_NO_SURFACE;
@@ -1465,11 +1542,15 @@ void Player::OnGLWindowDestroy() {
     frame_width_ = 0;
     frame_height_ = 0;
     window_created_ = false;
-    LOGI("leave %s", __func__);
+    LOGE("leave %s", __func__);
 }
 
 void Player::OnGLDestroy() {
     LOGI("enter %s", __func__);
+    if (nullptr != background_) {
+        delete background_;
+        background_ = nullptr;
+    }
     if (nullptr != image_process_) {
         delete image_process_;
         image_process_ = nullptr;

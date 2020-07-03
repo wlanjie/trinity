@@ -45,6 +45,8 @@
 #include "gaussian_blur.h"
 #include "blur_split_screen.h"
 #include "face.h"
+#include "background.h"
+#include "frame_buffer.h"
 
 //
 //extern "C" {
@@ -345,6 +347,22 @@ int main() {
 //    glBindTexture(GL_TEXTURE_2D, 0);
 //    stbi_image_free(prop_data);
 
+    Background background;
+    background.SetColor(255, 0, 0, 0);
+//    background.SetImage("/Users/wlanjie/project/trinity/app/src/main/assets/lenna.png", 512, 512);
+
+//    FrameBuffer frame_buffer(512, 512, DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
+//    GLfloat vertex_coordinate[] = {
+//        -0.25, -0.25,
+//        0.75, -0.25,
+//        -0.25, 0.75,
+//        0.75, 0.75
+//    };
+//    
+//    texture_id = frame_buffer.OnDrawFrame(texture_id, DEFAULT_VERTEX_COORDINATE, DEFAULT_TEXTURE_COORDINATE);
+
+    GaussianBlur blue(512, 512, 1.0);
+
     clock_t start = clock();
     ImageProcess image_process;
     char* name = "app/src/main/assets/effect/spaceBear";
@@ -361,15 +379,25 @@ int main() {
 //            image_process.OnUpdateAction(0, 300, 0);
         }
 //        image_process.OnUpdateEffectParam(0, "spaceBear", "scale", 3.0f);
-        int process_id = image_process.Process(texture_id, current_time, width, height, 0, 0);
-//        int process_id = face_point.OnDrawFrame(texture_id, prop_texture_id);
-        image_process.OnUpdateEffectParam(0, "spaceBear", "stickerWidth", 0.23f);
-        image_process.OnUpdateEffectParam(0, "spaceBear", "stickerX", 0.23f);
-        image_process.OnUpdateEffectParam(0, "spaceBear", "stickerY", 0.23f);
-        image_process.OnUpdateEffectParam(0, "spaceBear", "stickerRotate", (float)glfwGetTime() * 10);
+//        int process_id = image_process.Process(texture_id, current_time, width, height, 0, 0);
+////        int process_id = face_point.OnDrawFrame(texture_id, prop_texture_id);
+//        image_process.OnUpdateEffectParam(0, "spaceBear", "stickerWidth", 0.23f);
+//        image_process.OnUpdateEffectParam(0, "spaceBear", "stickerX", 0.23f);
+//        image_process.OnUpdateEffectParam(0, "spaceBear", "stickerY", 0.23f);
+//        image_process.OnUpdateEffectParam(0, "spaceBear", "stickerRotate", (float)glfwGetTime() * 10);
+
+        float VERTEX_COORDINATE[8] = {
+                -1.F, -1.F,
+                1.F, -1.F,
+                -1.F, 1.F,
+                1.F, 1.F
+        };
+        
+        int texture = background.OnDrawFrame(texture_id, 1080, 1080, VERTEX_COORDINATE);
+        texture = blue.OnDrawFrame(texture);
         
         render_screen.ActiveProgram();
-        render_screen.ProcessImage(process_id);
+        render_screen.ProcessImage(texture);
         glfwSwapBuffers(window);
         usleep(30 * 1000);
     }

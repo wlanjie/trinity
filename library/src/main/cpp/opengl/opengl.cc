@@ -182,6 +182,11 @@ void OpenGL::SetFloat(const char *name, float value) {
     glUniform1f(location, value);
 }
 
+void OpenGL::SetUniform4f(const char *name, float v0, float v1, float v2, float v3) {
+    auto location = glGetUniformLocation(program_, name);
+    glUniform4f(location, v0, v1, v2, v3);
+}
+
 void OpenGL::SetFloatVec2(const char *name, int size, const GLfloat *value) {
     GLint location = glGetUniformLocation(program_, name);
     glUniform2fv(location, size, value);
