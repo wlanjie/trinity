@@ -254,6 +254,16 @@ dependencies {
     implementation 'com.github.wlanjie:trinity:0.2.9.1'
 }
 ```
+### Load Libraries in Application class
+```
+companion object {
+    init {
+      System.loadLibrary("trinity")
+      System.loadLibrary("c++_shared")
+      System.loadLibrary("marsxlog")
+    }
+  }
+ ```
 
 ### Permission requirements
 ``` xml
