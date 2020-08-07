@@ -615,6 +615,7 @@ void VideoExport::ProcessVideoExport() {
             }
         } else if (current_media_clip_->type == VIDEO) {
 //            LOGE("video export status: %d", av_play_context_->status);
+
             if (av_play_context_->error_code == BUFFER_FLAG_END_OF_STREAM && av_play_context_->video_frame_queue->count == 0) {
                 pthread_mutex_lock(&media_mutex_);
                 LOGE("export video message stop");
