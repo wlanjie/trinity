@@ -1213,7 +1213,7 @@ void Player::RenderFrameBuffer() {
     Draw(draw_texture_id_);
 }
 
-void Player::startAudioRender() {
+void Player::StartAudioRender() {
         if (nullptr != audio_render_ && av_play_context_->av_track_flags & AUDIO_FLAG) {
             if (!audio_render_start_) {
                 audio_render_start_ = true;
@@ -1224,7 +1224,7 @@ void Player::startAudioRender() {
         }
 }
 
-void Player::pauseAudioRender() {
+void Player::PauseAudioRender() {
     if (audio_render_start_ && nullptr != audio_render_ &&
         av_play_context_->av_track_flags & AUDIO_FLAG) {
         audio_render_->Pause();
@@ -1236,11 +1236,11 @@ void Player::pauseAudioRender() {
 int Player::DrawVideoFrame() {
     int ret = DrawVideoFramePrepared();
     if (ret != 0) {
-        pauseAudioRender();
+        PauseAudioRender();
         return ret;
     }
     if (!av_play_context_->video_frame) {
-        pauseAudioRender();
+        PauseAudioRender();
         usleep(10000);
         return 0;
     }
@@ -1259,23 +1259,23 @@ int Player::DrawVideoFrame() {
 //        clock_reset(av_play_context_->video_clock);
 //        return 0;
 //    }
-    int64_t videoPts;
-    int64_t masterClock;
+    int64_t video_frame_pts;
+    int64_t master_clock;
     if (av_play_context_->is_sw_decode) {
-        videoPts = av_rescale_q(av_play_context_->video_frame->pts,
-                                av_play_context_->format_context->streams[av_play_context_->video_index]->time_base,
-                                AV_TIME_BASE_Q);
+        video_frame_pts = av_rescale_q(av_play_context_->video_frame->pts,
+                                       av_play_context_->format_context->streams[av_play_context_->video_index]->time_base,
+                                       AV_TIME_BASE_Q);
     } else {
-        videoPts = av_play_context_->video_frame->pts;
+        video_frame_pts = av_play_context_->video_frame->pts;
     }
 
     //如果有音频，则默认取音频来同步视频
     if (av_play_context_->av_track_flags & AUDIO_FLAG) {
         int64_t audio_delta_time = (audio_render_ == nullptr) ? 0
                                                               : audio_render_->GetDeltaTime();
-        masterClock =  (av_play_context_->audio_clock->pts + audio_delta_time);
+        master_clock =  (av_play_context_->audio_clock->pts + audio_delta_time);
     } else {
-        masterClock = clock_get(av_play_context_->video_clock);
+        master_clock = clock_get(av_play_context_->video_clock);
     }
 
     /**
@@ -1286,21 +1286,21 @@ int Player::DrawVideoFrame() {
      * min 为同步阈值
      * max为异常阈值
      */
-    int64_t diff = videoPts - masterClock;
+    int64_t diff = video_frame_pts - master_clock;
     int64_t min = 25000;
     int64_t max = 1000000;
 
     if(diff > -min && diff < min){
-        startAudioRender();
+        StartAudioRender();
         CreateRenderFrameBuffer();
         RenderFrameBuffer();
-        clock_set(av_play_context_->video_clock, videoPts);
+        clock_set(av_play_context_->video_clock, video_frame_pts);
     }else if(diff >= min && diff < max){
         usleep(static_cast<useconds_t>(diff - min));
-        startAudioRender();
+        StartAudioRender();
         CreateRenderFrameBuffer();
         RenderFrameBuffer();
-        clock_set(av_play_context_->video_clock, videoPts - (diff - min));
+        clock_set(av_play_context_->video_clock, video_frame_pts - (diff - min));
     }else{
         ReleaseVideoFrame();
     }
