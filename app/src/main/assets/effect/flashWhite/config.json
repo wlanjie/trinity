@@ -6,7 +6,7 @@
     "effect": [
         {
             "type": "generalEffect",
-            "name": "闪白",
+            "name": "Flash white",
             "vertexShader": "resource/vshader.vs",
             "vertexUniforms": [],
             "fragmentShader": "resource/fshader.fs",

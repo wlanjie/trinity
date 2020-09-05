@@ -6,7 +6,7 @@
     "effect": [
         {
             "type": "generalEffect",
-            "name": "九屏",
+            "name": "Nine screens",
             "vertexShader": "resource/vshader.vs",
             "vertexUniforms": [],
             "fragmentShader": "resource/fshader.fs",

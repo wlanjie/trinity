@@ -6,7 +6,7 @@
     "effect": [
         {
             "type": "generalEffect",
-            "name": "两屏",
+            "name": "Two screens",
             "vertexShader": "resource/vshader.vs",
             "vertexUniforms": [],
             "fragmentShader": "resource/fshader.fs",

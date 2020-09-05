@@ -6,7 +6,7 @@
     "effect": [
         {
             "type": "generalEffect",
-            "name": "抖动",
+            "name": "Jitter",
             "vertexShader": "resource/vshader.vs",
             "vertexUniforms": [],
             "fragmentShader": "resource/fshader.fs",

@@ -2,7 +2,7 @@
 [
   {
     "id": 1,
-    "name": "爱心光斑",
+    "name": "Love spot",
     "color": "#CCEA0000",
     "effect": "effect/loveSpot",
     "effectName": "loveSpot"

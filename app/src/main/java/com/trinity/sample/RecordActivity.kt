@@ -214,15 +214,15 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
             val effectPath = effect.effect
             mIdentifyId = mRecord.addEffect(externalCacheDir?.absolutePath + "/" + effectPath)
             if (effectPath == "effect/spaceBear") {
-              // 贴纸显示的宽, 0~1.0
-              // 参数解释: spaceBear为effectName, 是在解析effect数组中的type为intoSticker中的name
-              // stickerWidth 为固定的, 如果想更新显示区域则必须为stickerWidth
+              // Sticker width, 0~1.0
+              // Parameter explanation: spaceBear为effectName, The type in the parse effect array is the name in the intoSticker
+              // stickerWidth Fixed, If you want to update the display area, it must be stickerWidth
               mRecord.updateEffectParam(mIdentifyId, "spaceBear", "stickerWidth", 0.23f)
-              // 贴纸距离屏幕左边的距离, 左上角为原点, 0~1.0
+              // The distance between the sticker and the left side of the screen, The upper left corner is the origin, 0~1.0
               mRecord.updateEffectParam(mIdentifyId, "spaceBear", "stickerX", 0.13f)
-              // 贴纸距离屏幕上边的距离, 左上角为原点, 0~1.0
+              // The distance between the sticker and the top of the screen, The upper left corner is the origin, 0~1.0
               mRecord.updateEffectParam(mIdentifyId, "spaceBear", "stickerY", 0.13f)
-              // 贴纸旋转的角度, 顺时针 0~360度
+              // The angle of rotation of the sticker, Clockwise 0~360 degrees
               mRecord.updateEffectParam(
                 mIdentifyId,
                 "spaceBear",
@@ -411,7 +411,7 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
     }
     Log.i("trinity", "duration: $duration size: ${mRecordDurations.size}")
     if (duration >= mRecordDuration) {
-      Toast.makeText(this, "已达最大时长", Toast.LENGTH_LONG).show()
+      Toast.makeText(this, "Maximum time reached", Toast.LENGTH_LONG).show()
       return
     }
     val date = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
@@ -618,10 +618,10 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
       if (it.hasDenied()) {
         mPermissionDenied = true
         AlertDialog.Builder(this)
-          .setMessage("请允许请求的所有权限")
-          .setPositiveButton("请求") { _, _->
+          .setMessage("Please allow all permissions requested")
+          .setPositiveButton("Request") { _, _->
             it.askAgain()
-          }.setNegativeButton("拒绝") { dialog, _->
+          }.setNegativeButton("Refuse") { dialog, _->
             dialog.dismiss()
             finish()
           }.show()

@@ -1,11 +1,11 @@
 <resources>
     <string name="app_name">trinity</string>
 
-    <string name="rate_very_slow">极慢</string>
-    <string name="rate_slow">慢</string>
-    <string name="rate_standard">标准</string>
-    <string name="rate_fast">快</string>
-    <string name="rate_very_fast">极快</string>
+    <string name="rate_very_slow">Ext slow</string>
+    <string name="rate_slow">slow</string>
+    <string name="rate_standard">Normal</string>
+    <string name="rate_fast">fast</string>
+    <string name="rate_very_fast">Ext fast</string>
 
     <string-array name="preview_render_preference">
         <item>FIT</item>
@@ -49,30 +49,30 @@
         <item>22050</item>
     </string-array>
 
-    <string name="filter">滤镜</string>
-    <string name="music">音乐</string>
-    <string name="gif">动图</string>
-    <string name="subtitle">字幕</string>
+    <string name="filter">Filter</string>
+    <string name="music">Music</string>
+    <string name="gif">GIF</string>
+    <string name="subtitle">Subtitle</string>
     <string name="mv">MV</string>
-    <string name="sound">音效</string>
-    <string name="effect">特效</string>
-    <string name="speed_time">变速</string>
-    <string name="transition">转场</string>
-    <string name="paint">涂鸦</string>
-    <string name="cover">封面</string>
-    <string name="smoother">磨皮</string>
-    <string name="effect_tip">选择位置后, 按住使用效果</string>
-    <string name="undo">撤消</string>
-    <string name="split_screen">分屏</string>
-    <string name="dream">梦幻</string>
-    <string name="dynamic">动感</string>
+    <string name="sound">Sound effect</string>
+    <string name="effect">Special effects</string>
+    <string name="speed_time">Variable speed</string>
+    <string name="transition">Transitions</string>
+    <string name="paint">Graffiti</string>
+    <string name="cover">Cover</string>
+    <string name="smoother">Microdermabrasion</string>
+    <string name="effect_tip">After choosing a location, Press and hold to use effect</string>
+    <string name="undo">Undo</string>
+    <string name="split_screen">Split Screen</string>
+    <string name="dream">dream</string>
+    <string name="dynamic">Dynamic</string>
 
-    <string name="caption_effect_font_category_name">纯文字</string>
-    <string name="caption_effect_bottom_keyboard">键盘</string>
-    <string name="caption_effect_bottom_color">颜色</string>
-    <string name="caption_effect_bottom_font">字体</string>
-    <string name="caption_effect_bottom_animation">特效</string>
-    <string name="text_count_outof">字数超出限制</string>
-    <string name="subtitle_text_color">填充</string>
-    <string name="subtitle_text_stroke">描边</string>
+    <string name="caption_effect_font_category_name">Plain text</string>
+    <string name="caption_effect_bottom_keyboard">Keyboard</string>
+    <string name="caption_effect_bottom_color">Colour</string>
+    <string name="caption_effect_bottom_font">Font</string>
+    <string name="caption_effect_bottom_animation">Special effects</string>
+    <string name="text_count_outof">Word count exceeds limit</string>
+    <string name="subtitle_text_color">Filling</string>
+    <string name="subtitle_text_stroke">Stroke</string>
 </resources>

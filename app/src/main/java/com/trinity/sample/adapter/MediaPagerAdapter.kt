@@ -26,9 +26,9 @@ class MediaPagerAdapter(fm: FragmentManager) : FragmentStatePagerAdapter(fm, BEH
 
   override fun getPageTitle(position: Int): CharSequence? {
     return if (position == 0) {
-      "视频"
+      "Video"
     } else {
-      "图片"
+      "Image"
     }
   }
 }
