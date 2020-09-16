@@ -21,6 +21,7 @@ package com.trinity.record
 import android.content.Context
 import android.graphics.PointF
 import android.graphics.SurfaceTexture
+import android.hardware.Camera
 import android.provider.Settings
 import android.provider.Settings.SettingNotFoundException
 import android.view.OrientationEventListener
@@ -397,6 +398,10 @@ class TrinityRecord(
     val result = mFaceDetection?.faceDetection(data, width, height, FaceDetectionImageType.YUV_NV21, inAngle, outAngle, flipType)
     mFaceDetectionReports = result
     onFrameAvailable(mHandle)
+  }
+
+  override fun dispatchOnParameters(parameters: Camera.Parameters) {
+    mCameraCallback?.dispatchOnParameters(parameters)
   }
 
   override fun update(timer: Timer, elapsedTime: Int) {

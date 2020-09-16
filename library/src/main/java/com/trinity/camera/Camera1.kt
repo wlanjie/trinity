@@ -255,6 +255,7 @@ class Camera1(
       applyWhiteBalance(it)
       applyZoom(it, mZoom)
       applyExposureCorrection(it, mExposureCompensation)
+      mCameraCallback.dispatchOnParameters(it)
     }
     val size = computePreviewStreamSize(resolution)
     Log.i("trinity", "setPreviewSize width: ${size.width} height: ${size.height}")
