@@ -255,6 +255,8 @@ class Player : public Handler {
     int DrawVideoFramePrepared();
     void CreateRenderFrameBuffer();
     void RenderFrameBuffer();
+    void StartAudioRender();
+    void PauseAudioRender();
     int DrawVideoFrame();
     void Draw(int texture_id);
     void ReleaseVideoFrame();

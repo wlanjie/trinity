@@ -1213,18 +1213,36 @@ void Player::RenderFrameBuffer() {
     Draw(draw_texture_id_);
 }
 
+void Player::StartAudioRender() {
+        if (nullptr != audio_render_ && av_play_context_->av_track_flags & AUDIO_FLAG) {
+            if (!audio_render_start_) {
+                audio_render_start_ = true;
+                audio_render_->Start();
+            } else {
+                audio_render_->Play();
+            }
+        }
+}
+
+void Player::PauseAudioRender() {
+    if (audio_render_start_ && nullptr != audio_render_ &&
+        av_play_context_->av_track_flags & AUDIO_FLAG) {
+        audio_render_->Pause();
+    }
+}
+
+
+
 int Player::DrawVideoFrame() {
     int ret = DrawVideoFramePrepared();
     if (ret != 0) {
+        PauseAudioRender();
         return ret;
     }
     if (!av_play_context_->video_frame) {
+        PauseAudioRender();
         usleep(10000);
         return 0;
-    }
-    if (!audio_render_start_ && nullptr != audio_render_ && av_play_context_->av_track_flags & AUDIO_FLAG) {
-        audio_render_start_ = true;
-        audio_render_->Start();
     }
     // 发现seeking == 2 开始drop frame 直到发现&context->flush_frame
     // 解决连续seek卡住的问题
@@ -1241,36 +1259,50 @@ int Player::DrawVideoFrame() {
 //        clock_reset(av_play_context_->video_clock);
 //        return 0;
 //    }
-    int64_t time_stamp;
+    int64_t video_frame_pts;
+    int64_t master_clock;
     if (av_play_context_->is_sw_decode) {
-        time_stamp = av_rescale_q(av_play_context_->video_frame->pts,
-                av_play_context_->format_context->streams[av_play_context_->video_index]->time_base,
-                AV_TIME_BASE_Q);
+        video_frame_pts = av_rescale_q(av_play_context_->video_frame->pts,
+                                       av_play_context_->format_context->streams[av_play_context_->video_index]->time_base,
+                                       AV_TIME_BASE_Q);
     } else {
-        time_stamp = av_play_context_->video_frame->pts;
+        video_frame_pts = av_play_context_->video_frame->pts;
     }
-    int64_t diff = 0;
+
+    //如果有音频，则默认取音频来同步视频
     if (av_play_context_->av_track_flags & AUDIO_FLAG) {
-        int64_t audio_delta_time = (audio_render_ == nullptr) ? 0 : audio_render_->GetDeltaTime();
-        diff = time_stamp - (av_play_context_->audio_clock->pts + audio_delta_time);
-//        LOGE("diff: %lld time_stamp: %lld audio_pts: %lld audio_delta_time: %lld seek_to: %lld",
-//                diff, time_stamp / 1000, av_play_context_->audio_clock->pts / 1000, audio_delta_time, av_play_context_->seek_to);
+        int64_t audio_delta_time = (audio_render_ == nullptr) ? 0
+                                                              : audio_render_->GetDeltaTime();
+        master_clock =  (av_play_context_->audio_clock->pts + audio_delta_time);
     } else {
-        diff = time_stamp - clock_get(av_play_context_->video_clock);
+        master_clock = clock_get(av_play_context_->video_clock);
     }
-    // diff >= 33ms if draw_mode == wait_frame return -1
-    //              if draw_mode == fixed_frequency draw previous frame ,return 0
-    // diff > 0 && diff < 33ms  sleep(diff) draw return 0
-    // diff <= 0  draw return 0
-    if (diff >= 1000000) {
-        return -1;
-    } else {
+
+    /**
+     * 音视频同步逻辑
+     * diff 为当前队列最后面的帧的pts减去主时钟
+     * 根据 RFC-1359 国际规范，音频和视频的时间戳差值在 -100ms ～ +25ms 中间用户无法感知
+     * 所以根据这个差值来实现音视频同步。
+     * min 为同步阈值
+     * max为异常阈值
+     */
+    int64_t diff = video_frame_pts - master_clock;
+    int64_t min = 25000;
+    int64_t max = 1000000;
+
+    if(diff > -min && diff < min){
+        StartAudioRender();
         CreateRenderFrameBuffer();
-        if (diff > 0) {
-            usleep(static_cast<useconds_t>(diff));
-        }
         RenderFrameBuffer();
-        clock_set(av_play_context_->video_clock, time_stamp);
+        clock_set(av_play_context_->video_clock, video_frame_pts);
+    }else if(diff >= min && diff < max){
+        usleep(static_cast<useconds_t>(diff - min));
+        StartAudioRender();
+        CreateRenderFrameBuffer();
+        RenderFrameBuffer();
+        clock_set(av_play_context_->video_clock, video_frame_pts - (diff - min));
+    }else{
+        ReleaseVideoFrame();
     }
     return 0;
 }
