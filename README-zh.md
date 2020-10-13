@@ -613,6 +613,11 @@ mVideoEditor.deleteAction(actionId)
 ```
 
 #### 开始预览
+- 准备
+``` kotlin
+mVideoEditor.prepare()
+```
+
 - 播放
 ``` kotlin
 /**
