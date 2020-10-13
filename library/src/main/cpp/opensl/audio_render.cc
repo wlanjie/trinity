@@ -52,7 +52,7 @@ void AudioRender::PlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context
     audioRender->ProducePacket();
 }
 void AudioRender::ProducePacket() {
-    // 回调playerController中的方法来获得buffer
+    // Call back the method in playerController to get the buffer
     if (playing_state_ == PLAYING_STATE_PLAYING) {
         uint8_t* buffer = nullptr;
         int buffer_size;
@@ -64,7 +64,7 @@ void AudioRender::ProducePacket() {
         }
         if (ret == 0 && buffer_size > 0 &&
             buffer != nullptr && playing_state_ == PLAYING_STATE_PLAYING) {
-            // 将提供的数据加入到播放的buffer中去
+            // Add the provided data to the playback buffer
             (*audio_player_buffer_queue_)->Enqueue(audio_player_buffer_queue_, buffer,
                                                    static_cast<SLuint32>(buffer_size));
             (*audio_player_play_)->GetPosition(audio_player_play_, &play_position_);
@@ -261,7 +261,7 @@ void AudioRender::DestroyContext() {
     LOGI("leave DestroyContext");
 }
 
-/** 以下是私有方法的实现 **/
+/** The following is the implementation of the private method **/
 SLresult AudioRender::RealizeObject(SLObjectItf object) {
     // No async, blocking call
     return (*object)->Realize(object, SL_BOOLEAN_FALSE);

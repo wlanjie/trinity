@@ -61,10 +61,10 @@ class RecordButton : View {
     downColor = R.color.video_gray
     upColor = android.R.color.white
     paint = Paint()
-    paint?.isAntiAlias = true//抗锯齿
-    paint?.style = Paint.Style.STROKE//画笔属性是空心圆
+    paint?.isAntiAlias = true//Anti-aliasing
+    paint?.style = Paint.Style.STROKE//The brush attribute is hollow circle
     currentStrokeWidth = resources.getDimension(R.dimen.dp10)
-    paint?.strokeWidth = currentStrokeWidth//设置画笔粗细
+    paint?.strokeWidth = currentStrokeWidth//Set the brush thickness
 
     slideDis = resources.getDimension(R.dimen.dp10)
     radiusDis = resources.getDimension(R.dimen.dp3)

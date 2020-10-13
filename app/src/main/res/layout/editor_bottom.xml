@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<HorizontalScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingBottom="20dp"
         android:paddingTop="6dp"
         android:orientation="horizontal">
 
@@ -25,6 +24,7 @@
             android:id="@+id/tab_effect_overlay"
             style="@style/editor_bottom_tab"
             android:drawableTop="@mipmap/ic_gif"
+            android:visibility="gone"
             android:text="@string/gif"/>
 
         <TextView
@@ -36,11 +36,13 @@
             android:id="@+id/tab_effect_mv"
             style="@style/editor_bottom_tab"
             android:drawableTop="@mipmap/ic_mv"
+            android:visibility="gone"
             android:text="@string/mv"/>
         <TextView
             android:id="@+id/tab_effect_sound"
             style="@style/editor_bottom_tab"
             android:drawableTop="@mipmap/ic_sound"
+            android:visibility="gone"
             android:text="@string/sound"/>
         <TextView
             android:id="@+id/tab_effect_filter"
@@ -51,24 +53,28 @@
             android:id="@+id/tab_effect_time"
             style="@style/editor_bottom_tab"
             android:drawableTop="@mipmap/ic_speed_time"
+            android:visibility="gone"
             android:text="@string/speed_time"/>
 
         <TextView
             android:id="@+id/tab_effect_transition"
             style="@style/editor_bottom_tab"
             android:drawableTop="@mipmap/ic_transition"
+            android:visibility="gone"
             android:text="@string/transition"/>
 
         <TextView
             android:id="@+id/tab_paint"
             style="@style/editor_bottom_tab"
             android:drawableTop="@mipmap/ic_paint"
+            android:visibility="gone"
             android:text="@string/paint"/>
         <TextView
             android:id="@+id/tab_cover"
             style="@style/editor_bottom_tab"
             android:drawableTop="@mipmap/ic_cover"
+            android:visibility="gone"
             android:text="@string/cover"/>
 
     </LinearLayout>
-</HorizontalScrollView>
+</LinearLayout>

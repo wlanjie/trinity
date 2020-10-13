@@ -1,11 +1,11 @@
 <resources>
     <string name="app_name">trinity</string>
 
-    <string name="rate_very_slow">Ext slow</string>
-    <string name="rate_slow">slow</string>
-    <string name="rate_standard">Normal</string>
-    <string name="rate_fast">fast</string>
-    <string name="rate_very_fast">Ext fast</string>
+    <string name="rate_very_slow">0.3x</string>
+    <string name="rate_slow">0.5x</string>
+    <string name="rate_standard">1x</string>
+    <string name="rate_fast">2x</string>
+    <string name="rate_very_fast">3x</string>
 
     <string-array name="preview_render_preference">
         <item>FIT</item>

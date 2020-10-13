@@ -33,9 +33,9 @@ import java.util.*
 class TrinityVideoExport(private val context: Context) : VideoExport {
 
   private var mHandle = create()
-  // 硬编码对象
+  // Hardcoded object
   private var mSurfaceEncoder = MediaCodecSurfaceEncoder()
-  // Surface 对象
+  // Surface Object
   private var mSurface: Surface ?= null
   private var mListener: OnExportListener ?= null
 
@@ -90,8 +90,8 @@ class TrinityVideoExport(private val context: Context) : VideoExport {
   private external fun release(handle: Long)
 
   /**
-   * 导出进度,由c++回调回来,不要做改变
-   * @param progress 导出的进度, 进度比为0.0-1.0
+   * Export progress, call back by C++, do not change
+   * @param progress Export progress, the progress ratio is 0.0-1.0
    */
   @Suppress("unused")
   private fun onExportProgress(progress: Float) {
@@ -103,8 +103,8 @@ class TrinityVideoExport(private val context: Context) : VideoExport {
   }
 
   /**
-   * 导出失败了之后,由c++回调回来
-   * @param error 错误码
+   * After the export fails, it will be called back by C++
+   * @param error error code
    */
   @Suppress("unused")
   private fun onExportFailed(error: Int) {
@@ -116,7 +116,7 @@ class TrinityVideoExport(private val context: Context) : VideoExport {
   }
 
   /**
-   * 导出完成之后,由c++回调回来
+   * After the export is completed, it will be called back by C++
    */
   @Suppress("unused")
   private fun onExportComplete() {
@@ -128,7 +128,7 @@ class TrinityVideoExport(private val context: Context) : VideoExport {
   }
 
   /**
-   * 导出取消了之后,由c++回调回来
+   * After the export is cancelled, it will be called back by c++
    */
   @Suppress("unused")
   private fun onExportCanceled() {
@@ -141,12 +141,12 @@ class TrinityVideoExport(private val context: Context) : VideoExport {
 
 
   /**
-   * 由c++回调回来
-   * 创建硬编码
-   * @param width 录制视频的宽
-   * @param height 录制视频的高
-   * @param videoBitRate 录制视频的码率
-   * @param frameRate 录制视频的帧率
+   * Call back by c++
+   * Create hard code
+   * @param width The width of the recorded video
+   * @param height High of recorded video
+   * @param videoBitRate Bit rate of recorded video
+   * @param frameRate Frame rate of recorded video
    */
   @Suppress("unused")
   private fun createMediaCodecSurfaceEncoderFromNative(width: Int, height: Int, videoBitRate: Int, frameRate: Int): Int {
@@ -161,10 +161,10 @@ class TrinityVideoExport(private val context: Context) : VideoExport {
   }
 
   /**
-   * 由c++回调回来
-   * 获取h264数据
-   * @param data h264 buffer, 由c++创建传递回来
-   * @return 返回h264数据的大小, 返回0时数据无效
+   * Call back by c++
+   * Get h264 data
+   * @param data h264 buffer, Created by c++ and passed back
+   * @return Returns the size of the h264 data, the data is invalid when 0 is returned
    */
   @Suppress("unused")
   private fun drainEncoderFromNative(data: ByteArray): Int {
@@ -172,9 +172,9 @@ class TrinityVideoExport(private val context: Context) : VideoExport {
   }
 
   /**
-   * 由c++回调回来
-   * 获取当前编码的时间, 毫秒
-   * @return 当前编码的时间 mBufferInfo.presentationTimeUs
+   * Call back by c++
+   * Get the current encoding time, milliseconds
+   * @return Current encoding time mBufferInfo.presentationTimeUs
    */
   @Suppress("unused")
   private fun getLastPresentationTimeUsFromNative(): Long {
@@ -182,9 +182,9 @@ class TrinityVideoExport(private val context: Context) : VideoExport {
   }
 
   /**
-   * 由c++回调回来
-   * 获取编码器的Surface
-   * @return 编码器的Surface mediaCodec.createInputSurface()
+   * Call back by c++
+   * Get the Surface of the encoder
+   * @return Encoder Surface mediaCodec.createInputSurface()
    */
   @Suppress("unused")
   private fun getEncodeSurfaceFromNative(): Surface? {
@@ -192,8 +192,8 @@ class TrinityVideoExport(private val context: Context) : VideoExport {
   }
 
   /**
-   * 由c++回调回来
-   * 发送end of stream信号给编码器
+   * Call back by c++
+   * send end of stream Signal to encoder
    */
   @Suppress("unused")
   private fun signalEndOfInputStream() {
@@ -201,8 +201,8 @@ class TrinityVideoExport(private val context: Context) : VideoExport {
   }
 
   /**
-   * 由c++回调回来
-   * 关闭mediaCodec编码器
+   * Call back by c++
+   * Close mediaCodec encoder
    */
   @Suppress("unused")
   private fun closeMediaCodecCalledFromNative() {

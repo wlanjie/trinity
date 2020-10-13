@@ -303,7 +303,7 @@ class Player : public Handler {
     int seek_index_;
     MediaClip* pre_load_clip_;
     MediaClip* current_clip_;
-    // 前几个视频的时间总和
+    // The total time of the previous videos
     int video_count_duration_;
     AudioRender* audio_render_;
     bool audio_render_start_;
