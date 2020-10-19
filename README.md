@@ -1,11 +1,16 @@
 # trinity
 
+# If the trinity project is helpful to you, you can use paypal to support the author
+```
+https://www.paypal.me/wlanjie
+```
+
 [中文文档](https://github.com/wlanjie/trinity/blob/master/README-zh.md)
 
 ![icon~](https://github.com/wlanjie/trinity/blob/master/trinity@2x.png)
 
 [![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-trinity-brightgreen.svg?style=flat)](https://android-arsenal.com/details/1/8010)
-[![Download](https://api.bintray.com/packages/wlanjie/maven/trinity/images/download.svg?version=0.3.0)](https://bintray.com/wlanjie/maven/trinity/0.3.0/link)
+[![Download](https://api.bintray.com/packages/wlanjie/maven/trinity/images/download.svg?version=0.3.2)](https://bintray.com/wlanjie/maven/trinity/0.3.2/link)
 ![platform](https://img.shields.io/badge/platform-Android-orange.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
