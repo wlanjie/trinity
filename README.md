@@ -1,9 +1,5 @@
 # trinity
 
-# If the trinity project is helpful to you, you can use paypal to support the author
-```
-https://www.paypal.me/wlanjie
-```
 
 [中文文档](https://github.com/wlanjie/trinity/blob/master/README-zh.md)
 
