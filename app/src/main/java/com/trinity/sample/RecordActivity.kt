@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.PointF
+import android.hardware.Camera
 import android.os.Bundle
 import android.view.View
 import android.widget.FrameLayout
@@ -177,6 +178,9 @@ class RecordActivity : AppCompatActivity(), OnRecordingListener, OnRenderListene
   }
 
   override fun dispatchOnPreviewCallback(data: ByteArray, width: Int, height: Int, orientation: Int) {
+  }
+
+  override fun dispatchOnParameters(parameters: Camera.Parameters) {
   }
 
   private fun setFrame() {

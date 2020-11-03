@@ -24,4 +24,5 @@ interface CameraCallback {
   fun dispatchOnFocusStart(where: PointF)
   fun dispatchOnFocusEnd(success: Boolean, where: PointF)
   fun dispatchOnPreviewCallback(data: ByteArray, width: Int, height: Int, orientation: Int)
+  fun dispatchOnParameters(parameters: android.hardware.Camera.Parameters)
 }
