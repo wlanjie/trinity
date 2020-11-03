@@ -1,16 +1,16 @@
 #ifdef GL_ES
 precision highp float;
 varying highp vec2 textureCoordinate;
-uniform highp float uScanLineJitter_x; // 长度
-uniform highp float uScanLineJitter_y; // 密度
-uniform highp float uColorDrift_x; // 颜色倾斜
-uniform highp float uColorDrift_y; // 整体偏移
+uniform highp float uScanLineJitter_x; // length
+uniform highp float uScanLineJitter_y; // density
+uniform highp float uColorDrift_x; // Color tilt
+uniform highp float uColorDrift_y; // Overall offset
 #else
 varying vec2 textureCoordinate;
-uniform float uScanLineJitter_x; // 长度
-uniform float uScanLineJitter_y; // 密度
-uniform float uColorDrift_x; // 颜色倾斜
-uniform float uColorDrift_y; // 整体偏移
+uniform float uScanLineJitter_x; // length
+uniform float uScanLineJitter_y; // density
+uniform float uColorDrift_x; // Color tilt
+uniform float uColorDrift_y; // Overall offset
 #endif
 uniform sampler2D inputImageTexture;
 uniform float uTimeStamp; 
@@ -35,14 +35,14 @@ void main() {
     
     vec4 src1 = texture2D(inputImageTexture, fract(vec2(u + jitter + shake, jump)));
     vec4 src2 = texture2D(inputImageTexture, fract(vec2(u + jitter + shake + drift, jump)));
-    //src1.r, src1.g, src2.b 黄蓝
-    //src1.r, src1.g, src1.b 无
-    //src1.r, src2.g, src1.b 绿粉红
-    //src1.r, src2.g, src2.b 蓝红
-    //src2.r, src1.g, src1.b 蓝红
-    //src2.r, src1.g, src2.b 粉红绿
-    //src2.r, src2.g, src1.b 黄蓝
-    //src2.r, src2.g, src2.b 无
+    //src1.r, src1.g, src2.b Yellow and blue
+    //src1.r, src1.g, src1.b no
+    //src1.r, src2.g, src1.b Green pink
+    //src1.r, src2.g, src2.b Blue red
+    //src2.r, src1.g, src1.b Blue red
+    //src2.r, src1.g, src2.b Pink green
+    //src2.r, src2.g, src1.b Yellow and blue
+    //src2.r, src2.g, src2.b no
     gl_FragColor = vec4(src1.r, src2.g, src1.b, 1.0);
 }
 

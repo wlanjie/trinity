@@ -648,7 +648,7 @@ int Player::GetAudioFrame() {
         return -1;
     }
     if (context->audio_frame_queue->count == 0) {
-        // 没音频时播放静音
+        // Play silent when there is no audio
         LOGE("context->audio_frame_queue->size == 0");
         audio_buffer_size_ = 2048;
         if (audio_buffer_ == nullptr) {
@@ -659,7 +659,7 @@ int Player::GetAudioFrame() {
     }
     context->audio_frame = frame_queue_get(context->audio_frame_queue);
     if (nullptr == context->audio_frame) {
-        // 如果没有视频流  就从这里发结束信号
+        // If there is no video stream  Send the end signal from here
 //        if (context->eof && (((context->av_track_flags & VIDEO_FLAG) == 0) || context->just_audio)) {
 //            context->send_message(context, message_stop);
 //        }
@@ -669,7 +669,7 @@ int Player::GetAudioFrame() {
     // seek
     // get next frame
     while (context->audio_frame == &context->audio_frame_queue->flush_frame) {
-        // 如果没有视频流  就从这里重置seek标记
+        // If there is no video stream  Reset the seek mark from here
         if ((context->av_track_flags & VIDEO_FLAG) == 0) {
             context->seeking = 0;
         }

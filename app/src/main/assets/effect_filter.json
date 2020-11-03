@@ -1,35 +1,35 @@
 [
   {
     "id": 1,
-    "name": "闪白",
+    "name": "Flash white",
     "color": "#cc23bdb1",
     "effect": "effect/flashWhite",
     "effectName": "FlashWhite"
   },
   {
     "id": 2,
-    "name": "灵魂出窍",
+    "name": "Soul out of the body",
     "color": "#EA0000",
     "effect": "effect/soulScale",
     "effectName": "effect/SoulScale"
   },
   {
     "id": 3,
-    "name": "抖动",
+    "name": "Jitter",
     "color": "#CCEA0000",
     "effect": "effect/shake",
     "effectName": "Shake"
   },
   {
     "id": 4,
-    "name": "毛刺",
+    "name": "glitch",
     "color": "#CCEA0000",
     "effect": "effect/skinNeedling",
     "effectName": "SkinNeedling"
   },
   {
     "id": 5,
-    "name": "缩放",
+    "name": "Zoom",
     "color": "#CCEA0000",
     "effect": "effect/zoomInOut",
     "effectName": "zoomInOut"

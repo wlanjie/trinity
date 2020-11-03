@@ -46,7 +46,7 @@ class AudioRecordRecorderServiceImpl private constructor() : RecorderService {
   private var isUnAccom = false
   private var playerService: PlayerService? = null
 
-  //音频清唱会暂停
+  //Audio a cappella will pause
   override val isPaused: Boolean
     get() = mPaused
 
@@ -75,7 +75,7 @@ class AudioRecordRecorderServiceImpl private constructor() : RecorderService {
       audioRecord?.release()
     }
     try {
-      // 首先利用我们标准的44_1K的录音频率初是录音器
+      // First use our standard 44_1K recording frequency.
       bufferSizeInBytes = AudioRecord.getMinBufferSize(
         SAMPLE_RATE_IN_HZ,
         CHANNEL_CONFIGURATION, AUDIO_FORMAT
@@ -88,7 +88,7 @@ class AudioRecordRecorderServiceImpl private constructor() : RecorderService {
       e.printStackTrace()
     }
 
-    // 如果初始化不成功的话,则降低为16K的采样率来初始化录音器
+    // If the initialization is not successful, reduce the sampling rate to 16K to initialize the recorder
     if (audioRecord == null || audioRecord?.state != AudioRecord.STATE_INITIALIZED) {
       try {
         SAMPLE_RATE_IN_HZ = 16000
@@ -201,7 +201,7 @@ class AudioRecordRecorderServiceImpl private constructor() : RecorderService {
 //            val offset = (scoringBufferMaxSize.toLong() * 1000 / SAMPLE_RATE_IN_HZ).toInt()
       while (mRecording) {
         val localPaused = mPaused
-        if (isUnAccom && localPaused) { //只有是清唱才能暂停录制
+        if (isUnAccom && localPaused) { //Only a cappella can pause recording
           continue
         }
         val audioSampleSize = getAudioRecordBuffer(

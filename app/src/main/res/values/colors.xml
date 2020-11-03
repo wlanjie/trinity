@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="colorPrimary">#2196F3</color>
-    <color name="colorPrimaryDark">#1976D2</color>
+    <color name="colorPrimaryDark">#000000</color>
     <color name="colorAccent">#FF9800</color>
     <color name="colorPrimaryAlpha30">#4d2196F3</color>
 
@@ -15,6 +15,8 @@
     <color name="action_bar_bg">#232A42</color>
     <color name="bg_next">#FC4448 </color>
     <color name="timeline_bar_active_overlay">#66EF4B81</color>
+    <color name="colorClear">#00FFFFFF</color>
+    <color name="colorBlack">#000000</color>
 
     <color name="effect_color1">#E6FBDE38</color>
     <color name="effect_color2">#E662B6FE</color>

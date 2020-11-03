@@ -41,7 +41,7 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
   private lateinit var mSurfaceView: SurfaceView
   private lateinit var mPasterContainer: FrameLayout
   private lateinit var mTabLayout: TabLayout
-  private lateinit var mBottomLinear: HorizontalScrollView
+  private lateinit var mBottomLinear: LinearLayout
   private lateinit var mPlayImage: ImageView
   private lateinit var mPauseImage: ImageView
   private lateinit var mViewOperator: ViewOperator
@@ -121,7 +121,7 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
     }
     val result = mVideoEditor.play(true)
     if (result != 0) {
-      Toast.makeText(this, "播放失败: $result", Toast.LENGTH_SHORT).show()
+      Toast.makeText(this, "Playback failed: $result", Toast.LENGTH_SHORT).show()
     }
 
     initThumbLineBar(medias)
@@ -212,20 +212,20 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
         .setIcon(R.mipmap.ic_effect), false)
     mTabLayout.addTab(mTabLayout.newTab().setText(R.string.music)
         .setIcon(R.mipmap.ic_music), false)
-    mTabLayout.addTab(mTabLayout.newTab().setText(R.string.mv)
-        .setIcon(R.mipmap.ic_mv), false)
-    mTabLayout.addTab(mTabLayout.newTab().setText(R.string.speed_time)
-        .setIcon(R.mipmap.ic_speed_time), false)
-    mTabLayout.addTab(mTabLayout.newTab().setText(R.string.gif)
-        .setIcon(R.mipmap.ic_gif), false)
+//    mTabLayout.addTab(mTabLayout.newTab().setText(R.string.mv)
+//        .setIcon(R.mipmap.ic_mv), false)
+//    mTabLayout.addTab(mTabLayout.newTab().setText(R.string.speed_time)
+//        .setIcon(R.mipmap.ic_speed_time), false)
+//    mTabLayout.addTab(mTabLayout.newTab().setText(R.string.gif)
+//        .setIcon(R.mipmap.ic_gif), false)
     mTabLayout.addTab(mTabLayout.newTab().setText(R.string.subtitle)
         .setIcon(R.mipmap.ic_subtitle), false)
 //    mTabLayout.addTab(mTabLayout.newTab().setText(R.string.transition)
 //        .setIcon(R.mipmap.ic_transition), false)
-    mTabLayout.addTab(mTabLayout.newTab().setText(R.string.paint)
-        .setIcon(R.mipmap.ic_paint), false)
-    mTabLayout.addTab(mTabLayout.newTab().setText(R.string.cover)
-        .setIcon(R.mipmap.ic_cover), false)
+//    mTabLayout.addTab(mTabLayout.newTab().setText(R.string.paint)
+//        .setIcon(R.mipmap.ic_paint), false)
+//    mTabLayout.addTab(mTabLayout.newTab().setText(R.string.cover)
+//        .setIcon(R.mipmap.ic_cover), false)
     mTabLayout.addOnTabSelectedListener(this)
   }
 
@@ -345,7 +345,7 @@ class EditorActivity : AppCompatActivity(), ViewOperator.AnimatorListener, TabLa
         effectInfo.endTime = endTime
         mEffects.add(effectInfo)
 
-        // 删除同一时间的特效,保留当前的
+        // Delete the special effects at the same time, keep the current
         mEffects.forEach {
           if (mStartTime >= it.startTime && endTime <= it.endTime && actionId != it.actionId) {
             mVideoEditor.deleteAction(it.actionId)

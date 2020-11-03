@@ -1,6 +1,7 @@
 package com.trinity.sample
 
 import android.os.Bundle
+import android.os.Environment
 import android.view.View
 import android.widget.VideoView
 import androidx.appcompat.app.AppCompatActivity
@@ -21,7 +22,7 @@ class VideoExportActivity : AppCompatActivity(), OnExportListener {
   private lateinit var mProgressBar: ColorfulRingProgressView
   private lateinit var mVideoView: VideoView
   private lateinit var mVideoExport: VideoExport
-
+  lateinit var newfile: File
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_video_export)
@@ -31,10 +32,20 @@ class VideoExportActivity : AppCompatActivity(), OnExportListener {
       it.isLooping = true
     }
 
+
+    val filepath = Environment.getExternalStorageDirectory()
+    val dir =
+      File(filepath.absolutePath + "/" + "Video Creator" + "/")
+    if (!dir.exists()) {
+      dir.mkdirs()
+    }
+
+    newfile = File(dir, "save_" + System.currentTimeMillis() + ".mp4")
+
     val preferences = PreferenceManager.getDefaultSharedPreferences(this)
     val softCodecEncode = preferences.getBoolean("export_soft_encode", false)
     val softCodecDecode = preferences.getBoolean("export_soft_decode", false)
-    val info = VideoExportInfo("/sdcard/export.mp4")
+    val info = VideoExportInfo(newfile.toString())
     info.mediaCodecDecode = !softCodecDecode
     info.mediaCodecEncode = !softCodecEncode
     val width = resources.displayMetrics.widthPixels
@@ -55,18 +66,22 @@ class VideoExportActivity : AppCompatActivity(), OnExportListener {
   }
 
   override fun onExportCanceled() {
-    val file = File("/sdcard/export.mp4")
+    val file = File(newfile.toString())
     file.delete()
   }
 
+
   override fun onExportComplete() {
     mProgressBar.visibility = View.GONE
-    mVideoView.setVideoPath("/sdcard/export.mp4")
+    mVideoView.setVideoPath(newfile.toString())
     mVideoView.start()
+
   }
 
   override fun onDestroy() {
     super.onDestroy()
     mVideoExport.cancel()
   }
+
+
 }

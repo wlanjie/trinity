@@ -10,7 +10,7 @@ uniform sampler2D inputImageTexture;
 uniform float facePoints[106 * 2];
 uniform float bigEyeScale;
 
-// 眼睛圆内放大
+// Zoom in the eye circle
 vec2 enlargeEye(vec2 textureCoordinate, vec2 originPosition, float radius, float delta) {
     float weight = distance(vec2(textureCoordinate.x, textureCoordinate.y / aspectRatio),
         vec2(originPosition.x, originPosition.y / aspectRatio)) / radius;

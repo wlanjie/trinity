@@ -3,13 +3,16 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
 
+
+
 android {
     compileSdkVersion 29
     defaultConfig {
-        applicationId "com.trinity.sample"
+        applicationId "com.videoeditor.videocreator"
         minSdkVersion 16
         targetSdkVersion 29
         versionCode 1
+        multiDexEnabled true
         versionName "1.0.2.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -24,7 +27,7 @@ android {
         }
     }
 
-    // 在Android代码块中添加如下配置：（可优化最上图中transformClassDexBuilderForDebug的时间）
+    // Add the following configuration in the Android code block：（The time of transformClassDexBuilderForDebug can be optimized in the above figure）
     dexOptions {
         preDexLibraries true
         maxProcessCount 8
@@ -32,6 +35,11 @@ android {
 
     lintOptions {
         abortOnError false
+    }
+
+    compileOptions {
+        sourceCompatibility = '1.8'
+        targetCompatibility = '1.8'
     }
 
     packagingOptions {
@@ -73,4 +81,16 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+
+
+    implementation 'androidx.multidex:multidex:2.0.1'
+
+//    implementation 'com.arthenica:mobile-ffmpeg-full:4.4'
+
+//    implementation 'com.arthenica:mobile-ffmpeg-full-gpl:4.4.LTS'
+
+//    implementation 'com.arthenica:mobile-ffmpeg-full:4.3.1.LTS'
+    implementation 'com.github.yangjie10930:EpMedia:v1.0.1'
+
+
 }

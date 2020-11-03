@@ -1,37 +1,37 @@
 [
   {
     "id": 0,
-    "name": "太空熊",
+    "name": "Space bear",
     "color": "#cc23bdb1",
     "effect": "effect/spaceBear"
   },
   {
     "id": 1,
-    "name": "玫瑰眼妆",
+    "name": "Rose eye makeup",
     "color": "#cc23bdb1",
     "effect": "effect/roseEyeMakeup"
   },
   {
     "id": 2,
-    "name": "王妃",
+    "name": "Princess",
     "color": "#cce77e86",
     "effect": "effect/princess"
   },
   {
     "id": 3,
-    "name": "贴纸妆",
+    "name": "Sticker makeup",
     "color": "#cce77e86",
     "effect": "effect/stickerMarkup"
   },
   {
     "id": 4,
-    "name": "飘落小猪",
+    "name": "Falling piggy",
     "color": "#cce77e86",
     "effect": "effect/fallPig"
   },
   {
     "id": 5,
-    "name": "猫头",
+    "name": "Cat head",
     "color": "#cce77e86",
     "effect": "effect/cat"
   }

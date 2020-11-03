@@ -21,6 +21,8 @@
         android:gravity="center_vertical"
         android:layout_marginLeft="10dp"
         android:layout_below="@id/thumbnail_container"
+        android:layout_alignParentLeft="@+id/undo"
+        android:visibility="gone"
         android:textSize="12sp"/>
 
     <TextView

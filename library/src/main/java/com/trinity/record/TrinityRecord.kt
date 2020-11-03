@@ -21,6 +21,7 @@ package com.trinity.record
 import android.content.Context
 import android.graphics.PointF
 import android.graphics.SurfaceTexture
+import android.media.AudioRecord
 import android.provider.Settings
 import android.provider.Settings.SettingNotFoundException
 import android.view.OrientationEventListener
@@ -60,75 +61,75 @@ class TrinityRecord(
   preview: TrinityPreviewView
 ) : TrinityPreviewView.PreviewViewCallback, Timer.OnTimerListener, CameraCallback {
 
-  // c++对象指针地址
+  // c++Object pointer address
   private var mHandle: Long = 0
-  // 相机对象
+  // Camera object
   private var mCamera = Camera1(preview.context, this)
-  // 预览宽
+  // Preview width
   private var mCameraWidth = 0
-  // 预览高
+  // Preview high
   private var mCameraHeight = 0
   private var mViewWidth = 0
   private var mViewHeight = 0
   private var mFrame = Frame.CROP
   private var mCameraCallback: CameraCallback ?= null
-  // 渲染类型
+  // Rendering type
   private var mRenderType = RenderType.CROP
-  // 请求打开摄像头的宽和高
+  // Request to open the width and height of the camera
   private var mResolution = PreviewResolution.RESOLUTION_1280x720
-  // 预览比例
+  // Preview scale
   private var mAspectRatio = AspectRatio.of(16, 9)
   // surface texture
   private var mSurfaceTexture: SurfaceTexture ?= null
-  // texture矩阵
+  // texture matrix
   private val mTextureMatrix = FloatArray(16)
-  // 硬编码对象
+  // Hardcoded object
   private var mSurfaceEncoder = MediaCodecSurfaceEncoder()
-  // Surface 对象
+  // Surface Object
   private var mSurface: Surface ?= null
-  // 是否第一次创建
-  // 第一次创建时创建OpenGL环境,和开启OpenGL线程
-  // 第二次时直接创建EGLSurface
+  // Whether to create for the first time
+  // Create OpenGL environment when first created, and start OpenGL thread
+  // Create EGLSurface directly the second time
   private var mFirst = true
-  // Surface是否存在
-  // 在createSurface中设置为true
-  // 在destroySurface中设置为false
+  // Surface does it exist
+  // Set to true in createSurface
+  // Set to false in destroySurface
   private var mSurfaceExist = false
-  // 是否停止
+  // Whether to stop
   private var mStop = false
-  // 音频录制
+  // Audio recording
   private val mAudioRecordService: RecorderService = AudioRecordRecorderServiceImpl.instance
-  // 音乐播放器
+  // music player
   private var mPlayerService: PlayerService ?= null
-  // 计时器
+  // Timer
   private var mTimer = Timer(this, 20)
-  // 音乐是否播放中
-  // 这个标志为true时,在开始录制时,继续播放
+  // Is the music playing
+  // When this flag is true, when recording starts, continue playing
   private var mMusicPlaying = false
-  // texture回调
-  // 可以做特效处理 textureId是OES类型
+  // texture callback
+  // Can do special effects textureId is of OES type
   private var mOnRenderListener: OnRenderListener ?= null
-  // 录制事件
+  // Recording event
   private var mOnRecordingListener: OnRecordingListener ?= null
-  // 是否录制中
+  // Is recording
   private var mRecording = false
-  // 音乐播放器
+  // music player
   private var mAudioPlayer: AudioPlayer ?= null
-  // 音乐信息对象
+  // Music information object
   private var mMusicInfo: MusicInfo ?= null
-  // 录制速度
+  // Recording speed
   private var mSpeed = Speed.NORMAL
-  // 是否请求打开摄像头
-  // 如果textureId还没创建好时设置为true
-  // 在textureId创建成功时,打开摄像头
+  // Whether to request to open the camera
+  // Set to true if textureId is not created yet
+  // When the textureId is created successfully,Turn on the camera
   private var mRequestPreview = false
-  // 人脸检测实例
+  // Face detection example
   private var mFaceDetection: FaceDetection ?= null
-  // 设备角度检测
+  // Equipment angle detection
   private val mOrientationListener: OrientationEventListener
-  // 设备角度
+  // Equipment angle
   private var mRotateDegree = 0
-  // 设备是否自动旋转
+  // Whether the device automatically rotates
   private var mAutoRotate = false
   private var mFaceDetectionReports: Array<FaceDetectionReport> ?= null
 
@@ -169,15 +170,15 @@ class TrinityRecord(
     startPreview(surface, width, height)
   }
 
-  // SurfaceView surfaceChanged 回调
+  // SurfaceView surfaceChanged Callback
   override fun resetRenderSize(width: Int, height: Int) {
     mViewWidth = width
     mViewHeight = height
-    // 调整绘制区域大小
+    // Resize the drawing area
     setRenderSize(mHandle, width, height)
   }
 
-  // SurfaceView surfaceDestroyed 回调
+  // SurfaceView surfaceDestroyed Callback
   override fun destroySurface() {
     Log.i(Constants.TAG, "destroySurface")
     destroyEGLContext()
@@ -186,25 +187,25 @@ class TrinityRecord(
 
   private fun startPreview(surface: Surface, width: Int, height: Int) {
     if (mFirst) {
-      // 第一次创建c++对象
+      // Create a c++ object for the first time
       mHandle = create()
-      // 初始化OpenGL上下文,并开启线程
+      // Initialize the OpenGL context and start the thread
       prepareEGLContext(mHandle, surface, width, height)
       setRenderType(mRenderType)
       setFrame(mFrame)
       Log.d("tag", "startPreview")
       mFirst = false
     } else {
-      // 直接创建EGLSurface
+      // Create EGLSurface directly
       createWindowSurface(mHandle, surface)
     }
     mSurfaceExist = true
   }
 
   private fun destroyEGLContext() {
-    // 释放OpenGL上下文, 停止线程
+    // Release the OpenGL context, Stop thread
     destroyEGLContext(mHandle)
-    // 删除c++对象
+    // Delete c++ object
     release(mHandle)
     mHandle = 0
     mFirst = true
@@ -213,8 +214,8 @@ class TrinityRecord(
   }
 
   /**
-   * 设置预览显示类型
-   * @param renderType FIX_XY 显示整个屏幕,同时裁剪显示内容, CROP按原比例显示,同时上下留黑
+   * Set preview display type
+   * @param renderType FIX_XY Show the whole screen,At the same time crop the display, CROP is displayed in original scale,Stay black up and down at the same time
    */
   fun setRenderType(renderType: RenderType) {
     mRenderType = renderType
@@ -222,8 +223,8 @@ class TrinityRecord(
   }
 
   /**
-   * 设置播放速度,在录制过程中设置无效
-   * 注意: 快速录制时,需要进行丢帧处理,否则录制出来的视频在快4倍速时能达到120fps
+   * Set playback speed,Invalid setting during recording
+   * note: When recording quickly,Need to deal with dropped frames,Otherwise, the recorded video can reach 120fps at 4 times faster speed
    * @param speed Speed
    */
   fun setSpeed(speed: Speed) {
@@ -231,8 +232,8 @@ class TrinityRecord(
   }
 
   /**
-   * 设置画幅
-   * 目前画幅有: 垂直 横向 1:1方形
+   * Set frame
+   * The current frame has: Vertical horizontal 1:1 square
    */
   fun setFrame(frame: Frame) {
     mFrame = frame
@@ -240,22 +241,22 @@ class TrinityRecord(
   }
 
   /**
-   * 设置录制回调
+   * Set recording callback
    */
   fun setOnRecordingListener(l: OnRecordingListener) {
     mOnRecordingListener = l
   }
 
   /**
-   * 设置Render回调
+   * Set render callback
    */
   fun setOnRenderListener(l: OnRenderListener) {
     mOnRenderListener = l
   }
 
   /**
-   * 设置背景音乐路径
-   * @return 0 成功
+   * Set background music path
+   * @return 0 success
    */
   fun setBackgroundMusic(info: MusicInfo): Int {
     val file = File(info.path)
@@ -271,14 +272,14 @@ class TrinityRecord(
   }
 
   /**
-   * 开启摄像头预览
-   * @param resolution PreviewResolution 预览分辨率选择
+   * Turn on camera preview
+   * @param resolution PreviewResolution Preview resolution selection
    */
   fun startPreview(resolution: PreviewResolution) {
     mResolution = resolution
     if (mSurfaceTexture == null) {
-      // opengl环境还没准备好,此时不能打开相机
-      // 因为相机打开需要OES的textureId
+      // The opengl environment is not ready yet,Cannot turn on the camera at this time
+      // Because the camera needs the textureId of OES to open
       mRequestPreview = true
       return
     }
@@ -289,7 +290,7 @@ class TrinityRecord(
   }
 
   /**
-   * 停止预览, 释放摄像头
+   * Stop preview, Release camera
    */
   fun stopPreview() {
     mCamera.stop()
@@ -297,7 +298,7 @@ class TrinityRecord(
   }
 
   /**
-   * 切换摄像头
+   * Switch camera
    */
   fun switchCamera() {
     mCamera.setAspectRatio(mAspectRatio)
@@ -307,7 +308,7 @@ class TrinityRecord(
   }
 
   /**
-   * 设置当前摄像头id
+   * Set the current camera id
    */
   @Suppress("unused")
   fun setCameraFacing(facing: Facing) {
@@ -315,8 +316,8 @@ class TrinityRecord(
   }
 
   /**
-   * 获取当前摄像头id
-   * @return Facing 返回前后摄像头的枚举定义
+   * Get the current camera id
+   * @return Facing Returns the enumeration definition of the front and rear cameras
    */
   @Suppress("unused")
   fun getCameraFacing(): Facing {
@@ -324,30 +325,30 @@ class TrinityRecord(
   }
 
   /**
-   * 开头闪光灯
+   * Flash at the beginning
    * @param flash
-   * Flash.OFF 关闭
-   * Flash.ON 开启
+   * Flash.OFF shut down
+   * Flash.ON Turn on
    * Flash.TORCH
-   * Flash.AUTO 自动
+   * Flash.AUTO automatic
    */
   fun flash(flash: Flash) {
     mCamera.setFlash(flash)
   }
 
   /**
-   * 设置camera缩放
-   * 100 为最大缩放
-   * @param zoom camera缩放的值, 最大100, 最小0
+   * Set camera zoom
+   * 100 Maximum zoom
+   * @param zoom camera zoom value, Max 100, Minimum 0
    */
   fun setZoom(zoom: Int) {
     mCamera.setZoom(zoom)
   }
 
   /**
-   * 设置camera曝光度
-   * 100 为最大
-   * @param exposureCompensation camera曝光的值, 最在100, 最小0
+   * Set camera exposure
+   * 100 Is the largest
+   * @param exposureCompensation camera exposure value, Last 100, Minimum 0
    */
   @Suppress("unused")
   fun setExposureCompensation(exposureCompensation: Int) {
@@ -355,15 +356,15 @@ class TrinityRecord(
   }
 
   /**
-   * 设置聚焦区域
-   * @param point 聚焦区域的x, y值
+   * Set focus area
+   * @param point X of the focus area, y value
    */
   fun focus(point: PointF) {
     mCamera.focus(mViewWidth, mViewHeight, point)
   }
 
   /**
-   * 设置人脸检测接口
+   * Set up face detection interface
    * @param faceDetection FaceDetection
    */
   fun setFaceDetection(faceDetection: FaceDetection) {
@@ -404,7 +405,7 @@ class TrinityRecord(
   }
 
   /**
-   * 录制结束
+   * End of recording
    */
   override fun end(timer: Timer) {
     stopRecording()
@@ -417,24 +418,24 @@ class TrinityRecord(
 
 
   /**
-   * 添加滤镜
-   * 如: content.json的绝对路径为 /sdcard/Android/com.trinity.sample/cache/filters/config.json
-   * 传入的路径只需要 /sdcard/Android/com.trinity.sample/cache/filters 即可
-   * 如果当前路径不包含config.json则添加失败
-   * 具体json内容如下:
+   * Add filter
+   * Such as: content.The absolute path of json is /sdcard/Android/com.trinity.sample/cache/filters/config.json
+   * The incoming path only needs /sdcard/Android/com.trinity.sample/cache/filters Can
+   * If the current path does not contain config.json Add failed
+   * The specific json content is as follows:
    * {
    *  "type": 0,
    *  "intensity": 1.0,
    *  "lut": "lut_124/lut_124.png"
    * }
    *
-   * json 参数解释:
-   * type: 保留字段, 目前暂无作用
-   * intensity: 滤镜透明度, 0.0时和摄像头采集的无差别
-   * lut: 滤镜颜色表的地址, 必须为本地地址, 而且为相对路径
-   *      sdk内部会进行路径拼接
-   * @param configPath 滤镜config.json的父目录
-   * @return 返回当前滤镜的唯一id
+   * json Parameter explanation:
+   * type: reserved text, Currently no effect
+   * intensity: Filter transparency, 0.0 No difference between time and camera capture
+   * lut: The address of the filter color table, Must be a local address, And relative path
+   *      sdk Internal path stitching
+   * @param configPath Filter config.json Parent directory
+   * @return Returns the current filter一id
    */
   @Suppress("unused")
   fun addFilter(configPath: String): Int {
@@ -442,11 +443,11 @@ class TrinityRecord(
   }
 
   /**
-   * 更新滤镜
-   * @param configPath config.json的路径, 目前对称addFilter说明
-   * @param startTime 滤镜的开始时间
-   * @param endTime 滤镜的结束时间
-   * @param actionId 需要更新哪个滤镜, 必须为addFilter返回的actionId
+   * Update filter
+   * @param configPath config.jsonroute of, Currently symmetric addFilter Description
+   * @param startTime Start time of the filter
+   * @param endTime The end time of the filter
+   * @param actionId Which filter needs to be updated, Must be the actionId returned by addFilter
    */
   @Suppress("unused")
   fun updateFilter(configPath: String, startTime: Int, endTime: Int, actionId: Int) {
@@ -454,9 +455,9 @@ class TrinityRecord(
   }
 
   /**
-   * 更新滤镜透明度
-   * @param intensity Float 滤镜透明度 0.0 ~ 1.0
-   * @param actionId Int addAction时返回的id
+   * Update filter transparency
+   * @param intensity Float Filter transparency 0.0 ~ 1.0
+   * @param actionId Int addAction Id returned when
    */
   fun updateFilterIntensity(intensity: Float, actionId: Int) {
     updateFilterIntensity(mHandle, intensity, actionId)
@@ -465,20 +466,20 @@ class TrinityRecord(
   private external fun updateFilterIntensity(handle: Long, intensity: Float, actionId: Int)
 
   /**
-   * 删除滤镜
-   * @param actionId 需要删除哪个滤镜, 必须为addFilter时返回的actionId
+   * Remove filter
+   * @param actionId Which filter needs to be removed, Must be the actionId returned when addFilter
    */
   fun deleteFilter(actionId: Int) {
     deleteFilter(mHandle, actionId)
   }
 
   /**
-   * 添加特效
-   * 如: content.json的绝对路径为 /sdcard/Android/com.trinity.sample/cache/effects/config.json
-   * 传入的路径只需要 /sdcard/Android/com.trinity.sample/cache/effects 即可
-   * 如果当前路径不包含config.json则添加失败
-   * @param configPath 滤镜config.json的父目录
-   * @return 返回当前特效的唯一id
+   * Add special effects
+   * Such as: content.json The absolute path is /sdcard/Android/com.trinity.sample/cache/effects/config.json
+   * The incoming path only needs /sdcard/Android/com.trinity.sample/cache/effects Can
+   * If the current path does not contain config.json Add failed
+   * @param configPath Filter config.json Parent directory
+   * @return Returns the unique id of the current effect
    */
   fun addEffect(configPath: String): Int {
     if (mHandle <= 0) {
@@ -490,10 +491,10 @@ class TrinityRecord(
   private external fun addEffect(handle: Long, config: String): Int
 
   /**
-   * 更新指定特效
-   * @param startTime 特效的开始时间
-   * @param endTime 特效的结束时间
-   * @param actionId 需要更新哪个特效, 必须为addAction返回的actionId
+   * Update specific effects
+   * @param startTime The start time of the special effect
+   * @param endTime The end time of the special effect
+   * @param actionId Which special effect needs to be updated, Must be the actionId returned by addAction
    */
   fun updateEffectTime(startTime: Int, endTime: Int, actionId: Int) {
     if (mHandle <= 0) {
@@ -505,11 +506,11 @@ class TrinityRecord(
   private external fun updateEffectTime(handle: Long, startTime: Int, endTime: Int, actionId: Int)
 
   /**
-   * 更新指定特效的参数
-   * @param actionId Int 需要更新哪个特效, 必须为addAction返回的actionId
-   * @param effectName String 需要更新特效的名字, 这个是在json中定好的
-   * @param paramName String 更新OpenGL shader中的参数值
-   * @param value Float 具体的参数值 0.0 ~ 1.0
+   * Update the parameters of the specified special effect
+   * @param actionId Int Which special effect needs to be updated, Must be the actionId returned by addAction
+   * @param effectName String Need to update the name of the effect, This is set in json
+   * @param paramName String Update OpenGL Parameter values in shader
+   * @param value Float Specific parameter value 0.0 ~ 1.0
    */
   fun updateEffectParam(actionId: Int, effectName: String, paramName: String, value: Float) {
     updateEffectParam(mHandle, actionId, effectName, paramName, value)
@@ -518,11 +519,11 @@ class TrinityRecord(
   private external fun updateEffectParam(handle: Long, actionId: Int, effectName: String, paramName: String, value: Float)
 
 //  /**
-//   * 更新指定特效的参数
-//   * @param actionId Int 需要更新哪个特效, 必须为addAction返回的actionId
-//   * @param effectName String 需要更新特效的名字, 这个是在json中定好的
-//   * @param paramName String 更新OpenGL shader中的参数值
-//   * @param value FloatArray 具体的参数值 0.0 ~ 1.0
+//   * Update the parameters of the specified special effect
+//   * @param actionId Int Which special effect needs to be updated, Must be the actionId returned by addAction
+//   * @param effectName String Need to update the name of the effect, This is set in json
+//   * @param paramName String Update OpenGL Parameter values in shader
+//   * @param value FloatArray Specific parameter value 0.0 ~ 1.0
 //   */
 //  fun updateActionParam(actionId: Int, effectName: String, paramName: String, value: FloatArray) {
 //    updateActionParam(mHandle, actionId, effectName, paramName, value)
@@ -531,8 +532,8 @@ class TrinityRecord(
 //  private external fun updateActionParam(handle: Long, actionId: Int, effectName: String, paramName: String, value: FloatArray)
 
   /**
-   * 删除一个特效
-   * @param actionId 需要删除哪个特效, 必须为addAction返回的actionId
+   * Delete a special effect
+   * @param actionId Which special effect needs to be deleted, Must be the actionId returned by addAction
    */
   fun deleteEffect(actionId: Int) {
     if (mHandle <= 0) {
@@ -545,8 +546,8 @@ class TrinityRecord(
 
 
   /**
-   * 设置录制角度
-   * @param rotation 角度包含 0 90 180 270
+   * Set recording angle
+   * @param rotation Angle contains 0 90 180 270
    */
   @Suppress("unused")
   fun setRecordRotation(rotation: Int) {
@@ -554,13 +555,17 @@ class TrinityRecord(
   }
 
   /**
-   * 设置静音录制
-   * 静音录制需要把麦克风采集到的数据全部设置为0即可
-   * @param mute true为静音
+   * Set mute recording
+   * For silent recording, you need to set all the data collected by the microphone to 0.
+   * @param mute true is mute
    */
   @Suppress("unused")
   fun setMute(mute: Boolean) {
-
+//    if (mute) {
+//      mAudioRecordService.stop()
+//    }else{
+//
+//    }
   }
 
   private fun getNow(): String {
@@ -577,18 +582,18 @@ class TrinityRecord(
   }
 
   /**
-   * 开始录制一段视频
-   * @param path 录制的视频保存的地址
-   * @param width 录制视频的宽, SDK中会做16倍整数的运算, 可能最终输出视频的宽和设置进去的不一致
-   * @param height 录制视频的高, SDK中会做16倍整数的运算, 可能最终输出视频的宽和设置进去的不一致
-   * @param videoBitRate 视频输出的码率, 如果设置的是2000, 则为2M, 最终输出的和设置的可能有差别
-   * @param frameRate 视频输出的帧率
-   * @param useHardWareEncode 是否使用硬编码, 如果设置为true, 而硬编码不支持,则自动切换到软编码
-   * @param audioSampleRate 音频的采样率
-   * @param audioChannel 音频的声道数
-   * @param audioBitRate 音频的码率
-   * @param duration 需要录制多少时间
-   * @return Int ErrorCode.SUCCESS 为成功,其它为失败
+   * Start recording a video
+   * @param path The address where the recorded video is saved
+   * @param width The width of the recorded video, The SDK will do 16 times integer operations, The width of the final output video may be inconsistent with the setting
+   * @param height High of recorded video, The SDK will do 16 times integer operations, The width of the final output video may be inconsistent with the setting
+   * @param videoBitRate Video output bit rate, If it is set to 2000, Then 2M, The final output and the setting may be different
+   * @param frameRate Video output frame rate
+   * @param useHardWareEncode Whether to use hard coding, If set to true, And hard coding does not support,Soft coding
+   * @param audioSampleRate Audio sampling rate
+   * @param audioChannel Number of audio channels
+   * @param audioBitRate Audio bit rate
+   * @param duration How much time needs to be recorded
+   * @return Int ErrorCode.SUCCESS For success,Other failures
    * @throws InitRecorderFailException
    */
   @Throws(InitRecorderFailException::class)
@@ -630,7 +635,7 @@ class TrinityRecord(
   }
 
   /**
-   * 停止录制
+   * Stop recording
    */
   fun stopRecording() {
     synchronized(this) {
@@ -643,6 +648,7 @@ class TrinityRecord(
       mAudioPlayer?.pause()
       mPlayerService?.pauseAccompany()
       mPlayerService = null
+
       mAudioRecordService.stop()
       mAudioRecordService.destroyAudioRecorderProcessor()
       stopEncode(mHandle)
@@ -650,7 +656,7 @@ class TrinityRecord(
   }
 
   /**
-   * 在activity onDestroy方法中调用,释放其它资源
+   * In activity Called in the onDestroy method,Release other resources
    */
   fun release() {
     synchronized(this) {
@@ -665,14 +671,14 @@ class TrinityRecord(
   }
 
   /**
-   * 获取人脸信息, 由c++调用
-   * @return Array<FaceDetectionReport>? 人脸信息集合
+   * Get face information, Called by c++
+   * @return Array<FaceDetectionReport>? Face information collection
    */
   @Suppress("unused")
   private fun getFaceDetectionReports() = mFaceDetectionReports
 
   /**
-   * 获取预览宽，由c++调用，创建framebuffer
+   * Get preview width，Called by c++，Create framebuffer
    */
   @Suppress("unused")
   private fun getCameraWidth(): Int {
@@ -683,7 +689,7 @@ class TrinityRecord(
   }
 
   /**
-   * 获取预览宽，由c++调用，创建framebuffer
+   * Get preview width，Called by c++，Create framebuffer
    */
   @Suppress("unused")
   private fun getCameraHeight(): Int {
@@ -694,9 +700,9 @@ class TrinityRecord(
   }
 
   /**
-   * 由c++回调回来
-   * 开启预览
-   * @param textureId OES类型的id
+   * Call back by c++
+   * Open preview
+   * @param textureId OES type id
    */
   @Suppress("unused")
   private fun startPreviewFromNative(textureId: Int) {
@@ -716,8 +722,8 @@ class TrinityRecord(
   }
 
   /**
-   * 由c++回调回来
-   * 刷新相机采集的内容
+   * Call back by c++
+   * Refresh the content captured by the camera
    */
   @Suppress("unused")
   private fun updateTexImageFromNative() {
@@ -725,8 +731,8 @@ class TrinityRecord(
   }
 
   /**
-   * surface创建回调
-   * 由c++回调
+   * surface creation callback
+   * Callback by c++
    */
   @Suppress("unused")
   private fun onSurfaceCreated() {
@@ -734,12 +740,12 @@ class TrinityRecord(
   }
 
   /**
-   * texture回调
-   * 可以做特效处理, textureId为TEXTURE_2D类型
-   * @param textureId 相机textureId
-   * @param width texture宽
-   * @param height texture高
-   * @return 返回处理过的textureId, 必须为TEXTURE_2D类型
+   * texture callback
+   * Can do special effects, textureId is TEXTURE_2D type
+   * @param textureId Camera textureId
+   * @param width texture width
+   * @param height high texture
+   * @return Return the processed textureId, Must be TEXTURE_2D type
    */
   @Suppress("unused")
   private fun onDrawFrame(textureId: Int, width: Int, height: Int): Int {
@@ -747,8 +753,8 @@ class TrinityRecord(
   }
 
   /**
-   * surface销毁回调
-   * 由c++回调
+   * surface destruction callback
+   *Callback by c++
    */
   @Suppress("unused")
   private fun onSurfaceDestroy() {
@@ -756,9 +762,9 @@ class TrinityRecord(
   }
 
   /**
-   * 由c++调用
-   * 获取Texture矩阵
-   * 在OpenGL显示时使用
+   * Called by c++
+   * Get texture matrix
+   * Used in OpenGL display
    */
   @Suppress("unused")
   private fun getTextureMatrix(): FloatArray {
@@ -767,12 +773,12 @@ class TrinityRecord(
   }
 
   /**
-   * 由c++回调回来
-   * 创建硬编码
-   * @param width 录制视频的宽
-   * @param height 录制视频的高
-   * @param videoBitRate 录制视频的码率
-   * @param frameRate 录制视频的帧率
+   * Call back by c++
+   * Create hard code
+   * @param width The width of the recorded video
+   * @param height High of recorded video
+   * @param videoBitRate Bit rate of recorded video
+   * @param frameRate Frame rate of recorded video
    */
   @Suppress("unused")
   private fun createMediaCodecSurfaceEncoderFromNative(width: Int, height: Int, videoBitRate: Int, frameRate: Int): Int {
@@ -787,10 +793,10 @@ class TrinityRecord(
   }
 
   /**
-   * 由c++回调回来
-   * 获取h264数据
-   * @param data h264 buffer, 由c++创建传递回来
-   * @return 返回h264数据的大小, 返回0时数据无效
+   * Call back by c++
+   * Get h264 data
+   * @param data h264 buffer, Created by c++ and passed back
+   * @return Returns the size of h264 data, Data is invalid when 0 is returned
    */
   @Suppress("unused")
   private fun drainEncoderFromNative(data: ByteArray): Int {
@@ -798,9 +804,9 @@ class TrinityRecord(
   }
 
   /**
-   * 由c++回调回来
-   * 获取当前编码的时间, 毫秒
-   * @return 当前编码的时间 mBufferInfo.presentationTimeUs
+   *Call back by c++
+   * Get the current encoding time, millisecond
+   * @return Current encoding time mBufferInfo.presentationTimeUs
    */
   @Suppress("unused")
   private fun getLastPresentationTimeUsFromNative(): Long {
@@ -808,9 +814,9 @@ class TrinityRecord(
   }
 
   /**
-   * 由c++回调回来
-   * 获取编码器的Surface
-   * @return 编码器的Surface mediaCodec.createInputSurface()
+   * Call back by c++
+   * Get the Surface of the encoder
+   * @return Surface of the encoder mediaCodec.createInputSurface()
    */
   @Suppress("unused")
   private fun getEncodeSurfaceFromNative(): Surface? {
@@ -818,8 +824,8 @@ class TrinityRecord(
   }
 
   /**
-   * 由c++回调回来
-   * 发送end of stream信号给编码器
+   * Call back by c++
+   * Send the end of stream signal to the encoder
    */
   @Suppress("unused")
   private fun signalEndOfInputStream() {
@@ -827,8 +833,8 @@ class TrinityRecord(
   }
 
   /**
-   * 由c++回调回来
-   * 关闭mediaCodec编码器
+   * Call back by c++
+   * Close mediaCodec encoder
    */
   @Suppress("unused")
   private fun closeMediaCodecCalledFromNative() {
@@ -836,8 +842,8 @@ class TrinityRecord(
   }
 
   /**
-   * 由c++回调回来
-   * 释放当前的camera
+   * Call back by c++
+   * Release the current camera
    */
   @Suppress("unused")
   private fun releaseCameraFromNative() {
@@ -849,78 +855,78 @@ class TrinityRecord(
   }
 
   /**
-   * 创建c++对象
-   * @return 返回c++对象地址, 返回 <=0 时创建失败
+   * Create c++ objects
+   * @return Return the address of the c++ object, Creation failed when return <=0
    */
   private external fun create(): Long
 
   /**
-   * 初始化OpenGL上下文
-   * @param handle c++对象指针地址
-   * @param surface surface对象, 创建EGLSurface需要
-   * @param width surface 宽, 创建EGLSurface需要
-   * @param height surface 高, 创建EGLSurface需要
-   * @param cameraFacingId 前后摄像头id
+   * Initialize OpenGL context
+   * @param handle c++ Object pointer address
+   * @param surface surface object, Need to create EGLSurface
+   * @param width surface width, Need to create EGLSurface
+   * @param height surface high, Need to create EGLSurface
+   * @param cameraFacingId Front and rear camera id
    */
   private external fun prepareEGLContext(handle: Long, surface: Surface, width: Int, height: Int)
 
   /**
-   * 创建EGLSurface
-   * @param handle c++对象指针地址
-   * @param surface surface对象
+   * Create EGLSurface
+   * @param handle c++ Object pointer address
+   * @param surface surface object
    */
   private external fun createWindowSurface(handle: Long, surface: Surface)
 
   /**
-   * 重新设置绘制区域大小
-   * @param handle c++对象指针地址
-   * @param width 需要绘制的宽
-   * @param height 需要绘制的高
+   * Reset the drawing area size
+   * @param handle c++ Object pointer address
+   * @param width The width to be drawn
+   * @param height Need to draw high
    */
   private external fun setRenderSize(handle: Long, width: Int, height: Int)
 
   /**
-   * 绘制一帧内容
-   * @param handle c++对象地址
+   * Draw a frame of content
+   * @param handle c++ Object address
    */
   private external fun onFrameAvailable(handle: Long)
 
   /**
-   * 设置预览显示类型
+   * Set preview display type
    * @param handle Long
    * @param type Int 0: fix_xy 1: crop
    */
   private external fun setRenderType(handle: Long, type: Int)
 
   /**
-   * 设置录制速度
-   * @param handle c++地址
-   * @param speed 录制的速度, 0.25f, 0.5f, 1.0f, 2.0f, 4.0f
+   * Set recording speed
+   * @param handle c++ address
+   * @param speed Recording speed, 0.25f, 0.5f, 1.0f, 2.0f, 4.0f
    */
   private external fun setSpeed(handle: Long, speed: Float)
 
   /**
-   * 设置画幅到绘制和编码
-   * @param handle c++对象地址
-   * @param frame 画幅样式 0: 垂直 1: 横向 2: 方形
+   * Set frame to draw and encode
+   * @param handle c++ Object address
+   * @param frame Frame style 0: vertical 1: Horizontal 2: Square
    */
   private external fun setFrame(handle: Long, frame: Int)
 
   /**
-   * 设置texture矩阵
-   * @param handle c++对象地址
-   * @param matrix 矩阵
+   * Set the texture matrix
+   * @param handle c++ Object address
+   * @param matrix matrix
    */
   private external fun updateTextureMatrix(handle: Long, matrix: FloatArray)
 
   /**
-   * 开始录制
-   * @param handle c++对象地址
-   * @param width 录制视频的宽
-   * @param height 录制视频的高
-   * @param videoBitRate 录制视频的码率
-   * @param frameRate 录制视频的帧率
-   * @param useHardWareEncode 是否使用硬编码
+   * Start recording
+   * @param handle c++ Object address
+   * @param width The width of the recorded video
+   * @param height High of recorded video
+   * @param videoBitRate Bit rate of recorded video
+   * @param frameRate Bit rate of recorded video
+   * @param useHardWareEncode Whether to use hard coding
    * @param strategy
    */
   private external fun startEncode(handle: Long,
@@ -936,53 +942,53 @@ class TrinityRecord(
                                    tag: String)
 
   /**
-   * 停止录制
-   * @param handle c++对象地址
+   * Stop recording
+   * @param handle c++ Object address
    */
   private external fun stopEncode(handle: Long)
 
   /**
-   * 销毁EGLSurface
-   * @param handle c++对象地址
+   * Destroy EGLSurface
+   * @param handle c++ Object address
    */
   private external fun destroyWindowSurface(handle: Long)
 
   /**
-   * 销毁OpenGL 上下文, 销毁之后, 不能在调用绘制函数, 不然会出错或者黑屏
-   * @param handle c++对象地址
+   * Destroy OpenGL Context, After destruction, Cannot call drawing function, Otherwise there will be an error or a black screen
+   * @param handle c++ Object address
    */
   private external fun destroyEGLContext(handle: Long)
 
   private external fun switchCamera(handle: Long)
 
   /**
-   * 添加一个滤镜
-   * @param handle Long c++ 对象地址
-   * @param configPath String 滤镜配置地址
-   * @return Int 返回当前滤镜的唯一id
+   * Add a filter
+   * @param handle Long c++ Object address
+   * @param configPath String Filter configuration address
+   * @return Int Returns the unique id of the current filter
    */
   private external fun addFilter(handle: Long, configPath: String): Int
 
   /**
-   * 更新一个滤镜
-   * @param handle Long c++对象地址
-   * @param configPath String 滤镜配置地址
-   * @param startTime Int 滤镜开始时间
-   * @param endTime Int 滤镜结束时间, 如果一直显示,可以传入Int.MAX
-   * @param actionId Int 需要更新哪个滤镜, 必须为addFilter返回的actionId
+   * Update a filter
+   * @param handle Long c++ Object address
+   * @param configPath String Filter configuration address
+   * @param startTime Int Filter start time
+   * @param endTime Int Filter end time, If it keeps showing,Int can be passed in.MAX
+   * @param actionId Int Which filter needs to be updated, Must be the actionId returned by addFilter
    */
   private external fun updateFilter(handle: Long, configPath: String, startTime: Int, endTime: Int, actionId: Int)
 
   /**
-   * 删除一个滤镜
-   * @param handle Long c++对象地址
-   * @param actionId Int 需要更新哪个滤镜, 必须为addFilter返回的actionId
+   * Remove a filter
+   * @param handle Long c++ Object address
+   * @param actionId Int Which filter needs to be updated, Must be the actionId returned by addFilter
    */
   private external fun deleteFilter(handle: Long, actionId: Int)
 
   /**
-   * 删除c++对象
-   * @param handle c++对象地址
+   * Delete c++ object
+   * @param handle c++ object address
    */
   private external fun release(handle: Long)
 }

@@ -50,15 +50,17 @@
 
     <com.trinity.sample.view.TabLayout
         android:id="@+id/tab_layout"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_width="wrap_content"
+        android:layout_height="47dp"
+        android:layout_marginTop="10dp"
+        android:layout_centerInParent="true"
         app:trinityTabMode="scrollable"
         app:tabRippleColor="@android:color/transparent"
         app:tabTextColor="@android:color/white"
         app:tabSelectedTextColor="@android:color/white"
         app:tabBackground="@android:color/transparent"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="16dp"/>
+        android:layout_marginBottom="12dp"/>
 
     <LinearLayout
         android:layout_width="match_parent"
