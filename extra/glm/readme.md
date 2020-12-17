@@ -1178,7 +1178,7 @@ generation distribution
 
 ---
 ### GLM 0.2 - 2005-05-05
-- Improve adaptative from GLSL.
+- Improve adaptive from GLSL.
 - Add experimental extensions based on OpenGL extension process.
 - Fixe bugs.
 
