@@ -34,6 +34,7 @@ typedef struct JavaClass {
     jobject media_codec_object;
     jmethodID codec_init;
     jmethodID codec_stop;
+    jmethodID codec_seek;
     jmethodID codec_flush;
     jmethodID codec_dequeueInputBuffer;
     jmethodID codec_queueInputBuffer;
@@ -58,6 +59,8 @@ typedef enum {
     IDEL = 0,
     PLAYING,
     PAUSED,
+    SEEKING,
+    SEEK_COMPLETE,
     BUFFER_EMPTY,
     BUFFER_FULL
 } PlayStatus;
@@ -160,7 +163,6 @@ typedef struct AVPlayContext {
     JavaClass *java_class;
     ANativeWindow* window;
 
-    //用户设置
     int buffer_size_max;
     float buffer_time_length;
     bool force_sw_decode;
@@ -173,6 +175,10 @@ typedef struct AVPlayContext {
     pthread_t read_stream_thread;
     pthread_t audio_decode_thread;
     pthread_t video_decode_thread;
+
+    // eof cond
+    pthread_cond_t eof_cond_t;
+    pthread_mutex_t eof_mutex_t;
 
     // 封装
     AVFormatContext *format_context;
@@ -218,8 +224,11 @@ typedef struct AVPlayContext {
     bool is_sw_decode;
 
     // SEEK
-    float seek_to;
+    int64_t seek_to;
     uint8_t seeking;
+    // 是否精准seek
+    bool precise_seek;
+    int64_t current_video_packet_pts;
 
     // play background
     bool just_audio;
@@ -231,7 +240,7 @@ typedef struct AVPlayContext {
 
     bool abort_request;
 
-    int media_codec_texture_id;
+    unsigned int media_codec_texture_id;
 
     pthread_mutex_t media_codec_mutex;
 
@@ -259,6 +268,6 @@ typedef struct AVPlayContext {
 
     void (*on_complete)(struct AVPlayContext* context);
 
-    void (*play_audio)(struct AVPlayContext* context);
+    void (*on_seeking)(struct AVPlayContext* context);
 } AVPlayContext;
 #endif  // play_types_h

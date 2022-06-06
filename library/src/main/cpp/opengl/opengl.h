@@ -65,6 +65,7 @@ class OpenGL {
     void SetOutput(int width, int height);
     void SetInt(const char* name, int value);
     void SetFloat(const char* name, float value);
+    void SetUniform4f(const char* name, float v0, float v1, float v2, float v3);
     void SetFloatVec2(const char* name, int size, const GLfloat* value);
     void SetFloatVec3(const char* name, int size, const GLfloat* value);
     void SetFloatVec4(const char* name, int size, const GLfloat* value);

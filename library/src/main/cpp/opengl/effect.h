@@ -300,6 +300,8 @@ class SubEffect {
     std::vector<ShaderUniforms*> fragment_uniforms;
     std::vector<ShaderUniforms*> vertex_uniforms;
     std::vector<char*> input_effect;
+    std::map<std::string, float> update_params;
+    std::map<std::string, float*> update_point_params;
     char* param_name;
     float param_value;
 
@@ -329,6 +331,60 @@ class GeneralSubEffect : public SubEffect {
     ~GeneralSubEffect();
     virtual int OnDrawFrame(FaceDetection* face_detection, std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id,
         int width, int height, uint64_t current_time);
+};
+
+class InfoStickerFrame {
+ public:
+    InfoStickerFrame() {
+        file_name = nullptr;
+        frame_width = 0;
+        frame_height = 0;
+        frame_x = 0;
+        frame_y = 0;
+        rotated = false;
+        source_width = 0;
+        source_height = 0;
+        sprite_width = 0;
+        sprite_height = 0;
+        sprite_x = 0;
+        sprite_y = 0;
+    }
+    ~InfoStickerFrame() {
+        if (nullptr != file_name) {
+            delete[] file_name;
+            file_name = nullptr;
+        }
+    }
+    char* file_name;
+    double frame_width;
+    double frame_height;
+    double frame_x;
+    double frame_y;
+    bool rotated;
+    double source_width;
+    double source_height;
+    double sprite_width;
+    double sprite_height;
+    double sprite_x;
+    double sprite_y;
+};
+
+class InfoStickerSubEffect : public SubEffect {
+ public:
+    InfoStickerSubEffect();
+    ~InfoStickerSubEffect();
+    virtual int OnDrawFrame(FaceDetection* face_detection, std::list<SubEffect*> sub_effects, int origin_texture_id, int texture_id,
+        int width, int height, uint64_t current_time);
+ public:
+    char* format;
+    char* image;
+    double width;
+    double height;
+    size_t render_index;
+    int frame_rate_index;
+    ImageBuffer* image_buffer;
+    Blend* blend;
+    std::vector<InfoStickerFrame*> info_sticker_frames;
 };
 
 // Sticker
@@ -462,6 +518,7 @@ class Effect {
     int OnDrawFrame(GLuint texture_id, int width, int height, uint64_t current_time);
     void UpdateTime(int start_time, int end_time);
     void UpdateParam(const char* effect_name, const char* param_name, float value);
+    void UpdateParam(const char* effect_name, const char* param_name, float* value, int length);
  private:
     char* CopyValue(char* src);
     int ReadFile(const std::string& path, char** buffer);
@@ -470,6 +527,8 @@ class Effect {
     // 转换带人脸的2D贴纸json
     int ConvertStickerFaceConfig(cJSON* effect_item_json, char* resource_root_path, std::list<SubEffect*>& sub_effects);
     void ConvertGeneralConfig(cJSON* effect_item_json, char* resource_root_path, GeneralSubEffect* general_sub_effect);
+    // 普通贴纸信息解析
+    int ConvertInfoStickerConfig(cJSON* effect_item_json, char* resource_root_path, InfoStickerSubEffect* info_sticker_sub_effect);
     void ParseFaceMakeupV2(cJSON* makeup_root_json, const std::string& resource_root_path, FaceMakeupV2* face_makeup_v2);
     void ConvertFaceMakeupV2(cJSON* effect_item_json, char* resource_root_path, FaceMakeupV2SubEffect* face_makeup_v2_sub_effect);
     glm::mat4 VertexMatrix(SubEffect* sub_effect, int source_width, int source_height);

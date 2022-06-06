@@ -38,11 +38,15 @@ class Timer(private val mListener: OnTimerListener, private var mUpdateInterval:
       }
       val time = SystemClock.elapsedRealtime() - mStartTime
       if (time >= duration) {
-        mListener.update(this@Timer, duration)
-        mListener.end(this@Timer)
+        Trinity.callback {
+          mListener.update(this@Timer, duration)
+          mListener.end(this@Timer)
+        }
         return
       } else {
-        mListener.update(this@Timer, time.toInt())
+        Trinity.callback {
+          mListener.update(this@Timer, time.toInt())
+        }
       }
 
       mHandler?.postDelayed(this, mUpdateInterval.toLong())

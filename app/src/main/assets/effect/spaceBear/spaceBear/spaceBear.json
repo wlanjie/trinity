@@ -1,0 +1,139 @@
+{
+  "frames": [
+    {
+      "filename": "img_000.png",
+      "frame": {
+        "h": 280.0,
+        "w": 271.0,
+        "x": 2,
+        "y": 2.0
+      },
+      "rotated": false,
+      "sourceSize": {
+        "h": 280.0,
+        "w": 271.0
+      },
+      "spriteSourceSize": {
+        "h": 280.0,
+        "w": 271.0,
+        "x": 0,
+        "y": 0
+      },
+      "trimmed": false
+    },
+    {
+      "filename": "img_001.png",
+      "frame": {
+        "h": 280.0,
+        "w": 271.0,
+        "x": 2,
+        "y": 284.0
+      },
+      "rotated": false,
+      "sourceSize": {
+        "h": 280.0,
+        "w": 271.0
+      },
+      "spriteSourceSize": {
+        "h": 280.0,
+        "w": 271.0,
+        "x": 0,
+        "y": 0
+      },
+      "trimmed": false
+    },
+    {
+      "filename": "img_002.png",
+      "frame": {
+        "h": 280.0,
+        "w": 271.0,
+        "x": 2,
+        "y": 566.0
+      },
+      "rotated": false,
+      "sourceSize": {
+        "h": 280.0,
+        "w": 271.0
+      },
+      "spriteSourceSize": {
+        "h": 280.0,
+        "w": 271.0,
+        "x": 0,
+        "y": 0
+      },
+      "trimmed": false
+    },
+    {
+      "filename": "img_003.png",
+      "frame": {
+        "h": 280.0,
+        "w": 271.0,
+        "x": 275,
+        "y": 2.0
+      },
+      "rotated": false,
+      "sourceSize": {
+        "h": 280.0,
+        "w": 271.0
+      },
+      "spriteSourceSize": {
+        "h": 280.0,
+        "w": 271.0,
+        "x": 0,
+        "y": 0
+      },
+      "trimmed": false
+    },
+    {
+      "filename": "img_004.png",
+      "frame": {
+        "h": 280.0,
+        "w": 271.0,
+        "x": 275,
+        "y": 284.0
+      },
+      "rotated": false,
+      "sourceSize": {
+        "h": 280.0,
+        "w": 271.0
+      },
+      "spriteSourceSize": {
+        "h": 280.0,
+        "w": 271.0,
+        "x": 0,
+        "y": 0
+      },
+      "trimmed": false
+    },
+    {
+      "filename": "img_005.png",
+      "frame": {
+        "h": 280.0,
+        "w": 271.0,
+        "x": 275,
+        "y": 566.0
+      },
+      "rotated": false,
+      "sourceSize": {
+        "h": 280.0,
+        "w": 271.0
+      },
+      "spriteSourceSize": {
+        "h": 280.0,
+        "w": 271.0,
+        "x": 0,
+        "y": 0
+      },
+      "trimmed": false
+    }
+  ],
+  "meta": {
+    "format": "RGBA8888",
+    "image": "spaceBear/spaceBear.png",
+    "scale": "1",
+    "size": {
+      "h": 848.0,
+      "w": 548.0
+    }
+  }
+}

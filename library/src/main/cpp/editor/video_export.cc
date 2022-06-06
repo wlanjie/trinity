@@ -27,6 +27,7 @@
 #include "android_xlog.h"
 #include "tools.h"
 #include "gl.h"
+#include "rotate_coordinate.h"
 
 #define MAX_IMAGE_WIDTH 1080
 #define MAX_IMAGE_HEIGHT 1920
@@ -132,6 +133,7 @@ VideoExport::VideoExport(JNIEnv* env, jobject object)
     av_play_context_->on_complete = OnCompleteEvent;
     av_play_context_->change_status = OnStatusChanged;
     av_play_set_buffer_time(av_play_context_, 5);
+    LOGE("export av_play_context: %p", av_play_context_);
 
     packet_pool_ = PacketPool::GetInstance();
 }
@@ -265,7 +267,7 @@ void VideoExport::OnEffect() {
                     }
                     if (nullptr != config_json) {
                         char* config = config_json->valuestring;
-                        image_process_->OnAction(config, action_id);
+                        image_process_->OnEffect(config, action_id);
                         image_process_->OnUpdateActionTime(start_time, end_time, action_id);
                     }
                 }
@@ -320,7 +322,11 @@ void VideoExport::OnMusics() {
 void VideoExport::StartDecode(MediaClip *clip) {
     LOGI("enter %s path: %s start_time: %d export_index: %d", __func__, clip->file_name, clip->start_time, export_index_);
     if (clip->type == VIDEO) {
-        av_play_play(clip->file_name, clip->start_time, av_play_context_);
+        int ret = av_play_play(clip->file_name, av_play_context_);
+        if (ret != 0) {
+            av_play_stop(av_play_context_);
+            return;
+        }
     } else if (clip->type == IMAGE) {
         load_image_texture_ = true;
     }
@@ -609,6 +615,7 @@ void VideoExport::ProcessVideoExport() {
             }
         } else if (current_media_clip_->type == VIDEO) {
 //            LOGE("video export status: %d", av_play_context_->status);
+
             if (av_play_context_->error_code == BUFFER_FLAG_END_OF_STREAM && av_play_context_->video_frame_queue->count == 0) {
                 pthread_mutex_lock(&media_mutex_);
                 LOGE("export video message stop");
@@ -627,8 +634,14 @@ void VideoExport::ProcessVideoExport() {
             }
 
             AVFrame* frame = av_play_context_->video_frame;
-            int width = MIN(frame->linesize[0], frame->width);
-            int height = frame->height;
+            int rotation = av_play_context_->frame_rotation;
+            int width = MIN(av_play_context_->video_frame->linesize[0], av_play_context_->video_frame->width);
+            int height = av_play_context_->video_frame->height;
+            // rotation size
+            if (rotation == ROTATION_90 || rotation == ROTATION_270) {
+                width = av_play_context_->video_frame->height;
+                height = MIN(av_play_context_->video_frame->linesize[0], av_play_context_->video_frame->width);
+            }
             // 如果当前记录的视频的宽和高不相等时,重建各个FrameBuffer
             if (frame_width_ != width || frame_height_ != height) {
                 frame_width_ = width;
@@ -659,17 +672,13 @@ void VideoExport::ProcessVideoExport() {
 
                 // 硬编和软解时, yuv_render时需要旋做上下镜像处理
                 if (media_codec_encode_) {
-                    GLfloat texture_coordinate[] = {
-                            0.0F, 1.0F,
-                            1.0F, 1.0F,
-                            0.0F, 0.0F,
-                            1.0F, 0.0F
-                    };
+                    auto texture_coordinate = rotate_soft_decode_media_encode_coordinate(av_play_context_->frame_rotation);
                     encode_texture_id_ = yuv_render_->DrawFrame(frame, glm::value_ptr(scale_matrix),
                             crop_vertex_coordinate_, texture_coordinate);
                 } else {
+                    auto texture_coordinate = rotate_soft_decode_encode_coordinate(av_play_context_->frame_rotation);
                     encode_texture_id_ = yuv_render_->DrawFrame(frame, glm::value_ptr(scale_matrix),
-                            crop_vertex_coordinate_, texture_coordinate_);
+                            crop_vertex_coordinate_, texture_coordinate);
                 }
                 current_time_ = av_rescale_q(av_play_context_->video_frame->pts,
                                                                 av_play_context_->format_context->streams[av_play_context_->video_index]->time_base,
@@ -683,18 +692,13 @@ void VideoExport::ProcessVideoExport() {
                     continue;
                 }
 
-                GLfloat* texture_coordinate = texture_coordinate_;
+                GLfloat* texture_coordinate;
+                // 软编时硬解码需要做镜像处理
                 if (!media_codec_encode_) {
-                    // 软编时硬解码需要做镜像处理
-                    static GLfloat coordinate[] = {
-                            0.0F, 1.0F,
-                            1.0F, 1.0F,
-                            0.0F, 0.0F,
-                            1.0F, 0.0F
-                    };
-                    texture_coordinate = coordinate;
+                    texture_coordinate = rotate_mirror_coordinate(av_play_context_->frame_rotation);
+                } else {
+                    texture_coordinate = rotate_coordinate(av_play_context_->frame_rotation);
                 }
-
                 media_codec_render_->ActiveProgram();
                 encode_texture_id_ = media_codec_render_->OnDrawFrame(oes_texture_,
                         crop_vertex_coordinate_, texture_coordinate,

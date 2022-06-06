@@ -110,6 +110,12 @@ class VideoEditor : public Handler, public PlayerEventObserver {
 
     void DeleteAction(int action_id);
 
+    void SetBackgroundColor(int clip_index, int red, int green, int blue, int alpha);
+
+    int SetBackgroundImage(int clip_index, const char* image_path);
+
+    void SetFrameSize(int width, int height);
+
     void Seek(int time);
 
     // 开始播放

@@ -60,40 +60,6 @@ const char* NV21_FRAGMENT_SHADER =
         "   gl_FragColor = vec4(r, g, b, 1.0);\n"
         "}\n";
 
-static GLfloat VERTEX_COORDINATE[8] = {
-        -1.0f, -1.0f,
-        1.0f, -1.0f,
-        -1.0f, 1.0f,
-        1.0f, 1.0f,
-};
-
-static GLfloat TEXTURE_COORDINATE_NO_ROTATION[8] = {
-        0.0f, 0.0f,
-        1.0f, 0.0f,
-        0.0f, 1.0f,
-        1.0f, 1.0f
-};
-
-static GLfloat TEXTURE_COORDINATE_ROTATED_90[8] = {
-        0.0f, 1.0f,
-        0.0f, 0.0f,
-        1.0f, 1.0f,
-        1.0f, 0.0f
-};
-
-static GLfloat TEXTURE_COORDINATE_ROTATED_180[8] = {
-        1.0, 1.0,
-        0.0, 1.0,
-        1.0, 0.0,
-        0.0, 0.0,
-};
-static GLfloat TEXTURE_COORDINATE_ROTATED_270[8] = {
-        1.0f, 0.0f,
-        1.0f, 1.0f,
-        0.0f, 0.0f,
-        0.0f, 1.0f
-};
-
 YuvRender::YuvRender()
     : program_(0)
     , texture_id_(0)
@@ -102,29 +68,11 @@ YuvRender::YuvRender()
     , uniform_samplers_()
     , vertex_coordinate_location_(0)
     , texture_coordinate_location_(0)
-    , matrix_location_(0)
-    , y(nullptr)
-    , u(nullptr)
-    , v(nullptr) {
-    y_size_ = 0;
-    u_size_ = 0;
-    v_size_ = 0;
+    , matrix_location_(0) {
 }
 
 YuvRender::~YuvRender() {
     Destroy();
-    if (nullptr != y) {
-        delete[] y;
-        y = nullptr;
-    }
-    if (nullptr != u) {
-        delete[] u;
-        u = nullptr;
-    }
-    if (nullptr != v) {
-        delete[] v;
-        v = nullptr;
-    }
 }
 
 int YuvRender::Initialize(int width, int height, const char* fragment_shader) {

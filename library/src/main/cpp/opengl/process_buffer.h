@@ -24,7 +24,6 @@ class ProcessBuffer {
     ~ProcessBuffer();
 
     int Init(const char* vertex_shader, const char* fragment_shader);
-    void SetOutput(int width, int height);
     void SetInt(const char* name, int value);
     void SetFloat(const char* name, float value);
     void SetFloatVec2(const char* name, int size, const GLfloat* value);
@@ -34,7 +33,7 @@ class ProcessBuffer {
     void SetUniformMatrix4f(const char* name, int size, const GLfloat* matrix);
     void Destroy();
 
-    void ActiveProgram();
+    void ActiveProgram(int width, int height);
     void Clear();
     void ActiveAttribute();
     void DrawArrays();
@@ -46,6 +45,8 @@ class ProcessBuffer {
     }
 
  private:
+    void CreateFrameBuffer(int width, int height);
+    void DeleteFrameBuffer();
     void CreateProgram(const char *vertex, const char *fragment);
     void CompileShader(const char *shader_string, GLuint shader);
     void Link();

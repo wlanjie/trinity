@@ -96,15 +96,17 @@ class CameraRecord : public Handler, public FaceDetection {
 
     void UpdateFilter(const char* config_path, int start_time, int end_time, int action_id);
 
+    void UpdateFilterIntensity(float intensity, int action_id);
+
     void DeleteFilter(int action_id);
 
-    int AddAction(const char* config_path);
+    int AddEffect(const char* config_path);
 
-    void UpdateActionTime(int start_time, int end_time, int action_id);
+    void UpdateEffectTime(int start_time, int end_time, int action_id);
 
-    void UpdateActionParam(int action_id, const char* effect_name, const char* param_name, float value);
+    void UpdateEffectParam(int action_id, const char* effect_name, const char* param_name, float value);
 
-    void DeleteAction(int action_id);
+    void DeleteEffect(int action_id);
 
     virtual void FaceDetector(std::vector<FaceDetectionReport*>& face_detection);
  private:
@@ -157,15 +159,17 @@ class CameraRecord : public Handler, public FaceDetection {
     void OnUpdateFilter(char* config_path, int action_id,
             int start_time, int end_time);
 
+    void OnUpdateFilterIntensity(int intensity, int action_id);
+
     void OnDeleteFilter(int action_id);
 
-    void OnAddAction(char* config_path, int action_id);
+    void OnAddEffect(char* config_path, int action_id);
 
-    void OnUpdateActionTime(int start_time, int end_time, int action_id);
+    void OnUpdateEffectTime(int start_time, int end_time, int action_id);
 
-    void OnUpdateActionParam(EffectParam* param);
+    void OnUpdateEffectParam(EffectParam* param);
 
-    void OnDeleteAction(int action_id);
+    void OnDeleteEffect(int action_id);
 
     int GetCameraFacing();
 
@@ -176,6 +180,7 @@ class CameraRecord : public Handler, public FaceDetection {
     ANativeWindow *window_;
     JavaVM *vm_;
     jobject obj_;
+    bool screen_size_changed_;
     int screen_width_;
     int screen_height_;
     int camera_width_;

@@ -66,13 +66,6 @@ class YuvRender {
     GLuint texture_coordinate_location_;
     GLuint matrix_location_;
     GLint uniform_samplers_[3];
-
-    uint8_t *y;
-    uint8_t *u;
-    uint8_t *v;
-    int y_size_;
-    int u_size_;
-    int v_size_;
 };
 
 }  // namespace trinity

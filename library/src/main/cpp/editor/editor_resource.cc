@@ -35,6 +35,8 @@ EditorResource::EditorResource(const char *resource_path) {
     cJSON_AddItemToObject(root_json_, "musics", music_json_);
     filter_json_ = cJSON_CreateArray();
     cJSON_AddItemToObject(root_json_, "filters", filter_json_);
+    background_json_ = cJSON_CreateArray();
+    cJSON_AddItemToObject(root_json_, "backgrounds", background_json_);
 }
 
 EditorResource::~EditorResource() {
@@ -256,6 +258,65 @@ void EditorResource::DeleteFilter(int action_id) {
         cJSON_DeleteItemFromArray(filter_json_, index);
     }
     char *content = cJSON_Print(root_json_);
+    fprintf(resource_file_, "%s", content);
+    fflush(resource_file_);
+    free(content);
+}
+
+void EditorResource::SetBackgroundColor(int clip_index, int red, int green, int blue, int alpha) {
+    fseek(resource_file_, 0, SEEK_SET);
+    int background_size = cJSON_GetArraySize(background_json_);
+    if (background_size > 0) {
+        auto item = background_json_->child;
+        int index = -1;
+        for (int i = 0; i < background_size; ++i) {
+            auto item_json = cJSON_GetObjectItem(item, "clipIndex");
+            if (clip_index == item_json->valueint) {
+                index = i;
+                break;
+            }
+            item = item->next;
+        }
+        cJSON_DeleteItemFromArray(background_json_, index);
+    }
+    auto item = cJSON_CreateObject();
+    cJSON_AddNumberToObject(item, "type", BACKGROUND_COLOR);
+    cJSON_AddNumberToObject(item, "red", red);
+    cJSON_AddNumberToObject(item, "green", green);
+    cJSON_AddNumberToObject(item, "blue", blue);
+    cJSON_AddNumberToObject(item, "alpha", alpha);
+    cJSON_AddNumberToObject(item, "clipIndex", clip_index);
+    cJSON_AddItemToArray(background_json_, item);
+
+    char* content = cJSON_Print(root_json_);
+    fprintf(resource_file_, "%s", content);
+    fflush(resource_file_);
+    free(content);
+}
+
+void EditorResource::SetBackgroundImage(int clip_index, const char *path) {
+    fseek(resource_file_, 0, SEEK_SET);
+    int background_size = cJSON_GetArraySize(background_json_);
+    if (background_size > 0) {
+        auto item = background_json_->child;
+        int index = -1;
+        for (int i = 0; i < background_size; ++i) {
+            auto item_json = cJSON_GetObjectItem(item, "clipIndex");
+            if (clip_index == item_json->valueint) {
+                index = i;
+                break;
+            }
+            item = item->next;
+        }
+        cJSON_DeleteItemFromArray(background_json_, index);
+    }
+    auto item = cJSON_CreateObject();
+    cJSON_AddNumberToObject(item, "type", BACKGROUND_IMAGE);
+    cJSON_AddNumberToObject(item, "clipIndex", clip_index);
+    cJSON_AddStringToObject(item, "path", path);
+    cJSON_AddItemToArray(background_json_, item);
+
+    char* content = cJSON_Print(root_json_);
     fprintf(resource_file_, "%s", content);
     fflush(resource_file_);
     free(content);

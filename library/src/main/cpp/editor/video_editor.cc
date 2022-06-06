@@ -224,7 +224,15 @@ int64_t VideoEditor::GetClipTime(int index, int64_t video_time) {
 }
 
 int VideoEditor::GetClipIndex(int64_t time) {
-    return 0;
+    int index = 0;
+    int end_time = 0;
+    while (index < clip_deque_.size() && end_time < time) {
+        auto clip = clip_deque_.at(index);
+        auto duration = clip->end_time - clip->start_time;
+        end_time += duration;
+        index++;
+    }
+    return end_time > time ? index - 1 : -1;
 }
 
 int VideoEditor::AddFilter(const char *config) {
@@ -288,7 +296,7 @@ void VideoEditor::DeleteMusic(int action_id) {
 
 int VideoEditor::AddAction(const char *effect_config) {
     if (nullptr != player_) {
-        auto action_id = player_->AddAction(effect_config);
+        auto action_id = player_->AddEffect(effect_config);
         if (nullptr != editor_resource_) {
             editor_resource_->AddAction(effect_config, action_id);
         }
@@ -299,7 +307,7 @@ int VideoEditor::AddAction(const char *effect_config) {
 
 void VideoEditor::UpdateAction(int start_time, int end_time, int action_id) {
     if (nullptr != player_) {
-        player_->UpdateAction(start_time, end_time, action_id);
+        player_->UpdateEffect(start_time, end_time, action_id);
         if (nullptr != editor_resource_) {
             editor_resource_->UpdateAction(start_time, end_time, action_id);
         }
@@ -308,10 +316,42 @@ void VideoEditor::UpdateAction(int start_time, int end_time, int action_id) {
 
 void VideoEditor::DeleteAction(int action_id) {
     if (nullptr != player_) {
-        player_->DeleteAction(action_id);
+        player_->DeleteEffect(action_id);
     }
     if (nullptr != editor_resource_) {
         editor_resource_->DeleteAction(action_id);
+    }
+}
+
+void VideoEditor::SetBackgroundColor(int clip_index, int red, int green, int blue, int alpha) {
+    if (nullptr != editor_resource_) {
+        editor_resource_->SetBackgroundColor(clip_index, red, green, blue, alpha);
+    }
+    if (nullptr != player_) {
+        player_->SetBackgroundColor(clip_index, red, green, blue, alpha);
+    }
+}
+
+int VideoEditor::SetBackgroundImage(int clip_index, const char *image_path) {
+    MediaClip clip;
+    clip.file_name = const_cast<char *>(image_path);
+    auto result = CheckFileType(&clip);
+    LOGE("clip.type: %d result: %d", clip.type, result);
+    if (clip.type != IMAGE) {
+        return -2;
+    }
+    if (nullptr != editor_resource_) {
+        editor_resource_->SetBackgroundImage(clip_index, image_path);
+    }
+    if (nullptr != player_) {
+        player_->SetBackgroundImage(clip_index, image_path);
+    }
+    return 0;
+}
+
+void VideoEditor::SetFrameSize(int width, int height) {
+    if (nullptr != player_) {
+        player_->SetFrameSize(width, height);
     }
 }
 
@@ -340,13 +380,23 @@ void VideoEditor::OnComplete() {
     MediaClip* clip = clip_deque_.at(static_cast<unsigned int>(play_index_));
     if (nullptr != player_) {
         player_->Start(clip, video_count_duration);
+        auto pre_load_index = (play_index_ + 1) % clip_deque_.size();
+        player_->PreLoading(clip_deque_.at(pre_load_index));
     }
     LOGE("leave %s", __func__);
 }
 
 void VideoEditor::Seek(int time) {
     if (nullptr != player_) {
-        player_->Seek(time, INT_MAX);
+        int index = GetClipIndex(time);
+        auto clip = index >= 0 ? clip_deque_.at(index) : nullptr;
+        if (nullptr == clip) {
+            return;
+        }
+        int seek_time = static_cast<int>(GetVideoTime(index, 0));
+        // seek时改变播放的片段索引, 播放结束时, 根据播放的索引播放下一个
+        play_index_ = index;
+        player_->Seek(time - seek_time, clip, index >= 0 ? index : 0);
     }
 }
 
@@ -357,10 +407,13 @@ int VideoEditor::Play(bool repeat, JNIEnv* env, jobject object) {
     repeat_ = repeat;
     MediaClip* clip = clip_deque_.at(0);
 
+    int ret = 0;
     if (nullptr != player_) {
-        return player_->Start(clip);
+        ret = player_->Start(clip);
+        auto pre_load = (play_index_ + 1) % clip_deque_.size();
+        player_->PreLoading(clip_deque_.at(pre_load));
     }
-    return 0;
+    return ret;
 }
 
 void VideoEditor::Pause() {

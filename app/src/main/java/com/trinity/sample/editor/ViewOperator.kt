@@ -138,7 +138,6 @@ class ViewOperator(
         } else {
           ViewGroup.MarginLayoutParams(params)
         }
-        println("width: ${params.width} height: ${params.height} current: ${currentValue} width: ${mPlayerWidth} playerHeight: ${mPlayerHeight}")
         val marginTop = abs(mPlayerViewMarginTop - mMoveLength) * (1 - currentValue) / (1 - mScaleSize)
         marginParams.setMargins(0, marginTop.toInt(), 0, 0)
         playerView.layoutParams = marginParams

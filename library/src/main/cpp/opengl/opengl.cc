@@ -156,6 +156,7 @@ void OpenGL::SetFrame(int source_width, int source_height, int target_width, int
             scale_height = target_ratio / source_ratio;
         }
     }
+    LOGE("scale_width: %f scale_height: %f", scale_width, scale_height);
     default_vertex_coordinates_[0] = -scale_width;
     default_vertex_coordinates_[1] = -scale_height;
     default_vertex_coordinates_[2] = scale_width;
@@ -179,6 +180,11 @@ void OpenGL::SetInt(const char *name, int value) {
 void OpenGL::SetFloat(const char *name, float value) {
     GLint location = glGetUniformLocation(program_, name);
     glUniform1f(location, value);
+}
+
+void OpenGL::SetUniform4f(const char *name, float v0, float v1, float v2, float v3) {
+    auto location = glGetUniformLocation(program_, name);
+    glUniform4f(location, v0, v1, v2, v3);
 }
 
 void OpenGL::SetFloatVec2(const char *name, int size, const GLfloat *value) {
@@ -229,6 +235,7 @@ void OpenGL::ProcessImage(GLuint texture_id, const GLfloat *vertex_coordinate, c
                           GLfloat *texture_matrix) {
     if (program_ == 0) {
         // create program failed.
+        LOGE("program error: %d", program_);
         return;
     }
     glUseProgram(program_);

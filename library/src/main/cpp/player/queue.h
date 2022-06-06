@@ -20,6 +20,8 @@ FrameQueue* frame_queue_create(unsigned int size);
 void frame_queue_free(FrameQueue *queue);
 int frame_queue_put(FrameQueue *queue, AVFrame *frame);
 AVFrame* frame_queue_get(FrameQueue *queue);
+AVFrame* frame_queue_peek(FrameQueue* queue);
+AVFrame* frame_queue_peek_last(FrameQueue* queue);
 void frame_queue_flush(FrameQueue *queue, FramePool *pool);
 
 PacketPool* packet_pool_create(int size);
@@ -33,6 +35,8 @@ void queue_set_duration(PacketQueue *queue, uint64_t max_duration);
 void packet_queue_free(PacketQueue *queue);
 int packet_queue_put(PacketQueue *queue, AVPacket *packet);
 AVPacket* packet_queue_get(PacketQueue *queue);
+AVPacket* packet_queue_peek(PacketQueue* queue);
+AVPacket* packet_queue_peek_last(PacketQueue* queue);
 void packet_queue_flush(PacketQueue *queue, PacketPool *pool);
 
 #endif // queue_h

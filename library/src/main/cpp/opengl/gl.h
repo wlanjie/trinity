@@ -36,6 +36,41 @@ static const float DEFAULT_TEXTURE_COORDINATE[] = {
         1.F, 1.F
 };
 
+static float VERTEX_COORDINATE[8] = {
+        -1.0f, -1.0f,
+        1.0f, -1.0f,
+        -1.0f, 1.0f,
+        1.0f, 1.0f,
+};
+
+static float TEXTURE_COORDINATE_NO_ROTATION[8] = {
+        0.0f, 0.0f,
+        1.0f, 0.0f,
+        0.0f, 1.0f,
+        1.0f, 1.0f
+};
+
+static float TEXTURE_COORDINATE_ROTATED_90[8] = {
+        1.0f, 0.0f,
+        1.0f, 1.0f,
+        0.0f, 0.0f,
+        0.0f, 1.0f
+};
+
+static float TEXTURE_COORDINATE_ROTATED_180[8] = {
+        0.0f, 1.0f,
+        1.0f, 1.0f,
+        0.0f, 0.0f,
+        1.0f, 0.0f,
+};
+
+static float TEXTURE_COORDINATE_ROTATED_270[8] = {
+        0.0f, 1.0f,
+        0.0f, 0.0f,
+        1.0f, 1.0f,
+        1.0f, 0.0f
+};
+
 // 默认带matrix的顶点shader
 static const char* DEFAULT_VERTEX_MATRIX_SHADER =
         "attribute vec4 position;                                                               \n"
@@ -51,10 +86,10 @@ static const char* DEFAULT_VERTEX_MATRIX_SHADER =
 static const char* DEFAULT_OES_FRAGMENT_SHADER =
         "#extension GL_OES_EGL_image_external : require                                         \n"
         "precision mediump float;                                                               \n"
-        "uniform samplerExternalOES yuvTexSampler;                                              \n"
+        "uniform samplerExternalOES inputImageTexture;                                              \n"
         "varying vec2 textureCoordinate;                                                        \n"
         "void main() {                                                                          \n"
-        "  gl_FragColor = texture2D(yuvTexSampler, textureCoordinate);                          \n"
+        "  gl_FragColor = texture2D(inputImageTexture, textureCoordinate);                          \n"
         "}                                                                                      \n";
 
 // 默认顶点shader

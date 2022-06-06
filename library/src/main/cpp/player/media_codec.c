@@ -400,6 +400,9 @@ int mediacodec_receive_frame(AVPlayContext *context, AVFrame *frame) {
     jobject deqret = (*env)->CallObjectMethod(env, java_class->media_codec_object,
                                                        java_class->codec_dequeueOutputBufferIndex,
                                                        (jlong) 0);
+    if (!deqret) {
+        return -1;
+    }
     uint8_t* ret_buf = (*env)->GetDirectBufferAddress(env, deqret);
     int out_index = get_int(ret_buf);
     int flags = get_int(ret_buf + 4);
@@ -458,7 +461,7 @@ int mediacodec_dequeue_input_buffer_index(AVPlayContext* context) {
     JNIEnv *env = NULL;
     (*context->vm)->AttachCurrentThread(context->vm, &env, NULL);
     JavaClass* java_class = context->java_class;
-    int id = (*env)->CallIntMethod(env, java_class->media_codec_object, java_class->codec_dequeueInputBuffer, (jlong) 100 * 1000);
+    int id = (*env)->CallIntMethod(env, java_class->media_codec_object, java_class->codec_dequeueInputBuffer, (jlong) 100 * 10);
     (*context->vm)->DetachCurrentThread(context->vm);
     return id;
 }
@@ -536,10 +539,15 @@ void mediacodec_flush(AVPlayContext *context) {
         return;
     }
     JNIEnv *env = NULL;
-    (*context->vm)->AttachCurrentThread(context->vm, &env, NULL);
+    int status = (*context->vm)->GetEnv(context->vm, (void **) &env, JNI_VERSION_1_6);
+    if (status < 0) {
+        (*context->vm)->AttachCurrentThread(context->vm, &env, NULL);
+    }
     JavaClass* java_class = context->java_class;
     (*env)->CallVoidMethod(env, java_class->media_codec_object, java_class->codec_flush);
-    (*context->vm)->DetachCurrentThread(context->vm);
+    if (status < 0) {
+        (*context->vm)->DetachCurrentThread(context->vm);
+    }
     LOGI("leave %s", __func__);
     pthread_mutex_unlock(&context->media_codec_mutex);
 }
@@ -549,24 +557,18 @@ void mediacodec_seek(AVPlayContext* context) {
     if (media_codec_context == NULL) {
         return;
     }
+    LOGE("enter: %s", __func__);
     JNIEnv *env = NULL;
-    (*context->vm)->AttachCurrentThread(context->vm, &env, NULL);
-    while (1) {
-        JavaClass *java_class = context->java_class;
-        jobject deqret = (*env)->CallObjectMethod(env, java_class->media_codec_object,
-                                                  java_class->codec_dequeueOutputBufferIndex,
-                                                  (jlong) 0);
-        uint8_t *ret_buf = (*env)->GetDirectBufferAddress(env, deqret);
-        int out_index = get_int(ret_buf);
-        (*env)->DeleteLocalRef(env, deqret);
-        if (out_index >= 0) {
-            (*env)->CallVoidMethod(env, java_class->media_codec_object, java_class->codec_releaseOutPutBuffer,
-                                   out_index);
-        } else {
-            break;
-        }
+    int status = (*context->vm)->GetEnv(context->vm , (void**)(&env), JNI_VERSION_1_6);
+    if (status < 0) {
+        (*context->vm)->AttachCurrentThread(context->vm, &env, NULL);
     }
-    (*context->vm)->DetachCurrentThread(context->vm);
+    JavaClass* java_class = context->java_class;
+    (*env)->CallVoidMethod(env, java_class->media_codec_object, java_class->codec_seek);
+    LOGE("leave: %s", __func__);
+    if (status < 0) {
+        (*context->vm)->DetachCurrentThread(context->vm);
+    }
 }
 
 void mediacodec_stop(AVPlayContext *context) {
